@@ -1,5 +1,8 @@
 {
-  "name": "n4s",
+  "name": "not4sale-workflow",
+  "version": "0.1.0",
+  "homepage": ".",
+  "private": true,  "name": "n4s",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
