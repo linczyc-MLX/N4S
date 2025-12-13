@@ -1,7 +1,8 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Client } from '../types';
-import { getKYMWeight, getPortfolioContextLabel } from '../utils/storage';
+import { getKYCWeight, getKYMWeight, getPortfolioContextLabel } from '../utils/storage';
+
 interface InvestmentTrackerProps {
   client: Client;
 }
@@ -9,16 +10,16 @@ interface InvestmentTrackerProps {
 export const InvestmentTracker: React.FC<InvestmentTrackerProps> = ({ client }) => {
   // Calculate depreciation prevention based on portfolio context
   const getDepreciationRate = () => {
-  // Traditional depreciation is ~20% over time
-  // N4S reduces this significantly based on portfolio alignment
-  const baseDepreciation = 0.20;
-  const kymWeight = getKYMWeight(client.portfolioContext);  // ← ADD THIS LINE BACK
-  
-  // Higher KYM weight = better market alignment = less depreciation
-  const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
-  return baseDepreciation * (1 - depreciationReduction);
-};
-  
+    // Traditional depreciation is ~20% over time
+    // N4S reduces this significantly based on portfolio alignment
+    const baseDepreciation = 0.20;
+    const kymWeight = getKYMWeight(client.portfolioContext);
+    
+    // Higher KYM weight = better market alignment = less depreciation
+    const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
+    return baseDepreciation * (1 - depreciationReduction);
+  };
+
   const depreciationRate = getDepreciationRate();
   const landAppreciation = client.landProjected - client.landValue;
   const buildingDepreciation = client.buildingCost * depreciationRate;
@@ -46,99 +47,99 @@ export const InvestmentTracker: React.FC<InvestmentTrackerProps> = ({ client }) 
           <DollarSign className="w-5 h-5 text-amber-400" />
         </div>
         <div className="text-xs text-slate-300 mt-1">
-          {getPortfolioContextLabel(client.portfolioContext)} Strategy
+          {getPortfolioContextLabel(client.portfolioContext)}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6 space-y-4">
-        {/* Land Investment */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-slate-700">Land Value</span>
+      {/* Investment 1: Land */}
+      <div className="px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-green-600" />
-          </div>
-          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-slate-600">Purchase</span>
-              <span className="text-sm font-mono text-slate-700">{formatCurrency(client.landValue)}</span>
-            </div>
-            <div className="flex justify-between items-baseline mt-1">
-              <span className="text-xs text-slate-600">Projected</span>
-              <span className="text-lg font-mono font-bold text-green-700">{formatCurrency(client.landProjected)}</span>
-            </div>
-            <div className="text-xs text-green-600 mt-2 font-semibold">
-              +{formatCurrency(landAppreciation)} ({((landAppreciation / client.landValue) * 100).toFixed(1)}%)
-            </div>
+            <span className="font-semibold text-slate-900">Investment 1: Land</span>
           </div>
         </div>
-
-        {/* Building Investment */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-slate-700">Building Value</span>
-            <TrendingUp className="w-4 h-4 text-amber-600" />
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Purchase Price:</span>
+            <span className="font-semibold">{formatCurrency(client.landValue)}</span>
           </div>
-          <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-slate-600">Construction Cost</span>
-              <span className="text-sm font-mono text-slate-700">{formatCurrency(client.buildingCost)}</span>
-            </div>
-            <div className="flex justify-between items-baseline mt-1">
-              <span className="text-xs text-slate-600">Retained Value</span>
-              <span className="text-lg font-mono font-bold text-amber-700">{formatCurrency(buildingRetained)}</span>
-            </div>
-            <div className="text-xs text-amber-600 mt-2 font-semibold">
-              -{formatCurrency(buildingDepreciation)} ({(depreciationRate * 100).toFixed(1)}% depreciation)
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              N4S prevents {((1 - depreciationRate/0.20) * 100).toFixed(0)}% of typical depreciation
-            </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Projected Value:</span>
+            <span className="font-semibold text-green-600">{formatCurrency(client.landProjected)}</span>
+          </div>
+          <div className="flex justify-between pt-1 border-t border-slate-100">
+            <span className="text-slate-700 font-medium">Appreciation:</span>
+            <span className="font-bold text-green-600">
+              {formatCurrency(landAppreciation)} 
+              <span className="text-xs ml-1">
+                (+{((landAppreciation / client.landValue) * 100).toFixed(1)}%)
+              </span>
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Total ROI */}
-        <div className="border-t-2 border-slate-200 pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-slate-700">Total ROI</span>
-            {totalROI >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-green-600" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-600" />
-            )}
-          </div>
-          <div className={`rounded-lg p-4 border-2 ${
-            totalROI >= 0 
-              ? 'bg-green-50 border-green-300' 
-              : 'bg-red-50 border-red-300'
-          }`}>
-            <div className="flex justify-between items-baseline mb-2">
-              <span className="text-xs text-slate-600">Total Invested</span>
-              <span className="text-sm font-mono text-slate-700">{formatCurrency(totalInvested)}</span>
-            </div>
-            <div className="flex justify-between items-baseline mb-3">
-              <span className="text-xs text-slate-600">Projected Exit</span>
-              <span className="text-2xl font-mono font-bold text-slate-900">{formatCurrency(totalExit)}</span>
-            </div>
-            <div className={`text-center py-2 rounded font-bold ${
-              totalROI >= 0 ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-            }`}>
-              {totalROI >= 0 ? '+' : ''}{formatCurrency(totalROI)} ({roiPercentage >= 0 ? '+' : ''}{roiPercentage.toFixed(1)}%)
-            </div>
+      {/* Investment 2: Building */}
+      <div className="px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="w-4 h-4 text-amber-600" />
+            <span className="font-semibold text-slate-900">Investment 2: Building</span>
           </div>
         </div>
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Construction Cost:</span>
+            <span className="font-semibold">{formatCurrency(client.buildingCost)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Retained Value:</span>
+            <span className="font-semibold text-amber-600">{formatCurrency(buildingRetained)}</span>
+          </div>
+          <div className="flex justify-between pt-1 border-t border-slate-100">
+            <span className="text-slate-700 font-medium">Depreciation Prevented:</span>
+            <span className="font-bold text-amber-600">
+              {formatCurrency(client.buildingCost * 0.20 - buildingDepreciation)}
+              <span className="text-xs ml-1">
+                ({((1 - depreciationRate / 0.20) * 100).toFixed(0)}%)
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
 
-        {/* Portfolio Context */}
-        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-          <div className="text-xs text-slate-600 mb-2">Scoring Weights</div>
+      {/* Total ROI */}
+      <div className="px-6 py-4 bg-slate-50">
+        <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-700">
-              KYC (Client): <span className="font-bold">{(getKYCWeight(client.portfolioContext) * 100).toFixed(0)}%</span>
-            </span>
-            <span className="text-slate-700">
-              KYM (Market): <span className="font-bold">{(getKYMWeight(client.portfolioContext) * 100).toFixed(0)}%</span>
-            </span>
+            <span className="text-slate-700">Total Investment:</span>
+            <span className="font-semibold">{formatCurrency(totalInvested)}</span>
           </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-700">Projected Exit Value:</span>
+            <span className="font-semibold text-green-600">{formatCurrency(totalExit)}</span>
+          </div>
+          <div className="flex justify-between pt-2 border-t-2 border-slate-300">
+            <span className="font-serif font-bold text-slate-900">Total ROI:</span>
+            <div className="text-right">
+              <div className="font-bold text-green-600">{formatCurrency(totalROI)}</div>
+              <div className="text-xs text-green-600">+{roiPercentage.toFixed(1)}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Portfolio Context */}
+      <div className="px-6 py-3 bg-amber-50 border-t border-amber-100">
+        <div className="text-xs text-center text-slate-600 mb-2">Portfolio Weighting</div>
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-700">
+            KYC (Client): <span className="font-bold">{(getKYCWeight(client.portfolioContext) * 100).toFixed(0)}%</span>
+          </span>
+          <span className="text-slate-700">
+            KYM (Market): <span className="font-bold">{(getKYMWeight(client.portfolioContext) * 100).toFixed(0)}%</span>
+          </span>
         </div>
       </div>
     </div>
