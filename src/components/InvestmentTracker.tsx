@@ -1,8 +1,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Client } from '../types';
-import { getKYCWeight, getKYMWeight, getPortfolioContextLabel } from '../utils/storage';
-
+import { getKYMWeight, getPortfolioContextLabel } from '../utils/storage';
 interface InvestmentTrackerProps {
   client: Client;
 }
@@ -14,7 +13,6 @@ export const InvestmentTracker: React.FC<InvestmentTrackerProps> = ({ client }) 
     // N4S reduces this significantly based on portfolio alignment
     const baseDepreciation = 0.20;
     const kycWeight = getKYCWeight(client.portfolioContext);
-    const kymWeight = getKYMWeight(client.portfolioContext);
     
     // Higher KYM weight = better market alignment = less depreciation
     const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
