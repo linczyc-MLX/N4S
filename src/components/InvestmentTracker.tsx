@@ -9,15 +9,16 @@ interface InvestmentTrackerProps {
 export const InvestmentTracker: React.FC<InvestmentTrackerProps> = ({ client }) => {
   // Calculate depreciation prevention based on portfolio context
   const getDepreciationRate = () => {
-    // Traditional depreciation is ~20% over time
-    // N4S reduces this significantly based on portfolio alignment
-    const baseDepreciation = 0.20;
-    
-    // Higher KYM weight = better market alignment = less depreciation
-    const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
-    return baseDepreciation * (1 - depreciationReduction);
-  };
-
+  // Traditional depreciation is ~20% over time
+  // N4S reduces this significantly based on portfolio alignment
+  const baseDepreciation = 0.20;
+  const kymWeight = getKYMWeight(client.portfolioContext);  // ← ADD THIS LINE BACK
+  
+  // Higher KYM weight = better market alignment = less depreciation
+  const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
+  return baseDepreciation * (1 - depreciationReduction);
+};
+  
   const depreciationRate = getDepreciationRate();
   const landAppreciation = client.landProjected - client.landValue;
   const buildingDepreciation = client.buildingCost * depreciationRate;
