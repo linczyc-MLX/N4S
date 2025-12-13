@@ -11,6 +11,7 @@ export const PhaseOverview: React.FC = () => {
 
   useEffect(() => {
     loadClient();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
   const loadClient = async () => {

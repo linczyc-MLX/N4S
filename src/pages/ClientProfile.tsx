@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Users, Home as HomeIcon } from 'lucide-react';
+import { Save, Users } from 'lucide-react';
 import { Client, ClientProfileData, FamilyMember } from '../types';
 import { getClient, saveClient, getClientProfile, saveClientProfile, generateId } from '../utils/storage';
 
@@ -19,6 +19,7 @@ export const ClientProfile: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
   const loadData = async () => {

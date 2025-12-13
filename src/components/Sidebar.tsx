@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { Home, Users, TrendingUp, Calculator, CheckSquare, ChevronRight, Lock } from 'lucide-react';
+import { Home, Users, ChevronRight, Lock } from 'lucide-react';
 import { Client } from '../types';
 
 interface SidebarProps {
