@@ -86,12 +86,12 @@ function App() {
         <Route
           path="/"
           element={
-            <SimpleLayout>
+            <div className="flex h-screen bg-slate-50">
               <Sidebar />
-              <div className="ml-80">
+              <div className="flex-1 overflow-y-auto ml-80">
                 <Dashboard />
               </div>
-            </SimpleLayout>
+            </div></div>
           }
         />
 
