@@ -50,15 +50,6 @@ const ClientLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
-// Simple layout without sidebar for standalone pages
-const SimpleLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {children}
-    </div>
-  );
-};
-
 // Placeholder component for unimplemented workstreams
 const PlaceholderWorkstream: React.FC<{ title: string }> = ({ title }) => {
   return (
