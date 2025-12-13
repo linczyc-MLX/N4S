@@ -12,7 +12,6 @@ export const InvestmentTracker: React.FC<InvestmentTrackerProps> = ({ client }) 
     // Traditional depreciation is ~20% over time
     // N4S reduces this significantly based on portfolio alignment
     const baseDepreciation = 0.20;
-    const kycWeight = getKYCWeight(client.portfolioContext);
     
     // Higher KYM weight = better market alignment = less depreciation
     const depreciationReduction = kymWeight * 0.75; // Up to 75% reduction
