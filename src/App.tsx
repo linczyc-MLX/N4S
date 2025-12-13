@@ -91,7 +91,7 @@ function App() {
               <div className="flex-1 overflow-y-auto ml-80">
                 <Dashboard />
               </div>
-            </div></div>
+            </div>
           }
         />
 
