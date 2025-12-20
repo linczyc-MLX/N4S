@@ -30,15 +30,15 @@ const KYCModule = () => {
   } = useAppContext();
 
   const sections = [
-    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp' },
-    { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp' },
-    { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp' },
-    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp' },
-    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp' },
-    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced' },
-    { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp' },
-    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced' },
-    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced' },
+    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
+    { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
+    { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp', taskCode: 'P1.A.3' },
+    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp', taskCode: 'P1.A.4' },
+    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp', taskCode: 'P1.A.5' },
+    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced', taskCode: 'P1.A.6' },
+    { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp', taskCode: 'P1.A.7' },
+    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.8' },
+    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.9' },
   ];
 
   const respondentTabs = [
@@ -153,7 +153,8 @@ const KYCModule = () => {
       <div className="kyc-module__layout">
         {/* Section Navigation */}
         <nav className="kyc-module__nav">
-          <h3 className="kyc-module__nav-title">Sections</h3>
+          <h3 className="kyc-module__nav-title">Module A: KYC</h3>
+          <p className="kyc-module__nav-subtitle">Know Your Client</p>
           <ul className="kyc-module__nav-list">
             {visibleSections.map((section, index) => {
               const Icon = section.icon;
@@ -166,6 +167,7 @@ const KYCModule = () => {
                     className={`kyc-nav-item ${isActive ? 'kyc-nav-item--active' : ''}`}
                     onClick={() => setCurrentKYCSection(index)}
                   >
+                    <span className="kyc-nav-item__code">{section.taskCode}</span>
                     <div className="kyc-nav-item__icon">
                       <Icon size={18} />
                     </div>
@@ -181,9 +183,12 @@ const KYCModule = () => {
         {/* Section Content */}
         <div className="kyc-module__content">
           <div className="kyc-module__section-header">
-            <h2 className="kyc-module__section-title">
-              {visibleSections[currentKYCSection]?.label}
-            </h2>
+            <div className="kyc-module__section-title-group">
+              <span className="kyc-module__task-code">{visibleSections[currentKYCSection]?.taskCode}</span>
+              <h2 className="kyc-module__section-title">
+                {visibleSections[currentKYCSection]?.label}
+              </h2>
+            </div>
             <span className="kyc-module__section-counter">
               Section {currentKYCSection + 1} of {visibleSections.length}
             </span>
