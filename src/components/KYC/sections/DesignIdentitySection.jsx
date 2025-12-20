@@ -94,11 +94,19 @@ const DesignIdentitySection = ({ respondent, tier }) => {
 
   return (
     <div className="kyc-section">
+      {/* Taste Profile Notice */}
+      <div className="kyc-section__group">
+        <div className="info-banner info-banner--highlight">
+          <p><strong>Taste Exploration:</strong> These design preferences are best captured through our visual Taste Exploration module, where your choices reveal your aesthetic DNA. The sliders below show your derived taste profile once Taste Exploration is complete.</p>
+          <p className="info-banner__subtext">Manual adjustment available for initial discussions or refinement.</p>
+        </div>
+      </div>
+
       {/* Style Axes - The Core */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Design DNA: Style Axes</h3>
         <p className="kyc-section__group-description">
-          Position yourself on each spectrum. These five axes define your fundamental aesthetic preferences.
+          Your position on each spectrum, derived from Taste Exploration or manually adjusted.
         </p>
 
         <div className="style-axes">

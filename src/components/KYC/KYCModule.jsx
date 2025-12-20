@@ -34,7 +34,7 @@ const KYCModule = () => {
     { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp' },
     { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp' },
     { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp' },
-    { id: 'designIdentity', label: 'Design Identity', icon: Palette, tier: 'mvp' },
+    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp' },
     { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced' },
     { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp' },
     { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced' },

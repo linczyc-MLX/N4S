@@ -753,6 +753,23 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .compatibility-warning strong { display: block; margin-bottom: 4px; color: var(--gray-800); }
 .compatibility-warning p { font-size: 0.9rem; color: var(--gray-600); margin: 0; }
 
+/* Info Banner */
+.info-banner {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.info-banner p { margin: 0 0 8px 0; font-size: 0.95rem; color: var(--gray-700); }
+.info-banner p:last-child { margin-bottom: 0; }
+.info-banner__subtext { font-size: 0.85rem !important; color: var(--gray-500) !important; font-style: italic; }
+.info-banner--highlight {
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.1) 0%, rgba(26, 54, 93, 0.05) 100%);
+  border-color: var(--gold);
+  border-left: 4px solid var(--gold);
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .matching-results { grid-template-columns: repeat(2, 1fr); }
