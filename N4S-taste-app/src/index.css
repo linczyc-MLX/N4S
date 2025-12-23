@@ -1,0 +1,138 @@
+/* ============================================
+   N4S TASTE EXPLORATION - BASE STYLES
+   Matching N4S Dashboard Design System
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Background colors - Light luxury feel */
+  --color-bg-primary: #f5f3ef;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-input: #f8f7f5;
+  
+  /* Navy blue - Primary brand color */
+  --color-navy: #1e3a5f;
+  --color-navy-light: #2d4a6f;
+  --color-navy-dark: #152a45;
+  
+  /* Gold/Amber accent */
+  --color-accent: #c9a227;
+  --color-accent-hover: #d4b03a;
+  --color-accent-light: #f5e6b3;
+  
+  /* Status colors */
+  --color-success: #2e7d32;
+  --color-success-light: #4caf50;
+  --color-warning: #f9a825;
+  --color-error: #c62828;
+  --color-error-light: #ef5350;
+  
+  /* Text colors */
+  --color-text: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #757575;
+  --color-text-light: #ffffff;
+  
+  /* Border */
+  --color-border: #e0dcd5;
+  --color-border-light: #f0ece5;
+  
+  /* Fonts */
+  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Spacing & Radius */
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+  --transition: 0.2s ease;
+  
+  /* Progress bar */
+  --progress-bar-width: 60px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100vh;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg-primary);
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+a {
+  color: var(--color-navy);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Utility classes */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-navy {
+  color: var(--color-navy);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-navy);
+}
