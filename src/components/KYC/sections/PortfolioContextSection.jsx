@@ -1,15 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Plus, X, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
-import SliderField from '../../shared/SliderField';
 
 const PortfolioContextSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
   const data = kycData[respondent].portfolioContext;
+  const [showAuthorityModal, setShowAuthorityModal] = useState(false);
+  const [pendingAuthorityLevel, setPendingAuthorityLevel] = useState(null);
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
+  };
+
+  // Handle authority level selection with confirmation for Level 3+
+  const handleAuthorityLevelChange = (value) => {
+    const level = parseInt(value);
+    if (level >= 3) {
+      setPendingAuthorityLevel(level);
+      setShowAuthorityModal(true);
+    } else {
+      handleChange('familyOfficeAuthorityLevel', level);
+      handleChange('authorityLevelConfirmed', false);
+    }
+  };
+
+  const confirmAuthorityLevel = () => {
+    handleChange('familyOfficeAuthorityLevel', pendingAuthorityLevel);
+    handleChange('authorityLevelConfirmed', true);
+    setShowAuthorityModal(false);
+    setPendingAuthorityLevel(null);
+  };
+
+  // Handle multiple primary residences
+  const addPrimaryResidence = () => {
+    const residences = data.primaryResidences || [];
+    handleChange('primaryResidences', [...residences, { country: '', city: '' }]);
+  };
+
+  const updatePrimaryResidence = (index, field, value) => {
+    const residences = [...(data.primaryResidences || [])];
+    residences[index] = { ...residences[index], [field]: value };
+    handleChange('primaryResidences', residences);
+  };
+
+  const removePrimaryResidence = (index) => {
+    const residences = (data.primaryResidences || []).filter((_, i) => i !== index);
+    handleChange('primaryResidences', residences);
   };
 
   const propertyRoleOptions = [
@@ -58,8 +96,53 @@ const PortfolioContextSection = ({ respondent, tier }) => {
   // Only show governance fields for Principal
   const isPrincipal = respondent === 'principal';
 
+  // Show multiple residence inputs when count > 1
+  const propertyCount = parseInt(data.currentPropertyCount) || 0;
+
   return (
     <div className="kyc-section">
+      {/* Authority Level Confirmation Modal */}
+      {showAuthorityModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal__header">
+              <AlertTriangle size={24} className="modal__icon modal__icon--warning" />
+              <h3>Confirm Authority Level</h3>
+            </div>
+            <div className="modal__body">
+              <p>
+                You are granting <strong>
+                  {pendingAuthorityLevel === 3 ? 'Level 3: Co-Signatory on Stage Gates' : 'Level 4: Full Authority Delegated'}
+                </strong> to your Family Office/Advisor.
+              </p>
+              <p className="modal__warning">
+                This means they will {pendingAuthorityLevel === 3 
+                  ? 'need to co-sign all stage gate approvals' 
+                  : 'have full authority to make decisions on your behalf'}.
+              </p>
+              <p>Are you sure you want to proceed?</p>
+            </div>
+            <div className="modal__actions">
+              <button 
+                className="btn btn--secondary"
+                onClick={() => {
+                  setShowAuthorityModal(false);
+                  setPendingAuthorityLevel(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn--primary"
+                onClick={confirmAuthorityLevel}
+              >
+                Confirm Authority Level
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isPrincipal && (
         <>
           <div className="kyc-section__group">
@@ -70,48 +153,66 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             
             <div className="form-grid form-grid--2col">
               <FormField
-                label="Principal Name"
-                value={data.principalName}
-                onChange={(v) => handleChange('principalName', v)}
-                placeholder="Full legal name"
+                label="First Name"
+                value={data.principalFirstName}
+                onChange={(v) => handleChange('principalFirstName', v)}
+                placeholder="First name"
                 required
               />
               <FormField
-                label="Principal Email"
+                label="Last Name"
+                value={data.principalLastName}
+                onChange={(v) => handleChange('principalLastName', v)}
+                placeholder="Last name"
+                required
+              />
+            </div>
+            
+            <div className="form-grid form-grid--2col">
+              <FormField
+                label="Email"
                 type="email"
                 value={data.principalEmail}
                 onChange={(v) => handleChange('principalEmail', v)}
                 placeholder="email@example.com"
                 required
               />
+              <FormField
+                label="Phone"
+                type="tel"
+                value={data.principalPhone}
+                onChange={(v) => handleChange('principalPhone', v)}
+                placeholder="+1 (555) 000-0000"
+              />
             </div>
-            
-            <FormField
-              label="Principal Phone"
-              type="tel"
-              value={data.principalPhone}
-              onChange={(v) => handleChange('principalPhone', v)}
-              placeholder="+1 (555) 000-0000"
-            />
           </div>
 
           <div className="kyc-section__group">
             <h3 className="kyc-section__group-title">Secondary Stakeholder</h3>
+            <p className="kyc-section__group-description">
+              Spouse or co-decision-maker (if applicable)
+            </p>
             <div className="form-grid form-grid--2col">
               <FormField
-                label="Secondary Name"
-                value={data.secondaryName}
-                onChange={(v) => handleChange('secondaryName', v)}
-                placeholder="Spouse or co-decision-maker (if applicable)"
+                label="First Name"
+                value={data.secondaryFirstName}
+                onChange={(v) => handleChange('secondaryFirstName', v)}
+                placeholder="First name"
               />
               <FormField
-                label="Secondary Email"
-                type="email"
-                value={data.secondaryEmail}
-                onChange={(v) => handleChange('secondaryEmail', v)}
-                placeholder="email@example.com"
+                label="Last Name"
+                value={data.secondaryLastName}
+                onChange={(v) => handleChange('secondaryLastName', v)}
+                placeholder="Last name"
               />
             </div>
+            <FormField
+              label="Email"
+              type="email"
+              value={data.secondaryEmail}
+              onChange={(v) => handleChange('secondaryEmail', v)}
+              placeholder="email@example.com"
+            />
           </div>
 
           <div className="kyc-section__group">
@@ -126,12 +227,22 @@ const PortfolioContextSection = ({ respondent, tier }) => {
               <SelectField
                 label="Authority Level"
                 value={data.familyOfficeAuthorityLevel}
-                onChange={(v) => handleChange('familyOfficeAuthorityLevel', v)}
+                onChange={handleAuthorityLevelChange}
                 options={familyOfficeAuthorityOptions}
                 placeholder="Select authority level..."
                 helpText="Principal must formally designate this"
               />
             </div>
+            
+            {data.familyOfficeAuthorityLevel >= 3 && data.authorityLevelConfirmed && (
+              <div className="kyc-section__notice kyc-section__notice--info">
+                <AlertTriangle size={16} />
+                <span>
+                  Authority Level {data.familyOfficeAuthorityLevel} confirmed. 
+                  Stage gates will require {data.familyOfficeAuthorityLevel === 3 ? 'co-signature' : 'advisor approval'}.
+                </span>
+              </div>
+            )}
             
             {tier !== 'mvp' && (
               <FormField
@@ -153,22 +264,60 @@ const PortfolioContextSection = ({ respondent, tier }) => {
           Understanding the role this property plays in your overall portfolio helps us weight your preferences appropriately.
         </p>
         
-        <div className="form-grid form-grid--2col">
-          <FormField
-            label="Current Property Count"
-            type="number"
-            value={data.currentPropertyCount}
-            onChange={(v) => handleChange('currentPropertyCount', parseInt(v) || null)}
-            placeholder="Total properties owned"
-            min={0}
-          />
-          <FormField
-            label="Primary Residence Location"
-            value={data.primaryResidenceLocation}
-            onChange={(v) => handleChange('primaryResidenceLocation', v)}
-            placeholder="City, Country"
-          />
-        </div>
+        <FormField
+          label="Current Property Count"
+          type="number"
+          value={data.currentPropertyCount}
+          onChange={(v) => handleChange('currentPropertyCount', parseInt(v) || null)}
+          placeholder="Total properties owned"
+          min={0}
+        />
+
+        {/* Multiple Primary Residences */}
+        {propertyCount > 0 && (
+          <div className="kyc-section__subgroup">
+            <label className="form-field__label">Primary Residence Location(s)</label>
+            <p className="form-field__help" style={{ marginBottom: '12px' }}>
+              Enter the locations of your existing properties
+            </p>
+            
+            {(data.primaryResidences || []).map((residence, index) => (
+              <div key={index} className="residence-row">
+                <div className="form-grid form-grid--2col">
+                  <FormField
+                    label={`Property ${index + 1} - City`}
+                    value={residence.city}
+                    onChange={(v) => updatePrimaryResidence(index, 'city', v)}
+                    placeholder="City"
+                  />
+                  <FormField
+                    label="Country"
+                    value={residence.country}
+                    onChange={(v) => updatePrimaryResidence(index, 'country', v)}
+                    placeholder="Country"
+                  />
+                </div>
+                {(data.primaryResidences || []).length > 1 && (
+                  <button 
+                    className="btn btn--ghost btn--sm residence-row__remove"
+                    onClick={() => removePrimaryResidence(index)}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+            
+            {(data.primaryResidences || []).length < propertyCount && (
+              <button 
+                className="btn btn--secondary btn--sm"
+                onClick={addPrimaryResidence}
+              >
+                <Plus size={16} /> Add Property Location
+              </button>
+            )}
+          </div>
+        )}
 
         <SelectField
           label="This Property's Role"

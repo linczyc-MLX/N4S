@@ -20,10 +20,14 @@ const N4S_PHASES = {
 };
 
 const Dashboard = ({ onNavigate }) => {
-  const { clientData, kycData, fyiData, calculateCompleteness } = useAppContext();
+  const { clientData, updateClientData, kycData, fyiData, calculateCompleteness } = useAppContext();
   
   const kycProgress = calculateCompleteness('principal');
-  const hasSecondary = kycData.secondary.portfolioContext.secondaryName !== '';
+  const principalData = kycData.principal.portfolioContext;
+  const principalName = principalData.principalFirstName 
+    ? `${principalData.principalFirstName} ${principalData.principalLastName || ''}`.trim()
+    : '';
+  const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
   const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0;
 
   // Module status calculation
@@ -137,11 +141,30 @@ const Dashboard = ({ onNavigate }) => {
 
   return (
     <div className="dashboard">
+      {/* Project Identity Section */}
+      <section className="dashboard__project-identity">
+        <div className="project-name-field">
+          <label className="project-name-field__label">Project Name</label>
+          <input
+            type="text"
+            className="project-name-field__input"
+            value={clientData.projectName || ''}
+            onChange={(e) => updateClientData({ projectName: e.target.value })}
+            placeholder="e.g., Thornwood Estate, Palm Beach Residence..."
+          />
+        </div>
+        {clientData.lastUpdated && (
+          <span className="dashboard__last-saved">
+            Last saved: {new Date(clientData.lastUpdated).toLocaleString()}
+          </span>
+        )}
+      </section>
+
       {/* Welcome Section */}
       <section className="dashboard__welcome">
         <div className="dashboard__welcome-content">
           <h1 className="dashboard__title">
-            {clientData.principalName 
+            {principalName 
               ? `Welcome back` 
               : 'Welcome to N4S'}
           </h1>
@@ -151,7 +174,7 @@ const Dashboard = ({ onNavigate }) => {
               : 'Ultra-Luxury Residential Advisory Platform'}
           </p>
         </div>
-        {!clientData.principalName && (
+        {!principalName && (
           <button 
             className="btn btn--primary"
             onClick={() => onNavigate('kyc')}

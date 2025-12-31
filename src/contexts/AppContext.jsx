@@ -4,16 +4,19 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 const initialKYCData = {
   // Section 1: Client & Portfolio Context
   portfolioContext: {
-    principalName: '',
+    principalFirstName: '',
+    principalLastName: '',
     principalEmail: '',
     principalPhone: '',
-    secondaryName: '',
+    secondaryFirstName: '',
+    secondaryLastName: '',
     secondaryEmail: '',
     familyOfficeContact: '',
-    familyOfficeAuthorityLevel: null, // 1-4
+    familyOfficeAuthorityLevel: null, // 1-4: 1=Advisory, 2=Limited, 3=Full, 4=Fiduciary
+    authorityLevelConfirmed: false,   // Gate confirmation for Level 3+
     domainDelegationNotes: '',
     currentPropertyCount: null,
-    primaryResidenceLocation: '',
+    primaryResidences: [],            // Array of {country, city} for multiple properties
     thisPropertyRole: '', // Primary/Secondary/Vacation/Investment/Legacy
     investmentHorizon: '', // Forever/5yr/10yr/Generational
     exitStrategy: '', // Personal/Rental/Sale/Inheritance
@@ -25,6 +28,8 @@ const initialKYCData = {
   familyHousehold: {
     familyMembers: [], // Array of {name, age, role, specialNeeds}
     pets: '',
+    petGroomingRoom: false,           // MVP: Triggers pet washing/grooming room
+    petDogRun: false,                 // MVP: Triggers outdoor dog run
     staffingLevel: '',            // MVP: none/part_time/full_time/live_in
     liveInStaff: null,
     staffAccommodationRequired: false,
@@ -56,8 +61,9 @@ const initialKYCData = {
     interiorBudget: null,
     perSFExpectation: null,
     budgetFlexibility: '', // Fixed ceiling/Flexible/Investment-appropriate
-    feeStructurePreference: '', // Fixed/Percentage/Hourly/Hybrid
-    customVsSourcedRatio: 3, // 1-5 scale
+    architectFeeStructure: '',        // Fixed/Percentage/Hourly/Hybrid
+    interiorDesignerFeeStructure: '', // Fixed/Percentage/Hourly/Hybrid/Cost-Plus
+    interiorQualityTier: '',          // Select/Reserve/Signature/Legacy
     artBudgetSeparate: false,
     artBudgetAmount: null,
   },
@@ -150,6 +156,7 @@ const initialKYCData = {
     // Architecture-specific
     caRequirement: '', // Full CA/Limited CA/None
     contractorRelationshipPreference: '', // Design-Bid-Build/Design-Build/CM at Risk
+    earlyContractorInvolvement: false,    // ECI - contractor input from concept stage
     starchitectPreference: 3, // 1-5
   },
 
@@ -175,34 +182,107 @@ const initialFYIData = {
 // Create context
 const AppContext = createContext(null);
 
-export const AppProvider = ({ children }) => {
-  // Client data state
-  const [clientData, setClientData] = useState({
-    principalName: '',
-    projectName: '',
-    createdAt: null,
-    lastUpdated: null,
-  });
+// localStorage keys
+const STORAGE_KEYS = {
+  clientData: 'n4s_client_data',
+  kycData: 'n4s_kyc_data',
+  fyiData: 'n4s_fyi_data',
+  activeRespondent: 'n4s_active_respondent',
+  disclosureTier: 'n4s_disclosure_tier',
+};
 
-  // KYC data with multi-respondent support
-  const [kycData, setKYCData] = useState({
-    principal: { ...initialKYCData },
-    secondary: { ...initialKYCData },
-    advisor: { ...initialKYCData },
-    consolidated: { ...initialKYCData },
-  });
+// Required fields for completion status (section-based)
+const REQUIRED_FIELDS = {
+  portfolioContext: ['principalFirstName', 'principalLastName', 'thisPropertyRole'],
+  familyHousehold: [], // No required fields
+  projectParameters: ['projectCity', 'projectCountry', 'propertyType', 'targetGSF', 'bedroomCount'],
+  budgetFramework: ['totalProjectBudget'],
+  designIdentity: [],
+  lifestyleLiving: [],
+  spaceRequirements: [],
+  culturalContext: [],
+  workingPreferences: [],
+};
+
+// Load from localStorage helper
+const loadFromStorage = (key, defaultValue) => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch (e) {
+    console.warn(`Failed to load ${key} from localStorage:`, e);
+    return defaultValue;
+  }
+};
+
+// Save to localStorage helper
+const saveToStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`Failed to save ${key} to localStorage:`, e);
+  }
+};
+
+export const AppProvider = ({ children }) => {
+  // Client data state - with localStorage persistence
+  const [clientData, setClientData] = useState(() => 
+    loadFromStorage(STORAGE_KEYS.clientData, {
+      projectName: '',
+      projectCode: '',
+      createdAt: null,
+      lastUpdated: null,
+    })
+  );
+
+  // KYC data with multi-respondent support - with localStorage persistence
+  const [kycData, setKYCData] = useState(() => 
+    loadFromStorage(STORAGE_KEYS.kycData, {
+      principal: { ...initialKYCData },
+      secondary: { ...initialKYCData },
+      advisor: { ...initialKYCData },
+      consolidated: { ...initialKYCData },
+    })
+  );
 
   // Active respondent tab
-  const [activeRespondent, setActiveRespondent] = useState('principal');
+  const [activeRespondent, setActiveRespondent] = useState(() =>
+    loadFromStorage(STORAGE_KEYS.activeRespondent, 'principal')
+  );
 
   // FYI data
-  const [fyiData, setFYIData] = useState(initialFYIData);
+  const [fyiData, setFYIData] = useState(() =>
+    loadFromStorage(STORAGE_KEYS.fyiData, initialFYIData)
+  );
 
   // Current KYC section
   const [currentKYCSection, setCurrentKYCSection] = useState(0);
 
   // Progressive disclosure tier
-  const [disclosureTier, setDisclosureTier] = useState('mvp'); // mvp, enhanced, fyi-extended
+  const [disclosureTier, setDisclosureTier] = useState(() =>
+    loadFromStorage(STORAGE_KEYS.disclosureTier, 'mvp')
+  );
+
+  // Auto-save to localStorage when data changes
+  React.useEffect(() => {
+    saveToStorage(STORAGE_KEYS.clientData, clientData);
+  }, [clientData]);
+
+  React.useEffect(() => {
+    saveToStorage(STORAGE_KEYS.kycData, kycData);
+  }, [kycData]);
+
+  React.useEffect(() => {
+    saveToStorage(STORAGE_KEYS.fyiData, fyiData);
+  }, [fyiData]);
+
+  React.useEffect(() => {
+    saveToStorage(STORAGE_KEYS.activeRespondent, activeRespondent);
+  }, [activeRespondent]);
+
+  React.useEffect(() => {
+    saveToStorage(STORAGE_KEYS.disclosureTier, disclosureTier);
+  }, [disclosureTier]);
 
   // Update client data
   const updateClientData = useCallback((updates) => {
@@ -210,6 +290,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       ...updates,
       lastUpdated: new Date().toISOString(),
+      createdAt: prev.createdAt || new Date().toISOString(),
     }));
   }, []);
 
@@ -235,47 +316,87 @@ export const AppProvider = ({ children }) => {
     }));
   }, []);
 
-  // Calculate profile completeness
-  const calculateCompleteness = useCallback((respondent = 'principal') => {
-    const data = kycData[respondent];
-    let totalFields = 0;
-    let filledFields = 0;
-
-    const countFields = (obj) => {
-      Object.values(obj).forEach(value => {
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-          countFields(value);
-        } else {
-          totalFields++;
-          if (value !== '' && value !== null && value !== undefined && 
-              !(Array.isArray(value) && value.length === 0)) {
-            filledFields++;
-          }
-        }
-      });
-    };
-
-    countFields(data);
-    return totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
+  // Check if a section has required fields completed
+  const getSectionCompletionStatus = useCallback((respondent, sectionId) => {
+    const sectionData = kycData[respondent]?.[sectionId];
+    if (!sectionData) return 'empty';
+    
+    const requiredFields = REQUIRED_FIELDS[sectionId] || [];
+    
+    // If no required fields, check if ANY field has data
+    if (requiredFields.length === 0) {
+      const values = Object.values(sectionData);
+      const hasAnyData = values.some(v => 
+        v !== '' && v !== null && v !== undefined && 
+        !(Array.isArray(v) && v.length === 0) &&
+        v !== 3 && v !== 5 // Exclude default slider values
+      );
+      return hasAnyData ? 'complete' : 'empty';
+    }
+    
+    // Check required fields
+    const filledRequired = requiredFields.filter(field => {
+      const value = sectionData[field];
+      return value !== '' && value !== null && value !== undefined &&
+             !(Array.isArray(value) && value.length === 0);
+    });
+    
+    if (filledRequired.length === 0) return 'empty';
+    if (filledRequired.length === requiredFields.length) return 'complete';
+    return 'partial';
   }, [kycData]);
 
-  // Reset all data
+  // Calculate overall profile completeness (percentage of required fields)
+  const calculateCompleteness = useCallback((respondent = 'principal') => {
+    const data = kycData[respondent];
+    if (!data) return 0;
+    
+    let totalRequired = 0;
+    let filledRequired = 0;
+    
+    Object.entries(REQUIRED_FIELDS).forEach(([sectionId, fields]) => {
+      const sectionData = data[sectionId];
+      if (!sectionData || fields.length === 0) return;
+      
+      totalRequired += fields.length;
+      fields.forEach(field => {
+        const value = sectionData[field];
+        if (value !== '' && value !== null && value !== undefined &&
+            !(Array.isArray(value) && value.length === 0)) {
+          filledRequired++;
+        }
+      });
+    });
+    
+    return totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
+  }, [kycData]);
+
+  // Reset all data (also clears localStorage)
   const resetAllData = useCallback(() => {
-    setClientData({
-      principalName: '',
+    const newClientData = {
       projectName: '',
+      projectCode: '',
       createdAt: null,
       lastUpdated: null,
-    });
-    setKYCData({
+    };
+    const newKycData = {
       principal: { ...initialKYCData },
       secondary: { ...initialKYCData },
       advisor: { ...initialKYCData },
       consolidated: { ...initialKYCData },
-    });
+    };
+    
+    setClientData(newClientData);
+    setKYCData(newKycData);
     setFYIData(initialFYIData);
     setCurrentKYCSection(0);
     setActiveRespondent('principal');
+    setDisclosureTier('mvp');
+    
+    // Clear localStorage
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
   }, []);
 
   const value = {
@@ -301,6 +422,7 @@ export const AppProvider = ({ children }) => {
     
     // Utilities
     calculateCompleteness,
+    getSectionCompletionStatus,
     resetAllData,
   };
 

@@ -112,6 +112,20 @@ function calculateGuestBedrooms(bedroomCount) {
 }
 
 /**
+ * Determine number of home offices needed
+ * If WFH count >= 2, need a second office
+ */
+function calculateHomeOfficeCount(lifestyleLiving) {
+  const wfhCount = lifestyleLiving.wfhPeopleCount || 0;
+  const wfhFrequency = lifestyleLiving.workFromHome || '';
+  
+  if (wfhFrequency === 'never' || wfhFrequency === '') return 0;
+  if (wfhCount >= 2) return 2;
+  if (wfhCount === 1 || wfhFrequency !== 'never') return 1;
+  return 0;
+}
+
+/**
  * Transform KYC data into MVP KYCBriefInputs format
  * 
  * @param {Object} kycData - The full KYC data object from AppContext
@@ -161,10 +175,16 @@ export function transformKYCToMVPBrief(kycData, respondent = 'principal') {
       (spaceRequirements.mustHaveSpaces || []).includes('catering-kitchen') ||
       (spaceRequirements.mustHaveSpaces || []).includes('chef-kitchen'),
     
-    // Work
+    // Work - with second office trigger
     workFromHomeRequired: 
       lifestyleLiving.workFromHome !== 'never' && 
       lifestyleLiving.workFromHome !== '',
+    homeOfficeCount: calculateHomeOfficeCount(lifestyleLiving),
+    wantsSecondOffice: calculateHomeOfficeCount(lifestyleLiving) >= 2,
+    
+    // Pet Amenities
+    wantsPetGroomingRoom: familyHousehold.petGroomingRoom || false,
+    wantsDogRun: familyHousehold.petDogRun || false,
     
     // Wellness Program
     wellnessProgram: deriveWellnessProgram(lifestyleLiving.wellnessPriorities),

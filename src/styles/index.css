@@ -1910,3 +1910,288 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Modal Styles
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  max-width: 500px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.modal__header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.modal__icon {
+  flex-shrink: 0;
+}
+
+.modal__icon--warning {
+  color: var(--warning);
+}
+
+.modal__body {
+  padding: 1.5rem;
+}
+
+.modal__body p {
+  margin-bottom: 0.75rem;
+  color: var(--gray-700);
+}
+
+.modal__body p:last-child {
+  margin-bottom: 0;
+}
+
+.modal__warning {
+  background: var(--warning-bg);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+/* ============================================
+   Quality Tier Cards
+   ============================================ */
+
+.quality-tier-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.quality-tier-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quality-tier-card:hover {
+  border-color: var(--teal);
+  box-shadow: var(--shadow-md);
+}
+
+.quality-tier-card--selected {
+  border-color: var(--teal);
+  background: linear-gradient(135deg, #e6fffa 0%, #f0fff4 100%);
+}
+
+.quality-tier-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.quality-tier-card__number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: var(--white);
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 50%;
+}
+
+.quality-tier-card--selected .quality-tier-card__number {
+  background: var(--teal);
+}
+
+.quality-tier-card__label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.quality-tier-card__subtitle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--teal);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.quality-tier-card__description {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+/* ============================================
+   Residence Row Styles
+   ============================================ */
+
+.residence-row {
+  position: relative;
+  margin-bottom: 1rem;
+  padding-right: 40px;
+}
+
+.residence-row__remove {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ============================================
+   Project Name Field
+   ============================================ */
+
+.dashboard__project-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+}
+
+.project-name-field {
+  flex: 1;
+  max-width: 400px;
+}
+
+.project-name-field__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.project-name-field__input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--navy);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.project-name-field__input:hover {
+  background: var(--gray-50);
+}
+
+.project-name-field__input:focus {
+  outline: none;
+  border-color: var(--teal);
+  background: var(--white);
+}
+
+.project-name-field__input::placeholder {
+  color: var(--gray-400);
+  font-weight: 400;
+}
+
+.dashboard__last-saved {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+/* ============================================
+   KYC Section Notice
+   ============================================ */
+
+.kyc-section__notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.kyc-section__notice--info {
+  background: var(--warning-bg);
+  color: var(--gray-700);
+}
+
+.kyc-section__notice svg {
+  flex-shrink: 0;
+  color: var(--warning);
+}
+
+/* ============================================
+   Subgroup Styles
+   ============================================ */
+
+.kyc-section__subgroup {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+/* ============================================
+   Button Size Variants
+   ============================================ */
+
+.btn--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.btn--ghost {
+  background: transparent;
+  border: none;
+  color: var(--gray-500);
+}
+
+.btn--ghost:hover {
+  color: var(--navy);
+  background: var(--gray-100);
+}

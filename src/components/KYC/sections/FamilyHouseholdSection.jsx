@@ -130,6 +130,51 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
           placeholder="e.g., 2 dogs (Golden Retrievers), 1 cat - all indoor"
           helpText="Include type, quantity, and indoor/outdoor status"
         />
+        
+        {data.pets && data.pets.trim() !== '' && (
+          <div className="form-grid form-grid--2col" style={{ marginTop: '1rem' }}>
+            <div className="form-field">
+              <label className="form-field__label">Pet Grooming/Washing Room?</label>
+              <p className="form-field__help" style={{ marginBottom: '8px' }}>
+                Dedicated space for pet bathing and grooming
+              </p>
+              <div className="toggle-group">
+                <button
+                  className={`toggle-btn ${data.petGroomingRoom ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('petGroomingRoom', true)}
+                >
+                  Yes
+                </button>
+                <button
+                  className={`toggle-btn ${!data.petGroomingRoom ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('petGroomingRoom', false)}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="form-field__label">Outdoor Dog Run?</label>
+              <p className="form-field__help" style={{ marginBottom: '8px' }}>
+                Fenced outdoor area for dogs to exercise
+              </p>
+              <div className="toggle-group">
+                <button
+                  className={`toggle-btn ${data.petDogRun ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('petDogRun', true)}
+                >
+                  Yes
+                </button>
+                <button
+                  className={`toggle-btn ${!data.petDogRun ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('petDogRun', false)}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {tier !== 'mvp' && (

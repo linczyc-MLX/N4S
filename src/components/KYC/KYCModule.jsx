@@ -26,7 +26,8 @@ const KYCModule = () => {
     setCurrentKYCSection,
     disclosureTier,
     setDisclosureTier,
-    calculateCompleteness
+    calculateCompleteness,
+    getSectionCompletionStatus
   } = useAppContext();
 
   const sections = [
@@ -53,20 +54,9 @@ const KYCModule = () => {
     { id: 'fyi-extended', label: 'FYI Extended', description: '+15-20 min' },
   ];
 
-  // Calculate section completeness
+  // Calculate section completeness - use context function
   const getSectionStatus = (sectionId) => {
-    const data = kycData[activeRespondent][sectionId];
-    if (!data) return 'empty';
-    
-    const values = Object.values(data);
-    const filledCount = values.filter(v => 
-      v !== '' && v !== null && v !== undefined && 
-      !(Array.isArray(v) && v.length === 0)
-    ).length;
-    
-    if (filledCount === 0) return 'empty';
-    if (filledCount === values.length) return 'complete';
-    return 'partial';
+    return getSectionCompletionStatus(activeRespondent, sectionId);
   };
 
   // Check if section is visible based on tier
@@ -209,14 +199,15 @@ const KYCModule = () => {
               Previous
             </button>
             
-            <button
-              className="btn btn--primary"
-              onClick={() => setCurrentKYCSection(Math.min(visibleSections.length - 1, currentKYCSection + 1))}
-              disabled={currentKYCSection === visibleSections.length - 1}
-            >
-              Next
-              <ChevronRight size={18} />
-            </button>
+            {currentKYCSection < visibleSections.length - 1 && (
+              <button
+                className="btn btn--primary"
+                onClick={() => setCurrentKYCSection(currentKYCSection + 1)}
+              >
+                Next
+                <ChevronRight size={18} />
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -189,6 +189,27 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             options={contractorRelationshipOptions}
             placeholder="How should the contractor be engaged?"
           />
+
+          <div className="form-field">
+            <label className="form-field__label">Early Contractor Involvement (ECI)?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              Bring a qualified contractor in during concept/design phase for constructability input and early costing (separate from procurement method)
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.earlyContractorInvolvement ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('earlyContractorInvolvement', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.earlyContractorInvolvement ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('earlyContractorInvolvement', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

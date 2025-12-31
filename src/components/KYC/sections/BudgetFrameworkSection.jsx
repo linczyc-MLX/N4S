@@ -2,7 +2,6 @@ import React from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
-import SliderField from '../../shared/SliderField';
 
 const BudgetFrameworkSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -18,12 +17,48 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
     { value: 'investment', label: 'Investment-Appropriate - Value Matters More Than Cost' },
   ];
 
-  const feeStructureOptions = [
+  const architectFeeOptions = [
     { value: 'fixed', label: 'Fixed Fee' },
-    { value: 'percentage', label: 'Percentage of Project Cost' },
+    { value: 'percentage', label: 'Percentage of Construction Cost' },
     { value: 'hourly', label: 'Hourly Billing' },
     { value: 'hybrid', label: 'Hybrid (Fixed + Percentage)' },
     { value: 'no-preference', label: 'No Strong Preference' },
+  ];
+
+  const interiorDesignerFeeOptions = [
+    { value: 'fixed', label: 'Fixed Fee' },
+    { value: 'percentage', label: 'Percentage of Project Cost' },
+    { value: 'hourly', label: 'Hourly Billing' },
+    { value: 'cost-plus', label: 'Cost-Plus (Markup on Purchases)' },
+    { value: 'hybrid', label: 'Hybrid (Fixed + Cost-Plus)' },
+    { value: 'no-preference', label: 'No Strong Preference' },
+  ];
+
+  const interiorQualityTiers = [
+    { 
+      value: 'select', 
+      label: 'Select',
+      subtitle: 'The Curated Standard',
+      description: 'Every material and finish selected for aesthetic harmony and durability. A sophisticated, complete experience for those who value refined design without extensive customization.'
+    },
+    { 
+      value: 'reserve', 
+      label: 'Reserve',
+      subtitle: 'Exceptional Materials',
+      description: 'Features finishes sourced from specialized production—hand-selected stone and artisanal millwork chosen for unique qualities. For clients who desire a distinctly personal home.'
+    },
+    { 
+      value: 'signature', 
+      label: 'Signature',
+      subtitle: 'Bespoke Design',
+      description: 'Custom-engineered solutions and unique design elements tailored to a specific lifestyle. Each space features hallmarks of world-class craftsmanship.'
+    },
+    { 
+      value: 'legacy', 
+      label: 'Legacy',
+      subtitle: 'Enduring Heritage',
+      description: 'The pinnacle of the program. High-quality sustainable materials and advanced technologies. Designed to endure as a generational asset maintaining prestige for the future.'
+    },
   ];
 
   // Calculate per-SF if we have total budget and GSF
@@ -102,95 +137,96 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
           required
           helpText="This affects how aggressively we optimize for value vs. cost"
         />
-
-        {tier !== 'mvp' && (
-          <>
-            <SelectField
-              label="Fee Structure Preference"
-              value={data.feeStructurePreference}
-              onChange={(v) => handleChange('feeStructurePreference', v)}
-              options={feeStructureOptions}
-              placeholder="How do you prefer to pay design fees?"
-              helpText="For both architect and interior designer"
-            />
-
-            <SliderField
-              label="Custom vs. Sourced Ratio"
-              value={data.customVsSourcedRatio || 3}
-              onChange={(v) => handleChange('customVsSourcedRatio', v)}
-              min={1}
-              max={5}
-              leftLabel="All Catalog/Sourced"
-              rightLabel="All Bespoke/Custom"
-              helpText="1 = Source from catalogs, 5 = Everything custom-made"
-            />
-          </>
-        )}
       </div>
 
       {tier !== 'mvp' && (
-        <div className="kyc-section__group">
-          <h3 className="kyc-section__group-title">Art Budget</h3>
-          
-          <div className="form-field">
-            <label className="form-field__label">Separate Art Budget?</label>
-            <p className="form-field__help" style={{ marginBottom: '8px' }}>
-              Some clients allocate art acquisition separately from interior design
+        <>
+          <div className="kyc-section__group">
+            <h3 className="kyc-section__group-title">Fee Structure Preferences</h3>
+            <p className="kyc-section__group-description">
+              Different fee structures suit different project types and client preferences.
             </p>
-            <div className="toggle-group">
-              <button
-                className={`toggle-btn ${data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
-                onClick={() => handleChange('artBudgetSeparate', true)}
-              >
-                Yes, Separate
-              </button>
-              <button
-                className={`toggle-btn ${!data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
-                onClick={() => handleChange('artBudgetSeparate', false)}
-              >
-                No, Included
-              </button>
+            
+            <div className="form-grid form-grid--2col">
+              <SelectField
+                label="Architect Fee Structure"
+                value={data.architectFeeStructure}
+                onChange={(v) => handleChange('architectFeeStructure', v)}
+                options={architectFeeOptions}
+                placeholder="How do you prefer to pay the architect?"
+              />
+              <SelectField
+                label="Interior Designer Fee Structure"
+                value={data.interiorDesignerFeeStructure}
+                onChange={(v) => handleChange('interiorDesignerFeeStructure', v)}
+                options={interiorDesignerFeeOptions}
+                placeholder="How do you prefer to pay the ID?"
+              />
             </div>
           </div>
 
-          {data.artBudgetSeparate && (
-            <FormField
-              label="Art Budget Amount"
-              type="number"
-              value={data.artBudgetAmount}
-              onChange={(v) => handleChange('artBudgetAmount', parseInt(v) || null)}
-              placeholder="Separate art acquisition budget"
-              min={0}
-            />
-          )}
-        </div>
-      )}
+          <div className="kyc-section__group">
+            <h3 className="kyc-section__group-title">Interior Quality Tier</h3>
+            <p className="kyc-section__group-description">
+              Select the quality tier that best represents your expectations for materials and craftsmanship.
+            </p>
+            
+            <div className="quality-tier-cards">
+              {interiorQualityTiers.map((tierOption) => (
+                <div 
+                  key={tierOption.value}
+                  className={`quality-tier-card ${data.interiorQualityTier === tierOption.value ? 'quality-tier-card--selected' : ''}`}
+                  onClick={() => handleChange('interiorQualityTier', tierOption.value)}
+                >
+                  <div className="quality-tier-card__header">
+                    <span className="quality-tier-card__number">
+                      {tierOption.value === 'select' ? 'I' : tierOption.value === 'reserve' ? 'II' : tierOption.value === 'signature' ? 'III' : 'IV'}
+                    </span>
+                    <span className="quality-tier-card__label">{tierOption.label}</span>
+                  </div>
+                  <span className="quality-tier-card__subtitle">{tierOption.subtitle}</span>
+                  <p className="quality-tier-card__description">{tierOption.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* Budget Caliber Context */}
-      {data.interiorBudget && (
-        <div className="kyc-section__insight">
-          <h4 className="kyc-section__insight-title">Budget Caliber Matching</h4>
-          <p className="kyc-section__insight-text">
-            Based on your interior budget of ${(data.interiorBudget / 1000000).toFixed(1)}M, 
-            we will match you with professionals who typically work at this caliber level.
-          </p>
-          <div className="caliber-indicator">
-            <div className="caliber-indicator__scale">
-              <div 
-                className="caliber-indicator__marker"
-                style={{ 
-                  left: `${Math.min(95, Math.max(5, (data.interiorBudget / 20000000) * 100))}%` 
-                }}
-              />
-              <div className="caliber-indicator__labels">
-                <span>$1M</span>
-                <span>$5M</span>
-                <span>$10M</span>
-                <span>$20M+</span>
+          <div className="kyc-section__group">
+            <h3 className="kyc-section__group-title">Art Budget</h3>
+            
+            <div className="form-field">
+              <label className="form-field__label">Separate Art Budget?</label>
+              <p className="form-field__help" style={{ marginBottom: '8px' }}>
+                Some clients allocate art acquisition separately from interior design
+              </p>
+              <div className="toggle-group">
+                <button
+                  className={`toggle-btn ${data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('artBudgetSeparate', true)}
+                >
+                  Yes, Separate
+                </button>
+                <button
+                  className={`toggle-btn ${!data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('artBudgetSeparate', false)}
+                >
+                  No, Included
+                </button>
               </div>
             </div>
+
+            {data.artBudgetSeparate && (
+              <FormField
+                label="Art Budget Amount"
+                type="number"
+                value={data.artBudgetAmount}
+                onChange={(v) => handleChange('artBudgetAmount', parseInt(v) || null)}
+                placeholder="Separate art acquisition budget"
+                min={0}
+              />
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
