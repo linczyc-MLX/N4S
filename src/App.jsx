@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { 
   Home, Users, Search, GitCompare, Settings, Menu, X,
-  ChevronRight, Building2, Palette, CheckCircle2
+  ChevronRight, Building2, Palette, CheckCircle2, ClipboardCheck
 } from 'lucide-react';
 
 // Import modules
 import Dashboard from './components/Dashboard';
 import KYCModule from './components/KYC/KYCModule';
+import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 
 // Import context provider
@@ -20,6 +21,7 @@ const AppContent = () => {
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
+    { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
     { id: 'fyi', label: 'FYI', icon: Search, description: 'Find Your Inspiration' },
   ];
 
@@ -27,6 +29,8 @@ const AppContent = () => {
     switch (activeModule) {
       case 'kyc':
         return <KYCModule />;
+      case 'mvp':
+        return <MVPModule />;
       case 'fyi':
         return <FYIModule />;
       default:

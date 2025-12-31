@@ -25,6 +25,7 @@ const initialKYCData = {
   familyHousehold: {
     familyMembers: [], // Array of {name, age, role, specialNeeds}
     pets: '',
+    staffingLevel: '',            // MVP: none/part_time/full_time/live_in
     liveInStaff: null,
     staffAccommodationRequired: false,
     multigenerationalNeeds: false,
@@ -41,6 +42,8 @@ const initialKYCData = {
     bedroomCount: null,
     bathroomCount: null,
     floors: null,
+    hasBasement: false,           // MVP: Basement level included
+    sfCapConstraint: null,        // MVP: Optional SF budget cap (Discovery mode if null)
     timeline: '', // Urgent/12-18mo/18-24mo/24+mo
     complexityFactors: [], // Historic/Regulatory/Phased/Remote
     architecturalIntegration: '', // ID only/Shell coord/Full Arch
@@ -98,6 +101,7 @@ const initialKYCData = {
     typicalGuestCount: '',
     entertainingStyle: '', // Formal/Casual/Both
     wellnessPriorities: [],
+    lateNightMediaUse: false,     // MVP: Late-night movie watching (triggers Sound Lock)
     privacyLevelRequired: 3, // 1-5
     noiseSensitivity: 3, // 1-5
     indoorOutdoorLiving: 3, // 1-5
@@ -114,6 +118,12 @@ const initialKYCData = {
     accessibilityRequirements: '',
     technologyRequirements: [],
     sustainabilityPriorities: [],
+    // MVP-specific amenity flags
+    wantsSeparateFamilyRoom: false,   // MVP: Separate from Great Room
+    wantsSecondFormalLiving: false,   // MVP: Salon (15K+ tier only)
+    wantsBar: false,                  // MVP: Built-in bar (15K+ tier only)
+    wantsBunkRoom: false,             // MVP: Kids bunk room (additive)
+    wantsBreakfastNook: false,        // MVP: Breakfast nook in kitchen
   },
 
   // Section 8: Cultural Context

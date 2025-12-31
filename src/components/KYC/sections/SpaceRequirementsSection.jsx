@@ -213,6 +213,123 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
         </div>
       </div>
 
+      {/* MVP Space Clarifications */}
+      <div className="kyc-section__group">
+        <h3 className="kyc-section__group-title">Space Program Clarifications</h3>
+        <p className="kyc-section__group-description">
+          These questions help fine-tune your area program and spatial relationships.
+        </p>
+        
+        <div className="form-grid form-grid--2col">
+          <div className="form-field">
+            <label className="form-field__label">Separate Family Room?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              In addition to the Great Room - a more casual TV/hangout space
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.wantsSeparateFamilyRoom ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsSeparateFamilyRoom', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.wantsSeparateFamilyRoom ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsSeparateFamilyRoom', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="form-field__label">Second Formal Living / Salon?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              A second formal sitting room beyond the main living space
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.wantsSecondFormalLiving ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsSecondFormalLiving', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.wantsSecondFormalLiving ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsSecondFormalLiving', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-grid form-grid--3col">
+          <div className="form-field">
+            <label className="form-field__label">Built-in Bar?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              Dedicated bar area (not just kitchen island seating)
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.wantsBar ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBar', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.wantsBar ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBar', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="form-field__label">Kids Bunk Room?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              Extra sleeping for sleepovers (in addition to bedrooms)
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.wantsBunkRoom ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBunkRoom', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.wantsBunkRoom ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBunkRoom', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label className="form-field__label">Breakfast Nook?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              Casual eat-in area adjacent to kitchen
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.wantsBreakfastNook ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBreakfastNook', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.wantsBreakfastNook ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('wantsBreakfastNook', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Garage Requirements */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Garage & Auto Collection</h3>

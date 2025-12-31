@@ -119,6 +119,27 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           placeholder="Specific equipment needs, space requirements, or details about your hobbies..."
           rows={2}
         />
+
+        <div className="form-field">
+          <label className="form-field__label">Late Night Media Use?</label>
+          <p className="form-field__help" style={{ marginBottom: '8px' }}>
+            Do you watch movies or game late at night when others are sleeping? (Affects acoustic planning)
+          </p>
+          <div className="toggle-group">
+            <button
+              className={`toggle-btn ${data.lateNightMediaUse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('lateNightMediaUse', true)}
+            >
+              Yes
+            </button>
+            <button
+              className={`toggle-btn ${!data.lateNightMediaUse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('lateNightMediaUse', false)}
+            >
+              No
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="kyc-section__group">

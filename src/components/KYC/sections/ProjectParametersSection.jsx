@@ -146,6 +146,38 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           />
         </div>
 
+        <div className="form-grid form-grid--2col">
+          <div className="form-field">
+            <label className="form-field__label">Include Basement Level?</label>
+            <p className="form-field__help" style={{ marginBottom: '8px' }}>
+              Basement spaces have different adjacency rules (acoustic separation)
+            </p>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${data.hasBasement ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('hasBasement', true)}
+              >
+                Yes
+              </button>
+              <button
+                className={`toggle-btn ${!data.hasBasement ? 'toggle-btn--active' : ''}`}
+                onClick={() => handleChange('hasBasement', false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+          <FormField
+            label="SF Budget Cap (Optional)"
+            type="number"
+            value={data.sfCapConstraint}
+            onChange={(v) => handleChange('sfCapConstraint', parseInt(v) || null)}
+            placeholder="Leave blank for Discovery Mode"
+            min={0}
+            helpText="Set a maximum SF constraint, or leave blank to explore"
+          />
+        </div>
+
         {tier !== 'mvp' && (
           <FormField
             label="Floors / Levels"

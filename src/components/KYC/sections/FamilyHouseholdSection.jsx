@@ -137,33 +137,49 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
           <div className="kyc-section__group">
             <h3 className="kyc-section__group-title">Staff & Multi-Generational</h3>
             
-            <div className="form-grid form-grid--2col">
-              <FormField
-                label="Live-in Staff Count"
-                type="number"
-                value={data.liveInStaff}
-                onChange={(v) => handleChange('liveInStaff', parseInt(v) || null)}
-                placeholder="Number of live-in staff"
-                min={0}
-              />
-              <div className="form-field">
-                <label className="form-field__label">Staff Quarters Required?</label>
-                <div className="toggle-group">
-                  <button
-                    className={`toggle-btn ${data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
-                    onClick={() => handleChange('staffAccommodationRequired', true)}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    className={`toggle-btn ${!data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
-                    onClick={() => handleChange('staffAccommodationRequired', false)}
-                  >
-                    No
-                  </button>
+            <SelectField
+              label="Staffing Level"
+              value={data.staffingLevel}
+              onChange={(v) => handleChange('staffingLevel', v)}
+              options={[
+                { value: 'none', label: 'No Staff' },
+                { value: 'part_time', label: 'Part-Time Staff (cleaning, etc.)' },
+                { value: 'full_time', label: 'Full-Time Staff (daily presence)' },
+                { value: 'live_in', label: 'Live-In Staff (requires quarters)' },
+              ]}
+              placeholder="Select staffing level..."
+              helpText="Affects service areas and staff accommodation requirements"
+            />
+            
+            {data.staffingLevel === 'live_in' && (
+              <div className="form-grid form-grid--2col">
+                <FormField
+                  label="Live-in Staff Count"
+                  type="number"
+                  value={data.liveInStaff}
+                  onChange={(v) => handleChange('liveInStaff', parseInt(v) || null)}
+                  placeholder="Number of live-in staff"
+                  min={0}
+                />
+                <div className="form-field">
+                  <label className="form-field__label">Staff Quarters Required?</label>
+                  <div className="toggle-group">
+                    <button
+                      className={`toggle-btn ${data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
+                      onClick={() => handleChange('staffAccommodationRequired', true)}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      className={`toggle-btn ${!data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
+                      onClick={() => handleChange('staffAccommodationRequired', false)}
+                    >
+                      No
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="form-field">
               <label className="form-field__label">Multi-Generational Needs?</label>
