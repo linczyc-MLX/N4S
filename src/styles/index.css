@@ -781,7 +781,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 .task-matrix__header {
   display: grid;
-  grid-template-columns: 180px repeat(4, 1fr);
+  grid-template-columns: 180px repeat(5, 1fr);
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -793,6 +793,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   font-weight: 600;
 }
 .task-matrix__module-header--blue { background: rgba(26, 54, 93, 0.1); color: var(--navy); }
+.task-matrix__module-header--green { background: rgba(72, 187, 120, 0.15); color: #276749; }
 .task-matrix__module-header--teal { background: rgba(49, 151, 149, 0.1); color: var(--teal); }
 .task-matrix__module-header--purple { background: rgba(128, 90, 213, 0.1); color: var(--purple); }
 .task-matrix__module-header--gold { background: rgba(201, 169, 98, 0.1); color: #8b7355; }
@@ -800,7 +801,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .task-matrix__name { display: block; font-size: 0.8rem; opacity: 0.8; }
 .task-matrix__row {
   display: grid;
-  grid-template-columns: 180px repeat(4, 1fr);
+  grid-template-columns: 180px repeat(5, 1fr);
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -2451,18 +2452,6 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   font-size: 0.75rem;
   color: var(--success);
   white-space: nowrap;
-}
-
-/* Task Matrix - Add green color for MVP */
-.task-matrix__module-header--green {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: var(--success);
-}
-
-.task-cell--locked {
-  background: var(--gray-100);
-  color: var(--gray-400);
-  cursor: not-allowed;
 }
 
 /* Responsive */
