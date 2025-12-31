@@ -1,4 +1,9 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+
+// Generate unique project ID
+const generateProjectId = () => {
+  return 'proj_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+};
 
 // Initial KYC data structure based on v2 specification
 const initialKYCData = {
@@ -184,12 +189,13 @@ const AppContext = createContext(null);
 
 // localStorage keys
 const STORAGE_KEYS = {
-  clientData: 'n4s_client_data',
-  kycData: 'n4s_kyc_data',
-  fyiData: 'n4s_fyi_data',
-  activeRespondent: 'n4s_active_respondent',
+  projects: 'n4s_projects',           // List of all projects
+  activeProjectId: 'n4s_active_project', // Current active project ID
   disclosureTier: 'n4s_disclosure_tier',
 };
+
+// Get project-specific storage key
+const getProjectKey = (projectId) => `n4s_project_${projectId}`;
 
 // Required fields for completion status (section-based)
 const REQUIRED_FIELDS = {
@@ -224,85 +230,186 @@ const saveToStorage = (key, value) => {
   }
 };
 
+// Default empty project data
+const getEmptyProjectData = () => ({
+  clientData: {
+    projectName: '',
+    projectCode: '',
+    createdAt: null,
+    lastUpdated: null,
+  },
+  kycData: {
+    principal: { ...initialKYCData },
+    secondary: { ...initialKYCData },
+    advisor: { ...initialKYCData },
+    consolidated: { ...initialKYCData },
+  },
+  fyiData: { ...initialFYIData },
+  activeRespondent: 'principal',
+});
+
 export const AppProvider = ({ children }) => {
-  // Client data state - with localStorage persistence
-  const [clientData, setClientData] = useState(() => 
-    loadFromStorage(STORAGE_KEYS.clientData, {
-      projectName: '',
-      projectCode: '',
-      createdAt: null,
-      lastUpdated: null,
-    })
+  // Projects list
+  const [projects, setProjects] = useState(() => 
+    loadFromStorage(STORAGE_KEYS.projects, [])
+  );
+  
+  // Active project ID
+  const [activeProjectId, setActiveProjectId] = useState(() => 
+    loadFromStorage(STORAGE_KEYS.activeProjectId, null)
   );
 
-  // KYC data with multi-respondent support - with localStorage persistence
-  const [kycData, setKYCData] = useState(() => 
-    loadFromStorage(STORAGE_KEYS.kycData, {
-      principal: { ...initialKYCData },
-      secondary: { ...initialKYCData },
-      advisor: { ...initialKYCData },
-      consolidated: { ...initialKYCData },
-    })
-  );
+  // Load active project data
+  const loadProjectData = useCallback((projectId) => {
+    if (!projectId) return getEmptyProjectData();
+    return loadFromStorage(getProjectKey(projectId), getEmptyProjectData());
+  }, []);
 
-  // Active respondent tab
-  const [activeRespondent, setActiveRespondent] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.activeRespondent, 'principal')
-  );
+  // Initialize project data from active project
+  const [projectData, setProjectData] = useState(() => {
+    const activeId = loadFromStorage(STORAGE_KEYS.activeProjectId, null);
+    return loadProjectData(activeId);
+  });
 
-  // FYI data
-  const [fyiData, setFYIData] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.fyiData, initialFYIData)
-  );
+  // Destructure project data for easier access
+  const { clientData, kycData, fyiData, activeRespondent: storedRespondent } = projectData;
+  
+  // Active respondent
+  const [activeRespondent, setActiveRespondent] = useState(storedRespondent || 'principal');
 
   // Current KYC section
   const [currentKYCSection, setCurrentKYCSection] = useState(0);
 
-  // Progressive disclosure tier
+  // Progressive disclosure tier (global, not per-project)
   const [disclosureTier, setDisclosureTier] = useState(() =>
     loadFromStorage(STORAGE_KEYS.disclosureTier, 'mvp')
   );
 
-  // Auto-save to localStorage when data changes
-  React.useEffect(() => {
-    saveToStorage(STORAGE_KEYS.clientData, clientData);
-  }, [clientData]);
+  // Save projects list when it changes
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.projects, projects);
+  }, [projects]);
 
-  React.useEffect(() => {
-    saveToStorage(STORAGE_KEYS.kycData, kycData);
-  }, [kycData]);
+  // Save active project ID when it changes
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.activeProjectId, activeProjectId);
+  }, [activeProjectId]);
 
-  React.useEffect(() => {
-    saveToStorage(STORAGE_KEYS.fyiData, fyiData);
-  }, [fyiData]);
-
-  React.useEffect(() => {
-    saveToStorage(STORAGE_KEYS.activeRespondent, activeRespondent);
-  }, [activeRespondent]);
-
-  React.useEffect(() => {
+  // Save disclosure tier when it changes
+  useEffect(() => {
     saveToStorage(STORAGE_KEYS.disclosureTier, disclosureTier);
   }, [disclosureTier]);
 
+  // Save project data when it changes
+  useEffect(() => {
+    if (activeProjectId) {
+      saveToStorage(getProjectKey(activeProjectId), {
+        ...projectData,
+        activeRespondent,
+      });
+      
+      // Update project metadata in projects list
+      setProjects(prev => prev.map(p => 
+        p.id === activeProjectId 
+          ? { ...p, name: projectData.clientData.projectName, lastUpdated: new Date().toISOString() }
+          : p
+      ));
+    }
+  }, [projectData, activeRespondent, activeProjectId]);
+
+  // Create new project
+  const createProject = useCallback((name = '') => {
+    const newId = generateProjectId();
+    const now = new Date().toISOString();
+    
+    const newProject = {
+      id: newId,
+      name: name || 'Untitled Project',
+      createdAt: now,
+      lastUpdated: now,
+    };
+    
+    // Add to projects list
+    setProjects(prev => [...prev, newProject]);
+    
+    // Initialize project data
+    const newProjectData = {
+      ...getEmptyProjectData(),
+      clientData: {
+        projectName: name || 'Untitled Project',
+        projectCode: newId.substring(5, 10).toUpperCase(),
+        createdAt: now,
+        lastUpdated: now,
+      },
+    };
+    
+    saveToStorage(getProjectKey(newId), newProjectData);
+    
+    // Switch to new project
+    setActiveProjectId(newId);
+    setProjectData(newProjectData);
+    setActiveRespondent('principal');
+    setCurrentKYCSection(0);
+    
+    return newId;
+  }, []);
+
+  // Switch to existing project
+  const switchProject = useCallback((projectId) => {
+    if (!projectId || projectId === activeProjectId) return;
+    
+    const data = loadProjectData(projectId);
+    setActiveProjectId(projectId);
+    setProjectData(data);
+    setActiveRespondent(data.activeRespondent || 'principal');
+    setCurrentKYCSection(0);
+  }, [activeProjectId, loadProjectData]);
+
+  // Delete project
+  const deleteProject = useCallback((projectId) => {
+    // Remove from projects list
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    
+    // Remove from localStorage
+    localStorage.removeItem(getProjectKey(projectId));
+    
+    // If deleting active project, switch to another or create new
+    if (projectId === activeProjectId) {
+      const remaining = projects.filter(p => p.id !== projectId);
+      if (remaining.length > 0) {
+        switchProject(remaining[0].id);
+      } else {
+        setActiveProjectId(null);
+        setProjectData(getEmptyProjectData());
+      }
+    }
+  }, [activeProjectId, projects, switchProject]);
+
   // Update client data
   const updateClientData = useCallback((updates) => {
-    setClientData(prev => ({
+    setProjectData(prev => ({
       ...prev,
-      ...updates,
-      lastUpdated: new Date().toISOString(),
-      createdAt: prev.createdAt || new Date().toISOString(),
+      clientData: {
+        ...prev.clientData,
+        ...updates,
+        lastUpdated: new Date().toISOString(),
+        createdAt: prev.clientData.createdAt || new Date().toISOString(),
+      },
     }));
   }, []);
 
   // Update KYC data for specific respondent and section
   const updateKYCData = useCallback((respondent, section, data) => {
-    setKYCData(prev => ({
+    setProjectData(prev => ({
       ...prev,
-      [respondent]: {
-        ...prev[respondent],
-        [section]: {
-          ...prev[respondent][section],
-          ...data,
+      kycData: {
+        ...prev.kycData,
+        [respondent]: {
+          ...prev.kycData[respondent],
+          [section]: {
+            ...prev.kycData[respondent][section],
+            ...data,
+          },
         },
       },
     }));
@@ -310,9 +417,12 @@ export const AppProvider = ({ children }) => {
 
   // Update FYI data
   const updateFYIData = useCallback((updates) => {
-    setFYIData(prev => ({
+    setProjectData(prev => ({
       ...prev,
-      ...updates,
+      fyiData: {
+        ...prev.fyiData,
+        ...updates,
+      },
     }));
   }, []);
 
@@ -371,35 +481,44 @@ export const AppProvider = ({ children }) => {
     return totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
   }, [kycData]);
 
-  // Reset all data (also clears localStorage)
-  const resetAllData = useCallback(() => {
-    const newClientData = {
-      projectName: '',
-      projectCode: '',
-      createdAt: null,
-      lastUpdated: null,
-    };
-    const newKycData = {
-      principal: { ...initialKYCData },
-      secondary: { ...initialKYCData },
-      advisor: { ...initialKYCData },
-      consolidated: { ...initialKYCData },
-    };
+  // Reset current project data
+  const resetCurrentProject = useCallback(() => {
+    if (!activeProjectId) return;
     
-    setClientData(newClientData);
-    setKYCData(newKycData);
-    setFYIData(initialFYIData);
+    const emptyData = getEmptyProjectData();
+    setProjectData(emptyData);
+    setActiveRespondent('principal');
+    setCurrentKYCSection(0);
+  }, [activeProjectId]);
+
+  // Reset all data (clears all projects)
+  const resetAllData = useCallback(() => {
+    // Clear all project data from localStorage
+    projects.forEach(p => {
+      localStorage.removeItem(getProjectKey(p.id));
+    });
+    
+    // Clear project list and active project
+    setProjects([]);
+    setActiveProjectId(null);
+    setProjectData(getEmptyProjectData());
     setCurrentKYCSection(0);
     setActiveRespondent('principal');
     setDisclosureTier('mvp');
     
-    // Clear localStorage
-    Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
-    });
-  }, []);
+    // Clear storage keys
+    localStorage.removeItem(STORAGE_KEYS.projects);
+    localStorage.removeItem(STORAGE_KEYS.activeProjectId);
+  }, [projects]);
 
   const value = {
+    // Project management
+    projects,
+    activeProjectId,
+    createProject,
+    switchProject,
+    deleteProject,
+    
     // Client data
     clientData,
     updateClientData,
@@ -423,6 +542,7 @@ export const AppProvider = ({ children }) => {
     // Utilities
     calculateCompleteness,
     getSectionCompletionStatus,
+    resetCurrentProject,
     resetAllData,
   };
 

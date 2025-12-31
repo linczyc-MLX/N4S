@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Users, Search, CheckCircle2, AlertCircle, Clock, 
-  ArrowRight, Building2, Palette, GitCompare, Map, Zap
+  ArrowRight, Building2, Palette, GitCompare, Map, Zap,
+  ClipboardCheck, Plus, ChevronDown, Trash2, FolderOpen
 } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 
-// N4S Task Matrix Configuration
+// N4S Task Matrix Configuration - Added MVP between KYC and KYM
 const N4S_MODULES = {
   A: { id: 'kyc', name: 'KYC', fullName: 'Know Your Client', icon: Users, color: 'blue' },
+  M: { id: 'mvp', name: 'MVP', fullName: 'Mansion Validation', icon: ClipboardCheck, color: 'green' },
   B: { id: 'kym', name: 'KYM', fullName: 'Know Your Market', icon: Map, color: 'teal' },
   C: { id: 'fyi', name: 'FYI', fullName: 'Find Your Inspiration', icon: Search, color: 'purple' },
   D: { id: 'vmx', name: 'VMX', fullName: 'Vision Matrix', icon: Zap, color: 'gold' },
@@ -20,7 +22,14 @@ const N4S_PHASES = {
 };
 
 const Dashboard = ({ onNavigate }) => {
-  const { clientData, updateClientData, kycData, fyiData, calculateCompleteness } = useAppContext();
+  const { 
+    clientData, updateClientData, kycData, fyiData, calculateCompleteness,
+    projects, activeProjectId, createProject, switchProject, deleteProject
+  } = useAppContext();
+  
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
   
   const kycProgress = calculateCompleteness('principal');
   const principalData = kycData.principal.portfolioContext;
@@ -30,11 +39,19 @@ const Dashboard = ({ onNavigate }) => {
   const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
   const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0;
 
+  // MVP progress based on KYC completion and project parameters
+  const mvpProgress = kycData.principal.projectParameters.targetGSF && 
+                      kycData.principal.projectParameters.bedroomCount ? 
+                      Math.min(100, kycProgress + 20) : 0;
+
   // Module status calculation
   const getModuleStatus = (moduleCode) => {
     switch (moduleCode) {
       case 'A': // KYC
         return kycProgress === 0 ? 'not-started' : kycProgress < 100 ? 'in-progress' : 'complete';
+      case 'M': // MVP
+        if (kycProgress < 50) return 'locked';
+        return mvpProgress === 0 ? 'not-started' : mvpProgress < 100 ? 'in-progress' : 'complete';
       case 'B': // KYM
         return 'not-started'; // Coming soon
       case 'C': // FYI
@@ -47,10 +64,27 @@ const Dashboard = ({ onNavigate }) => {
     }
   };
 
+  // Handle creating new project
+  const handleCreateProject = () => {
+    if (newProjectName.trim()) {
+      createProject(newProjectName.trim());
+      setNewProjectName('');
+      setShowNewProjectInput(false);
+      setShowProjectDropdown(false);
+    }
+  };
+
+  // Handle project switch
+  const handleSwitchProject = (projectId) => {
+    switchProject(projectId);
+    setShowProjectDropdown(false);
+  };
+
   const getPhaseStatus = (phaseCode, moduleCode) => {
     // Simplified status for now - can be expanded with actual task tracking
     const moduleStatus = getModuleStatus(moduleCode);
     if (moduleStatus === 'not-started') return 'pending';
+    if (moduleStatus === 'locked') return 'locked';
     if (moduleStatus === 'complete') return 'complete';
     
     // For in-progress modules, determine phase status based on module
@@ -58,6 +92,11 @@ const Dashboard = ({ onNavigate }) => {
       if (phaseCode === 'P1') return kycProgress > 30 ? 'complete' : 'in-progress';
       if (phaseCode === 'P2') return kycProgress > 60 ? 'in-progress' : 'pending';
       if (phaseCode === 'P3') return kycProgress > 90 ? 'in-progress' : 'pending';
+    }
+    if (moduleCode === 'M') { // MVP
+      if (phaseCode === 'P1') return mvpProgress > 30 ? 'complete' : 'in-progress';
+      if (phaseCode === 'P2') return mvpProgress > 60 ? 'in-progress' : 'pending';
+      if (phaseCode === 'P3') return mvpProgress > 90 ? 'in-progress' : 'pending';
     }
     return 'pending';
   };
@@ -83,6 +122,19 @@ const Dashboard = ({ onNavigate }) => {
       status: getModuleStatus('A'),
       color: 'blue',
       enabled: true,
+    },
+    {
+      code: 'M',
+      id: 'mvp',
+      title: 'Module M: MVP',
+      subtitle: 'Mansion Validation',
+      description: 'Area program generation and validation from KYC inputs',
+      icon: ClipboardCheck,
+      progress: mvpProgress,
+      status: getModuleStatus('M'),
+      color: 'green',
+      enabled: kycProgress >= 50,
+      requiresKYC: true,
     },
     {
       code: 'C',
@@ -141,22 +193,117 @@ const Dashboard = ({ onNavigate }) => {
 
   return (
     <div className="dashboard">
-      {/* Project Identity Section */}
-      <section className="dashboard__project-identity">
-        <div className="project-name-field">
-          <label className="project-name-field__label">Project Name</label>
-          <input
-            type="text"
-            className="project-name-field__input"
-            value={clientData.projectName || ''}
-            onChange={(e) => updateClientData({ projectName: e.target.value })}
-            placeholder="e.g., Thornwood Estate, Palm Beach Residence..."
-          />
+      {/* Project Selector Section */}
+      <section className="dashboard__project-selector">
+        <div className="project-selector">
+          <div className="project-selector__current" onClick={() => setShowProjectDropdown(!showProjectDropdown)}>
+            <FolderOpen size={20} className="project-selector__icon" />
+            <div className="project-selector__info">
+              <span className="project-selector__label">Current Project</span>
+              <span className="project-selector__name">
+                {clientData.projectName || 'No Project Selected'}
+              </span>
+            </div>
+            <ChevronDown size={20} className={`project-selector__chevron ${showProjectDropdown ? 'project-selector__chevron--open' : ''}`} />
+          </div>
+          
+          {showProjectDropdown && (
+            <div className="project-dropdown">
+              <div className="project-dropdown__header">
+                <span>Your Projects ({projects.length})</span>
+              </div>
+              
+              <div className="project-dropdown__list">
+                {projects.length === 0 ? (
+                  <div className="project-dropdown__empty">
+                    No projects yet. Create your first project below.
+                  </div>
+                ) : (
+                  projects.map(project => (
+                    <div 
+                      key={project.id}
+                      className={`project-dropdown__item ${project.id === activeProjectId ? 'project-dropdown__item--active' : ''}`}
+                      onClick={() => handleSwitchProject(project.id)}
+                    >
+                      <div className="project-dropdown__item-info">
+                        <span className="project-dropdown__item-name">{project.name}</span>
+                        <span className="project-dropdown__item-date">
+                          {new Date(project.lastUpdated || project.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {project.id === activeProjectId && (
+                        <CheckCircle2 size={16} className="project-dropdown__item-check" />
+                      )}
+                      {projects.length > 1 && project.id !== activeProjectId && (
+                        <button 
+                          className="project-dropdown__item-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete "${project.name}"? This cannot be undone.`)) {
+                              deleteProject(project.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="project-dropdown__footer">
+                {showNewProjectInput ? (
+                  <div className="project-dropdown__new-input">
+                    <input
+                      type="text"
+                      placeholder="Project name..."
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+                      autoFocus
+                    />
+                    <button className="btn btn--primary btn--sm" onClick={handleCreateProject}>
+                      Create
+                    </button>
+                    <button 
+                      className="btn btn--ghost btn--sm" 
+                      onClick={() => {
+                        setShowNewProjectInput(false);
+                        setNewProjectName('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    className="project-dropdown__new-btn"
+                    onClick={() => setShowNewProjectInput(true)}
+                  >
+                    <Plus size={16} /> New Project
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        {clientData.lastUpdated && (
-          <span className="dashboard__last-saved">
-            Last saved: {new Date(clientData.lastUpdated).toLocaleString()}
-          </span>
+        
+        {activeProjectId && (
+          <div className="project-name-edit">
+            <input
+              type="text"
+              className="project-name-edit__input"
+              value={clientData.projectName || ''}
+              onChange={(e) => updateClientData({ projectName: e.target.value })}
+              placeholder="Enter project name..."
+            />
+            {clientData.lastUpdated && (
+              <span className="project-name-edit__saved">
+                Saved {new Date(clientData.lastUpdated).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         )}
       </section>
 
@@ -174,12 +321,22 @@ const Dashboard = ({ onNavigate }) => {
               : 'Ultra-Luxury Residential Advisory Platform'}
           </p>
         </div>
-        {!principalName && (
+        {!activeProjectId ? (
+          <button 
+            className="btn btn--primary"
+            onClick={() => {
+              createProject('New Project');
+              onNavigate('kyc');
+            }}
+          >
+            Start New Project <ArrowRight size={18} />
+          </button>
+        ) : !principalName && (
           <button 
             className="btn btn--primary"
             onClick={() => onNavigate('kyc')}
           >
-            Start New Client <ArrowRight size={18} />
+            Continue KYC <ArrowRight size={18} />
           </button>
         )}
       </section>
