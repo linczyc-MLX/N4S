@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
-  ChevronLeft, ChevronRight, Check, X, RotateCcw,
-  Eye, Palette, Home, UtensilsCrossed, Bed, Bath, TreeDeciduous
+  ChevronLeft, Check, X, RotateCcw,
+  Eye, Palette, Home, UtensilsCrossed, Bed, Bath, TreeDeciduous,
+  Heart, ThumbsDown
 } from 'lucide-react';
-import { quads, categories, categoryOrder, RANK_WEIGHTS, SKIP_WEIGHT, getTotalQuadCount } from '../../data/tasteQuads';
+import { quads, categories, categoryOrder, getTotalQuadCount } from '../../data/tasteQuads';
 
 // Category icons mapping
 const categoryIcons = {
@@ -17,29 +18,71 @@ const categoryIcons = {
 };
 
 // ============================================================
-// QUAD CARD COMPONENT
+// QUAD CARD COMPONENT - Option E: Top 2 + Bottom 1
 // ============================================================
-const QuadCard = ({ quad, ranking, onSelect, onSkip }) => {
+const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm, isComplete }) => {
   const [imageErrors, setImageErrors] = useState({});
   
+  // selections = { favorites: [index, index], least: index | null }
+  const { favorites = [], least = null } = selections || {};
+  
   const handleImageClick = (index) => {
-    if (ranking.includes(index)) {
-      // Already ranked - remove it and all after
-      const position = ranking.indexOf(index);
-      onSelect(ranking.slice(0, position));
-    } else {
-      // Add to ranking
-      onSelect([...ranking, index]);
+    // If already selected as favorite, remove it
+    if (favorites.includes(index)) {
+      onSelectionChange({
+        favorites: favorites.filter(i => i !== index),
+        least
+      });
+      return;
+    }
+    
+    // If already selected as least favorite, remove it
+    if (least === index) {
+      onSelectionChange({
+        favorites,
+        least: null
+      });
+      return;
+    }
+    
+    // If we don't have 2 favorites yet, add as favorite
+    if (favorites.length < 2) {
+      onSelectionChange({
+        favorites: [...favorites, index],
+        least
+      });
+      return;
+    }
+    
+    // If we have 2 favorites but no least, add as least
+    if (least === null) {
+      onSelectionChange({
+        favorites,
+        least: index
+      });
     }
   };
 
-  const getRankPosition = (index) => {
-    const pos = ranking.indexOf(index);
-    return pos >= 0 ? pos + 1 : null;
+  const getSelectionType = (index) => {
+    if (favorites.includes(index)) {
+      return favorites.indexOf(index) === 0 ? 'favorite-1' : 'favorite-2';
+    }
+    if (least === index) return 'least';
+    return null;
   };
 
   const handleImageError = (index) => {
     setImageErrors(prev => ({ ...prev, [index]: true }));
+  };
+
+  const selectionsComplete = favorites.length === 2 && least !== null;
+  
+  // Determine current instruction
+  const getInstruction = () => {
+    if (favorites.length === 0) return 'Select your 2 favorite images';
+    if (favorites.length === 1) return 'Select 1 more favorite';
+    if (least === null) return 'Now select your least favorite';
+    return 'Ready to confirm';
   };
 
   return (
@@ -49,15 +92,20 @@ const QuadCard = ({ quad, ranking, onSelect, onSkip }) => {
         <p className="taste-quad__subtitle">{quad.variation}</p>
       </div>
       
+      {/* Instruction reminder */}
+      <div className={`taste-quad__instruction ${selectionsComplete ? 'taste-quad__instruction--complete' : ''}`}>
+        {getInstruction()}
+        <span className="taste-quad__tap-hint">Tap a selection to change it</span>
+      </div>
+      
       <div className="taste-quad__grid">
         {[0, 1, 2, 3].map((index) => {
-          const rank = getRankPosition(index);
-          const isRanked = rank !== null;
+          const selectionType = getSelectionType(index);
           
           return (
             <div 
               key={index}
-              className={`taste-quad__image-wrapper ${isRanked ? 'taste-quad__image-wrapper--ranked' : ''}`}
+              className={`taste-quad__image-wrapper ${selectionType ? `taste-quad__image-wrapper--${selectionType}` : ''}`}
               onClick={() => handleImageClick(index)}
             >
               {imageErrors[index] ? (
@@ -79,9 +127,19 @@ const QuadCard = ({ quad, ranking, onSelect, onSkip }) => {
                 {String.fromCharCode(65 + index)}
               </div>
               
-              {isRanked && (
-                <div className={`taste-quad__rank-badge taste-quad__rank-badge--${rank}`}>
-                  {rank}
+              {selectionType === 'favorite-1' && (
+                <div className="taste-quad__selection-badge taste-quad__selection-badge--fav1">
+                  <Heart size={20} /> 1st
+                </div>
+              )}
+              {selectionType === 'favorite-2' && (
+                <div className="taste-quad__selection-badge taste-quad__selection-badge--fav2">
+                  <Heart size={20} /> 2nd
+                </div>
+              )}
+              {selectionType === 'least' && (
+                <div className="taste-quad__selection-badge taste-quad__selection-badge--least">
+                  <ThumbsDown size={20} />
                 </div>
               )}
               
@@ -97,26 +155,28 @@ const QuadCard = ({ quad, ranking, onSelect, onSkip }) => {
         <button 
           className="taste-quad__skip-btn"
           onClick={onSkip}
-          title="Not My Style - Skip this quad"
+          title="None of these resonate with me"
         >
-          <X size={16} /> Not My Style
+          <X size={16} /> Skip - Not My Style
         </button>
         
-        {ranking.length > 0 && (
+        {(favorites.length > 0 || least !== null) && (
           <button 
             className="taste-quad__reset-btn"
-            onClick={() => onSelect([])}
-            title="Reset selections"
+            onClick={() => onSelectionChange({ favorites: [], least: null })}
+            title="Clear all selections"
           >
             <RotateCcw size={16} /> Reset
           </button>
         )}
         
-        <div className="taste-quad__progress-hint">
-          {ranking.length === 0 && 'Tap images in order of preference (1st to 4th)'}
-          {ranking.length > 0 && ranking.length < 4 && `${4 - ranking.length} more to complete`}
-          {ranking.length === 4 && <span className="taste-quad__complete"><Check size={16} /> Complete</span>}
-        </div>
+        <button 
+          className={`taste-quad__confirm-btn ${selectionsComplete ? 'taste-quad__confirm-btn--ready' : ''}`}
+          onClick={onConfirm}
+          disabled={!selectionsComplete}
+        >
+          <Check size={16} /> Confirm & Continue
+        </button>
       </div>
     </div>
   );
@@ -125,7 +185,7 @@ const QuadCard = ({ quad, ranking, onSelect, onSkip }) => {
 // ============================================================
 // CATEGORY DIVIDER COMPONENT
 // ============================================================
-const CategoryDivider = ({ category, categoryIndex, totalCategories, quadCount, onContinue }) => {
+const CategoryDivider = ({ category, categoryIndex, totalCategories, quadCount, onContinue, isFirstCategory }) => {
   const categoryData = categories[category];
   const Icon = categoryIcons[category] || Palette;
   
@@ -146,9 +206,33 @@ const CategoryDivider = ({ category, categoryIndex, totalCategories, quadCount, 
         <span>{quadCount} comparison{quadCount > 1 ? 's' : ''} in this category</span>
       </div>
       
-      <p className="taste-divider__instruction">
-        For each set of four images, tap them in order of preference—from your favorite (1st) to least favorite (4th).
-      </p>
+      {/* Instructions - more prominent on first category */}
+      {isFirstCategory ? (
+        <div className="taste-divider__instructions">
+          <h4>How It Works</h4>
+          <div className="taste-divider__instruction-steps">
+            <div className="taste-divider__step">
+              <span className="taste-divider__step-icon taste-divider__step-icon--fav">❤️</span>
+              <span><strong>Step 1:</strong> Tap your <strong>2 favorite</strong> images</span>
+            </div>
+            <div className="taste-divider__step">
+              <span className="taste-divider__step-icon taste-divider__step-icon--least">👎</span>
+              <span><strong>Step 2:</strong> Tap your <strong>least favorite</strong> image</span>
+            </div>
+            <div className="taste-divider__step">
+              <span className="taste-divider__step-icon taste-divider__step-icon--confirm">✓</span>
+              <span><strong>Step 3:</strong> Press <strong>Confirm</strong> to continue</span>
+            </div>
+          </div>
+          <p className="taste-divider__tip">
+            💡 You can tap any selection to change it before confirming
+          </p>
+        </div>
+      ) : (
+        <p className="taste-divider__instruction">
+          Select your <strong>2 favorites</strong>, then your <strong>least favorite</strong>, and confirm.
+        </p>
+      )}
       
       <button className="taste-divider__btn" onClick={onContinue}>
         Begin {categoryData.name}
@@ -160,7 +244,7 @@ const CategoryDivider = ({ category, categoryIndex, totalCategories, quadCount, 
 // ============================================================
 // RESULTS SUMMARY COMPONENT
 // ============================================================
-const ResultsSummary = ({ rankings, skipped, onRestart }) => {
+const ResultsSummary = ({ selections, skipped, onRestart }) => {
   const calculateProfile = useMemo(() => {
     // Initialize scores
     const scores = {
@@ -173,16 +257,24 @@ const ResultsSummary = ({ rankings, skipped, onRestart }) => {
       materials: {}
     };
     
+    // Weight values for Option E (Top 2 + Bottom 1)
+    const FAVORITE_1_WEIGHT = 4.0;  // Strong positive
+    const FAVORITE_2_WEIGHT = 2.5;  // Positive
+    const LEAST_WEIGHT = -2.0;      // Negative signal
+    
     let totalWeight = 0;
     
-    // Process each ranking
-    Object.entries(rankings).forEach(([quadId, ranking]) => {
+    // Process each selection
+    Object.entries(selections).forEach(([quadId, selection]) => {
       const quad = quads.find(q => q.quadId === quadId);
-      if (!quad || !quad.attributes) return;
+      if (!quad || !quad.attributes || !selection) return;
       
-      ranking.forEach((imageIndex, position) => {
-        const weight = RANK_WEIGHTS[position + 1] || 1;
-        totalWeight += weight;
+      const { favorites = [], least } = selection;
+      
+      // Process favorites
+      favorites.forEach((imageIndex, position) => {
+        const weight = position === 0 ? FAVORITE_1_WEIGHT : FAVORITE_2_WEIGHT;
+        totalWeight += Math.abs(weight);
         
         // Score attributes
         Object.entries(quad.attributes).forEach(([attr, values]) => {
@@ -196,18 +288,35 @@ const ResultsSummary = ({ rankings, skipped, onRestart }) => {
           }
         });
       });
+      
+      // Process least favorite (negative weight)
+      if (least !== null && least !== undefined) {
+        totalWeight += Math.abs(LEAST_WEIGHT);
+        
+        Object.entries(quad.attributes).forEach(([attr, values]) => {
+          if (Array.isArray(values) && values[least] !== undefined) {
+            if (attr === 'material_focus') {
+              const material = values[least];
+              scores.materials[material] = (scores.materials[material] || 0) + LEAST_WEIGHT;
+            } else if (scores[attr] !== undefined) {
+              scores[attr] += values[least] * LEAST_WEIGHT;
+            }
+          }
+        });
+      }
     });
     
     // Normalize scores to 1-10 scale
     const normalizedScores = {};
     ['warmth', 'formality', 'drama', 'tradition', 'openness', 'art_focus'].forEach(attr => {
       normalizedScores[attr] = totalWeight > 0 
-        ? Math.round((scores[attr] / totalWeight) * 10) / 10 
+        ? Math.min(10, Math.max(1, Math.round((scores[attr] / totalWeight + 5) * 10) / 10))
         : 5;
     });
     
-    // Get top materials
+    // Get top materials (filter out negatives)
     const topMaterials = Object.entries(scores.materials)
+      .filter(([_, score]) => score > 0)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([material]) => material);
@@ -215,11 +324,11 @@ const ResultsSummary = ({ rankings, skipped, onRestart }) => {
     return {
       scores: normalizedScores,
       topMaterials,
-      completedQuads: Object.keys(rankings).length,
+      completedQuads: Object.keys(selections).length,
       skippedQuads: skipped.length,
       totalQuads: quads.length
     };
-  }, [rankings, skipped]);
+  }, [selections, skipped]);
 
   const getScoreLabel = (score) => {
     if (score >= 8) return 'High';
@@ -331,20 +440,20 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
   ).length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [rankings, setRankings] = useState({}); // { quadId: [imageIndex, ...] }
+  const [selections, setSelections] = useState({}); // { quadId: { favorites: [idx, idx], least: idx } }
   const [skipped, setSkipped] = useState([]); // [quadId, ...]
   const [isComplete, setIsComplete] = useState(false);
 
   const currentItem = sequence[currentIndex];
   const totalQuads = getTotalQuadCount();
-  const completedCount = Object.keys(rankings).length + skipped.length;
+  const completedCount = Object.keys(selections).length + skipped.length;
   const overallProgress = Math.round((completedCount / totalQuads) * 100);
 
-  // Handle ranking selection
-  const handleRankingChange = useCallback((quadId, ranking) => {
-    setRankings(prev => ({
+  // Handle selection change for a quad
+  const handleSelectionChange = useCallback((quadId, selection) => {
+    setSelections(prev => ({
       ...prev,
-      [quadId]: ranking
+      [quadId]: selection
     }));
   }, []);
 
@@ -357,13 +466,13 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
       setIsComplete(true);
       if (onComplete) {
         onComplete({
-          rankings,
+          selections,
           skipped,
           completedAt: new Date().toISOString()
         });
       }
     }
-  }, [currentIndex, sequence.length, rankings, skipped, onComplete]);
+  }, [currentIndex, sequence.length, selections, skipped, onComplete]);
 
   const goToPrev = useCallback(() => {
     if (currentIndex > 0) {
@@ -374,8 +483,8 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
   // Handle skip (must be after goToNext)
   const handleSkip = useCallback((quadId) => {
     setSkipped(prev => [...prev, quadId]);
-    // Remove from rankings if it was there
-    setRankings(prev => {
+    // Remove from selections if it was there
+    setSelections(prev => {
       const updated = { ...prev };
       delete updated[quadId];
       return updated;
@@ -384,23 +493,18 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
     goToNext();
   }, [goToNext]);
 
-  // Auto-advance when quad is complete
-  useEffect(() => {
-    if (currentItem?.type === 'quad') {
-      const quadId = currentItem.quad.quadId;
-      const ranking = rankings[quadId];
-      if (ranking && ranking.length === 4) {
-        // Short delay before advancing
-        const timer = setTimeout(goToNext, 500);
-        return () => clearTimeout(timer);
-      }
+  // Handle confirm - explicit advance when user confirms their selection
+  const handleConfirm = useCallback((quadId) => {
+    const selection = selections[quadId];
+    if (selection && selection.favorites?.length === 2 && selection.least !== null) {
+      goToNext();
     }
-  }, [rankings, currentItem, goToNext]);
+  }, [selections, goToNext]);
 
   // Restart
   const handleRestart = () => {
     setCurrentIndex(0);
-    setRankings({});
+    setSelections({});
     setSkipped([]);
     setIsComplete(false);
   };
@@ -410,7 +514,7 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
     return (
       <div className="taste-exploration">
         <ResultsSummary 
-          rankings={rankings}
+          selections={selections}
           skipped={skipped}
           onRestart={handleRestart}
         />
@@ -453,36 +557,34 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
             totalCategories={totalCategories}
             quadCount={currentItem.quadCount}
             onContinue={goToNext}
+            isFirstCategory={currentItem.categoryIndex === 0}
           />
         )}
         
         {currentItem?.type === 'quad' && (
           <QuadCard
             quad={currentItem.quad}
-            ranking={rankings[currentItem.quad.quadId] || []}
-            onSelect={(ranking) => handleRankingChange(currentItem.quad.quadId, ranking)}
+            selections={selections[currentItem.quad.quadId] || { favorites: [], least: null }}
+            onSelectionChange={(selection) => handleSelectionChange(currentItem.quad.quadId, selection)}
             onSkip={() => handleSkip(currentItem.quad.quadId)}
+            onConfirm={() => handleConfirm(currentItem.quad.quadId)}
+            isComplete={
+              selections[currentItem.quad.quadId]?.favorites?.length === 2 && 
+              selections[currentItem.quad.quadId]?.least !== null
+            }
           />
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Previous only, Confirm is now in QuadCard */}
       {currentItem?.type === 'quad' && (
-        <div className="taste-exploration__nav">
+        <div className="taste-exploration__nav taste-exploration__nav--simple">
           <button 
             className="taste-exploration__nav-btn"
             onClick={goToPrev}
             disabled={currentIndex === 0}
           >
             <ChevronLeft size={20} /> Previous
-          </button>
-          
-          <button 
-            className="taste-exploration__nav-btn taste-exploration__nav-btn--next"
-            onClick={goToNext}
-            disabled={!(rankings[currentItem.quad.quadId]?.length === 4 || skipped.includes(currentItem.quad.quadId))}
-          >
-            {currentIndex === sequence.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={20} />
           </button>
         </div>
       )}

@@ -102,7 +102,7 @@ const WelcomeView = ({
 
   const principalDisplayName = principalFirstName || 'Principal';
   const secondaryDisplayName = secondaryFirstName || 'Secondary';
-  const familyName = principalLastName || 'Client';
+  const familyName = principalLastName || secondaryLastName || 'Client';
 
   return (
     <div className="design-prefs-welcome">

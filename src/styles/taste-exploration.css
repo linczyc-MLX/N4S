@@ -202,6 +202,71 @@
   background: #0d1f3c;
 }
 
+/* Divider Instructions for First Category */
+.taste-divider__instructions {
+  background: #F7FAFC;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+  text-align: left;
+}
+
+.taste-divider__instructions h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.taste-divider__instruction-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.taste-divider__step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+}
+
+.taste-divider__step-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.taste-divider__step-icon--fav {
+  background: linear-gradient(135deg, #FFF5E6, #FEEBC8);
+}
+
+.taste-divider__step-icon--least {
+  background: linear-gradient(135deg, #FED7D7, #FEB2B2);
+}
+
+.taste-divider__step-icon--confirm {
+  background: linear-gradient(135deg, #E6FFFA, #B2F5EA);
+}
+
+.taste-divider__tip {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-200);
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  text-align: center;
+}
+
 /* ============================================
    QUAD CARD
    ============================================ */
@@ -275,6 +340,31 @@
   filter: brightness(0.85);
 }
 
+/* Option E Selection States */
+.taste-quad__image-wrapper--favorite-1 {
+  border-color: #C9A962;
+  box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.3);
+}
+
+.taste-quad__image-wrapper--favorite-2 {
+  border-color: #38B2AC;
+  box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.3);
+}
+
+.taste-quad__image-wrapper--least {
+  border-color: #E53E3E;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2);
+}
+
+.taste-quad__image-wrapper--favorite-1 .taste-quad__image,
+.taste-quad__image-wrapper--favorite-2 .taste-quad__image {
+  filter: brightness(0.9);
+}
+
+.taste-quad__image-wrapper--least .taste-quad__image {
+  filter: brightness(0.7) grayscale(0.3);
+}
+
 .taste-quad__image-placeholder {
   width: 100%;
   height: 100%;
@@ -341,6 +431,35 @@
   background: linear-gradient(135deg, #718096, #4A5568);
 }
 
+/* Selection Badges for Option E */
+.taste-quad__selection-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.taste-quad__selection-badge--fav1 {
+  background: linear-gradient(135deg, #C9A962, #A07D3A);
+}
+
+.taste-quad__selection-badge--fav2 {
+  background: linear-gradient(135deg, #38B2AC, #2C7A7B);
+}
+
+.taste-quad__selection-badge--least {
+  background: linear-gradient(135deg, #E53E3E, #C53030);
+}
+
 .taste-quad__image-title {
   position: absolute;
   bottom: 0;
@@ -360,6 +479,65 @@
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--gray-100);
+  flex-wrap: wrap;
+}
+
+/* Instruction Reminder */
+.taste-quad__instruction {
+  padding: 0.75rem 1rem;
+  background: #FFF8E1;
+  border-left: 4px solid #C9A962;
+  margin: 0 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.taste-quad__instruction--complete {
+  background: #E6FFFA;
+  border-left-color: var(--teal);
+  color: var(--teal);
+}
+
+.taste-quad__tap-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--gray-500);
+}
+
+/* Confirm Button */
+.taste-quad__confirm-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+  padding: 0.625rem 1.25rem;
+  background: var(--gray-200);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: all 0.2s ease;
+}
+
+.taste-quad__confirm-btn--ready {
+  background: var(--navy);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.taste-quad__confirm-btn--ready:hover {
+  background: #0d1f3c;
+}
+
+/* Simple Navigation */
+.taste-exploration__nav--simple {
+  justify-content: flex-start;
 }
 
 .taste-quad__skip-btn,
