@@ -157,12 +157,12 @@ const initialKYCData = {
     previousDesignerExperience: '',
     redFlagsToAvoid: '',
     existingIndustryConnections: '',
-    celebrityVsQuietProfessional: 3, // 1-5
+    architectCelebrityPreference: 3,      // 1-5: 1=Starchitect, 5=Quiet Professional
+    interiorDesignerCelebrityPreference: 3, // 1-5: 1=Celebrity, 5=Quiet Professional
     // Architecture-specific
     caRequirement: '', // Full CA/Limited CA/None
     contractorRelationshipPreference: '', // Design-Bid-Build/Design-Build/CM at Risk
     earlyContractorInvolvement: false,    // ECI - contractor input from concept stage
-    starchitectPreference: 3, // 1-5
   },
 
   // Advisor-Assessed Fields

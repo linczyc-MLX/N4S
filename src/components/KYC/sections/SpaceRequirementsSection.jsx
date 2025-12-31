@@ -262,9 +262,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
               </button>
             </div>
           </div>
-        </div>
 
-        <div className="form-grid form-grid--3col">
           <div className="form-field">
             <label className="form-field__label">Built-in Bar?</label>
             <p className="form-field__help" style={{ marginBottom: '8px' }}>

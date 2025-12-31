@@ -1,267 +1,178 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
+import TasteExploration from '../../TasteExploration/TasteExploration';
+import { 
+  Palette, Play, Check, Users, User, ChevronRight,
+  BarChart3, RefreshCw
+} from 'lucide-react';
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
-const TASTE_APP_URL = 'https://taste-5019238456.app-ionos.space';
-const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
-
-// Architectural Styles Data with correct Cloudinary URLs
+// Architectural Styles Data for preview carousel
 const ARCH_STYLES = [
   { id: 'AS1', name: 'Avant-Contemporary', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045989/AS1_tpnuxa.png',
-    features: ['Sculptural, experimental massing; asymmetry and bold cantilevers.', 'Parametric or faceted façade moves; deep reveals and dramatic shadow play.', 'High-contrast material palette (metal, glass, monolithic stone/concrete).', '"Statement" architecture: kinetic screens, expressive structure, theatrical lighting.'],
-    appeal: 'Appeals to clients who want an unmistakable statement home—architectural as art, engineered to impress and differentiate.' },
+    description: 'Sculptural, experimental forms with bold cantilevers and dramatic expression.' },
   { id: 'AS2', name: 'Architectural Modern', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045988/AS2_ty6rnh.png',
-    features: ['Rational, rectilinear volumes; clean lines and disciplined proportions.', 'Flat roofs, crisp parapets, minimal ornamentation.', 'Large-format glazing and clear structural logic (steel/concrete expression).', 'Restrained palette and detailing; emphasis on function and clarity.'],
-    appeal: 'Appeals to clients who value clarity, performance, and a disciplined aesthetic—modernity expressed through structure and proportion.' },
+    description: 'Rational volumes, clean lines, flat roofs, large-format glazing.' },
   { id: 'AS3', name: 'Curated Minimalism', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045989/AS3_vwoca5.png',
-    features: ['Minimal forms with highly refined proportions and junctions (shadow gaps, knife edges).', 'Warm, tactile materials used sparingly (limestone, plaster, pale timber, bronze).', 'Calm compositions with controlled openings; negative space as a design tool.', 'Landscape and hardscape treated as quiet, edited extensions of the architecture.'],
-    appeal: 'Appeals to clients who prize calm luxury—quiet confidence, impeccable detailing, and "nothing extra" done exceptionally well.' },
+    description: 'Refined proportions, warm tactile materials, calm compositions.' },
   { id: 'AS4', name: 'Nordic Contemporary', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045988/AS4_kdptrm.png',
-    features: ['Simplified archetypes (often gables) reinterpreted in modern, crisp geometry.', 'Light timber cladding paired with dark accents; standing-seam metal roofs common.', 'Practical, climate-driven envelopes: deep eaves, sheltered thresholds, robust materials.', 'Soft, natural palettes and a strong indoor–outdoor relationship to landscape.'],
-    appeal: 'Appeals to clients who want warm modern living with pragmatic comfort—clean design rooted in nature, light, and livability.' },
+    description: 'Simplified archetypes, light timber, strong indoor-outdoor relationship.' },
   { id: 'AS5', name: 'Mid-Century Refined', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045989/AS5_b5xgik.png',
-    features: ['Strong horizontality: low-slung pavilions, broad overhangs, post-and-beam rhythm.', 'Indoor–outdoor continuity via terraces, sliders, courtyards, and glazing.', 'Signature elements: clerestories, breeze-block screens, thin columns, warm wood ceilings.', 'Updated finishes and detailing (more tailored, less nostalgic).'],
-    appeal: 'Appeals to clients drawn to iconic indoor–outdoor ease—timeless mid-century DNA, updated with sharper tailoring and quality.' },
+    description: 'Strong horizontality, post-and-beam rhythm, indoor-outdoor continuity.' },
   { id: 'AS6', name: 'Modern Classic', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045988/AS6_kdudr2.png',
-    features: ['Classical proportion and symmetry distilled into clean, simplified forms.', 'Subtle references (pared pilasters/cornices) without heavy ornamentation.', 'Stone-forward elegance with contemporary window scale and crisp detailing.', 'Overall effect: composed, formal, and timeless—yet clearly modern.'],
-    appeal: 'Appeals to clients who want timeless elegance without ostentation—classical balance translated into a contemporary lifestyle.' },
+    description: 'Classical proportion distilled into clean, simplified forms.' },
   { id: 'AS7', name: 'Classical Contemporary', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045987/AS7_csfm3r.png',
-    features: ['Classical massing and order combined with contemporary transparency and scale shifts.', 'Selective ornament: traditional motifs simplified and used as accents, not wallpaper.', 'Stone/brick paired with modern bronze/steel and large glazed openings.', 'A "hybrid" identity: heritage cues with modern lightness and openness.'],
-    appeal: 'Appeals to clients who want tradition with openness—heritage cues paired with modern scale, light, and glass-forward living.' },
+    description: 'Traditional motifs simplified as accents with modern transparency.' },
   { id: 'AS8', name: 'Formal Classical', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045990/AS8_emtr7x.png',
-    features: ['Strict symmetry, axial planning, and hierarchical façade composition.', 'Prominent columns, entablatures, pediments, and richly articulated moldings.', 'High craftsmanship: carved stone, ornate ironwork, formal courtyards/approaches.', 'Monumental presence; architecture as ceremony and status.'],
-    appeal: 'Appeals to clients who seek prestige and ceremony—formal symmetry, grand arrival, and legacy craftsmanship.' },
+    description: 'Strict symmetry, prominent columns, ceremonial presence.' },
   { id: 'AS9', name: 'Heritage Estate', 
     image: 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045990/AS9_s3btos.png',
-    features: ['Estate scale and layered historic character (manor, chateau, country house cues).', 'Deep-set windows, steep roofs, chimneys; materials with patina (stone, slate, brick).', 'Picturesque composition: wings, garden walls, service elements, inherited complexity.', 'Landscape is integral—drives, hedges, gardens—projecting longevity and legacy.'],
-    appeal: 'Appeals to clients who want generational gravitas—an estate that feels established, storied, and permanently valuable.' },
+    description: 'Estate scale with layered historic character and legacy gravitas.' },
 ];
 
 // ============================================
-// HELPER FUNCTIONS
+// STYLE CARD COMPONENT
 // ============================================
-
-function loadProfileFromStorage(clientId) {
-  if (!clientId) return null;
-  const key = `${PROFILE_STORAGE_PREFIX}${clientId}`;
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
-function getProfileStatus(profile) {
-  if (!profile) return 'not-started';
-  if (profile.session?.completedAt) return 'complete';
-  if (profile.session?.progress && Object.keys(profile.session.progress).length > 0) return 'pending';
-  return 'not-started';
-}
-
-// ============================================
-// SUB-COMPONENTS
-// ============================================
-
-// Design DNA Slider (Gold-to-Navy gradient)
-const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
-  const percentage = ((value - 1) / 4) * 100; // 1-5 scale
-  
-  return (
-    <div className="dna-slider">
-      <div className="dna-slider__header">
-        <span className="dna-slider__label">{label}</span>
-        <span className="dna-slider__value">{value.toFixed(1)}</span>
-      </div>
-      <div className="dna-slider__track-row">
-        <span className="dna-slider__endpoint dna-slider__endpoint--left">{leftLabel}</span>
-        <div className="dna-slider__track">
-          <div className="dna-slider__fill" style={{ width: `${percentage}%` }} />
-          <div className="dna-slider__thumb" style={{ left: `${percentage}%` }} />
-        </div>
-        <span className="dna-slider__endpoint dna-slider__endpoint--right">{rightLabel}</span>
-      </div>
+const StyleCard = ({ style }) => (
+  <div className="arch-style-card">
+    <img 
+      src={style.image} 
+      alt={style.name}
+      className="arch-style-card__image"
+    />
+    <div className="arch-style-card__content">
+      <h4 className="arch-style-card__name">{style.name}</h4>
+      <p className="arch-style-card__description">{style.description}</p>
     </div>
-  );
-};
-
-// Style Card for Carousel - Vertical layout with image on top
-const StyleCard = ({ style }) => {
-  // Split features into two columns
-  const midpoint = Math.ceil(style.features.length / 2);
-  const leftFeatures = style.features.slice(0, midpoint);
-  const rightFeatures = style.features.slice(midpoint);
-  
-  return (
-    <div className="arch-style-card">
-      <div className="arch-style-card__image">
-        <img src={style.image} alt={style.name} loading="lazy" />
-      </div>
-      <div className="arch-style-card__content">
-        <h4 className="arch-style-card__title">{style.name}</h4>
-        <div className="arch-style-card__features-grid">
-          <ul className="arch-style-card__features">
-            {leftFeatures.map((f, i) => <li key={i}>{f}</li>)}
-          </ul>
-          <ul className="arch-style-card__features">
-            {rightFeatures.map((f, i) => <li key={i}>{f}</li>)}
-          </ul>
-        </div>
-        <p className="arch-style-card__appeal">{style.appeal}</p>
-      </div>
-    </div>
-  );
-};
-
-// Status Badge
-const StatusBadge = ({ status, name }) => (
-  <span className={`taste-status-badge taste-status-badge--${status}`}>
-    {status === 'complete' ? '✓' : status === 'pending' ? '◐' : '○'}
-    <span>{name}: {status === 'complete' ? 'Complete' : status === 'pending' ? 'In Progress' : 'Not Started'}</span>
-  </span>
+  </div>
 );
 
 // ============================================
-// WELCOME VIEW (Before Taste Exploration)
+// STATUS BADGE COMPONENT
 // ============================================
+const StatusBadge = ({ status, name }) => {
+  const statusConfig = {
+    'complete': { label: 'Complete', color: 'success', icon: Check },
+    'in-progress': { label: 'In Progress', color: 'warning', icon: BarChart3 },
+    'not-started': { label: 'Not Started', color: 'gray', icon: null }
+  };
+  
+  const config = statusConfig[status] || statusConfig['not-started'];
+  const Icon = config.icon;
+  
+  return (
+    <div className={`taste-status-badge taste-status-badge--${config.color}`}>
+      {Icon && <Icon size={14} />}
+      <span className="taste-status-badge__name">{name}</span>
+      <span className="taste-status-badge__status">{config.label}</span>
+    </div>
+  );
+};
 
+// ============================================
+// WELCOME VIEW (Before starting exploration)
+// ============================================
 const WelcomeView = ({ 
-  clientType, setClientType,
-  clientBaseName, setClientBaseName,
-  principalName, setPrincipalName,
-  secondaryName, setSecondaryName,
-  clientIdP, clientIdS,
-  statusP, statusS,
-  onLaunch, onRefresh
+  clientType, 
+  setClientType, 
+  principalFirstName,
+  principalLastName,
+  secondaryFirstName,
+  secondaryLastName,
+  principalStatus,
+  secondaryStatus,
+  onStartExploration,
+  carouselIndex,
+  setCarouselIndex
 }) => {
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  
-  const goToPrev = () => setCarouselIndex(i => i === 0 ? ARCH_STYLES.length - 2 : i - 1);
-  const goToNext = () => setCarouselIndex(i => i >= ARCH_STYLES.length - 2 ? 0 : i + 1);
-  
-  const visibleStyles = [
-    ARCH_STYLES[carouselIndex],
-    ARCH_STYLES[(carouselIndex + 1) % ARCH_STYLES.length]
-  ];
+  const goToNext = () => setCarouselIndex((prev) => (prev + 1) % (ARCH_STYLES.length - 1));
+  const goToPrev = () => setCarouselIndex((prev) => (prev - 1 + ARCH_STYLES.length - 1) % (ARCH_STYLES.length - 1));
+  const visibleStyles = [ARCH_STYLES[carouselIndex], ARCH_STYLES[carouselIndex + 1]].filter(Boolean);
+
+  const principalDisplayName = principalFirstName || 'Principal';
+  const secondaryDisplayName = secondaryFirstName || 'Secondary';
+  const familyName = principalLastName || 'Client';
 
   return (
     <div className="design-prefs-welcome">
       {/* Introduction */}
       <div className="taste-intro-banner">
+        <div className="taste-intro-banner__icon">
+          <Palette size={32} />
+        </div>
         <h3>Discover Your Aesthetic DNA</h3>
         <p>
           The <strong>Taste Exploration</strong> assessment reveals your unique design preferences through 
-          a series of visual choices. By selecting images that resonate with you across nine residential 
+          a series of visual choices. By selecting images that resonate with you across residential 
           space categories, we create a detailed profile of your aesthetic sensibilities—helping us match 
           you with designers who share your vision.
         </p>
-        <p>
-          The assessment takes approximately <strong>10-15 minutes</strong> to complete. Before you begin, 
-          explore the architectural styles below to familiarize yourself with the spectrum of design languages.
+        <p className="taste-intro-banner__duration">
+          ⏱️ Approximately <strong>10-15 minutes</strong> to complete
         </p>
       </div>
 
       {/* Client Configuration */}
       <div className="kyc-section__group">
-        <h3 className="kyc-section__group-title">Client Configuration</h3>
+        <h3 className="kyc-section__group-title">Assessment Configuration</h3>
+        
+        <div className="client-info-display">
+          <div className="client-info-display__header">
+            <span className="client-info-display__label">Client Family</span>
+            <span className="client-info-display__name">{familyName}</span>
+          </div>
+          <p className="client-info-display__note">
+            Names are automatically populated from your Portfolio Context (P1.A.1)
+          </p>
+        </div>
         
         <div className="client-type-toggle">
           <button
             className={`client-type-btn ${clientType === 'individual' ? 'client-type-btn--active' : ''}`}
             onClick={() => setClientType('individual')}
           >
-            <span className="client-type-btn__icon">👤</span>
-            Individual
+            <User size={20} />
+            <span>Individual</span>
+            <small>Single decision-maker</small>
           </button>
           <button
             className={`client-type-btn ${clientType === 'couple' ? 'client-type-btn--active' : ''}`}
             onClick={() => setClientType('couple')}
           >
-            <span className="client-type-btn__icon">👥</span>
-            Couple
+            <Users size={20} />
+            <span>Couple</span>
+            <small>Partner alignment analysis</small>
           </button>
         </div>
 
-        <div className="client-name-fields">
-          <div className="form-field">
-            <label className="form-field__label">Client Family Name</label>
-            <input
-              type="text"
-              className="form-field__input"
-              placeholder="e.g., Thornwood"
-              value={clientBaseName}
-              onChange={(e) => setClientBaseName(e.target.value)}
-            />
-            <span className="form-field__hint">Used to generate client IDs</span>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field">
-              <label className="form-field__label">
-                {clientType === 'couple' ? 'Principal Name' : 'Client Name'}
-              </label>
-              <input
-                type="text"
-                className="form-field__input"
-                placeholder="First name"
-                value={principalName}
-                onChange={(e) => setPrincipalName(e.target.value)}
-              />
-            </div>
+        {/* Status Display */}
+        <div className="taste-status-section">
+          <h4>Assessment Status</h4>
+          <div className="taste-status-row">
+            <StatusBadge status={principalStatus} name={principalDisplayName} />
             {clientType === 'couple' && (
-              <div className="form-field">
-                <label className="form-field__label">Secondary Name</label>
-                <input
-                  type="text"
-                  className="form-field__input"
-                  placeholder="Spouse/Partner"
-                  value={secondaryName}
-                  onChange={(e) => setSecondaryName(e.target.value)}
-                />
-              </div>
+              <StatusBadge status={secondaryStatus} name={secondaryDisplayName} />
             )}
           </div>
-
-          {clientBaseName && (
-            <div className="client-ids-display">
-              <span className="client-ids-display__label">Generated IDs:</span>
-              <code className="client-ids-display__id">{clientIdP}</code>
-              {clientType === 'couple' && clientIdS && (
-                <code className="client-ids-display__id">{clientIdS}</code>
-              )}
-            </div>
-          )}
-
-          {clientType === 'couple' && clientBaseName && (
-            <div className="taste-status-row">
-              <StatusBadge status={statusP} name={principalName || 'Principal'} />
-              <StatusBadge status={statusS} name={secondaryName || 'Secondary'} />
-              <button className="refresh-btn" onClick={onRefresh} title="Refresh status">↻</button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Architectural Styles Carousel */}
+      {/* Architectural Styles Preview */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Architectural Style Spectrum</h3>
         <p className="kyc-section__group-description">
-          From avant-garde contemporary to heritage estate—explore the range of architectural expressions 
-          to understand where your preferences might fall.
+          From avant-garde contemporary to heritage estate—explore the range of architectural expressions.
         </p>
 
         <div className="arch-carousel">
@@ -281,10 +192,10 @@ const WelcomeView = ({
         </div>
 
         <div className="arch-carousel__dots">
-          {ARCH_STYLES.map((_, idx) => (
+          {ARCH_STYLES.slice(0, -1).map((_, idx) => (
             <button
               key={idx}
-              className={`arch-carousel__dot ${idx === carouselIndex || idx === carouselIndex + 1 ? 'arch-carousel__dot--active' : ''}`}
+              className={`arch-carousel__dot ${idx === carouselIndex ? 'arch-carousel__dot--active' : ''}`}
               onClick={() => setCarouselIndex(idx)}
             />
           ))}
@@ -293,34 +204,36 @@ const WelcomeView = ({
 
       {/* Launch Buttons */}
       <div className="taste-launch-section">
+        <h3 className="taste-launch-section__title">Start Taste Exploration</h3>
+        
         {clientType === 'couple' ? (
           <div className="taste-launch-buttons">
             <button 
               className="taste-launch-btn taste-launch-btn--primary"
-              onClick={() => onLaunch(clientIdP)}
-              disabled={!clientIdP}
+              onClick={() => onStartExploration('principal')}
             >
-              Start Taste Exploration — {principalName || 'Principal'}
+              <Play size={20} />
+              <span>Begin as {principalDisplayName}</span>
+              <ChevronRight size={20} />
             </button>
             <button 
               className="taste-launch-btn taste-launch-btn--secondary"
-              onClick={() => onLaunch(clientIdS)}
-              disabled={!clientIdS}
+              onClick={() => onStartExploration('secondary')}
             >
-              Start Taste Exploration — {secondaryName || 'Secondary'}
+              <Play size={20} />
+              <span>Begin as {secondaryDisplayName}</span>
+              <ChevronRight size={20} />
             </button>
           </div>
         ) : (
           <button 
-            className="taste-launch-btn taste-launch-btn--primary"
-            onClick={() => onLaunch(clientIdP)}
-            disabled={!clientIdP}
+            className="taste-launch-btn taste-launch-btn--primary taste-launch-btn--full"
+            onClick={() => onStartExploration('principal')}
           >
-            Start Taste Exploration
+            <Play size={20} />
+            <span>Start Taste Exploration</span>
+            <ChevronRight size={20} />
           </button>
-        )}
-        {!clientBaseName && (
-          <p className="taste-launch-hint">Please enter a client name above to enable the assessment.</p>
         )}
       </div>
     </div>
@@ -328,113 +241,124 @@ const WelcomeView = ({
 };
 
 // ============================================
-// COMPLETED VIEW (After Taste Exploration)
+// RESULTS VIEW (After completion)
 // ============================================
+const ResultsView = ({ 
+  principalResults, 
+  secondaryResults, 
+  clientType,
+  principalFirstName,
+  secondaryFirstName,
+  onRestart
+}) => {
+  const principalDisplayName = principalFirstName || 'Principal';
+  const secondaryDisplayName = secondaryFirstName || 'Secondary';
 
-const CompletedView = ({ profileP, profileS, clientType, principalName, secondaryName }) => {
-  const metrics = profileP?.metrics || {};
-  
-  // Get top 3 regional influences
-  const regionalInfluences = Object.entries(metrics.regionPreferences || {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
-  
-  // Get top 4 material preferences
-  const materialPreferences = Object.entries(metrics.materialPreferences || {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
+  const getScoreLabel = (score) => {
+    if (score >= 8) return 'High';
+    if (score >= 6) return 'Moderate-High';
+    if (score >= 4) return 'Moderate';
+    if (score >= 2) return 'Moderate-Low';
+    return 'Low';
+  };
+
+  const ScoreBar = ({ label, value }) => (
+    <div className="results-score-bar">
+      <div className="results-score-bar__header">
+        <span className="results-score-bar__label">{label}</span>
+        <span className="results-score-bar__value">{value}/10</span>
+      </div>
+      <div className="results-score-bar__track">
+        <div 
+          className="results-score-bar__fill" 
+          style={{ width: `${value * 10}%` }}
+        />
+      </div>
+      <span className="results-score-bar__level">{getScoreLabel(value)}</span>
+    </div>
+  );
 
   return (
-    <div className="design-prefs-complete">
-      {/* Taste Exploration Complete Notice */}
-      <div className="taste-complete-banner">
-        <span className="taste-complete-banner__check">✓</span>
-        <div>
-          <strong>Taste Exploration Complete</strong>
-          <p>Your design preferences have been derived from your visual selections.</p>
-        </div>
+    <div className="design-prefs-results">
+      <div className="results-header">
+        <Check size={48} className="results-header__icon" />
+        <h2>Taste Exploration Complete</h2>
+        <p>Your aesthetic preferences have been captured and saved.</p>
       </div>
 
-      {/* Design DNA Section */}
-      <div className="kyc-section__group">
-        <h3 className="kyc-section__group-title">Design DNA</h3>
-        <p className="kyc-section__group-description">
-          Your position on each spectrum, derived from Taste Exploration.
-        </p>
-
-        <div className="design-dna-sliders">
-          <DesignDNASlider 
-            label="Style Era" 
-            value={metrics.ctScale5 || 2.5} 
-            leftLabel="Contemporary" 
-            rightLabel="Traditional" 
-          />
-          <DesignDNASlider 
-            label="Material Complexity" 
-            value={metrics.mlScale5 || 2.5} 
-            leftLabel="Minimal" 
-            rightLabel="Layered" 
-          />
-          <DesignDNASlider 
-            label="Mood Palette" 
-            value={metrics.wcScale5 || 2.5} 
-            leftLabel="Warm" 
-            rightLabel="Cool" 
-          />
-        </div>
-      </div>
-
-      {/* Regional Influences & Material Preferences */}
-      <div className="kyc-section__group">
-        <div className="prefs-grid">
-          {/* Regional Influences */}
-          <div className="prefs-card">
-            <h4 className="prefs-card__title">Regional Influences</h4>
-            <ul className="prefs-card__list">
-              {regionalInfluences.map(([name, count]) => (
-                <li key={name} className="prefs-card__item">
-                  <span className="prefs-card__item-name">{name}</span>
-                  <span className="prefs-card__item-count">{count}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Material Preferences */}
-          <div className="prefs-card">
-            <h4 className="prefs-card__title">Material Preferences</h4>
-            <div className="prefs-card__chips">
-              {materialPreferences.map(([name, count]) => (
-                <span key={name} className="prefs-chip">
-                  {name} ({count})
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Partner Comparison (for couples) */}
-      {clientType === 'couple' && profileS && (
-        <div className="kyc-section__group">
-          <h3 className="kyc-section__group-title">Partner Alignment</h3>
-          <p className="kyc-section__group-description">
-            Comparison of {principalName || 'Principal'} and {secondaryName || 'Secondary'} preferences.
-          </p>
-          
-          <div className="partner-comparison">
-            <div className="comparison-legend">
-              <span className="comparison-legend__item comparison-legend__item--p">● {principalName || 'Principal'}</span>
-              <span className="comparison-legend__item comparison-legend__item--s">● {secondaryName || 'Secondary'}</span>
-            </div>
+      <div className="results-profiles">
+        {/* Principal Results */}
+        {principalResults && (
+          <div className="results-profile-card">
+            <h3>{principalDisplayName}'s Profile</h3>
             
-            {/* Comparison sliders would go here */}
-            <p className="comparison-note">
-              View the full Partner Alignment Report for detailed divergence analysis.
-            </p>
+            <div className="results-stats">
+              <div className="results-stat">
+                <span className="results-stat__value">
+                  {Object.keys(principalResults.rankings || {}).length}
+                </span>
+                <span className="results-stat__label">Quads Ranked</span>
+              </div>
+              <div className="results-stat">
+                <span className="results-stat__value">
+                  {principalResults.skipped?.length || 0}
+                </span>
+                <span className="results-stat__label">Skipped</span>
+              </div>
+            </div>
+
+            {principalResults.profile && (
+              <div className="results-axes">
+                {Object.entries(principalResults.profile.scores || {}).map(([axis, score]) => (
+                  <ScoreBar 
+                    key={axis} 
+                    label={axis.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    value={score}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Secondary Results (if couple) */}
+        {clientType === 'couple' && secondaryResults && (
+          <div className="results-profile-card">
+            <h3>{secondaryDisplayName}'s Profile</h3>
+            
+            <div className="results-stats">
+              <div className="results-stat">
+                <span className="results-stat__value">
+                  {Object.keys(secondaryResults.rankings || {}).length}
+                </span>
+                <span className="results-stat__label">Quads Ranked</span>
+              </div>
+              <div className="results-stat">
+                <span className="results-stat__value">
+                  {secondaryResults.skipped?.length || 0}
+                </span>
+                <span className="results-stat__label">Skipped</span>
+              </div>
+            </div>
+
+            {secondaryResults.profile && (
+              <div className="results-axes">
+                {Object.entries(secondaryResults.profile.scores || {}).map(([axis, score]) => (
+                  <ScoreBar 
+                    key={axis} 
+                    label={axis.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    value={score}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <button className="results-restart-btn" onClick={onRestart}>
+        <RefreshCw size={16} /> Restart Taste Exploration
+      </button>
     </div>
   );
 };
@@ -442,92 +366,113 @@ const CompletedView = ({ profileP, profileS, clientType, principalName, secondar
 // ============================================
 // MAIN COMPONENT
 // ============================================
-
 const DesignIdentitySection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
   const data = kycData[respondent]?.designIdentity || {};
+  const portfolioData = kycData[respondent]?.portfolioContext || {};
 
-  // Client configuration state
+  // Get names from Portfolio Context
+  const principalFirstName = portfolioData.principalFirstName || '';
+  const principalLastName = portfolioData.principalLastName || '';
+  const secondaryFirstName = portfolioData.secondaryFirstName || '';
+  const secondaryLastName = portfolioData.secondaryLastName || '';
+
+  // Local state
   const [clientType, setClientType] = useState(data.clientType || 'couple');
-  const [clientBaseName, setClientBaseName] = useState(data.clientBaseName || '');
-  const [principalName, setPrincipalName] = useState(data.principalName || '');
-  const [secondaryName, setSecondaryName] = useState(data.secondaryName || '');
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [activeExploration, setActiveExploration] = useState(null); // null | 'principal' | 'secondary'
   
-  // Taste profiles from localStorage
-  const [profileP, setProfileP] = useState(null);
-  const [profileS, setProfileS] = useState(null);
+  // Results from KYC data
+  const principalResults = data.principalTasteResults || null;
+  const secondaryResults = data.secondaryTasteResults || null;
 
-  // Generate client IDs
-  const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
-  const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
+  // Determine status
+  const principalStatus = useMemo(() => {
+    if (principalResults?.completedAt) return 'complete';
+    if (principalResults?.rankings && Object.keys(principalResults.rankings).length > 0) return 'in-progress';
+    return 'not-started';
+  }, [principalResults]);
 
-  // Load profiles
-  const refreshProfiles = useCallback(() => {
-    if (clientIdP) {
-      setProfileP(loadProfileFromStorage(clientIdP));
-    }
-    if (clientIdS) {
-      setProfileS(loadProfileFromStorage(clientIdS));
-    }
-  }, [clientIdP, clientIdS]);
+  const secondaryStatus = useMemo(() => {
+    if (secondaryResults?.completedAt) return 'complete';
+    if (secondaryResults?.rankings && Object.keys(secondaryResults.rankings).length > 0) return 'in-progress';
+    return 'not-started';
+  }, [secondaryResults]);
 
+  // Save client type to KYC
   useEffect(() => {
-    refreshProfiles();
-  }, [refreshProfiles]);
+    if (data.clientType !== clientType) {
+      updateKYCData(respondent, 'designIdentity', { clientType });
+    }
+  }, [clientType, data.clientType, updateKYCData, respondent]);
 
-  // Save client config to KYC data
-  useEffect(() => {
+  // Handle exploration completion
+  const handleExplorationComplete = (results) => {
+    const fieldName = activeExploration === 'principal' 
+      ? 'principalTasteResults' 
+      : 'secondaryTasteResults';
+    
     updateKYCData(respondent, 'designIdentity', {
-      clientType,
-      clientBaseName,
-      principalName,
-      secondaryName
+      [fieldName]: results
     });
-  }, [clientType, clientBaseName, principalName, secondaryName, updateKYCData, respondent]);
-
-  // Get status
-  const statusP = getProfileStatus(profileP);
-  const statusS = getProfileStatus(profileS);
-  
-  // Determine if we should show completed view
-  const showCompletedView = statusP === 'complete';
-
-  // Launch Taste Exploration
-  const handleLaunch = (clientId) => {
-    if (!clientId) {
-      alert('Please enter a client name first');
-      return;
-    }
-    const url = `${TASTE_APP_URL}?clientId=${encodeURIComponent(clientId)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    
+    setActiveExploration(null);
   };
+
+  // Handle restart
+  const handleRestart = () => {
+    updateKYCData(respondent, 'designIdentity', {
+      principalTasteResults: null,
+      secondaryTasteResults: null
+    });
+  };
+
+  // Determine which view to show
+  const showResults = principalStatus === 'complete' || 
+    (clientType === 'couple' && secondaryStatus === 'complete');
+
+  // Active exploration mode
+  if (activeExploration) {
+    const clientName = activeExploration === 'principal' 
+      ? `${principalFirstName} ${principalLastName}`.trim() || 'Principal'
+      : `${secondaryFirstName} ${secondaryLastName}`.trim() || 'Secondary';
+
+    return (
+      <div className="kyc-section design-identity-section design-identity-section--exploring">
+        <TasteExploration
+          clientName={clientName}
+          respondentType={activeExploration}
+          onComplete={handleExplorationComplete}
+          onBack={() => setActiveExploration(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="kyc-section design-identity-section">
-      {showCompletedView ? (
-        <CompletedView 
-          profileP={profileP}
-          profileS={profileS}
+      {showResults ? (
+        <ResultsView
+          principalResults={principalResults}
+          secondaryResults={secondaryResults}
           clientType={clientType}
-          principalName={principalName}
-          secondaryName={secondaryName}
+          principalFirstName={principalFirstName}
+          secondaryFirstName={secondaryFirstName}
+          onRestart={handleRestart}
         />
       ) : (
         <WelcomeView
           clientType={clientType}
           setClientType={setClientType}
-          clientBaseName={clientBaseName}
-          setClientBaseName={setClientBaseName}
-          principalName={principalName}
-          setPrincipalName={setPrincipalName}
-          secondaryName={secondaryName}
-          setSecondaryName={setSecondaryName}
-          clientIdP={clientIdP}
-          clientIdS={clientIdS}
-          statusP={statusP}
-          statusS={statusS}
-          onLaunch={handleLaunch}
-          onRefresh={refreshProfiles}
+          principalFirstName={principalFirstName}
+          principalLastName={principalLastName}
+          secondaryFirstName={secondaryFirstName}
+          secondaryLastName={secondaryLastName}
+          principalStatus={principalStatus}
+          secondaryStatus={secondaryStatus}
+          onStartExploration={setActiveExploration}
+          carouselIndex={carouselIndex}
+          setCarouselIndex={setCarouselIndex}
         />
       )}
     </div>

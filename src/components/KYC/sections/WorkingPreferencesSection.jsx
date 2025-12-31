@@ -147,27 +147,26 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
         <h3 className="kyc-section__group-title">Designer Profile Preferences</h3>
         
         <SliderField
-          label="Celebrity vs. Quiet Professional"
-          value={data.celebrityVsQuietProfessional || 3}
-          onChange={(v) => handleChange('celebrityVsQuietProfessional', v)}
+          label="Architect: Celebrity vs. Quiet Professional"
+          value={data.architectCelebrityPreference || 3}
+          onChange={(v) => handleChange('architectCelebrityPreference', v)}
           min={1}
           max={5}
-          leftLabel="Celebrity/Starchitect"
+          leftLabel="Want the Starchitect"
           rightLabel="Quiet Professional"
-          helpText="1 = Want the big name, 5 = Prefer discretion"
+          helpText="1 = Want the big name architect, 5 = Prefer discretion"
         />
 
-        {tier !== 'mvp' && (
-          <SliderField
-            label="Architect Celebrity Preference"
-            value={data.starchitectPreference || 3}
-            onChange={(v) => handleChange('starchitectPreference', v)}
-            min={1}
-            max={5}
-            leftLabel="Want the Starchitect"
-            rightLabel="Prefer Low-Profile"
-          />
-        )}
+        <SliderField
+          label="Interior Designer: Celebrity vs. Quiet Professional"
+          value={data.interiorDesignerCelebrityPreference || 3}
+          onChange={(v) => handleChange('interiorDesignerCelebrityPreference', v)}
+          min={1}
+          max={5}
+          leftLabel="Want the Celebrity Designer"
+          rightLabel="Quiet Professional"
+          helpText="1 = Want the big name designer, 5 = Prefer discretion"
+        />
       </div>
 
       {tier !== 'mvp' && (
@@ -212,6 +211,19 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
           </div>
         </div>
       )}
+
+      {/* Save & Close Section */}
+      <div className="kyc-section__footer">
+        <div className="kyc-section__footer-message">
+          <p>Your responses are automatically saved as you go.</p>
+        </div>
+        <button 
+          className="btn btn--primary btn--lg"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          Save & Return to Dashboard
+        </button>
+      </div>
     </div>
   );
 };

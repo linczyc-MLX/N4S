@@ -90,24 +90,24 @@ const MVPModule = () => {
       {/* Summary Stats */}
       <div className="mvp-stats-row">
         <div className="mvp-stat">
+          <span className="mvp-stat__value">{summary?.household.totalBedrooms || 0}</span>
+          <span className="mvp-stat__label">Total Bedrooms</span>
+        </div>
+        <div className="mvp-stat">
           <span className="mvp-stat__value">{summary?.household.guestBedrooms || 0}</span>
-          <span className="mvp-stat__label">Guest Bedrooms</span>
+          <span className="mvp-stat__label">Guest Suites</span>
         </div>
         <div className="mvp-stat">
           <span className="mvp-stat__value">{amenityCount}</span>
-          <span className="mvp-stat__label">Amenities Selected</span>
+          <span className="mvp-stat__label">Amenities</span>
         </div>
         <div className="mvp-stat">
           <span className="mvp-stat__value">{summary?.propertyConfig.levels || 2}</span>
-          <span className="mvp-stat__label">Levels Above Grade</span>
+          <span className="mvp-stat__label">Levels</span>
         </div>
         <div className="mvp-stat">
           <span className="mvp-stat__value">{summary?.propertyConfig.basement === 'Yes' ? '+B' : '—'}</span>
           <span className="mvp-stat__label">Basement</span>
-        </div>
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">{summary?.propertyConfig.sfCap}</span>
-          <span className="mvp-stat__label">SF Mode</span>
         </div>
       </div>
 
@@ -132,11 +132,11 @@ const MVPModule = () => {
         </SectionCard>
 
         {/* Household */}
-        <SectionCard title="Household" icon={Users}>
+        <SectionCard title="Household Composition" icon={Users}>
           <div className="mvp-field-list">
             <div className="mvp-field">
-              <span className="mvp-field__label">Guest Bedrooms</span>
-              <span className="mvp-field__value">{summary?.household.guestBedrooms}</span>
+              <span className="mvp-field__label">Bedrooms</span>
+              <span className="mvp-field__value">{summary?.household.totalBedrooms} total ({summary?.household.guestBedrooms} guest)</span>
             </div>
             <div className="mvp-field">
               <span className="mvp-field__label">Children</span>
@@ -145,6 +145,14 @@ const MVPModule = () => {
             <div className="mvp-field">
               <span className="mvp-field__label">School-Age</span>
               <StatusBadge active={summary?.household.hasSchoolAge} label={summary?.household.hasSchoolAge ? 'Yes' : 'No'} />
+            </div>
+            <div className="mvp-field">
+              <span className="mvp-field__label">Pets</span>
+              {summary?.household.hasPets ? (
+                <span className="mvp-field__value mvp-field__value--small">{summary?.household.petsDescription}</span>
+              ) : (
+                <StatusBadge active={false} label="None" />
+              )}
             </div>
             <div className="mvp-field">
               <span className="mvp-field__label">Staffing</span>

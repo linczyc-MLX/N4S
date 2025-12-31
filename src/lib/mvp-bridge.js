@@ -155,11 +155,16 @@ export function transformKYCToMVPBrief(kycData, respondent = 'principal') {
     levelsAboveGrade: projectParameters.floors || 2,
     
     // Bedroom Configuration
+    totalBedroomCount: projectParameters.bedroomCount || 0,
     guestBedroomCount: calculateGuestBedrooms(projectParameters.bedroomCount),
     
     // Household Composition (derived)
     hasChildren: hasChildrenInHousehold(familyHousehold.familyMembers),
     hasSchoolAgeChildren: hasSchoolAgeChildren(familyHousehold.familyMembers),
+    
+    // Pets
+    hasPets: !!(familyHousehold.pets && familyHousehold.pets.trim()),
+    petsDescription: familyHousehold.pets || '',
     
     // Staffing
     staffingLevel: mapStaffingLevel(familyHousehold),
@@ -237,15 +242,20 @@ export function getMVPBriefSummary(briefInputs) {
       levels: briefInputs.levelsAboveGrade,
     },
     household: {
+      totalBedrooms: briefInputs.totalBedroomCount,
       guestBedrooms: briefInputs.guestBedroomCount,
       hasChildren: briefInputs.hasChildren,
       hasSchoolAge: briefInputs.hasSchoolAgeChildren,
+      hasPets: briefInputs.hasPets,
+      petsDescription: briefInputs.petsDescription,
       staffing: briefInputs.staffingLevel,
     },
     lifestyle: {
       entertaining: briefInputs.entertainingLoad,
       formalEntertaining: briefInputs.formalEntertainingRequired,
       workFromHome: briefInputs.workFromHomeRequired,
+      homeOfficeCount: briefInputs.homeOfficeCount,
+      wantsSecondOffice: briefInputs.wantsSecondOffice,
       lateNightMedia: briefInputs.lateNightMediaUse,
     },
     wellness: {
@@ -265,6 +275,8 @@ export function getMVPBriefSummary(briefInputs) {
       bunkRoom: briefInputs.wantsBunkRoom,
       breakfastNook: briefInputs.wantsBreakfastNook,
       outdoorEntertaining: briefInputs.wantsOutdoorEntertaining,
+      petGroomingRoom: briefInputs.wantsPetGroomingRoom,
+      dogRun: briefInputs.wantsDogRun,
     },
   };
   
