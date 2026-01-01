@@ -102,7 +102,10 @@ const WelcomeView = ({
 
   const principalDisplayName = principalFirstName || 'Principal';
   const secondaryDisplayName = secondaryFirstName || 'Secondary';
-  const familyName = principalLastName || secondaryLastName || 'Client';
+  
+  // Family name should come from last name, not first name
+  const familyName = principalLastName || secondaryLastName || null;
+  const needsNameSetup = !familyName;
 
   return (
     <div className="design-prefs-welcome">
@@ -127,14 +130,20 @@ const WelcomeView = ({
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Assessment Configuration</h3>
         
-        <div className="client-info-display">
+        <div className={`client-info-display ${needsNameSetup ? 'client-info-display--warning' : ''}`}>
           <div className="client-info-display__header">
             <span className="client-info-display__label">Client Family</span>
-            <span className="client-info-display__name">{familyName}</span>
+            <span className="client-info-display__name">{familyName || '— Not Set —'}</span>
           </div>
-          <p className="client-info-display__note">
-            Names are automatically populated from your Portfolio Context (P1.A.1)
-          </p>
+          {needsNameSetup ? (
+            <p className="client-info-display__warning">
+              ⚠️ Please enter Principal's Last Name in P1.A.1 Portfolio Context
+            </p>
+          ) : (
+            <p className="client-info-display__note">
+              Names are automatically populated from your Portfolio Context (P1.A.1)
+            </p>
+          )}
         </div>
         
         <div className="client-type-toggle">

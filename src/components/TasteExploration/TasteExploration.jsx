@@ -19,8 +19,9 @@ const categoryIcons = {
 
 // ============================================================
 // QUAD CARD COMPONENT - Option E: Top 2 + Bottom 1
+// No labels - pure visual preference to avoid cognitive bias
 // ============================================================
-const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm, isComplete }) => {
+const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm }) => {
   const [imageErrors, setImageErrors] = useState({});
   
   // selections = { favorites: [index, index], least: index | null }
@@ -87,11 +88,6 @@ const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm, isCo
 
   return (
     <div className="taste-quad">
-      <div className="taste-quad__header">
-        <h3 className="taste-quad__title">{quad.title}</h3>
-        <p className="taste-quad__subtitle">{quad.variation}</p>
-      </div>
-      
       {/* Instruction reminder */}
       <div className={`taste-quad__instruction ${selectionsComplete ? 'taste-quad__instruction--complete' : ''}`}>
         {getInstruction()}
@@ -116,13 +112,14 @@ const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm, isCo
               ) : (
                 <img
                   src={quad.images[index]}
-                  alt={`${quad.title} - Option ${String.fromCharCode(65 + index)}`}
+                  alt={`Option ${String.fromCharCode(65 + index)}`}
                   className="taste-quad__image"
                   onError={() => handleImageError(index)}
                   loading="lazy"
                 />
               )}
               
+              {/* Position indicator only - no descriptive labels */}
               <div className="taste-quad__image-label">
                 {String.fromCharCode(65 + index)}
               </div>
@@ -142,10 +139,6 @@ const QuadCard = ({ quad, selections, onSelectionChange, onSkip, onConfirm, isCo
                   <ThumbsDown size={20} />
                 </div>
               )}
-              
-              <div className="taste-quad__image-title">
-                {quad.labels[index]}
-              </div>
             </div>
           );
         })}
@@ -568,10 +561,6 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
             onSelectionChange={(selection) => handleSelectionChange(currentItem.quad.quadId, selection)}
             onSkip={() => handleSkip(currentItem.quad.quadId)}
             onConfirm={() => handleConfirm(currentItem.quad.quadId)}
-            isComplete={
-              selections[currentItem.quad.quadId]?.favorites?.length === 2 && 
-              selections[currentItem.quad.quadId]?.least !== null
-            }
           />
         )}
       </div>

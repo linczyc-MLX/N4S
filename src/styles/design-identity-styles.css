@@ -710,6 +710,18 @@
   margin-top: 0.5rem;
 }
 
+.client-info-display--warning {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border-color: #F59E0B;
+}
+
+.client-info-display__warning {
+  font-size: 0.85rem;
+  color: #B45309;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
 /* ============================================
    NEW: ENHANCED CLIENT TYPE TOGGLE
    ============================================ */
