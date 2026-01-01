@@ -6,15 +6,104 @@ import {
 } from 'lucide-react';
 import { quads, categories, categoryOrder, getTotalQuadCount } from '../../data/tasteQuads';
 
+// ============================================================
+// PROFILE CALCULATION HELPER
+// ============================================================
+const calculateProfileFromSelections = (selections, skipped) => {
+  // Initialize scores
+  const scores = {
+    warmth: 0,
+    formality: 0,
+    drama: 0,
+    tradition: 0,
+    openness: 0,
+    art_focus: 0,
+    materials: {}
+  };
+  
+  // Weight values for Option E (Top 2 + Bottom 1)
+  const FAVORITE_1_WEIGHT = 4.0;
+  const FAVORITE_2_WEIGHT = 2.5;
+  const LEAST_WEIGHT = -2.0;
+  
+  let totalWeight = 0;
+  
+  // Process each selection
+  Object.entries(selections).forEach(([quadId, selection]) => {
+    const quad = quads.find(q => q.quadId === quadId);
+    if (!quad || !quad.attributes || !selection) return;
+    
+    const { favorites = [], least } = selection;
+    
+    // Process favorites
+    favorites.forEach((imageIndex, position) => {
+      const weight = position === 0 ? FAVORITE_1_WEIGHT : FAVORITE_2_WEIGHT;
+      totalWeight += Math.abs(weight);
+      
+      Object.entries(quad.attributes).forEach(([attr, values]) => {
+        if (Array.isArray(values) && values[imageIndex] !== undefined) {
+          if (attr === 'material_focus') {
+            const material = values[imageIndex];
+            scores.materials[material] = (scores.materials[material] || 0) + weight;
+          } else if (scores[attr] !== undefined) {
+            scores[attr] += values[imageIndex] * weight;
+          }
+        }
+      });
+    });
+    
+    // Process least favorite (negative weight)
+    if (least !== null && least !== undefined) {
+      totalWeight += Math.abs(LEAST_WEIGHT);
+      
+      Object.entries(quad.attributes).forEach(([attr, values]) => {
+        if (Array.isArray(values) && values[least] !== undefined) {
+          if (attr === 'material_focus') {
+            const material = values[least];
+            scores.materials[material] = (scores.materials[material] || 0) + LEAST_WEIGHT;
+          } else if (scores[attr] !== undefined) {
+            scores[attr] += values[least] * LEAST_WEIGHT;
+          }
+        }
+      });
+    }
+  });
+  
+  // Normalize scores to 1-10 scale
+  const normalizedScores = {};
+  ['warmth', 'formality', 'drama', 'tradition', 'openness', 'art_focus'].forEach(attr => {
+    normalizedScores[attr] = totalWeight > 0 
+      ? Math.min(10, Math.max(1, Math.round((scores[attr] / totalWeight + 5) * 10) / 10))
+      : 5;
+  });
+  
+  // Get top materials
+  const topMaterials = Object.entries(scores.materials)
+    .filter(([_, score]) => score > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([material]) => material);
+  
+  return {
+    scores: normalizedScores,
+    topMaterials,
+    completedQuads: Object.keys(selections).length,
+    skippedQuads: skipped.length,
+    totalQuads: quads.length
+  };
+};
+
 // Category icons mapping
 const categoryIcons = {
   living_spaces: Home,
-  exterior_architecture: Palette,
   dining_spaces: UtensilsCrossed,
   kitchens: UtensilsCrossed,
   primary_bedrooms: Bed,
   primary_bathrooms: Bath,
-  exterior_landscape: TreeDeciduous
+  guest_bedrooms: Bed,
+  family_areas: Home,
+  exterior_architecture: Palette,
+  outdoor_living: TreeDeciduous
 };
 
 // ============================================================
@@ -238,90 +327,10 @@ const CategoryDivider = ({ category, categoryIndex, totalCategories, quadCount, 
 // RESULTS SUMMARY COMPONENT
 // ============================================================
 const ResultsSummary = ({ selections, skipped, onRestart }) => {
-  const calculateProfile = useMemo(() => {
-    // Initialize scores
-    const scores = {
-      warmth: 0,
-      formality: 0,
-      drama: 0,
-      tradition: 0,
-      openness: 0,
-      art_focus: 0,
-      materials: {}
-    };
-    
-    // Weight values for Option E (Top 2 + Bottom 1)
-    const FAVORITE_1_WEIGHT = 4.0;  // Strong positive
-    const FAVORITE_2_WEIGHT = 2.5;  // Positive
-    const LEAST_WEIGHT = -2.0;      // Negative signal
-    
-    let totalWeight = 0;
-    
-    // Process each selection
-    Object.entries(selections).forEach(([quadId, selection]) => {
-      const quad = quads.find(q => q.quadId === quadId);
-      if (!quad || !quad.attributes || !selection) return;
-      
-      const { favorites = [], least } = selection;
-      
-      // Process favorites
-      favorites.forEach((imageIndex, position) => {
-        const weight = position === 0 ? FAVORITE_1_WEIGHT : FAVORITE_2_WEIGHT;
-        totalWeight += Math.abs(weight);
-        
-        // Score attributes
-        Object.entries(quad.attributes).forEach(([attr, values]) => {
-          if (Array.isArray(values) && values[imageIndex] !== undefined) {
-            if (attr === 'material_focus') {
-              const material = values[imageIndex];
-              scores.materials[material] = (scores.materials[material] || 0) + weight;
-            } else if (scores[attr] !== undefined) {
-              scores[attr] += values[imageIndex] * weight;
-            }
-          }
-        });
-      });
-      
-      // Process least favorite (negative weight)
-      if (least !== null && least !== undefined) {
-        totalWeight += Math.abs(LEAST_WEIGHT);
-        
-        Object.entries(quad.attributes).forEach(([attr, values]) => {
-          if (Array.isArray(values) && values[least] !== undefined) {
-            if (attr === 'material_focus') {
-              const material = values[least];
-              scores.materials[material] = (scores.materials[material] || 0) + LEAST_WEIGHT;
-            } else if (scores[attr] !== undefined) {
-              scores[attr] += values[least] * LEAST_WEIGHT;
-            }
-          }
-        });
-      }
-    });
-    
-    // Normalize scores to 1-10 scale
-    const normalizedScores = {};
-    ['warmth', 'formality', 'drama', 'tradition', 'openness', 'art_focus'].forEach(attr => {
-      normalizedScores[attr] = totalWeight > 0 
-        ? Math.min(10, Math.max(1, Math.round((scores[attr] / totalWeight + 5) * 10) / 10))
-        : 5;
-    });
-    
-    // Get top materials (filter out negatives)
-    const topMaterials = Object.entries(scores.materials)
-      .filter(([_, score]) => score > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([material]) => material);
-    
-    return {
-      scores: normalizedScores,
-      topMaterials,
-      completedQuads: Object.keys(selections).length,
-      skippedQuads: skipped.length,
-      totalQuads: quads.length
-    };
-  }, [selections, skipped]);
+  const profile = useMemo(() => 
+    calculateProfileFromSelections(selections, skipped), 
+    [selections, skipped]
+  );
 
   const getScoreLabel = (score) => {
     if (score >= 8) return 'High';
@@ -341,11 +350,11 @@ const ResultsSummary = ({ selections, skipped, onRestart }) => {
 
       <div className="taste-results__stats">
         <div className="taste-results__stat">
-          <span className="taste-results__stat-value">{calculateProfile.completedQuads}</span>
+          <span className="taste-results__stat-value">{profile.completedQuads}</span>
           <span className="taste-results__stat-label">Quads Ranked</span>
         </div>
         <div className="taste-results__stat">
-          <span className="taste-results__stat-value">{calculateProfile.skippedQuads}</span>
+          <span className="taste-results__stat-value">{profile.skippedQuads}</span>
           <span className="taste-results__stat-label">Skipped</span>
         </div>
       </div>
@@ -354,7 +363,7 @@ const ResultsSummary = ({ selections, skipped, onRestart }) => {
         <h3>Your Design Profile</h3>
         
         <div className="taste-results__axes">
-          {Object.entries(calculateProfile.scores).map(([axis, score]) => (
+          {Object.entries(profile.scores).map(([axis, score]) => (
             <div key={axis} className="taste-results__axis">
               <div className="taste-results__axis-header">
                 <span className="taste-results__axis-name">
@@ -373,11 +382,11 @@ const ResultsSummary = ({ selections, skipped, onRestart }) => {
           ))}
         </div>
 
-        {calculateProfile.topMaterials.length > 0 && (
+        {profile.topMaterials.length > 0 && (
           <div className="taste-results__materials">
             <h4>Material Affinities</h4>
             <div className="taste-results__material-tags">
-              {calculateProfile.topMaterials.map(material => (
+              {profile.topMaterials.map(material => (
                 <span key={material} className="taste-results__material-tag">
                   {material.replace(/_/g, ' ')}
                 </span>
@@ -455,12 +464,14 @@ const TasteExploration = ({ clientName, respondentType, onComplete, onBack }) =>
     if (currentIndex < sequence.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
-      // Complete
+      // Complete - calculate profile and pass to onComplete
       setIsComplete(true);
       if (onComplete) {
+        const profile = calculateProfileFromSelections(selections, skipped);
         onComplete({
           selections,
           skipped,
+          profile,
           completedAt: new Date().toISOString()
         });
       }

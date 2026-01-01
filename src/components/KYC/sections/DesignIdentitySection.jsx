@@ -304,7 +304,7 @@ const ResultsView = ({
             <div className="results-stats">
               <div className="results-stat">
                 <span className="results-stat__value">
-                  {Object.keys(principalResults.rankings || {}).length}
+                  {Object.keys(principalResults.selections || {}).length}
                 </span>
                 <span className="results-stat__label">Quads Ranked</span>
               </div>
@@ -338,7 +338,7 @@ const ResultsView = ({
             <div className="results-stats">
               <div className="results-stat">
                 <span className="results-stat__value">
-                  {Object.keys(secondaryResults.rankings || {}).length}
+                  {Object.keys(secondaryResults.selections || {}).length}
                 </span>
                 <span className="results-stat__label">Quads Ranked</span>
               </div>
@@ -398,13 +398,13 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Determine status
   const principalStatus = useMemo(() => {
     if (principalResults?.completedAt) return 'complete';
-    if (principalResults?.rankings && Object.keys(principalResults.rankings).length > 0) return 'in-progress';
+    if (principalResults?.selections && Object.keys(principalResults.selections).length > 0) return 'in-progress';
     return 'not-started';
   }, [principalResults]);
 
   const secondaryStatus = useMemo(() => {
     if (secondaryResults?.completedAt) return 'complete';
-    if (secondaryResults?.rankings && Object.keys(secondaryResults.rankings).length > 0) return 'in-progress';
+    if (secondaryResults?.selections && Object.keys(secondaryResults.selections).length > 0) return 'in-progress';
     return 'not-started';
   }, [secondaryResults]);
 
