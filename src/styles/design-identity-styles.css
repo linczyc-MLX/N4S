@@ -61,17 +61,29 @@
   position: relative;
   padding: 0 50px;
   margin: 24px 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .arch-carousel__cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+  width: 100%;
+}
+
+.arch-carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  order: 3;
 }
 
 .arch-carousel__btn {
   position: absolute;
-  top: 40%;
+  top: 45%;
   transform: translateY(-50%);
   width: 44px;
   height: 44px;
@@ -96,14 +108,6 @@
 
 .arch-carousel__btn--prev { left: 0; }
 .arch-carousel__btn--next { right: 0; }
-
-.arch-carousel__dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 24px;
-  width: 100%;
-}
 
 .arch-carousel__dot {
   width: 10px;
