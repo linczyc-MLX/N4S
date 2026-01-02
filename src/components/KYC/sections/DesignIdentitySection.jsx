@@ -135,11 +135,8 @@ const ArchStyleCarousel = () => {
 
   return (
     <div className="arch-carousel">
-      <div className="arch-carousel__nav">
-        <button onClick={prev} className="arch-carousel__btn">←</button>
-        <span className="arch-carousel__counter">{currentIndex + 1} / {ARCH_STYLES.length}</span>
-        <button onClick={next} className="arch-carousel__btn">→</button>
-      </div>
+      <button onClick={prev} className="arch-carousel__btn arch-carousel__btn--prev">‹</button>
+      <button onClick={next} className="arch-carousel__btn arch-carousel__btn--next">›</button>
 
       <div className="arch-carousel__card">
         <div className="arch-carousel__image-container">

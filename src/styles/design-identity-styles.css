@@ -59,51 +59,40 @@
 
 .arch-carousel {
   position: relative;
-  padding: 0 60px;
-}
-
-.arch-carousel__nav {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  transform: translateY(-50%);
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-  z-index: 10;
+  margin: 20px 0;
 }
 
 .arch-carousel__btn {
-  width: 44px;
-  height: 44px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 2px solid #1e3a5f;
+  border: 1px solid #e2e8f0;
   background: #fff;
-  color: #1e3a5f;
-  font-size: 20px;
-  font-weight: bold;
+  color: #64748b;
+  font-size: 24px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  pointer-events: auto;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .arch-carousel__btn:hover {
-  background: #1e3a5f;
-  color: #fff;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
-.arch-carousel__counter {
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
+.arch-carousel__btn--prev {
+  left: -20px;
+}
+
+.arch-carousel__btn--next {
+  right: -20px;
 }
 
 .arch-carousel__card {
