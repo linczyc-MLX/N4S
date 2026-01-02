@@ -6,7 +6,7 @@ import { TasteReportGenerator, downloadTasteReport, viewTasteReport } from '../.
 // CONFIGURATION
 // ============================================
 
-const TASTE_APP_URL = 'https://taste-5019238456.app-ionos.space';
+const TASTE_APP_URL = 'https://home-5019254550.app-ionos.space';
 const KYC_RETURN_URL = 'https://home-5019238456.app-ionos.space';
 const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
 
