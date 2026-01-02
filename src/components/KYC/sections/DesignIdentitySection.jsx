@@ -6,10 +6,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
-import { 
-  viewTasteReport, 
-  downloadTasteReport, 
-  getTasteReportBlob 
+import {
+  viewTasteReport,
+  downloadTasteReport,
+  getTasteReportBlob
 } from '../../../utils/TasteReportGenerator';
 
 // ============================================
@@ -22,39 +22,39 @@ const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767
 
 // Architectural Styles Data with Cloudinary URLs
 const ARCH_STYLES = [
-  { id: 'AS1', name: 'Avant-Contemporary', 
+  { id: 'AS1', name: 'Avant-Contemporary',
     image: `${CLOUDINARY_BASE}/AS1_tpnuxa.png`,
     features: ['Sculptural, experimental massing; asymmetry and bold cantilevers.', 'Parametric or faceted façade moves; deep reveals and dramatic shadow play.', 'High-contrast material palette (metal, glass, monolithic stone/concrete).', '"Statement" architecture: kinetic screens, expressive structure, theatrical lighting.'],
     appeal: 'Attracts clients drawn to bold artistic expression, avant-garde culture, and design as spectacle.' },
-  { id: 'AS2', name: 'Architectural Modern', 
+  { id: 'AS2', name: 'Architectural Modern',
     image: `${CLOUDINARY_BASE}/AS2_owp3hs.png`,
     features: ['Clean, minimalist volumetric forms, often flat roofs and ribbon glazing.', 'Refined material joints—flush details, frameless glass, concealed flashings.', 'Emphasis on "honest" structure (exposed steel, board-formed concrete, natural wood).', 'Landscape seamlessly merges with architecture via courtyards and indoor-outdoor flow.'],
     appeal: 'Speaks to clients who value intellectual rigor, craftsmanship transparency, and edited, gallery-like interiors.' },
-  { id: 'AS3', name: 'Curated Minimalism', 
+  { id: 'AS3', name: 'Curated Minimalism',
     image: `${CLOUDINARY_BASE}/AS3_v7ug4d.png`,
     features: ['Simple rectilinear massing with low-profile roofs or subtle flat roof parapets.', 'White/off-white palette with textured plaster, lime wash, bleached wood, or matte stone.', 'Furniture and décor as focal points; architecture recedes to a serene backdrop.', 'Light-wells, internal courtyards, and tranquil water features enhance calm ambience.'],
     appeal: 'Resonates with clients seeking sanctuary from visual noise—wellness-minded, art collectors, or contemplative personalities.' },
-  { id: 'AS4', name: 'Nordic Contemporary', 
+  { id: 'AS4', name: 'Nordic Contemporary',
     image: `${CLOUDINARY_BASE}/AS4_n7oxlu.png`,
     features: ['Warm-wood cladding combined with dark metal or stone accents; pitched or shed roofs.', 'Large, carefully placed windows framing views; deep eaves and sheltered entries.', 'Cozy, "hygge-inspired" interiors—tactile textiles, fireplaces, natural light modulation.', 'Integration with landscape: timber terraces, evergreen planting, stone pathways.'],
     appeal: 'Attracts those who want warmth without fuss—nature lovers, families desiring comfort, and clients from colder climates.' },
-  { id: 'AS5', name: 'Mid-Century Refined', 
+  { id: 'AS5', name: 'Mid-Century Refined',
     image: `${CLOUDINARY_BASE}/AS5_bcrh8m.png`,
     features: ['Low-slung profiles, butterfly/gable roofs, and rhythmic post-and-beam structure.', 'Floor-to-ceiling glass walls blurring inside-out; open-plan living.', 'Mix of natural materials (teak, walnut, stone, leather) with period-correct detailing.', 'Restored or reimagined vintage furniture; curated art pieces from the 1950s–70s.'],
     appeal: 'Draws collectors and design-history enthusiasts who appreciate authenticity, vintage provenance, and understated glamour.' },
-  { id: 'AS6', name: 'Modern Classic', 
+  { id: 'AS6', name: 'Modern Classic',
     image: `${CLOUDINARY_BASE}/AS6_nlbffa.png`,
     features: ['Symmetrical façades with simplified classical proportions—no heavy ornamentation.', 'Warm whites, limestones, and metal accents; standing-seam roofs or simple parapets.', 'Interiors balance traditional layouts with contemporary finishes.', 'Timeless elegance: paneled walls meet sleek cabinetry and curated antiques.'],
     appeal: 'Appeals to clients who want enduring elegance without flash—often older wealth, diplomats, or those comfortable in traditional social settings.' },
-  { id: 'AS7', name: 'Classical Contemporary', 
+  { id: 'AS7', name: 'Classical Contemporary',
     image: `${CLOUDINARY_BASE}/AS7_uwasgz.png`,
     features: ['Classical motifs (columns, pediments, cornices) rendered in stone or stucco; updated scale.', 'Grand entry sequences with proportioned doors, sidelights, and fanlights.', 'Formal interiors—high ceilings, crown moldings, wainscoting—paired with current fabrics.', 'Gardens reference classical landscape traditions: symmetry, hedges, sculpture.'],
     appeal: 'Resonates with clients who value tradition, family heritage, and a visible sense of status rooted in historical continuity.' },
-  { id: 'AS8', name: 'Formal Classical', 
+  { id: 'AS8', name: 'Formal Classical',
     image: `${CLOUDINARY_BASE}/AS8_bnpwqn.png`,
     features: ['Full classical vocabulary: Doric/Ionic columns, entablatures, balustrades, hipped slate roofs.', 'Limestone, brick, or rendered masonry; ornate ironwork and stately porte-cochères.', 'Enfilade room sequences; grand staircases, paneled libraries, and ballroom-scale spaces.', 'Formal gardens with parterre beds, fountains, and axial sight lines.'],
     appeal: 'Attracts those seeking overt prestige—Old World aristocracy, philanthropists, or clients who host grand social and ceremonial events.' },
-  { id: 'AS9', name: 'Heritage Estate', 
+  { id: 'AS9', name: 'Heritage Estate',
     image: `${CLOUDINARY_BASE}/AS9_ikzqsu.png`,
     features: ['Estate scale and layered historic character (manor, chateau, country house cues).', 'Deep-set windows, steep roofs, chimneys; materials with patina (stone, slate, brick).', 'Picturesque composition: wings, garden walls, service elements, inherited complexity.', 'Landscape is integral—drives, hedges, gardens—projecting longevity and legacy.'],
     appeal: 'Appeals to clients who want generational gravitas—an estate that feels established, storied, and permanently valuable.' },
@@ -141,11 +141,11 @@ const ArchStyleCarousel = () => {
         <span className="arch-carousel__counter">{currentIndex + 1} / {ARCH_STYLES.length}</span>
         <button onClick={next} className="arch-carousel__btn">→</button>
       </div>
-      
+
       <div className="arch-carousel__card">
         <div className="arch-carousel__image-container">
-          <img 
-            src={style.image} 
+          <img
+            src={style.image}
             alt={style.name}
             className="arch-carousel__image"
           />
@@ -191,7 +191,7 @@ const ProfileCard = ({ clientId, name, profile, status, onLaunch, isPrimary }) =
         {statusLabels[status]}
       </div>
       {status !== 'complete' && (
-        <button 
+        <button
           className="profile-card__btn"
           onClick={() => onLaunch(clientId)}
         >
@@ -213,13 +213,13 @@ const ProfileCard = ({ clientId, name, profile, status, onLaunch, isPrimary }) =
 
 const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
   const percentage = ((value - 1) / (max - 1)) * 100;
-  
+
   return (
     <div className="dna-slider">
       <div className="dna-slider__label">{label}</div>
       <div className="dna-slider__track">
-        <div 
-          className="dna-slider__marker" 
+        <div
+          className="dna-slider__marker"
           style={{ left: `${percentage}%` }}
         />
       </div>
@@ -235,26 +235,26 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
 // COMPLETED VIEW COMPONENT (with Report Buttons)
 // ============================================
 
-const CompletedView = ({ 
-  profileP, 
-  profileS, 
-  clientType, 
-  principalName, 
-  secondaryName, 
+const CompletedView = ({
+  profileP,
+  profileS,
+  clientType,
+  principalName,
+  secondaryName,
   location,
-  onRetake, 
-  onRefresh, 
-  onLaunchSecondary 
+  onRetake,
+  onRefresh,
+  onLaunchSecondary
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [emailStatus, setEmailStatus] = useState('');
-  
+
   // Calculate metrics from profile
   const getMetrics = (profile) => {
     if (!profile?.session?.progress) return { ct: 3, ml: 3, mp: 3 };
-    
+
     let totalAS = 0, totalVD = 0, totalMP = 0, count = 0;
-    
+
     Object.values(profile.session.progress).forEach(cat => {
       if (cat.selections) {
         cat.selections.forEach(sel => {
@@ -271,19 +271,19 @@ const CompletedView = ({
         });
       }
     });
-    
+
     if (count === 0) return { ct: 3, ml: 3, mp: 3 };
-    
+
     return {
       ct: ((totalAS / count - 1) / 8) * 4 + 1,
       ml: totalVD / count,
       mp: totalMP / count
     };
   };
-  
+
   const metricsP = getMetrics(profileP);
   const metricsS = profileS ? getMetrics(profileS) : null;
-  
+
   // Get style label
   const getStyleLabel = (ctValue) => {
     if (ctValue < 2.5) return 'Contemporary';
@@ -335,7 +335,7 @@ const CompletedView = ({
           `Generated: ${new Date().toLocaleString()}\n\n` +
           `Note: Please download the PDF report and attach it to your email.`
         );
-        
+
         // Download first
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -343,7 +343,7 @@ const CompletedView = ({
         a.download = `N4S-Taste-Profile-${profileP?.clientId || 'Report'}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
-        
+
         // Open email client
         setTimeout(() => {
           window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -375,24 +375,24 @@ const CompletedView = ({
         <div className="dna-label">
           <span className="dna-label__style">{getStyleLabel(metricsP.ct)}</span>
         </div>
-        
-        <DesignDNASlider 
-          label="Style Era" 
-          value={metricsP.ct} 
-          leftLabel="Contemporary" 
-          rightLabel="Traditional" 
+
+        <DesignDNASlider
+          label="Style Era"
+          value={metricsP.ct}
+          leftLabel="Contemporary"
+          rightLabel="Traditional"
         />
-        <DesignDNASlider 
-          label="Material Complexity" 
-          value={metricsP.ml} 
-          leftLabel="Minimal" 
-          rightLabel="Layered" 
+        <DesignDNASlider
+          label="Material Complexity"
+          value={metricsP.ml}
+          leftLabel="Minimal"
+          rightLabel="Layered"
         />
-        <DesignDNASlider 
-          label="Mood Palette" 
-          value={metricsP.mp} 
-          leftLabel="Warm" 
-          rightLabel="Cool" 
+        <DesignDNASlider
+          label="Mood Palette"
+          value={metricsP.mp}
+          leftLabel="Warm"
+          rightLabel="Cool"
         />
       </div>
 
@@ -400,7 +400,7 @@ const CompletedView = ({
       <div className="completed-view__reports">
         <h4>📄 Taste Profile Report</h4>
         <div className="report-buttons">
-          <button 
+          <button
             className="report-btn report-btn--view"
             onClick={handleViewReport}
             disabled={isGenerating}
@@ -408,8 +408,8 @@ const CompletedView = ({
             <span className="report-btn__icon">👁️</span>
             <span className="report-btn__text">View Report</span>
           </button>
-          
-          <button 
+
+          <button
             className="report-btn report-btn--download"
             onClick={handleDownloadReport}
             disabled={isGenerating}
@@ -417,8 +417,8 @@ const CompletedView = ({
             <span className="report-btn__icon">📥</span>
             <span className="report-btn__text">Download PDF</span>
           </button>
-          
-          <button 
+
+          <button
             className="report-btn report-btn--email"
             onClick={handleEmailReport}
             disabled={isGenerating}
@@ -438,11 +438,11 @@ const CompletedView = ({
           {profileS ? (
             <div className="partner-summary">
               <p>✅ {secondaryName || 'Secondary'} has completed their Taste Exploration</p>
-              <DesignDNASlider 
-                label="Style Era" 
-                value={metricsS.ct} 
-                leftLabel="Contemporary" 
-                rightLabel="Traditional" 
+              <DesignDNASlider
+                label="Style Era"
+                value={metricsS.ct}
+                leftLabel="Contemporary"
+                rightLabel="Traditional"
               />
               <p className="comparison-note">
                 Full partner alignment analysis is included in the PDF report above.
@@ -506,15 +506,15 @@ const WelcomeView = ({
       {/* Client Configuration */}
       <div className="client-config">
         <h3>Client Configuration</h3>
-        
+
         <div className="client-type-toggle">
-          <button 
+          <button
             className={`toggle-btn ${clientType === 'individual' ? 'active' : ''}`}
             onClick={() => setClientType('individual')}
           >
             👤 Individual
           </button>
-          <button 
+          <button
             className={`toggle-btn ${clientType === 'couple' ? 'active' : ''}`}
             onClick={() => setClientType('couple')}
           >
@@ -525,20 +525,20 @@ const WelcomeView = ({
         <div className="client-names">
           <div className="name-field">
             <label>Family Name</label>
-            <input 
-              type="text" 
-              value={clientBaseName} 
+            <input
+              type="text"
+              value={clientBaseName}
               onChange={(e) => setClientBaseName(e.target.value)}
               placeholder="e.g. Thornwood"
             />
             {clientBaseName && <small>IDs: {clientIdP}{clientType === 'couple' && `, ${clientIdS}`}</small>}
           </div>
-          
+
           <div className="name-field">
             <label>{clientType === 'couple' ? 'Principal Name' : 'Client Name'}</label>
-            <input 
-              type="text" 
-              value={principalName} 
+            <input
+              type="text"
+              value={principalName}
               onChange={(e) => setPrincipalName(e.target.value)}
               placeholder="e.g. Peter"
             />
@@ -547,9 +547,9 @@ const WelcomeView = ({
           {clientType === 'couple' && (
             <div className="name-field">
               <label>Secondary Name</label>
-              <input 
-                type="text" 
-                value={secondaryName} 
+              <input
+                type="text"
+                value={secondaryName}
                 onChange={(e) => setSecondaryName(e.target.value)}
                 placeholder="e.g. Mary"
               />
@@ -563,9 +563,9 @@ const WelcomeView = ({
         <div className="launch-section">
           <h3>Taste Exploration</h3>
           <p>Launch the visual preference discovery experience for your client(s).</p>
-          
+
           <div className="profile-cards">
-            <ProfileCard 
+            <ProfileCard
               clientId={clientIdP}
               name={principalName}
               profile={null}
@@ -573,9 +573,9 @@ const WelcomeView = ({
               onLaunch={onLaunch}
               isPrimary={true}
             />
-            
+
             {clientType === 'couple' && (
-              <ProfileCard 
+              <ProfileCard
                 clientId={clientIdS}
                 name={secondaryName}
                 profile={null}
@@ -585,7 +585,7 @@ const WelcomeView = ({
               />
             )}
           </div>
-          
+
           <button className="btn-refresh-small" onClick={onRefresh}>
             🔄 Refresh Status
           </button>
@@ -608,7 +608,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   const [clientBaseName, setClientBaseName] = useState(data.clientBaseName || '');
   const [principalName, setPrincipalName] = useState(data.principalName || '');
   const [secondaryName, setSecondaryName] = useState(data.secondaryName || '');
-  
+
   // Taste profiles from localStorage
   const [profileP, setProfileP] = useState(null);
   const [profileS, setProfileS] = useState(null);
@@ -622,7 +622,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     const lifestyleData = kycData[respondent]?.lifestyleGeography || {};
     const city = lifestyleData.primaryCity || lifestyleData.city || '';
     const country = lifestyleData.primaryCountry || lifestyleData.country || '';
-    
+
     if (city && country) {
       return `${city}, ${country}`;
     } else if (city) {
@@ -680,7 +680,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Get status
   const statusP = getProfileStatus(profileP);
   const statusS = getProfileStatus(profileS);
-  
+
   // Determine if we should show completed view
   const showCompletedView = statusP === 'complete';
 
@@ -712,7 +712,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   return (
     <div className="kyc-section design-identity-section">
       {showCompletedView ? (
-        <CompletedView 
+        <CompletedView
           profileP={profileP}
           profileS={profileS}
           clientType={clientType}
