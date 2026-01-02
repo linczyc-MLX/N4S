@@ -11,12 +11,12 @@ import {
   downloadTasteReport,
   getTasteReportBlob
 } from '../../../utils/TasteReportGenerator';
+import TasteExploration from '../../TasteExploration/TasteExploration';
 
 // ============================================
 // CONFIGURATION
 // ============================================
 
-const TASTE_APP_URL = 'https://home-5019254550.app-ionos.space';
 const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
 const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045989';
 
@@ -193,7 +193,7 @@ const ProfileCard = ({ clientId, name, profile, status, onLaunch, isPrimary }) =
       {status !== 'complete' && (
         <button
           className="profile-card__btn"
-          onClick={() => onLaunch(clientId)}
+          onClick={() => onLaunch(isPrimary ? 'principal' : 'secondary')}
         >
           {status === 'in_progress' ? 'Continue' : 'Start'} Taste Exploration
         </button>
@@ -612,6 +612,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Taste profiles from localStorage
   const [profileP, setProfileP] = useState(null);
   const [profileS, setProfileS] = useState(null);
+  const [activeExploration, setActiveExploration] = useState(null);
 
   // Generate client IDs
   const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
@@ -684,15 +685,31 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Determine if we should show completed view
   const showCompletedView = statusP === 'complete';
 
-  // Launch Taste Exploration with return URL
-  const handleLaunch = (clientId) => {
+  // Launch Taste Exploration
+  const handleLaunch = (who) => {
+    const clientId = who === 'principal' ? clientIdP : clientIdS;
     if (!clientId) {
       alert('Please enter a client name first');
       return;
     }
-    const returnUrl = encodeURIComponent(window.location.href.split('#')[0]);
-    const url = `${TASTE_APP_URL}?clientId=${encodeURIComponent(clientId)}&returnUrl=${returnUrl}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    setActiveExploration(who);
+  };
+
+  const handleExplorationComplete = (result) => {
+    const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
+    if (result && clientId) {
+      saveProfileToStorage(clientId, {
+        clientId,
+        session: result,
+        completedAt: new Date().toISOString()
+      });
+    }
+    refreshProfiles();
+    setActiveExploration(null);
+  };
+
+  const handleExplorationBack = () => {
+    setActiveExploration(null);
   };
 
   // Handle retake
@@ -708,6 +725,22 @@ const DesignIdentitySection = ({ respondent, tier }) => {
       setProfileS(null);
     }
   };
+
+  if (activeExploration) {
+    const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
+    const clientName = activeExploration === 'principal' ? principalName : secondaryName;
+    return (
+      <div className="kyc-section design-identity-section">
+        <TasteExploration
+          clientId={clientId}
+          clientName={clientName || clientId}
+          respondentType={activeExploration}
+          onComplete={handleExplorationComplete}
+          onBack={handleExplorationBack}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="kyc-section design-identity-section">
