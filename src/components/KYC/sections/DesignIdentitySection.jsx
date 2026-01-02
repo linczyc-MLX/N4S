@@ -1,0 +1,748 @@
+// ============================================
+// N4S KYC DESIGN IDENTITY SECTION (P1.A.5)
+// Design Preferences with Taste Exploration
+// Version 2.5 - FINAL with Location & Enhanced Reports
+// ============================================
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAppContext } from '../../../contexts/AppContext';
+import { 
+  viewTasteReport, 
+  downloadTasteReport, 
+  getTasteReportBlob 
+} from '../../utils/TasteReportGenerator';
+
+// ============================================
+// CONFIGURATION
+// ============================================
+
+const TASTE_APP_URL = 'https://home-5019254550.app-ionos.space';
+const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload/v1767045989';
+
+// Architectural Styles Data with Cloudinary URLs
+const ARCH_STYLES = [
+  { id: 'AS1', name: 'Avant-Contemporary', 
+    image: `${CLOUDINARY_BASE}/AS1_tpnuxa.png`,
+    features: ['Sculptural, experimental massing; asymmetry and bold cantilevers.', 'Parametric or faceted façade moves; deep reveals and dramatic shadow play.', 'High-contrast material palette (metal, glass, monolithic stone/concrete).', '"Statement" architecture: kinetic screens, expressive structure, theatrical lighting.'],
+    appeal: 'Attracts clients drawn to bold artistic expression, avant-garde culture, and design as spectacle.' },
+  { id: 'AS2', name: 'Architectural Modern', 
+    image: `${CLOUDINARY_BASE}/AS2_owp3hs.png`,
+    features: ['Clean, minimalist volumetric forms, often flat roofs and ribbon glazing.', 'Refined material joints—flush details, frameless glass, concealed flashings.', 'Emphasis on "honest" structure (exposed steel, board-formed concrete, natural wood).', 'Landscape seamlessly merges with architecture via courtyards and indoor-outdoor flow.'],
+    appeal: 'Speaks to clients who value intellectual rigor, craftsmanship transparency, and edited, gallery-like interiors.' },
+  { id: 'AS3', name: 'Curated Minimalism', 
+    image: `${CLOUDINARY_BASE}/AS3_v7ug4d.png`,
+    features: ['Simple rectilinear massing with low-profile roofs or subtle flat roof parapets.', 'White/off-white palette with textured plaster, lime wash, bleached wood, or matte stone.', 'Furniture and décor as focal points; architecture recedes to a serene backdrop.', 'Light-wells, internal courtyards, and tranquil water features enhance calm ambience.'],
+    appeal: 'Resonates with clients seeking sanctuary from visual noise—wellness-minded, art collectors, or contemplative personalities.' },
+  { id: 'AS4', name: 'Nordic Contemporary', 
+    image: `${CLOUDINARY_BASE}/AS4_n7oxlu.png`,
+    features: ['Warm-wood cladding combined with dark metal or stone accents; pitched or shed roofs.', 'Large, carefully placed windows framing views; deep eaves and sheltered entries.', 'Cozy, "hygge-inspired" interiors—tactile textiles, fireplaces, natural light modulation.', 'Integration with landscape: timber terraces, evergreen planting, stone pathways.'],
+    appeal: 'Attracts those who want warmth without fuss—nature lovers, families desiring comfort, and clients from colder climates.' },
+  { id: 'AS5', name: 'Mid-Century Refined', 
+    image: `${CLOUDINARY_BASE}/AS5_bcrh8m.png`,
+    features: ['Low-slung profiles, butterfly/gable roofs, and rhythmic post-and-beam structure.', 'Floor-to-ceiling glass walls blurring inside-out; open-plan living.', 'Mix of natural materials (teak, walnut, stone, leather) with period-correct detailing.', 'Restored or reimagined vintage furniture; curated art pieces from the 1950s–70s.'],
+    appeal: 'Draws collectors and design-history enthusiasts who appreciate authenticity, vintage provenance, and understated glamour.' },
+  { id: 'AS6', name: 'Modern Classic', 
+    image: `${CLOUDINARY_BASE}/AS6_nlbffa.png`,
+    features: ['Symmetrical façades with simplified classical proportions—no heavy ornamentation.', 'Warm whites, limestones, and metal accents; standing-seam roofs or simple parapets.', 'Interiors balance traditional layouts with contemporary finishes.', 'Timeless elegance: paneled walls meet sleek cabinetry and curated antiques.'],
+    appeal: 'Appeals to clients who want enduring elegance without flash—often older wealth, diplomats, or those comfortable in traditional social settings.' },
+  { id: 'AS7', name: 'Classical Contemporary', 
+    image: `${CLOUDINARY_BASE}/AS7_uwasgz.png`,
+    features: ['Classical motifs (columns, pediments, cornices) rendered in stone or stucco; updated scale.', 'Grand entry sequences with proportioned doors, sidelights, and fanlights.', 'Formal interiors—high ceilings, crown moldings, wainscoting—paired with current fabrics.', 'Gardens reference classical landscape traditions: symmetry, hedges, sculpture.'],
+    appeal: 'Resonates with clients who value tradition, family heritage, and a visible sense of status rooted in historical continuity.' },
+  { id: 'AS8', name: 'Formal Classical', 
+    image: `${CLOUDINARY_BASE}/AS8_bnpwqn.png`,
+    features: ['Full classical vocabulary: Doric/Ionic columns, entablatures, balustrades, hipped slate roofs.', 'Limestone, brick, or rendered masonry; ornate ironwork and stately porte-cochères.', 'Enfilade room sequences; grand staircases, paneled libraries, and ballroom-scale spaces.', 'Formal gardens with parterre beds, fountains, and axial sight lines.'],
+    appeal: 'Attracts those seeking overt prestige—Old World aristocracy, philanthropists, or clients who host grand social and ceremonial events.' },
+  { id: 'AS9', name: 'Heritage Estate', 
+    image: `${CLOUDINARY_BASE}/AS9_ikzqsu.png`,
+    features: ['Estate scale and layered historic character (manor, chateau, country house cues).', 'Deep-set windows, steep roofs, chimneys; materials with patina (stone, slate, brick).', 'Picturesque composition: wings, garden walls, service elements, inherited complexity.', 'Landscape is integral—drives, hedges, gardens—projecting longevity and legacy.'],
+    appeal: 'Appeals to clients who want generational gravitas—an estate that feels established, storied, and permanently valuable.' },
+];
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Load profile from localStorage
+const loadProfileFromStorage = (clientId) => {
+  if (!clientId) return null;
+  try {
+    const stored = localStorage.getItem(`${PROFILE_STORAGE_PREFIX}${clientId}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch (e) {
+    console.error('Error loading profile:', e);
+    return null;
+  }
+};
+
+// Save profile to localStorage
+const saveProfileToStorage = (clientId, profile) => {
+  if (!clientId) return null;
+  try {
+    const toSave = {
+      ...profile,
+      clientId,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(`${PROFILE_STORAGE_PREFIX}${clientId}`, JSON.stringify(toSave));
+    return toSave;
+  } catch (e) {
+    console.error('Error saving profile:', e);
+    return null;
+  }
+};
+
+// Extract profile from URL (when redirecting back from Taste app)
+const extractProfileFromURL = () => {
+  try {
+    const hash = window.location.hash;
+    if (hash && hash.includes('tasteProfile=')) {
+      const encoded = hash.split('tasteProfile=')[1];
+      if (encoded) {
+        const decoded = JSON.parse(atob(decodeURIComponent(encoded)));
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        return decoded;
+      }
+    }
+  } catch (e) {
+    console.error('Error extracting profile from URL:', e);
+  }
+  return null;
+};
+
+// Get profile status
+const getProfileStatus = (profile) => {
+  if (!profile) return 'not_started';
+  if (profile.session?.completedAt) return 'complete';
+  if (profile.session?.progress) {
+    const cats = Object.values(profile.session.progress);
+    const hasAnyProgress = cats.some(c => c.completedQuads > 0);
+    return hasAnyProgress ? 'in_progress' : 'not_started';
+  }
+  return 'not_started';
+};
+
+// ============================================
+// ARCHITECTURAL STYLE CAROUSEL COMPONENT
+// ============================================
+
+const ArchStyleCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const style = ARCH_STYLES[currentIndex];
+
+  const next = () => setCurrentIndex((currentIndex + 1) % ARCH_STYLES.length);
+  const prev = () => setCurrentIndex((currentIndex - 1 + ARCH_STYLES.length) % ARCH_STYLES.length);
+
+  return (
+    <div className="arch-carousel">
+      <div className="arch-carousel__nav">
+        <button onClick={prev} className="arch-carousel__btn">←</button>
+        <span className="arch-carousel__counter">{currentIndex + 1} / {ARCH_STYLES.length}</span>
+        <button onClick={next} className="arch-carousel__btn">→</button>
+      </div>
+      
+      <div className="arch-carousel__card">
+        <div className="arch-carousel__image-container">
+          <img 
+            src={style.image} 
+            alt={style.name}
+            className="arch-carousel__image"
+          />
+        </div>
+        <div className="arch-carousel__content">
+          <h4 className="arch-carousel__title">{style.id}: {style.name}</h4>
+          <ul className="arch-carousel__features">
+            {style.features.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
+          <p className="arch-carousel__appeal"><strong>Appeal:</strong> {style.appeal}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// PROFILE STATUS CARD COMPONENT
+// ============================================
+
+const ProfileCard = ({ clientId, name, profile, status, onLaunch, isPrimary }) => {
+  const statusLabels = {
+    'not_started': 'Not Started',
+    'in_progress': 'In Progress',
+    'complete': 'Complete'
+  };
+
+  const statusColors = {
+    'not_started': '#94a3b8',
+    'in_progress': '#f59e0b',
+    'complete': '#10b981'
+  };
+
+  return (
+    <div className={`profile-card ${isPrimary ? 'profile-card--primary' : 'profile-card--secondary'}`}>
+      <div className="profile-card__header">
+        <span className="profile-card__badge">{isPrimary ? 'P' : 'S'}</span>
+        <span className="profile-card__name">{name || clientId}</span>
+      </div>
+      <div className="profile-card__status" style={{ color: statusColors[status] }}>
+        {statusLabels[status]}
+      </div>
+      {status !== 'complete' && (
+        <button 
+          className="profile-card__btn"
+          onClick={() => onLaunch(clientId)}
+        >
+          {status === 'in_progress' ? 'Continue' : 'Start'} Taste Exploration
+        </button>
+      )}
+      {status === 'complete' && profile?.session && (
+        <div className="profile-card__summary">
+          <small>Completed {new Date(profile.session.completedAt).toLocaleDateString()}</small>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// DESIGN DNA SLIDER COMPONENT
+// ============================================
+
+const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
+  const percentage = ((value - 1) / (max - 1)) * 100;
+  
+  return (
+    <div className="dna-slider">
+      <div className="dna-slider__label">{label}</div>
+      <div className="dna-slider__track">
+        <div 
+          className="dna-slider__marker" 
+          style={{ left: `${percentage}%` }}
+        />
+      </div>
+      <div className="dna-slider__labels">
+        <span>{leftLabel}</span>
+        <span>{rightLabel}</span>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// COMPLETED VIEW COMPONENT (with Report Buttons)
+// ============================================
+
+const CompletedView = ({ 
+  profileP, 
+  profileS, 
+  clientType, 
+  principalName, 
+  secondaryName, 
+  location,
+  onRetake, 
+  onRefresh, 
+  onLaunchSecondary 
+}) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [emailStatus, setEmailStatus] = useState('');
+  
+  // Calculate metrics from profile
+  const getMetrics = (profile) => {
+    if (!profile?.session?.progress) return { ct: 3, ml: 3, mp: 3 };
+    
+    let totalAS = 0, totalVD = 0, totalMP = 0, count = 0;
+    
+    Object.values(profile.session.progress).forEach(cat => {
+      if (cat.selections) {
+        cat.selections.forEach(sel => {
+          if (sel.selectedIndex >= 0) {
+            // Extract values from quad metadata if available
+            const asNum = 5; // Default
+            const vdNum = 3;
+            const mpNum = 3;
+            totalAS += asNum;
+            totalVD += vdNum;
+            totalMP += mpNum;
+            count++;
+          }
+        });
+      }
+    });
+    
+    if (count === 0) return { ct: 3, ml: 3, mp: 3 };
+    
+    return {
+      ct: ((totalAS / count - 1) / 8) * 4 + 1,
+      ml: totalVD / count,
+      mp: totalMP / count
+    };
+  };
+  
+  const metricsP = getMetrics(profileP);
+  const metricsS = profileS ? getMetrics(profileS) : null;
+  
+  // Get style label
+  const getStyleLabel = (ctValue) => {
+    if (ctValue < 2.5) return 'Contemporary';
+    if (ctValue > 3.5) return 'Traditional';
+    return 'Transitional';
+  };
+
+  // Build report options with location
+  const buildReportOptions = () => {
+    return {
+      location: location || null
+    };
+  };
+
+  // Report handlers
+  const handleViewReport = async () => {
+    setIsGenerating(true);
+    try {
+      await viewTasteReport(profileP, profileS, buildReportOptions());
+    } catch (e) {
+      console.error('Error generating report:', e);
+      alert('Error generating report. Please try again.');
+    }
+    setIsGenerating(false);
+  };
+
+  const handleDownloadReport = async () => {
+    setIsGenerating(true);
+    try {
+      await downloadTasteReport(profileP, profileS, buildReportOptions());
+    } catch (e) {
+      console.error('Error downloading report:', e);
+      alert('Error downloading report. Please try again.');
+    }
+    setIsGenerating(false);
+  };
+
+  const handleEmailReport = async () => {
+    setIsGenerating(true);
+    setEmailStatus('Generating report...');
+    try {
+      const blob = await getTasteReportBlob(profileP, profileS, buildReportOptions());
+      if (blob) {
+        const clientName = principalName || profileP?.clientId || 'Client';
+        const subject = encodeURIComponent(`N4S Taste Profile Report - ${clientName}`);
+        const body = encodeURIComponent(
+          `Please find attached the Taste Profile Report for ${clientName}.\n\n` +
+          (location ? `Location: ${location}\n` : '') +
+          `Generated: ${new Date().toLocaleString()}\n\n` +
+          `Note: Please download the PDF report and attach it to your email.`
+        );
+        
+        // Download first
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `N4S-Taste-Profile-${profileP?.clientId || 'Report'}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        // Open email client
+        setTimeout(() => {
+          window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          setEmailStatus('PDF downloaded - please attach to email');
+        }, 500);
+      }
+    } catch (e) {
+      console.error('Error preparing email:', e);
+      setEmailStatus('Error preparing email');
+    }
+    setIsGenerating(false);
+  };
+
+  return (
+    <div className="completed-view">
+      <div className="completed-view__header">
+        <h3>✅ Taste Profile Complete</h3>
+        <p className="completed-view__subtitle">
+          {principalName || 'Principal'}'s design preferences have been captured
+        </p>
+        {location && (
+          <p className="completed-view__location">📍 {location}</p>
+        )}
+      </div>
+
+      {/* Design DNA Summary */}
+      <div className="completed-view__dna">
+        <h4>Design DNA</h4>
+        <div className="dna-label">
+          <span className="dna-label__style">{getStyleLabel(metricsP.ct)}</span>
+        </div>
+        
+        <DesignDNASlider 
+          label="Style Era" 
+          value={metricsP.ct} 
+          leftLabel="Contemporary" 
+          rightLabel="Traditional" 
+        />
+        <DesignDNASlider 
+          label="Material Complexity" 
+          value={metricsP.ml} 
+          leftLabel="Minimal" 
+          rightLabel="Layered" 
+        />
+        <DesignDNASlider 
+          label="Mood Palette" 
+          value={metricsP.mp} 
+          leftLabel="Warm" 
+          rightLabel="Cool" 
+        />
+      </div>
+
+      {/* Report Buttons */}
+      <div className="completed-view__reports">
+        <h4>📄 Taste Profile Report</h4>
+        <div className="report-buttons">
+          <button 
+            className="report-btn report-btn--view"
+            onClick={handleViewReport}
+            disabled={isGenerating}
+          >
+            <span className="report-btn__icon">👁️</span>
+            <span className="report-btn__text">View Report</span>
+          </button>
+          
+          <button 
+            className="report-btn report-btn--download"
+            onClick={handleDownloadReport}
+            disabled={isGenerating}
+          >
+            <span className="report-btn__icon">📥</span>
+            <span className="report-btn__text">Download PDF</span>
+          </button>
+          
+          <button 
+            className="report-btn report-btn--email"
+            onClick={handleEmailReport}
+            disabled={isGenerating}
+          >
+            <span className="report-btn__icon">✉️</span>
+            <span className="report-btn__text">Email Report</span>
+          </button>
+        </div>
+        {emailStatus && <p className="report-status">{emailStatus}</p>}
+        {isGenerating && <p className="report-status">Generating report...</p>}
+      </div>
+
+      {/* Secondary Partner Section */}
+      {clientType === 'couple' && (
+        <div className="completed-view__partner">
+          <h4>Partner Profile</h4>
+          {profileS ? (
+            <div className="partner-summary">
+              <p>✅ {secondaryName || 'Secondary'} has completed their Taste Exploration</p>
+              <DesignDNASlider 
+                label="Style Era" 
+                value={metricsS.ct} 
+                leftLabel="Contemporary" 
+                rightLabel="Traditional" 
+              />
+              <p className="comparison-note">
+                Full partner alignment analysis is included in the PDF report above.
+              </p>
+            </div>
+          ) : (
+            <div className="partner-pending">
+              <p>⏳ Waiting for {secondaryName || 'Secondary'} to complete their Taste Exploration</p>
+              <button className="btn-launch-secondary" onClick={onLaunchSecondary}>
+                Start {secondaryName || 'Secondary'}'s Exploration
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="completed-view__actions">
+        <button className="btn-refresh" onClick={onRefresh}>
+          🔄 Refresh Profiles
+        </button>
+        <button className="btn-retake" onClick={onRetake}>
+          ↩️ Retake Exploration
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// WELCOME VIEW COMPONENT
+// ============================================
+
+const WelcomeView = ({
+  clientType, setClientType,
+  clientBaseName, setClientBaseName,
+  principalName, setPrincipalName,
+  secondaryName, setSecondaryName,
+  clientIdP, clientIdS,
+  statusP, statusS,
+  onLaunch, onRefresh
+}) => {
+  return (
+    <div className="welcome-view">
+      {/* Section Header */}
+      <div className="section-header">
+        <div className="section-header__icon">🎨</div>
+        <div className="section-header__text">
+          <h2>P1.A.5 Design Preferences</h2>
+          <p>Discover your client's architectural and interior design aesthetic through the Taste Exploration experience.</p>
+        </div>
+      </div>
+
+      {/* Architectural Style Reference */}
+      <div className="style-reference">
+        <h3>Architectural Style Spectrum</h3>
+        <p>The 9-point scale from Avant-Contemporary (AS1) to Heritage Estate (AS9):</p>
+        <ArchStyleCarousel />
+      </div>
+
+      {/* Client Configuration */}
+      <div className="client-config">
+        <h3>Client Configuration</h3>
+        
+        <div className="client-type-toggle">
+          <button 
+            className={`toggle-btn ${clientType === 'individual' ? 'active' : ''}`}
+            onClick={() => setClientType('individual')}
+          >
+            👤 Individual
+          </button>
+          <button 
+            className={`toggle-btn ${clientType === 'couple' ? 'active' : ''}`}
+            onClick={() => setClientType('couple')}
+          >
+            👥 Couple
+          </button>
+        </div>
+
+        <div className="client-names">
+          <div className="name-field">
+            <label>Family Name</label>
+            <input 
+              type="text" 
+              value={clientBaseName} 
+              onChange={(e) => setClientBaseName(e.target.value)}
+              placeholder="e.g. Thornwood"
+            />
+            {clientBaseName && <small>IDs: {clientIdP}{clientType === 'couple' && `, ${clientIdS}`}</small>}
+          </div>
+          
+          <div className="name-field">
+            <label>{clientType === 'couple' ? 'Principal Name' : 'Client Name'}</label>
+            <input 
+              type="text" 
+              value={principalName} 
+              onChange={(e) => setPrincipalName(e.target.value)}
+              placeholder="e.g. Peter"
+            />
+          </div>
+
+          {clientType === 'couple' && (
+            <div className="name-field">
+              <label>Secondary Name</label>
+              <input 
+                type="text" 
+                value={secondaryName} 
+                onChange={(e) => setSecondaryName(e.target.value)}
+                placeholder="e.g. Mary"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Launch Cards */}
+      {clientBaseName && (
+        <div className="launch-section">
+          <h3>Taste Exploration</h3>
+          <p>Launch the visual preference discovery experience for your client(s).</p>
+          
+          <div className="profile-cards">
+            <ProfileCard 
+              clientId={clientIdP}
+              name={principalName}
+              profile={null}
+              status={statusP}
+              onLaunch={onLaunch}
+              isPrimary={true}
+            />
+            
+            {clientType === 'couple' && (
+              <ProfileCard 
+                clientId={clientIdS}
+                name={secondaryName}
+                profile={null}
+                status={statusS}
+                onLaunch={onLaunch}
+                isPrimary={false}
+              />
+            )}
+          </div>
+          
+          <button className="btn-refresh-small" onClick={onRefresh}>
+            🔄 Refresh Status
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+const DesignIdentitySection = ({ respondent, tier }) => {
+  const { kycData, updateKYCData } = useAppContext();
+  const data = kycData[respondent]?.designIdentity || {};
+
+  // Client configuration state
+  const [clientType, setClientType] = useState(data.clientType || 'couple');
+  const [clientBaseName, setClientBaseName] = useState(data.clientBaseName || '');
+  const [principalName, setPrincipalName] = useState(data.principalName || '');
+  const [secondaryName, setSecondaryName] = useState(data.secondaryName || '');
+  
+  // Taste profiles from localStorage
+  const [profileP, setProfileP] = useState(null);
+  const [profileS, setProfileS] = useState(null);
+
+  // Generate client IDs
+  const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
+  const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
+
+  // Get location from P1.A.3 (Lifestyle Geography Section)
+  const getLocationFromKYC = () => {
+    const lifestyleData = kycData[respondent]?.lifestyleGeography || {};
+    const city = lifestyleData.primaryCity || lifestyleData.city || '';
+    const country = lifestyleData.primaryCountry || lifestyleData.country || '';
+    
+    if (city && country) {
+      return `${city}, ${country}`;
+    } else if (city) {
+      return city;
+    } else if (country) {
+      return country;
+    }
+    return null;
+  };
+
+  const location = getLocationFromKYC();
+
+  // Check URL for returned profile data on mount
+  useEffect(() => {
+    const urlProfile = extractProfileFromURL();
+    if (urlProfile && urlProfile.clientId) {
+      saveProfileToStorage(urlProfile.clientId, urlProfile);
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, []);
+
+  // Load profiles
+  const refreshProfiles = useCallback(() => {
+    if (clientIdP) {
+      setProfileP(loadProfileFromStorage(clientIdP));
+    }
+    if (clientIdS) {
+      setProfileS(loadProfileFromStorage(clientIdS));
+    }
+  }, [clientIdP, clientIdS]);
+
+  useEffect(() => {
+    refreshProfiles();
+  }, [refreshProfiles]);
+
+  // Listen for storage events
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refreshProfiles();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refreshProfiles]);
+
+  // Save client config to KYC data
+  useEffect(() => {
+    updateKYCData(respondent, 'designIdentity', {
+      clientType,
+      clientBaseName,
+      principalName,
+      secondaryName
+    });
+  }, [clientType, clientBaseName, principalName, secondaryName, updateKYCData, respondent]);
+
+  // Get status
+  const statusP = getProfileStatus(profileP);
+  const statusS = getProfileStatus(profileS);
+  
+  // Determine if we should show completed view
+  const showCompletedView = statusP === 'complete';
+
+  // Launch Taste Exploration with return URL
+  const handleLaunch = (clientId) => {
+    if (!clientId) {
+      alert('Please enter a client name first');
+      return;
+    }
+    const returnUrl = encodeURIComponent(window.location.href.split('#')[0]);
+    const url = `${TASTE_APP_URL}?clientId=${encodeURIComponent(clientId)}&returnUrl=${returnUrl}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  // Handle retake
+  const handleRetake = () => {
+    if (window.confirm('This will reset your Taste Exploration results. Are you sure?')) {
+      if (clientIdP) {
+        localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdP}`);
+      }
+      if (clientIdS) {
+        localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdS}`);
+      }
+      setProfileP(null);
+      setProfileS(null);
+    }
+  };
+
+  return (
+    <div className="kyc-section design-identity-section">
+      {showCompletedView ? (
+        <CompletedView 
+          profileP={profileP}
+          profileS={profileS}
+          clientType={clientType}
+          principalName={principalName}
+          secondaryName={secondaryName}
+          location={location}
+          onRetake={handleRetake}
+          onRefresh={refreshProfiles}
+          onLaunchSecondary={() => handleLaunch(clientIdS)}
+        />
+      ) : (
+        <WelcomeView
+          clientType={clientType}
+          setClientType={setClientType}
+          clientBaseName={clientBaseName}
+          setClientBaseName={setClientBaseName}
+          principalName={principalName}
+          setPrincipalName={setPrincipalName}
+          secondaryName={secondaryName}
+          setSecondaryName={setSecondaryName}
+          clientIdP={clientIdP}
+          clientIdS={clientIdS}
+          statusP={statusP}
+          statusS={statusS}
+          onLaunch={handleLaunch}
+          onRefresh={refreshProfiles}
+        />
+      )}
+    </div>
+  );
+};
+
+export default DesignIdentitySection;
