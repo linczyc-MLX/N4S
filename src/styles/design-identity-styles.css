@@ -1,0 +1,667 @@
+/* ============================================
+   N4S DESIGN IDENTITY SECTION STYLES
+   Version 2.4 - With Report Button Styles
+   ============================================ */
+
+/* Variables */
+:root {
+  --n4s-navy: #1e3a5f;
+  --n4s-gold: #c9a227;
+  --n4s-light-gold: #f5f0e1;
+  --n4s-dark-text: #2d3748;
+  --n4s-light-text: #718096;
+  --n4s-border: #e2e8f0;
+  --n4s-success: #10b981;
+  --n4s-warning: #f59e0b;
+  --n4s-error: #ef4444;
+}
+
+/* ============================================
+   SECTION LAYOUT
+   ============================================ */
+
+.design-identity-section {
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--n4s-gold);
+}
+
+.section-header__icon {
+  font-size: 32px;
+}
+
+.section-header__text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--n4s-navy);
+  margin: 0 0 4px 0;
+}
+
+.section-header__text p {
+  font-size: 14px;
+  color: var(--n4s-light-text);
+  margin: 0;
+}
+
+/* ============================================
+   ARCHITECTURAL STYLE CAROUSEL
+   ============================================ */
+
+.arch-carousel {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.arch-carousel__nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.arch-carousel__btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--n4s-navy);
+  background: #fff;
+  color: var(--n4s-navy);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.arch-carousel__btn:hover {
+  background: var(--n4s-navy);
+  color: #fff;
+}
+
+.arch-carousel__counter {
+  font-size: 14px;
+  color: var(--n4s-light-text);
+}
+
+.arch-carousel__card {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.arch-carousel__image-container {
+  width: 300px;
+  height: 220px;
+  overflow: hidden;
+}
+
+.arch-carousel__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arch-carousel__content {
+  padding: 16px;
+}
+
+.arch-carousel__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--n4s-navy);
+  margin: 0 0 12px 0;
+}
+
+.arch-carousel__features {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+  font-size: 12px;
+  color: var(--n4s-dark-text);
+  line-height: 1.5;
+}
+
+.arch-carousel__features li {
+  margin-bottom: 4px;
+}
+
+.arch-carousel__appeal {
+  font-size: 12px;
+  color: var(--n4s-light-text);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ============================================
+   CLIENT CONFIGURATION
+   ============================================ */
+
+.client-config {
+  margin: 24px 0;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.client-config h3 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 16px 0;
+}
+
+.client-type-toggle {
+  display: inline-flex;
+  background: #e2e8f0;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.toggle-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--n4s-light-text);
+}
+
+.toggle-btn.active {
+  background: var(--n4s-navy);
+  color: #fff;
+}
+
+.client-names {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.name-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--n4s-light-text);
+  margin-bottom: 4px;
+}
+
+.name-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--n4s-border);
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.name-field input:focus {
+  outline: none;
+  border-color: var(--n4s-navy);
+}
+
+.name-field small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--n4s-light-text);
+}
+
+/* ============================================
+   PROFILE CARDS
+   ============================================ */
+
+.profile-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.profile-card {
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid var(--n4s-border);
+  background: #fff;
+}
+
+.profile-card--primary {
+  border-color: var(--n4s-gold);
+}
+
+.profile-card--secondary {
+  border-color: var(--n4s-navy);
+}
+
+.profile-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.profile-card__badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.profile-card--primary .profile-card__badge {
+  background: var(--n4s-gold);
+  color: #fff;
+}
+
+.profile-card--secondary .profile-card__badge {
+  background: var(--n4s-navy);
+  color: #fff;
+}
+
+.profile-card__name {
+  font-weight: 600;
+  color: var(--n4s-dark-text);
+}
+
+.profile-card__status {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.profile-card__btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--n4s-navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-card__btn:hover {
+  background: #2d4a6f;
+}
+
+.profile-card__summary {
+  font-size: 12px;
+  color: var(--n4s-light-text);
+}
+
+/* ============================================
+   COMPLETED VIEW
+   ============================================ */
+
+.completed-view {
+  max-width: 700px;
+}
+
+.completed-view__header {
+  margin-bottom: 24px;
+}
+
+.completed-view__header h3 {
+  font-size: 20px;
+  color: var(--n4s-success);
+  margin: 0 0 8px 0;
+}
+
+.completed-view__subtitle {
+  font-size: 14px;
+  color: var(--n4s-light-text);
+  margin: 0;
+}
+
+/* Design DNA Section */
+.completed-view__dna {
+  padding: 20px;
+  background: var(--n4s-light-gold);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.completed-view__dna h4 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 16px 0;
+}
+
+.dna-label {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.dna-label__style {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--n4s-navy);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* DNA Sliders */
+.dna-slider {
+  margin-bottom: 16px;
+}
+
+.dna-slider__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--n4s-dark-text);
+  margin-bottom: 8px;
+}
+
+.dna-slider__track {
+  position: relative;
+  height: 8px;
+  background: #fff;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.dna-slider__marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: var(--n4s-gold);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.dna-slider__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--n4s-light-text);
+}
+
+/* ============================================
+   REPORT BUTTONS - KEY NEW STYLES
+   ============================================ */
+
+.completed-view__reports {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--n4s-border);
+  margin-bottom: 24px;
+}
+
+.completed-view__reports h4 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 16px 0;
+}
+
+.report-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.report-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.report-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.report-btn__icon {
+  font-size: 18px;
+}
+
+/* View Report Button */
+.report-btn--view {
+  background: #fff;
+  border-color: var(--n4s-navy);
+  color: var(--n4s-navy);
+}
+
+.report-btn--view:hover:not(:disabled) {
+  background: var(--n4s-navy);
+  color: #fff;
+}
+
+/* Download Button */
+.report-btn--download {
+  background: var(--n4s-navy);
+  border-color: var(--n4s-navy);
+  color: #fff;
+}
+
+.report-btn--download:hover:not(:disabled) {
+  background: #2d4a6f;
+}
+
+/* Email Button */
+.report-btn--email {
+  background: #fff;
+  border-color: var(--n4s-gold);
+  color: var(--n4s-gold);
+}
+
+.report-btn--email:hover:not(:disabled) {
+  background: var(--n4s-gold);
+  color: #fff;
+}
+
+.report-status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--n4s-light-text);
+  font-style: italic;
+}
+
+/* ============================================
+   PARTNER SECTION
+   ============================================ */
+
+.completed-view__partner {
+  padding: 20px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bae6fd;
+  margin-bottom: 24px;
+}
+
+.completed-view__partner h4 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 16px 0;
+}
+
+.partner-summary p,
+.partner-pending p {
+  font-size: 14px;
+  color: var(--n4s-dark-text);
+  margin-bottom: 12px;
+}
+
+.comparison-note {
+  font-size: 12px;
+  color: var(--n4s-light-text);
+  font-style: italic;
+}
+
+.btn-launch-secondary {
+  padding: 10px 20px;
+  background: var(--n4s-navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-launch-secondary:hover {
+  background: #2d4a6f;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.completed-view__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-refresh,
+.btn-retake,
+.btn-refresh-small {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-refresh {
+  background: #fff;
+  border: 1px solid var(--n4s-border);
+  color: var(--n4s-dark-text);
+}
+
+.btn-refresh:hover {
+  background: #f8fafc;
+}
+
+.btn-retake {
+  background: #fff;
+  border: 1px solid var(--n4s-warning);
+  color: var(--n4s-warning);
+}
+
+.btn-retake:hover {
+  background: #fffbeb;
+}
+
+.btn-refresh-small {
+  background: transparent;
+  border: none;
+  color: var(--n4s-light-text);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.btn-refresh-small:hover {
+  color: var(--n4s-navy);
+}
+
+/* ============================================
+   LAUNCH SECTION
+   ============================================ */
+
+.launch-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fefce8;
+  border-radius: 8px;
+  border: 1px solid #fef08a;
+}
+
+.launch-section h3 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 8px 0;
+}
+
+.launch-section > p {
+  font-size: 13px;
+  color: var(--n4s-light-text);
+  margin: 0 0 16px 0;
+}
+
+/* ============================================
+   STYLE REFERENCE SECTION
+   ============================================ */
+
+.style-reference {
+  margin: 24px 0;
+}
+
+.style-reference h3 {
+  font-size: 16px;
+  color: var(--n4s-navy);
+  margin: 0 0 8px 0;
+}
+
+.style-reference > p {
+  font-size: 13px;
+  color: var(--n4s-light-text);
+  margin: 0 0 16px 0;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .arch-carousel__card {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-carousel__image-container {
+    width: 100%;
+    height: 180px;
+  }
+
+  .client-names {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .report-buttons {
+    flex-direction: column;
+  }
+
+  .report-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .completed-view__actions {
+    flex-direction: column;
+  }
+}
