@@ -858,16 +858,34 @@ export class TasteReportGenerator {
       const thumbY = y + (row * (thumbSize + 35));
 
       // Get first valid selection for this category
-      const selections = this.profileP.session?.progress?.[catId]?.selections || [];
-      let selectedImage = null;
+      // Support both formats:
+      // 1. Flat: profileP.selections = { 'LS-001': { favorites: [0,2], least: 3 } }
+      // 2. Nested: profileP.session.progress.[catId].selections = [{ quadId, selectedIndex }]
       let quadId = null;
       let position = null;
 
-      for (const sel of selections) {
-        if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
-          quadId = sel.quadId;
-          position = sel.selectedIndex + 1; // 1-indexed for filename
+      // Try flat structure first (new format)
+      const flatSelections = this.profileP.selections || this.profileP.session?.selections || {};
+      const categoryQuads = quads.filter(q => q.category === catId);
+
+      for (const quad of categoryQuads) {
+        const sel = flatSelections[quad.quadId];
+        if (sel && sel.favorites && sel.favorites.length > 0) {
+          quadId = quad.quadId;
+          position = sel.favorites[0] + 1; // Use first favorite, convert to 1-indexed
           break;
+        }
+      }
+
+      // Fallback to nested structure (old format)
+      if (!quadId) {
+        const nestedSelections = this.profileP.session?.progress?.[catId]?.selections || [];
+        for (const sel of nestedSelections) {
+          if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
+            quadId = sel.quadId;
+            position = sel.selectedIndex + 1;
+            break;
+          }
         }
       }
 
