@@ -127,34 +127,58 @@ const getProfileStatus = (profile) => {
 // ============================================
 
 const ArchStyleCarousel = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const style = ARCH_STYLES[currentIndex];
+  const [pairIndex, setPairIndex] = useState(0);
+  const totalPairs = Math.ceil(ARCH_STYLES.length / 2);
 
-  const next = () => setCurrentIndex((currentIndex + 1) % ARCH_STYLES.length);
-  const prev = () => setCurrentIndex((currentIndex - 1 + ARCH_STYLES.length) % ARCH_STYLES.length);
+  const next = () => setPairIndex((pairIndex + 1) % totalPairs);
+  const prev = () => setPairIndex((pairIndex - 1 + totalPairs) % totalPairs);
+
+  const leftStyle = ARCH_STYLES[pairIndex * 2];
+  const rightStyle = ARCH_STYLES[pairIndex * 2 + 1];
+
+  const StyleCard = ({ style }) => {
+    if (!style) return null;
+    const midpoint = Math.ceil(style.features.length / 2);
+    const leftFeatures = style.features.slice(0, midpoint);
+    const rightFeatures = style.features.slice(midpoint);
+
+    return (
+      <div className="style-card">
+        <div className="style-card__image-container">
+          <img src={style.image} alt={style.name} className="style-card__image" />
+        </div>
+        <h4 className="style-card__title">{style.name}</h4>
+        <div className="style-card__features">
+          <ul className="style-card__feature-list">
+            {leftFeatures.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+          <ul className="style-card__feature-list">
+            {rightFeatures.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </div>
+        <p className="style-card__appeal">{style.appeal}</p>
+      </div>
+    );
+  };
 
   return (
     <div className="arch-carousel">
       <button onClick={prev} className="arch-carousel__btn arch-carousel__btn--prev">‹</button>
+
+      <div className="arch-carousel__cards">
+        <StyleCard style={leftStyle} />
+        <StyleCard style={rightStyle} />
+      </div>
+
       <button onClick={next} className="arch-carousel__btn arch-carousel__btn--next">›</button>
 
-      <div className="arch-carousel__card">
-        <div className="arch-carousel__image-container">
-          <img
-            src={style.image}
-            alt={style.name}
-            className="arch-carousel__image"
+      <div className="arch-carousel__dots">
+        {ARCH_STYLES.map((_, i) => (
+          <span
+            key={i}
+            className={`arch-carousel__dot ${i >= pairIndex * 2 && i < pairIndex * 2 + 2 ? 'active' : ''}`}
           />
-        </div>
-        <div className="arch-carousel__content">
-          <h4 className="arch-carousel__title">{style.id}: {style.name}</h4>
-          <ul className="arch-carousel__features">
-            {style.features.map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ul>
-          <p className="arch-carousel__appeal"><strong>Appeal:</strong> {style.appeal}</p>
-        </div>
+        ))}
       </div>
     </div>
   );
