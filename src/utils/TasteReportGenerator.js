@@ -14,9 +14,18 @@ import {
   VD_LABELS,
   MP_LABELS,
   getCodeValue,
-  getQuadPosition,
-  TASTE_IMAGE_BASE_URL
+  getQuadPosition
 } from '../data/tasteConfig';
+import { quads } from '../data/tasteQuads';
+
+// Helper to get correct image URL from quads data
+const getSelectionImageUrl = (quadId, positionIndex) => {
+  const quad = quads.find(q => q.quadId === quadId);
+  if (!quad || !quad.images || !quad.images[positionIndex]) {
+    return null;
+  }
+  return quad.images[positionIndex];
+};
 
 // ============================================
 // CONSTANTS
@@ -868,9 +877,9 @@ export class TasteReportGenerator {
       this.doc.roundedRect(thumbX, thumbY, thumbSize, thumbSize, 4, 4, 'FD');
 
       // Try to load and embed the image
-      if (quadId && position) {
-        const imageUrl = `${TASTE_IMAGE_BASE_URL}/${catInfo.code}/${quadId}-${position}`;
+      const imageUrl = quadId && position ? getSelectionImageUrl(quadId, position - 1) : null;
 
+      if (imageUrl) {
         try {
           const imgData = await loadImageAsBase64(imageUrl);
           if (imgData) {
@@ -888,7 +897,7 @@ export class TasteReportGenerator {
           this.doc.text('■■', thumbX + thumbSize/2, thumbY + thumbSize/2, { align: 'center' });
         }
       } else {
-        // No selection - show placeholder
+        // No selection or no image URL - show placeholder
         this.doc.setFontSize(10);
         this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
         this.doc.text('■■', thumbX + thumbSize/2, thumbY + thumbSize/2, { align: 'center' });
