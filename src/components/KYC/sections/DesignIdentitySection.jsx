@@ -113,12 +113,15 @@ const extractProfileFromURL = () => {
 // Get profile status
 const getProfileStatus = (profile) => {
   if (!profile) return 'not_started';
-  if (profile.session?.completedAt) return 'complete';
+  // Check for completedAt at top level OR inside session
+  if (profile.completedAt || profile.session?.completedAt) return 'complete';
   if (profile.session?.progress) {
     const cats = Object.values(profile.session.progress);
     const hasAnyProgress = cats.some(c => c.completedQuads > 0);
     return hasAnyProgress ? 'in_progress' : 'not_started';
   }
+  // Also check for selections directly (old format)
+  if (profile.selections && Object.keys(profile.selections).length > 0) return 'complete';
   return 'not_started';
 };
 
