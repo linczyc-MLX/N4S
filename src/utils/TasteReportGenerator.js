@@ -694,7 +694,8 @@ export class TasteReportGenerator {
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
     // Build info parts
-    let infoText = `Client:  ${clientName}`;
+    const clientPrefix = 'Client:  ';
+    let infoText = `${clientPrefix}${clientName}`;
     if (projectName) infoText += `     Project: ${projectName}`;
     if (location) infoText += `     Location: ${location}`;
     this.doc.text(infoText, this.margin, y);
@@ -703,8 +704,9 @@ export class TasteReportGenerator {
     if (this.hasPartnerData) {
       const secondaryName = this.getSecondaryName();
       y += 14;
-      // Indent to align under principal name (after "Client:  ")
-      this.doc.text(`         ${secondaryName}`, this.margin, y);
+      // Measure "Client:  " width to align secondary name under principal name
+      const prefixWidth = this.doc.getTextWidth(clientPrefix);
+      this.doc.text(secondaryName, this.margin + prefixWidth, y);
     }
 
     y += 20;

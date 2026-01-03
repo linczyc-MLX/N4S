@@ -1,12 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { 
-  ClipboardCheck, AlertTriangle, CheckCircle2, XCircle, 
+import {
+  ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
   Home, Users, ChefHat, Dumbbell, Wine, Tv, BookOpen,
   Sofa, Gamepad2, Beer, BedDouble, Coffee, TreePine,
   Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import { transformKYCToMVPBrief, getMVPBriefSummary, countSelectedAmenities } from '../../lib/mvp-bridge';
+import { quads, categoryOrder } from '../../data/tasteQuads';
 
 // ============================================
 // TASTE PROFILE INTEGRATION
@@ -28,12 +29,67 @@ function loadTasteProfile(clientId) {
   return null;
 }
 
-// Get style direction label from tradition score
-function getStyleDirection(traditionScore) {
-  if (!traditionScore) return 'Not assessed';
-  if (traditionScore <= 3) return 'Contemporary';
-  if (traditionScore <= 5) return 'Transitional Modern';
-  if (traditionScore <= 7) return 'Transitional Classic';
+// ============================================
+// STYLE ERA CALCULATION (matches Report algorithm)
+// ============================================
+
+// Extract AS/VD/MP codes from image filename
+function extractCodesFromFilename(imageUrl) {
+  if (!imageUrl) return null;
+  const filename = imageUrl.split('/').pop();
+  const asMatch = filename.match(/AS(\d)/);
+  if (!asMatch) return null;
+  return { as: parseInt(asMatch[1]) };
+}
+
+// Normalize 1-9 scale to 1-5 scale
+function normalize9to5(value) {
+  return ((value - 1) / 8) * 4 + 1;
+}
+
+// Get selection for a category from profile
+function getSelectionForCategory(profile, categoryId) {
+  const flatSelections = profile.selections || profile.session?.selections || {};
+  const categoryQuads = quads.filter(q => q.category === categoryId);
+
+  for (const quad of categoryQuads) {
+    const sel = flatSelections[quad.quadId];
+    if (sel && sel.favorites && sel.favorites.length > 0) {
+      const quadData = quads.find(q => q.quadId === quad.quadId);
+      if (quadData && quadData.images && quadData.images[sel.favorites[0]]) {
+        return quadData.images[sel.favorites[0]];
+      }
+    }
+  }
+  return null;
+}
+
+// Calculate styleEra from profile selections (same algorithm as Report)
+function calculateStyleEraFromProfile(profile) {
+  if (!profile) return null;
+
+  let totalStyleEra = 0;
+  let count = 0;
+
+  categoryOrder.forEach(categoryId => {
+    const imageUrl = getSelectionForCategory(profile, categoryId);
+    if (imageUrl) {
+      const codes = extractCodesFromFilename(imageUrl);
+      if (codes) {
+        totalStyleEra += normalize9to5(codes.as);
+        count++;
+      }
+    }
+  });
+
+  return count > 0 ? totalStyleEra / count : null;
+}
+
+// Get style direction label from styleEra (1-5 scale, matches Report)
+function getStyleDirection(styleEra) {
+  if (!styleEra) return 'Not assessed';
+  if (styleEra < 2.5) return 'Contemporary';
+  if (styleEra <= 3.5) return 'Transitional';
   return 'Traditional';
 }
 
@@ -122,7 +178,16 @@ const MVPModule = () => {
   const combinedScores = useMemo(() => {
     return scoresP || null;
   }, [scoresP]);
-  
+
+  // Calculate styleEra from selections (matches Report algorithm)
+  const styleEraP = useMemo(() => {
+    return calculateStyleEraFromProfile(tasteProfileP);
+  }, [tasteProfileP]);
+
+  const styleEraS = useMemo(() => {
+    return calculateStyleEraFromProfile(tasteProfileS);
+  }, [tasteProfileS]);
+
   // Transform KYC data to MVP brief inputs
   const briefInputs = useMemo(() => {
     return transformKYCToMVPBrief(kycData, activeRespondent);
@@ -246,7 +311,7 @@ const MVPModule = () => {
                 <div className="mvp-design-summary__item">
                   <span className="mvp-design-summary__label">Style Direction</span>
                   <span className="mvp-design-summary__value mvp-design-summary__value--highlight">
-                    {getStyleDirection(combinedScores?.tradition)}
+                    {getStyleDirection(styleEraP)}
                   </span>
                 </div>
                 <div className="mvp-design-summary__item">
@@ -269,11 +334,11 @@ const MVPModule = () => {
                   Design DNA {clientType === 'couple' && hasBothProfiles ? '(Combined)' : ''}
                 </h4>
                 <div className="mvp-design-dna__sliders">
-                  <DesignDNASlider 
-                    label="Tradition" 
-                    value={combinedScores?.tradition} 
-                    leftLabel="Contemporary" 
-                    rightLabel="Traditional" 
+                  <DesignDNASlider
+                    label="Tradition"
+                    value={styleEraP ? (styleEraP - 1) * 2.25 + 1 : null}
+                    leftLabel="Contemporary"
+                    rightLabel="Traditional"
                   />
                   <DesignDNASlider 
                     label="Formality" 
@@ -329,11 +394,11 @@ const MVPModule = () => {
                   <div className="mvp-design-comparison__grid">
                     <div className="mvp-design-comparison__col">
                       <span className="mvp-design-comparison__name">{principalName || 'Principal'}</span>
-                      <span className="mvp-design-comparison__style">{getStyleDirection(scoresP.tradition)}</span>
+                      <span className="mvp-design-comparison__style">{getStyleDirection(styleEraP)}</span>
                     </div>
                     <div className="mvp-design-comparison__col">
                       <span className="mvp-design-comparison__name">{secondaryName || 'Secondary'}</span>
-                      <span className="mvp-design-comparison__style">{getStyleDirection(scoresS.tradition)}</span>
+                      <span className="mvp-design-comparison__style">{getStyleDirection(styleEraS)}</span>
                     </div>
                   </div>
                 </div>
@@ -404,7 +469,9 @@ const MVPModule = () => {
             </div>
             <div className="mvp-field">
               <span className="mvp-field__label">Staffing</span>
-              <span className="mvp-field__value">{summary?.household.staffing || 'None'}</span>
+              <span className="mvp-field__value mvp-field__value--small">
+                {(summary?.household.staffing || 'none').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              </span>
             </div>
           </div>
         </SectionCard>
