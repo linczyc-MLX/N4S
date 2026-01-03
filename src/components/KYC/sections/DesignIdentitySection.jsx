@@ -394,33 +394,39 @@ const CompletedView = ({
 
   const handleEmailReport = async () => {
     setIsGenerating(true);
-    setEmailStatus('Generating report...');
+    setEmailStatus('Downloading reports...');
     try {
-      const blob = await getTasteReportBlob(profileP, profileS, buildReportOptions());
-      if (blob) {
-        const clientName = principalName || profileP?.clientId || 'Client';
-        const subject = encodeURIComponent(`N4S Taste Profile Report - ${clientName}`);
-        const body = encodeURIComponent(
-          `Please find attached the Taste Profile Report for ${clientName}.\n\n` +
-          (location ? `Location: ${location}\n` : '') +
-          `Generated: ${new Date().toLocaleString()}\n\n` +
-          `Note: Please download the PDF report and attach it to your email.`
-        );
+      const projectName = kycData?.principal?.projectParameters?.projectName || 'Project';
+      const clientName = principalName || 'Client';
+      const partnerName = secondaryName || 'Partner';
+      const hasPartner = profileS && profileS.completedAt;
 
-        // Download first
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `N4S-Taste-Profile-${profileP?.clientId || 'Report'}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
+      // Download principal's report (includes partner alignment if both completed)
+      await downloadTasteReport(profileP, profileS, buildReportOptions());
 
-        // Open email client
-        setTimeout(() => {
-          window.location.href = `mailto:?subject=${subject}&body=${body}`;
-          setEmailStatus('PDF downloaded - please attach to email');
-        }, 500);
+      // If partner exists, also download their individual report
+      if (hasPartner) {
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await downloadTasteReport(profileS, null, buildReportOptions());
       }
+
+      // Compose email
+      const subject = encodeURIComponent(`${projectName} - Design Preferences Report`);
+      const body = encodeURIComponent(
+        `Please find attached the Design Preferences Report for ${projectName}.\n\n` +
+        `The PDF report(s) have been downloaded to your computer. Please attach them to this email.\n\n` +
+        `Reports included:\n` +
+        `- ${clientName}'s Design Profile${hasPartner ? `\n- ${partnerName}'s Design Profile` : ''}\n\n` +
+        `Best regards`
+      );
+
+      // Open email client
+      setTimeout(() => {
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        setEmailStatus(`${hasPartner ? '2 PDFs' : 'PDF'} downloaded - please attach to email`);
+      }, 300);
+
     } catch (e) {
       console.error('Error preparing email:', e);
       setEmailStatus('Error preparing email');
