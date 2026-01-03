@@ -174,12 +174,12 @@ function evaluateCondition(
     
     // Children
     if (condition === 'childrenCount > 0') {
-      if ((kyc.householdProfile?.childrenCount || 0) > 0) {
+      if ((kyc.householdProfile?.childrenAges?.length || 0) > 0) {
         return { matches: true, reason: 'You have children' };
       }
     }
     if (condition === 'childrenCount >= 2') {
-      if ((kyc.householdProfile?.childrenCount || 0) >= 2) {
+      if ((kyc.householdProfile?.childrenAges?.length || 0) >= 2) {
         return { matches: true, reason: 'You have multiple children' };
       }
     }
@@ -225,7 +225,8 @@ function evaluateCondition(
     
     // Primary cook
     if (condition === 'primaryCook === "family"') {
-      if (kyc.kitchenProfile?.primaryCook === 'family') {
+      const cook = kyc.kitchenProfile?.primaryCook;
+      if (cook === 'self' || cook === 'spouse' || cook === 'both') {
         return { matches: true, reason: 'Family members do the cooking' };
       }
     }
