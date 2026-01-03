@@ -1,4 +1,4 @@
-import type { BriefSpace, AdjacencyRequirement, CirculationNode, CrossLink, BridgeConfig } from "@shared/schema";
+import type { BriefSpace, AdjacencyRequirement, CirculationNode, CrossLink, BridgeConfig } from "../../shared/schema";
 
 export interface ProgramPreset {
   id: string;

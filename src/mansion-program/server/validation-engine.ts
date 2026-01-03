@@ -1,15 +1,23 @@
-import { randomUUID } from "crypto";
-import type { 
-  ValidationResult, 
-  RedFlag, 
-  RequiredBridge, 
+import type {
+  ValidationResult,
+  RedFlag,
+  RequiredBridge,
   ModuleScore,
   OperatingModel,
   LifestylePriorities,
   GateStatus,
   PlanBrief,
   AdjacencyRequirement
-} from "@shared/schema";
+} from "../shared/schema";
+
+// Browser-compatible UUID generator
+function randomUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 interface ValidationInput {
   projectId?: string;

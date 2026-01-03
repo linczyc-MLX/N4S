@@ -147,7 +147,7 @@ function mapPrivacyPosture(preference: PrivacyPreference): PrivacyPosture {
   return mapping[preference] || 'balanced';
 }
 
-function mapWetProgram(wellness: typeof KYCResponse.prototype.wellnessProfile): WetProgram {
+function mapWetProgram(wellness: KYCResponse['wellnessProfile']): WetProgram {
   const { interest, poolDesired, spaFeatures } = wellness;
   
   if (interest === 'resort' || interest === 'dedicated') {
@@ -180,7 +180,7 @@ function deriveLifestylePriorities(kyc: KYCResponse): LifestylePriorities {
   };
 }
 
-function isChefLedCooking(kitchen: typeof KYCResponse.prototype.kitchenProfile): boolean {
+function isChefLedCooking(kitchen: KYCResponse['kitchenProfile']): boolean {
   return kitchen.cookingStyle === 'serious' || 
          kitchen.cookingStyle === 'professional' ||
          kitchen.separateCateringKitchen ||
@@ -195,11 +195,11 @@ function isMultiFamilyHosting(kyc: KYCResponse): boolean {
           kyc.privacyProfile.typicalGuestStayDuration !== 'overnight');
 }
 
-function isSignificantHomeOffice(workLevel: typeof KYCResponse.prototype.privacyProfile.workFromHome): boolean {
+function isSignificantHomeOffice(workLevel: KYCResponse['privacyProfile']['workFromHome']): boolean {
   return workLevel === 'primary' || workLevel === 'executive';
 }
 
-function isSignificantFitness(wellness: typeof KYCResponse.prototype.wellnessProfile): boolean {
+function isSignificantFitness(wellness: KYCResponse['wellnessProfile']): boolean {
   return wellness.fitnessRoutine === 'regular' || 
          wellness.fitnessRoutine === 'intensive' ||
          wellness.spaFeatures.length >= 2;
@@ -645,7 +645,6 @@ function detectConflicts(
 // ============================================================================
 
 export {
-  mapKYCToValidation,
   deriveOperatingModel,
   deriveLifestylePriorities,
   deriveBridgeConfig,

@@ -43,7 +43,7 @@ export {
   modulesData,
   getModuleById,
   getModuleByNumber,
-  adjacencyRelations
+  adjacencyMatrix
 } from './server/modules-data';
 
 // Baseline program presets (10K, 15K, 20K SF models)

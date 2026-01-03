@@ -2,19 +2,15 @@
  * useBriefingBuilder Hook
  *
  * React hook for managing Briefing Builder state and operations.
- * Provides state management, validation preview, and export functionality.
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { BridgeConfig } from '../../shared/schema';
-import type { ValidationContext, UniqueRequirement } from '../../server/kyc-integration';
+import { useState, useCallback, useEffect } from 'react';
+import type { BridgeConfig, BriefSpace, AdjacencyRequirement } from '../../shared/schema';
+import type { ValidationContext } from '../../server/kyc-integration';
 import {
   type BriefingBuilderState,
   type AppliedChange,
-  type AdjacencyRelation,
-  type SpaceDefinition,
   loadPreset,
-  applyUniqueRequirements,
   applyBridgeConfig,
   updateSpace,
   addCustomSpace,
@@ -23,6 +19,7 @@ import {
   exportToPlanBrief,
   initializeFromKYC
 } from '../utils/briefing-builder-utils';
+import { programPresets, getPreset } from '../data/program-presets';
 
 export interface ValidationPreview {
   gateStatus: 'pass' | 'warning' | 'fail';
@@ -36,44 +33,27 @@ export interface UseBriefingBuilderOptions {
   initialPreset?: '10k' | '15k' | '20k';
   kycContext?: ValidationContext;
   onStateChange?: (state: BriefingBuilderState) => void;
-  autoSave?: boolean;
 }
 
 export interface UseBriefingBuilderReturn {
-  // State
   state: BriefingBuilderState;
   isLoading: boolean;
-  validationPreview: ValidationPreview | null;
   isValidating: boolean;
+  validationPreview: ValidationPreview | null;
 
-  // Space operations
-  handleUpdateSpace: (spaceCode: string, updates: Partial<SpaceDefinition>) => void;
-  handleAddSpace: (space: Omit<SpaceDefinition, 'isCustom'>) => void;
+  handleUpdateSpace: (spaceCode: string, updates: Partial<BriefSpace>) => void;
+  handleAddSpace: (space: Omit<BriefSpace, 'id'>) => void;
   handleRemoveSpace: (spaceCode: string) => void;
-
-  // Adjacency operations
-  handleUpdateAdjacency: (from: string, to: string, relation: AdjacencyRelation) => void;
-
-  // Bridge operations
+  handleUpdateAdjacency: (from: string, to: string, relation: AdjacencyRequirement['relationship']) => void;
   handleToggleBridge: (bridge: keyof BridgeConfig) => void;
-
-  // Preset operations
   handleLoadPreset: (preset: '10k' | '15k' | '20k') => void;
-  handleApplyKYC: (context: ValidationContext) => void;
-
-  // Validation
   runValidationPreview: () => Promise<void>;
-
-  // Export
   handleExport: () => ReturnType<typeof exportToPlanBrief>;
 
-  // Undo/Redo
   canUndo: boolean;
   canRedo: boolean;
   handleUndo: () => void;
   handleRedo: () => void;
-
-  // Reset
   handleReset: () => void;
 }
 
@@ -83,43 +63,57 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
   const {
     initialPreset = '15k',
     kycContext,
-    onStateChange,
-    autoSave = false
+    onStateChange
   } = options;
 
-  // Initialize state
   const [state, setState] = useState<BriefingBuilderState>(() => {
-    if (kycContext) {
-      return initializeFromKYC(kycContext);
+    const preset = getPreset(initialPreset);
+    if (kycContext && preset) {
+      return initializeFromKYC(preset, kycContext, 'project-001', 'New Project');
     }
-    return loadPreset(initialPreset);
+    if (preset) {
+      return loadPreset(preset, 'project-001', 'New Project');
+    }
+    // Fallback empty state
+    return {
+      projectId: 'project-001',
+      projectName: 'New Project',
+      basePreset: initialPreset,
+      spaces: [],
+      adjacencyMatrix: [],
+      nodes: [],
+      crossLinks: [],
+      bridgeConfig: {
+        butlerPantry: false,
+        guestAutonomy: false,
+        soundLock: false,
+        wetFeetIntercept: false,
+        opsCore: false
+      },
+      appliedChanges: [],
+      totalSF: 0,
+      levels: 2,
+      bedrooms: 0,
+      hasBasement: false,
+      isDirty: false
+    };
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [validationPreview, setValidationPreview] = useState<ValidationPreview | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [validationPreview, setValidationPreview] = useState<ValidationPreview | null>(null);
 
-  // History for undo/redo
   const [history, setHistory] = useState<BriefingBuilderState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // Notify parent of state changes
   useEffect(() => {
     onStateChange?.(state);
   }, [state, onStateChange]);
 
-  // Auto-save to localStorage
-  useEffect(() => {
-    if (autoSave && state.isDirty) {
-      localStorage.setItem('briefing-builder-state', JSON.stringify(state));
-    }
-  }, [state, autoSave]);
-
-  // Push state to history
-  const pushToHistory = useCallback((newState: BriefingBuilderState) => {
+  const pushToHistory = useCallback((currentState: BriefingBuilderState) => {
     setHistory(prev => {
       const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(newState);
+      newHistory.push(currentState);
       if (newHistory.length > MAX_HISTORY) {
         newHistory.shift();
       }
@@ -128,35 +122,37 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
   }, [historyIndex]);
 
-  // Update state with history tracking
   const updateState = useCallback((newState: BriefingBuilderState) => {
     pushToHistory(state);
     setState(newState);
   }, [state, pushToHistory]);
 
-  // Space operations
-  const handleUpdateSpace = useCallback((spaceCode: string, updates: Partial<SpaceDefinition>) => {
-    const newState = updateSpace(state, spaceCode, updates);
-    updateState(newState);
+  const handleUpdateSpace = useCallback((spaceCode: string, updates: Partial<BriefSpace>) => {
+    const space = state.spaces.find(s => s.code === spaceCode);
+    if (space?.id) {
+      const newState = updateSpace(state, space.id, updates);
+      updateState(newState);
+    }
   }, [state, updateState]);
 
-  const handleAddSpace = useCallback((space: Omit<SpaceDefinition, 'isCustom'>) => {
+  const handleAddSpace = useCallback((space: Omit<BriefSpace, 'id'>) => {
     const newState = addCustomSpace(state, space);
     updateState(newState);
   }, [state, updateState]);
 
   const handleRemoveSpace = useCallback((spaceCode: string) => {
-    const newState = removeSpace(state, spaceCode);
-    updateState(newState);
+    const space = state.spaces.find(s => s.code === spaceCode);
+    if (space?.id) {
+      const newState = removeSpace(state, space.id);
+      updateState(newState);
+    }
   }, [state, updateState]);
 
-  // Adjacency operations
-  const handleUpdateAdjacency = useCallback((from: string, to: string, relation: AdjacencyRelation) => {
+  const handleUpdateAdjacency = useCallback((from: string, to: string, relation: AdjacencyRequirement['relationship']) => {
     const newState = updateAdjacency(state, from, to, relation);
     updateState(newState);
   }, [state, updateState]);
 
-  // Bridge operations
   const handleToggleBridge = useCallback((bridge: keyof BridgeConfig) => {
     const newBridgeConfig: BridgeConfig = {
       ...state.bridgeConfig,
@@ -166,67 +162,53 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
     updateState(newState);
   }, [state, updateState]);
 
-  // Preset operations
-  const handleLoadPreset = useCallback((preset: '10k' | '15k' | '20k') => {
+  const handleLoadPreset = useCallback((presetId: '10k' | '15k' | '20k') => {
     setIsLoading(true);
     try {
-      const newState = loadPreset(preset);
-      updateState(newState);
+      const preset = getPreset(presetId);
+      if (preset) {
+        const newState = loadPreset(preset, state.projectId, state.projectName);
+        updateState(newState);
+      }
       setValidationPreview(null);
     } finally {
       setIsLoading(false);
     }
-  }, [updateState]);
+  }, [state.projectId, state.projectName, updateState]);
 
-  const handleApplyKYC = useCallback((context: ValidationContext) => {
-    setIsLoading(true);
-    try {
-      const newState = initializeFromKYC(context);
-      updateState(newState);
-      setValidationPreview(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [updateState]);
-
-  // Validation preview
   const runValidationPreview = useCallback(async () => {
     setIsValidating(true);
     try {
-      // Simulate validation call - in production this would call the validation engine
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const messages: string[] = [];
       let redFlagCount = 0;
       let missingBridgeCount = 0;
 
-      // Check for critical issues
       const hasKitchen = state.spaces.some(s => s.code === 'KIT' || s.code === 'SHOWKIT');
       if (!hasKitchen) {
         messages.push('[CRITICAL] No kitchen space defined');
         redFlagCount++;
       }
 
-      const hasPrimarySuite = state.spaces.some(s => s.code === 'PRIM' || s.code.startsWith('PRI'));
+      const hasPrimarySuite = state.spaces.some(s => s.code === 'PRI' || s.code?.startsWith('PRI'));
       if (!hasPrimarySuite) {
         messages.push('[CRITICAL] No primary suite defined');
         redFlagCount++;
       }
 
-      // Check SF allocation
-      const totalAllocated = state.spaces.reduce((sum, s) => sum + s.sf, 0);
+      const totalAllocated = state.spaces.reduce((sum, s) => sum + (s.targetSF || 0), 0);
       if (Math.abs(totalAllocated - state.totalSF) > 100) {
         messages.push(`[WARNING] SF mismatch: allocated ${totalAllocated.toLocaleString()} vs target ${state.totalSF.toLocaleString()}`);
       }
 
-      // Check bridges
       const bridgeChecks = [
-        { key: 'butlerPantry', name: 'Butler Pantry' },
-        { key: 'guestAutonomy', name: 'Guest Autonomy' },
-        { key: 'soundLock', name: 'Sound Lock' },
-        { key: 'wetFeetIntercept', name: 'Wet-Feet Intercept' },
-        { key: 'opsCore', name: 'Operations Core' }
-      ] as const;
+        { key: 'butlerPantry' as const, name: 'Butler Pantry' },
+        { key: 'guestAutonomy' as const, name: 'Guest Autonomy' },
+        { key: 'soundLock' as const, name: 'Sound Lock' },
+        { key: 'wetFeetIntercept' as const, name: 'Wet-Feet Intercept' },
+        { key: 'opsCore' as const, name: 'Operations Core' }
+      ];
 
       for (const bridge of bridgeChecks) {
         if (!state.bridgeConfig[bridge.key]) {
@@ -235,22 +217,11 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
         }
       }
 
-      // Check adjacency conflicts
-      const adjacencyConflicts = state.adjacencyMatrix.filter(
-        adj => adj.relation === 'N' && adj.required
-      );
-      for (const conflict of adjacencyConflicts) {
-        messages.push(`[WARNING] Required adjacency ${conflict.from} → ${conflict.to} set to Never`);
-      }
-
-      // Calculate score
       let score = 100;
       score -= redFlagCount * 20;
       score -= missingBridgeCount * 5;
-      score -= adjacencyConflicts.length * 3;
       score = Math.max(0, Math.min(100, score));
 
-      // Determine gate status
       let gateStatus: ValidationPreview['gateStatus'] = 'pass';
       if (redFlagCount > 0) {
         gateStatus = 'fail';
@@ -270,12 +241,10 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
     }
   }, [state]);
 
-  // Export
   const handleExport = useCallback(() => {
     return exportToPlanBrief(state);
   }, [state]);
 
-  // Undo/Redo
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < history.length - 1;
 
@@ -295,9 +264,16 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
     }
   }, [canRedo, history, historyIndex]);
 
-  // Reset
   const handleReset = useCallback(() => {
-    const freshState = kycContext ? initializeFromKYC(kycContext) : loadPreset(initialPreset);
+    const preset = getPreset(initialPreset);
+    let freshState: BriefingBuilderState;
+    if (kycContext && preset) {
+      freshState = initializeFromKYC(preset, kycContext, 'project-001', 'New Project');
+    } else if (preset) {
+      freshState = loadPreset(preset, 'project-001', 'New Project');
+    } else {
+      return;
+    }
     setHistory([]);
     setHistoryIndex(-1);
     setState(freshState);
@@ -305,40 +281,24 @@ export function useBriefingBuilder(options: UseBriefingBuilderOptions = {}): Use
   }, [initialPreset, kycContext]);
 
   return {
-    // State
     state,
     isLoading,
-    validationPreview,
     isValidating,
+    validationPreview,
 
-    // Space operations
     handleUpdateSpace,
     handleAddSpace,
     handleRemoveSpace,
-
-    // Adjacency operations
     handleUpdateAdjacency,
-
-    // Bridge operations
     handleToggleBridge,
-
-    // Preset operations
     handleLoadPreset,
-    handleApplyKYC,
-
-    // Validation
     runValidationPreview,
-
-    // Export
     handleExport,
 
-    // Undo/Redo
     canUndo,
     canRedo,
     handleUndo,
     handleRedo,
-
-    // Reset
     handleReset
   };
 }

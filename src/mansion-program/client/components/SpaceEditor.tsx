@@ -7,7 +7,7 @@ import type { BriefSpace } from '../../shared/schema';
 
 export interface SpaceEditorProps {
   space: BriefSpace;
-  onUpdate: (field: keyof BriefSpace, value: any) => void;
+  onUpdate: (updates: Partial<BriefSpace>) => void;
   onDelete: () => void;
 }
 
@@ -49,7 +49,7 @@ export function SpaceEditor({ space, onUpdate, onDelete }: SpaceEditorProps) {
           <input
             type="number"
             value={space.targetSF}
-            onChange={e => onUpdate('targetSF', Number(e.target.value))}
+            onChange={e => onUpdate({ targetSF: Number(e.target.value) })}
             onClick={e => e.stopPropagation()}
             min={10}
             max={5000}
@@ -73,7 +73,7 @@ export function SpaceEditor({ space, onUpdate, onDelete }: SpaceEditorProps) {
               <input
                 type="text"
                 value={space.name}
-                onChange={e => onUpdate('name', e.target.value)}
+                onChange={e => onUpdate({ name: e.target.value })}
               />
             </label>
           </div>
@@ -84,7 +84,7 @@ export function SpaceEditor({ space, onUpdate, onDelete }: SpaceEditorProps) {
               <input
                 type="text"
                 value={space.zone}
-                onChange={e => onUpdate('zone', e.target.value)}
+                onChange={e => onUpdate({ zone: e.target.value })}
               />
             </label>
           </div>
@@ -94,7 +94,7 @@ export function SpaceEditor({ space, onUpdate, onDelete }: SpaceEditorProps) {
               Level:
               <select
                 value={space.level}
-                onChange={e => onUpdate('level', Number(e.target.value))}
+                onChange={e => onUpdate({ level: Number(e.target.value) })}
               >
                 {[1, 2, 3, 4].map(l => (
                   <option key={l} value={l}>Level {l}</option>

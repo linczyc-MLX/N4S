@@ -19,11 +19,17 @@ export interface BriefingBuilderProps {
   projectName: string;
   kycContext?: ValidationContext;
   initialPreset?: '10k' | '15k' | '20k';
-  onSave?: (brief: ReturnType<ReturnType<typeof useBriefingBuilder>['exportBrief']>) => void;
+  onSave?: (brief: ReturnType<typeof import('../utils/briefing-builder-utils').exportToPlanBrief>) => void;
   onCancel?: () => void;
 }
 
 type TabId = 'spaces' | 'adjacency' | 'bridges' | 'validation' | 'changes';
+
+const PRESET_OPTIONS = [
+  { id: '10k' as const, name: '10K Signature', targetSF: 10000 },
+  { id: '15k' as const, name: '15K Grand', targetSF: 15000 },
+  { id: '20k' as const, name: '20K Estate', targetSF: 20000 }
+];
 
 export function BriefingBuilder({
   projectId,
@@ -37,43 +43,40 @@ export function BriefingBuilder({
   const [showAddSpace, setShowAddSpace] = useState(false);
 
   const builder = useBriefingBuilder({
-    projectId,
-    projectName,
-    kycContext,
-    initialPreset
+    initialPreset,
+    kycContext
   });
 
   const {
     state,
     isLoading,
+    isValidating,
     validationPreview,
-    loadPresetById,
-    availablePresets,
-    updateSpaceField,
-    addSpace,
-    deleteSpace,
-    setAdjacency,
-    getAdjacency,
-    toggleBridge,
+    handleUpdateSpace,
+    handleAddSpace,
+    handleRemoveSpace,
+    handleUpdateAdjacency,
+    handleToggleBridge,
+    handleLoadPreset,
     runValidationPreview,
-    exportBrief,
-    getSpacesByLevel,
-    getZones,
-    undoLastChange,
-    canUndo
+    handleExport,
+    canUndo,
+    handleUndo,
+    handleReset
   } = builder;
 
+  // Group spaces by level
   const spacesByLevel = useMemo(() => {
     const levels = [...new Set(state.spaces.map(s => s.level))].sort();
     return levels.map(level => ({
       level,
-      spaces: getSpacesByLevel(level),
-      totalSF: getSpacesByLevel(level).reduce((sum, s) => sum + s.targetSF, 0)
+      spaces: state.spaces.filter(s => s.level === level),
+      totalSF: state.spaces.filter(s => s.level === level).reduce((sum, s) => sum + (s.targetSF || 0), 0)
     }));
-  }, [state.spaces, getSpacesByLevel]);
+  }, [state.spaces]);
 
   const handleSave = () => {
-    const brief = exportBrief();
+    const brief = handleExport();
     onSave?.(brief);
   };
 
@@ -82,11 +85,11 @@ export function BriefingBuilder({
       <div className="preset-selector">
         <label>Baseline Preset:</label>
         <div className="preset-buttons">
-          {availablePresets.map(preset => (
+          {PRESET_OPTIONS.map(preset => (
             <button
               key={preset.id}
               className={`preset-btn ${state.basePreset === preset.id ? 'active' : ''}`}
-              onClick={() => loadPresetById(preset.id as '10k' | '15k' | '20k')}
+              onClick={() => handleLoadPreset(preset.id)}
             >
               {preset.name}
               <span className="preset-sf">{preset.targetSF.toLocaleString()} SF</span>
@@ -105,34 +108,31 @@ export function BriefingBuilder({
           <span className="stat-label">Total SF</span>
         </div>
         <div className="stat">
-          <span className="stat-value">{state.bedrooms}</span>
-          <span className="stat-label">Bedrooms</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{state.levels}</span>
-          <span className="stat-label">Levels</span>
+          <span className="stat-value">{state.appliedChanges.length}</span>
+          <span className="stat-label">Changes</span>
         </div>
       </div>
 
-      {spacesByLevel.map(({ level, spaces, totalSF }) => (
-        <div key={level} className="level-section">
-          <h3 className="level-header">
-            Level {level}
-            <span className="level-sf">{totalSF.toLocaleString()} SF</span>
-          </h3>
-
-          <div className="spaces-grid">
-            {spaces.map(space => (
-              <SpaceEditor
-                key={space.id}
-                space={space}
-                onUpdate={(field, value) => updateSpaceField(space.id, field, value)}
-                onDelete={() => deleteSpace(space.id)}
-              />
-            ))}
+      <div className="spaces-by-level">
+        {spacesByLevel.map(({ level, spaces, totalSF }) => (
+          <div key={level} className="level-group">
+            <div className="level-header">
+              <h3>Level {level}</h3>
+              <span className="level-sf">{totalSF.toLocaleString()} SF</span>
+            </div>
+            <div className="spaces-grid">
+              {spaces.map(space => (
+                <SpaceEditor
+                  key={space.code}
+                  space={space}
+                  onUpdate={(updates) => handleUpdateSpace(space.code, updates)}
+                  onDelete={() => handleRemoveSpace(space.code)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <button
         className="add-space-btn"
@@ -143,162 +143,155 @@ export function BriefingBuilder({
 
       {showAddSpace && (
         <AddSpaceModal
-          zones={getZones()}
-          levels={spacesByLevel.map(l => l.level)}
           onAdd={(space) => {
-            addSpace(space);
+            handleAddSpace(space);
             setShowAddSpace(false);
           }}
           onClose={() => setShowAddSpace(false)}
+          existingCodes={state.spaces.map(s => s.code)}
         />
       )}
     </div>
   );
 
+  const renderAdjacencyTab = () => (
+    <AdjacencyMatrix
+      spaces={state.spaces}
+      adjacencyMatrix={state.adjacencyMatrix}
+      onUpdate={handleUpdateAdjacency}
+    />
+  );
+
+  const renderBridgesTab = () => (
+    <BridgePanel
+      bridgeConfig={state.bridgeConfig}
+      onToggle={handleToggleBridge}
+      kycContext={kycContext}
+    />
+  );
+
+  const renderValidationTab = () => (
+    <ValidationPanel
+      preview={validationPreview}
+      isLoading={isValidating}
+      onRunValidation={runValidationPreview}
+      state={state}
+    />
+  );
+
+  const renderChangesTab = () => (
+    <ChangesLog changes={state.appliedChanges} />
+  );
+
+  const tabs: { id: TabId; label: string; count?: number }[] = [
+    { id: 'spaces', label: 'Spaces', count: state.spaces.length },
+    { id: 'adjacency', label: 'Adjacency', count: state.adjacencyMatrix.length },
+    { id: 'bridges', label: 'Bridges' },
+    { id: 'validation', label: 'Validation' },
+    { id: 'changes', label: 'Changes', count: state.appliedChanges.length }
+  ];
+
   return (
     <div className="briefing-builder">
       <header className="builder-header">
         <div className="header-left">
-          <h1>{projectName}</h1>
+          <h1>{projectName || 'Briefing Builder'}</h1>
           <span className="project-id">{projectId}</span>
         </div>
         <div className="header-right">
           {canUndo && (
-            <button className="undo-btn" onClick={undoLastChange}>
+            <button className="undo-btn" onClick={handleUndo}>
               ↶ Undo
             </button>
           )}
-          {state.isDirty && <span className="dirty-indicator">Unsaved changes</span>}
-          <button className="cancel-btn" onClick={onCancel}>
-            Cancel
+          <button className="reset-btn" onClick={handleReset}>
+            Reset
           </button>
+          {onCancel && (
+            <button className="cancel-btn" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
           <button className="save-btn" onClick={handleSave}>
             Save Brief
           </button>
         </div>
       </header>
 
-      {kycContext && (
-        <div className="kyc-summary">
-          <div className="kyc-item">
-            <strong>Recommended:</strong> {kycContext.recommendedPreset.toUpperCase()}
-          </div>
-          <div className="kyc-item">
-            <strong>Confidence:</strong> {kycContext.confidenceScore}%
-          </div>
-          <div className="kyc-item">
-            <strong>Custom Requirements:</strong> {kycContext.uniqueRequirements.length}
-          </div>
-          {kycContext.warnings.length > 0 && (
-            <div className="kyc-warnings">
-              <strong>⚠ {kycContext.warnings.length} warning(s)</strong>
-            </div>
-          )}
-        </div>
-      )}
-
-      <nav className="tab-nav">
-        <button
-          className={`tab-btn ${activeTab === 'spaces' ? 'active' : ''}`}
-          onClick={() => setActiveTab('spaces')}
-        >
-          Spaces ({state.spaces.length})
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'adjacency' ? 'active' : ''}`}
-          onClick={() => setActiveTab('adjacency')}
-        >
-          Adjacency
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'bridges' ? 'active' : ''}`}
-          onClick={() => setActiveTab('bridges')}
-        >
-          Bridges
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'validation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('validation')}
-        >
-          Validation
-          {validationPreview && (
-            <span className={`validation-badge ${validationPreview.gateStatus}`}>
-              {validationPreview.gateStatus}
-            </span>
-          )}
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'changes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('changes')}
-        >
-          Changes ({state.appliedChanges.length})
-        </button>
+      <nav className="builder-tabs">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+            {tab.count !== undefined && (
+              <span className="tab-count">{tab.count}</span>
+            )}
+          </button>
+        ))}
       </nav>
 
-      <main className="tab-content">
+      <main className="builder-content">
+        {isLoading && <div className="loading-overlay">Loading...</div>}
+
         {activeTab === 'spaces' && renderSpacesTab()}
-        {activeTab === 'adjacency' && (
-          <AdjacencyMatrix
-            spaces={state.spaces}
-            adjacencyMatrix={state.adjacencyMatrix}
-            onUpdate={setAdjacency}
-            getAdjacency={getAdjacency}
-          />
-        )}
-        {activeTab === 'bridges' && (
-          <BridgePanel
-            bridgeConfig={state.bridgeConfig}
-            onToggle={toggleBridge}
-            kycContext={kycContext}
-          />
-        )}
-        {activeTab === 'validation' && (
-          <ValidationPanel
-            preview={validationPreview}
-            isLoading={isLoading}
-            onRunValidation={runValidationPreview}
-            state={state}
-          />
-        )}
-        {activeTab === 'changes' && (
-          <ChangesLog changes={state.appliedChanges} />
-        )}
+        {activeTab === 'adjacency' && renderAdjacencyTab()}
+        {activeTab === 'bridges' && renderBridgesTab()}
+        {activeTab === 'validation' && renderValidationTab()}
+        {activeTab === 'changes' && renderChangesTab()}
       </main>
+
+      {state.isDirty && (
+        <div className="dirty-indicator">
+          Unsaved changes
+        </div>
+      )}
     </div>
   );
 }
 
+// Add Space Modal Component
 interface AddSpaceModalProps {
-  zones: string[];
-  levels: number[];
-  onAdd: (space: Omit<import('../../shared/schema').BriefSpace, 'id'>) => void;
+  onAdd: (space: {
+    code: string;
+    name: string;
+    zone: string;
+    level: number;
+    sf: number;
+  }) => void;
   onClose: () => void;
+  existingCodes: string[];
 }
 
-function AddSpaceModal({ zones, levels, onAdd, onClose }: AddSpaceModalProps) {
+function AddSpaceModal({ onAdd, onClose, existingCodes }: AddSpaceModalProps) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [targetSF, setTargetSF] = useState(100);
-  const [zone, setZone] = useState(zones[0] || 'Special Purpose');
-  const [level, setLevel] = useState(levels[0] || 1);
+  const [zone, setZone] = useState('living');
+  const [level, setLevel] = useState(1);
+  const [sf, setSf] = useState(200);
+
+  const isValid = code.length >= 2 &&
+    name.length >= 2 &&
+    !existingCodes.includes(code.toUpperCase());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code || !name) return;
-
-    onAdd({
-      code: code.toUpperCase(),
-      name,
-      targetSF,
-      zone,
-      level,
-      rationale: 'Added manually'
-    });
+    if (isValid) {
+      onAdd({
+        code: code.toUpperCase(),
+        name,
+        zone,
+        level,
+        sf
+      });
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
         <h2>Add Custom Space</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-row">
@@ -307,10 +300,9 @@ function AddSpaceModal({ zones, levels, onAdd, onClose }: AddSpaceModalProps) {
               <input
                 type="text"
                 value={code}
-                onChange={e => setCode(e.target.value)}
-                placeholder="e.g., ARTSTU"
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                placeholder="e.g., YOGA"
                 maxLength={8}
-                required
               />
             </label>
             <label>
@@ -319,48 +311,46 @@ function AddSpaceModal({ zones, levels, onAdd, onClose }: AddSpaceModalProps) {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="e.g., Art Studio"
-                required
+                placeholder="e.g., Yoga Studio"
               />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              Target SF:
-              <input
-                type="number"
-                value={targetSF}
-                onChange={e => setTargetSF(Number(e.target.value))}
-                min={10}
-                max={5000}
-              />
-            </label>
-            <label>
-              Level:
-              <select value={level} onChange={e => setLevel(Number(e.target.value))}>
-                {levels.map(l => (
-                  <option key={l} value={l}>Level {l}</option>
-                ))}
-                <option value={Math.max(...levels) + 1}>
-                  Level {Math.max(...levels) + 1} (New)
-                </option>
-              </select>
             </label>
           </div>
           <div className="form-row">
             <label>
               Zone:
               <select value={zone} onChange={e => setZone(e.target.value)}>
-                {zones.map(z => (
-                  <option key={z} value={z}>{z}</option>
-                ))}
-                <option value="Special Purpose">Special Purpose</option>
+                <option value="living">Living</option>
+                <option value="sleeping">Sleeping</option>
+                <option value="service">Service</option>
+                <option value="wellness">Wellness</option>
+                <option value="outdoor">Outdoor</option>
               </select>
+            </label>
+            <label>
+              Level:
+              <input
+                type="number"
+                value={level}
+                onChange={e => setLevel(parseInt(e.target.value) || 1)}
+                min={0}
+                max={3}
+              />
+            </label>
+            <label>
+              SF:
+              <input
+                type="number"
+                value={sf}
+                onChange={e => setSf(parseInt(e.target.value) || 0)}
+                min={50}
+                max={2000}
+                step={50}
+              />
             </label>
           </div>
           <div className="form-actions">
             <button type="button" onClick={onClose}>Cancel</button>
-            <button type="submit" className="primary">Add Space</button>
+            <button type="submit" disabled={!isValid}>Add Space</button>
           </div>
         </form>
       </div>

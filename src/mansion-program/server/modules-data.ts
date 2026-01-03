@@ -1,4 +1,4 @@
-import type { ModuleDefinition } from "@shared/schema";
+import type { ModuleDefinition } from "../shared/schema";
 
 export const modulesData: ModuleDefinition[] = [
   {

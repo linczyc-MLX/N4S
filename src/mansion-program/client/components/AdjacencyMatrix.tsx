@@ -9,7 +9,6 @@ export interface AdjacencyMatrixProps {
   spaces: BriefSpace[];
   adjacencyMatrix: AdjacencyRequirement[];
   onUpdate: (fromCode: string, toCode: string, relationship: AdjacencyType | null) => void;
-  getAdjacency: (fromCode: string, toCode: string) => AdjacencyType | null;
 }
 
 type RelationshipType = 'A' | 'N' | 'B' | 'S' | null;
@@ -21,7 +20,14 @@ const RELATIONSHIP_LABELS: Record<string, { label: string; color: string; descri
   'S': { label: 'S', color: '#f44336', description: 'Separate - Isolation required' }
 };
 
-export function AdjacencyMatrix({ spaces, adjacencyMatrix, onUpdate, getAdjacency }: AdjacencyMatrixProps) {
+export function AdjacencyMatrix({ spaces, adjacencyMatrix, onUpdate }: AdjacencyMatrixProps) {
+  // Derive getAdjacency from the matrix
+  const getAdjacency = (fromCode: string, toCode: string): AdjacencyType | null => {
+    const entry = adjacencyMatrix.find(
+      adj => adj.fromSpaceCode === fromCode && adj.toSpaceCode === toCode
+    );
+    return entry?.relationship || null;
+  };
   const [filterZone, setFilterZone] = useState<string | null>(null);
   const [filterLevel, setFilterLevel] = useState<number | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ from: string; to: string } | null>(null);
