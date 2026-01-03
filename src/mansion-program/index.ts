@@ -140,3 +140,30 @@ export {
   multiGenKYC,
   runTests as runAdjacencyTests
 } from './test/adjacency-recommender-test';
+
+// Adjacency Personalization UI Components
+export {
+  AdjacencyPersonalization,
+  type AdjacencyPersonalizationProps,
+  type PersonalizationOutput
+} from './client/components/AdjacencyPersonalization';
+
+export {
+  DecisionCard,
+  type DecisionCardProps
+} from './client/components/DecisionCard';
+
+export {
+  RecommendationsSummary,
+  type RecommendationsSummaryProps
+} from './client/components/RecommendationsSummary';
+
+export {
+  DecisionDetail,
+  type DecisionDetailProps
+} from './client/components/DecisionDetail';
+
+export {
+  PersonalizationResult,
+  type PersonalizationResultProps
+} from './client/components/PersonalizationResult';

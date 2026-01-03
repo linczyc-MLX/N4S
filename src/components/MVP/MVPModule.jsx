@@ -3,10 +3,11 @@ import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
   Home, Users, ChefHat, Dumbbell, Wine, Tv, BookOpen,
   Sofa, Gamepad2, Beer, BedDouble, Coffee, TreePine,
-  Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer, FileText
+  Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer, FileText, Sparkles
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
+import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import { transformKYCToMVPBrief, getMVPBriefSummary, countSelectedAmenities } from '../../lib/mvp-bridge';
 import { quads, categoryOrder } from '../../data/tasteQuads';
 
@@ -220,6 +221,27 @@ const MVPModule = () => {
   // Derive project info for BriefingBuilderView
   const projectId = clientBaseName || 'project-001';
   const projectName = kycData[activeRespondent]?.projectParameters?.projectName || 'New Project';
+
+  // If in personalization mode, show Adjacency Personalization
+  if (viewMode === 'personalization') {
+    return (
+      <AdjacencyPersonalizationView
+        kycData={kycData}
+        mvpData={briefInputs}
+        tasteProfile={tasteProfileP}
+        projectId={projectId}
+        projectName={projectName}
+        onBack={() => setViewMode('overview')}
+        onComplete={(result) => {
+          console.log('Personalization result:', result);
+          setViewMode('overview');
+        }}
+        onViewDiagram={() => {
+          setViewMode('builder');
+        }}
+      />
+    );
+  }
 
   // If in builder mode, show Briefing Builder
   if (viewMode === 'builder') {
@@ -599,6 +621,13 @@ const MVPModule = () => {
           Open the Briefing Builder to configure spaces, adjacencies, and operational bridges.
           Run validation preview and export your completed PlanBrief.
         </p>
+        <button
+          onClick={() => setViewMode('personalization')}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Sparkles className="w-4 h-4" />
+          Personalize Your Layout
+        </button>
         <button
           onClick={() => setViewMode('builder')}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
