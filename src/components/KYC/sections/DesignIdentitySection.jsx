@@ -314,10 +314,11 @@ const CompletedView = ({
     return 'Transitional';
   };
 
-  // Build report options with location
+  // Build report options with location and kycData
   const buildReportOptions = () => {
     return {
-      location: location || null
+      location: location || null,
+      kycData: kycData
     };
   };
 

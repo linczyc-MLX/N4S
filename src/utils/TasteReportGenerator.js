@@ -279,7 +279,7 @@ export class TasteReportGenerator {
     );
   }
 
-  drawSlider5(x, y, width, value, label) {
+  drawSlider5(x, y, width, value, label, leftLabel = '', rightLabel = '') {
     const trackHeight = 8;
     const normalizedValue = Math.max(1, Math.min(5, value));
     const fillWidth = ((normalizedValue - 1) / 4) * width;
@@ -309,6 +309,20 @@ export class TasteReportGenerator {
     // Marker
     this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
     this.doc.circle(x + fillWidth, y + trackHeight / 2, 6, 'F');
+
+    // Endpoint labels below slider
+    if (leftLabel || rightLabel) {
+      this.doc.setFontSize(7);
+      this.doc.setFont('helvetica', 'normal');
+      this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+      if (leftLabel) {
+        this.doc.text(leftLabel, x, y + trackHeight + 10);
+      }
+      if (rightLabel) {
+        this.doc.text(rightLabel, x + width, y + trackHeight + 10, { align: 'right' });
+      }
+      return y + trackHeight + 18;
+    }
 
     return y + trackHeight + 8;
   }
@@ -370,11 +384,11 @@ export class TasteReportGenerator {
     y += 25;
 
     const sliderWidth = 200;
-    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.styleEra, 'Style Era');
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.styleEra, 'Style Era', 'Contemporary', 'Traditional');
     y += 5;
-    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.materialComplexity, 'Material Complexity');
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.materialComplexity, 'Material Complexity', 'Minimal', 'Layered');
     y += 5;
-    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.moodPalette, 'Mood Palette');
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.moodPalette, 'Mood Palette', 'Warm', 'Cool');
 
     y += 15;
 
