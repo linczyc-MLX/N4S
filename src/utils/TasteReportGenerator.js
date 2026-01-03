@@ -684,7 +684,7 @@ export class TasteReportGenerator {
 
     y = 65;
 
-    // Client info line
+    // Client info line(s)
     this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
@@ -693,10 +693,19 @@ export class TasteReportGenerator {
     const projectName = this.getProjectName();
     const location = this.getLocation();
 
+    // Line 1: Client, Project, Location
     let infoText = `Client: ${clientName}`;
     if (projectName) infoText += `    Project: ${projectName}`;
     if (location) infoText += `    Location: ${location}`;
     this.doc.text(infoText, this.margin, y);
+
+    // Line 2: Partner name (if exists), indented to align under principal name
+    if (this.hasPartnerData) {
+      const secondaryName = this.getSecondaryName();
+      // "Client: " is about 35pt wide, indent partner name to align
+      this.doc.text(`           ${secondaryName}`, this.margin, y + 14);
+      y += 14;
+    }
 
     y += 25;
 
