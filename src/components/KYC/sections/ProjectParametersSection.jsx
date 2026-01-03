@@ -66,8 +66,20 @@ const ProjectParametersSection = ({ respondent, tier }) => {
   return (
     <div className="kyc-section">
       <div className="kyc-section__group">
+        <h3 className="kyc-section__group-title">Project Identification</h3>
+
+        <FormField
+          label="Project Name"
+          value={data.projectName}
+          onChange={(v) => handleChange('projectName', v)}
+          placeholder="e.g., Smith Residence, Villa Azure, The Thornwood Estate"
+          required
+        />
+      </div>
+
+      <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Location</h3>
-        
+
         <div className="form-grid form-grid--2col">
           <FormField
             label="City"
