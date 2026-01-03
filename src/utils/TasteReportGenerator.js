@@ -1,31 +1,11 @@
 // ============================================
 // N4S TASTE PROFILE REPORT GENERATOR
 // PDF Generation using jsPDF
-// Version: FINAL - Matches approved PDF format
+// Version: 3.0 - New Design Specifications
 // ============================================
 
 import jsPDF from 'jspdf';
-import {
-  QUAD_MATRIX,
-  CATEGORIES,
-  CATEGORY_ORDER,
-  AS_LABELS,
-  AS_ORDER,
-  VD_LABELS,
-  MP_LABELS,
-  getCodeValue,
-  getQuadPosition
-} from '../data/tasteConfig';
-import { quads } from '../data/tasteQuads';
-
-// Helper to get correct image URL from quads data
-const getSelectionImageUrl = (quadId, positionIndex) => {
-  const quad = quads.find(q => q.quadId === quadId);
-  if (!quad || !quad.images || !quad.images[positionIndex]) {
-    return null;
-  }
-  return quad.images[positionIndex];
-};
+import { quads, categories as quadCategories } from '../data/tasteQuads';
 
 // ============================================
 // CONSTANTS
@@ -34,217 +14,92 @@ const getSelectionImageUrl = (quadId, positionIndex) => {
 // N4S Brand Colors (RGB values for jsPDF)
 const NAVY = { r: 30, g: 58, b: 95 };
 const GOLD = { r: 201, g: 162, b: 39 };
-const LIGHT_GOLD = { r: 245, g: 240, b: 225 };
+const CREAM = { r: 254, g: 249, b: 231 }; // #FEF9E7
+const CARD_BG = { r: 248, g: 250, b: 252 }; // #F8FAFC
+const LIGHT_GRAY = { r: 100, g: 116, b: 139 }; // #64748B
 const DARK_TEXT = { r: 45, g: 55, b: 72 };
-const LIGHT_TEXT = { r: 113, g: 128, b: 150 };
-const WARM_GRAY = { r: 248, g: 250, b: 252 };
 const WHITE = { r: 255, g: 255, b: 255 };
-const SUCCESS_GREEN = { r: 56, g: 161, b: 105 };
-const WARNING_ORANGE = { r: 221, g: 107, b: 32 };
-const ERROR_RED = { r: 197, g: 48, b: 48 };
+const SUCCESS_GREEN = { r: 34, g: 197, b: 94 };
 
-// Category mapping
-const CATEGORY_MAP = {
-  'exterior_architecture': { code: 'EA', name: 'Exterior Architecture' },
-  'living_spaces': { code: 'LS', name: 'Living Spaces' },
-  'dining_spaces': { code: 'DS', name: 'Dining Spaces' },
-  'kitchens': { code: 'KT', name: 'Kitchens' },
-  'family_areas': { code: 'FA', name: 'Family Areas' },
-  'primary_bedrooms': { code: 'PB', name: 'Primary Bedrooms' },
-  'primary_bathrooms': { code: 'PBT', name: 'Primary Bathrooms' },
-  'guest_bedrooms': { code: 'GB', name: 'Guest Bedrooms' },
-  'outdoor_living': { code: 'OL', name: 'Outdoor Living' }
-};
+// Category mapping with order
+const CATEGORY_ORDER = [
+  { id: 'exterior_architecture', code: 'EA', name: 'Exterior Architecture' },
+  { id: 'living_spaces', code: 'LS', name: 'Living Spaces' },
+  { id: 'dining_spaces', code: 'DS', name: 'Dining Spaces' },
+  { id: 'kitchens', code: 'KT', name: 'Kitchens' },
+  { id: 'family_areas', code: 'FA', name: 'Family Areas' },
+  { id: 'primary_bedrooms', code: 'PB', name: 'Primary Bedrooms' },
+  { id: 'primary_bathrooms', code: 'PBT', name: 'Primary Bathrooms' },
+  { id: 'guest_bedrooms', code: 'GB', name: 'Guest Bedrooms' },
+  { id: 'outdoor_living', code: 'OL', name: 'Outdoor Living' }
+];
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
 
-/**
- * Format date for display
- */
 function formatDate(date) {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   return date.toLocaleDateString('en-US', options);
 }
 
-/**
- * Get style position on 1-9 scale
- */
-function getStylePosition(styleCode) {
-  const idx = AS_ORDER.indexOf(styleCode);
-  return idx >= 0 ? idx + 1 : 5;
+// Get image URL from quads data
+function getSelectionImageUrl(quadId, positionIndex) {
+  const quad = quads.find(q => q.quadId === quadId);
+  if (!quad || !quad.images || !quad.images[positionIndex]) {
+    return null;
+  }
+  return quad.images[positionIndex];
 }
 
-/**
- * Calculate metrics for a specific category
- */
-function getCategoryMetrics(selections) {
-  if (!selections || selections.length === 0) {
-    return { ct: 2.5, ml: 2.5, mp: 2.5, dominantStyle: 'AS5' };
-  }
+// Extract AS/VD/MP codes from image filename
+// Format: LS-001_0_AS1_VD1_MP1.png
+function extractCodesFromFilename(imageUrl) {
+  if (!imageUrl) return null;
 
-  let totalCT = 0, totalML = 0, totalMP = 0, count = 0;
-  const styleCounts = {};
+  const filename = imageUrl.split('/').pop();
+  const asMatch = filename.match(/AS(\d)/);
+  const vdMatch = filename.match(/VD(\d)/);
+  const mpMatch = filename.match(/MP(\d)/);
 
-  selections.forEach(sel => {
-    if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
-      const quadData = getQuadPosition(sel.quadId, sel.selectedIndex);
-      if (quadData) {
-        const ctVal = getCodeValue(quadData.style);
-        const mlVal = getCodeValue(quadData.vd);
-        const mpVal = getCodeValue(quadData.mp);
-
-        totalCT += ctVal;
-        totalML += mlVal;
-        totalMP += mpVal;
-        count++;
-
-        styleCounts[quadData.style] = (styleCounts[quadData.style] || 0) + 1;
-      }
-    }
-  });
-
-  if (count === 0) {
-    return { ct: 2.5, ml: 2.5, mp: 2.5, dominantStyle: 'AS5' };
-  }
-
-  // Find dominant style
-  let dominantStyle = 'AS5';
-  let maxCount = 0;
-  Object.entries(styleCounts).forEach(([style, cnt]) => {
-    if (cnt > maxCount) {
-      maxCount = cnt;
-      dominantStyle = style;
-    }
-  });
+  if (!asMatch || !vdMatch || !mpMatch) return null;
 
   return {
-    ct: totalCT / count,
-    ml: totalML / count,
-    mp: totalMP / count,
-    dominantStyle
+    as: parseInt(asMatch[1]),
+    vd: parseInt(vdMatch[1]),
+    mp: parseInt(mpMatch[1])
   };
 }
 
-/**
- * Calculate overall metrics from profile
- */
-function calculateOverallMetrics(profile) {
-  if (!profile?.session?.progress) return null;
+// Normalize 1-9 scale to 1-5 scale
+function normalize9to5(value) {
+  return ((value - 1) / 8) * 4 + 1;
+}
 
-  let totalCT = 0, totalML = 0, totalMP = 0, count = 0;
-  const styleCounts = {};
-  const materialCounts = {};
+// Calculate per-category metrics from selected image
+function getCategoryMetricsFromSelection(quadId, positionIndex) {
+  const imageUrl = getSelectionImageUrl(quadId, positionIndex);
+  const codes = extractCodesFromFilename(imageUrl);
 
-  Object.values(profile.session.progress).forEach(catProgress => {
-    if (catProgress.selections) {
-      catProgress.selections.forEach(sel => {
-        if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
-          const quadData = getQuadPosition(sel.quadId, sel.selectedIndex);
-          if (quadData) {
-            totalCT += getCodeValue(quadData.style);
-            totalML += getCodeValue(quadData.vd);
-            totalMP += getCodeValue(quadData.mp);
-            count++;
-
-            styleCounts[quadData.style] = (styleCounts[quadData.style] || 0) + 1;
-            materialCounts[quadData.mp] = (materialCounts[quadData.mp] || 0) + 1;
-          }
-        }
-      });
-    }
-  });
-
-  if (count === 0) return null;
-
-  const avgCT = totalCT / count;
-  const avgML = totalML / count;
-  const avgMP = totalMP / count;
-
-  // Convert to 5-point scale
-  const ctScale5 = ((avgCT - 1) / 8) * 4 + 1;
-  const mlScale5 = avgML;
-  const mpScale5 = avgMP;
-
-  // Determine style label
-  let styleLabel = 'Transitional';
-  if (avgCT < 4) styleLabel = 'Contemporary';
-  else if (avgCT > 6) styleLabel = 'Traditional';
-
-  // Get top preferences
-  const sortedStyles = Object.entries(styleCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([code]) => AS_LABELS[code] || code);
-
-  const sortedMaterials = Object.entries(materialCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([code]) => MP_LABELS[code] || code);
+  if (!codes) {
+    return { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5 };
+  }
 
   return {
-    avgCT, avgML, avgMP,
-    ctScale5, mlScale5, mpScale5,
-    styleLabel,
-    regionalPreferences: sortedStyles,
-    materialPreferences: sortedMaterials
+    styleEra: normalize9to5(codes.as),
+    materialComplexity: normalize9to5(codes.vd),
+    moodPalette: normalize9to5(codes.mp)
   };
 }
 
-/**
- * Calculate alignment percentage between two profiles
- */
-function calculateAlignment(metricsP, metricsS) {
-  if (!metricsP || !metricsS) return 0;
-
-  const ctDiff = Math.abs(metricsP.ctScale5 - metricsS.ctScale5) / 4;
-  const mlDiff = Math.abs(metricsP.mlScale5 - metricsS.mlScale5) / 4;
-  const mpDiff = Math.abs(metricsP.mpScale5 - metricsS.mpScale5) / 4;
-
-  const avgDiff = (ctDiff + mlDiff + mpDiff) / 3;
-  return Math.round((1 - avgDiff) * 100);
+// Calculate overall style label from average style era
+function getStyleLabel(avgStyleEra) {
+  if (avgStyleEra < 2.5) return 'Contemporary';
+  if (avgStyleEra > 3.5) return 'Traditional';
+  return 'Transitional';
 }
 
-/**
- * Find flagged divergences between partners
- */
-function findDivergences(profileP, profileS) {
-  const flagged = [];
-
-  if (!profileP?.session?.progress || !profileS?.session?.progress) {
-    return flagged;
-  }
-
-  Object.entries(CATEGORY_MAP).forEach(([catId, catInfo]) => {
-    const selectionsP = profileP.session.progress[catId]?.selections || [];
-    const selectionsS = profileS.session.progress[catId]?.selections || [];
-
-    const metricsP = getCategoryMetrics(selectionsP);
-    const metricsS = getCategoryMetrics(selectionsS);
-
-    const posP = getStylePosition(metricsP.dominantStyle);
-    const posS = getStylePosition(metricsS.dominantStyle);
-    const gap = Math.abs(posP - posS);
-
-    if (gap > 2) {
-      flagged.push({
-        category: catInfo.name,
-        styleP: AS_LABELS[metricsP.dominantStyle] || metricsP.dominantStyle,
-        codeP: metricsP.dominantStyle,
-        styleS: AS_LABELS[metricsS.dominantStyle] || metricsS.dominantStyle,
-        codeS: metricsS.dominantStyle,
-        gap
-      });
-    }
-  });
-
-  return flagged;
-}
-
-/**
- * Load image as base64 for PDF embedding
- */
+// Load image as base64 for PDF embedding
 async function loadImageAsBase64(url) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -256,7 +111,7 @@ async function loadImageAsBase64(url) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       try {
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         resolve(dataUrl);
       } catch (e) {
         console.warn('Could not load image:', url);
@@ -271,6 +126,29 @@ async function loadImageAsBase64(url) {
   });
 }
 
+// Get selection for a category from profile
+function getSelectionForCategory(profile, categoryId) {
+  const flatSelections = profile.selections || profile.session?.selections || {};
+  const categoryQuads = quads.filter(q => q.category === categoryId);
+
+  for (const quad of categoryQuads) {
+    const sel = flatSelections[quad.quadId];
+    if (sel && sel.favorites && sel.favorites.length > 0) {
+      return { quadId: quad.quadId, positionIndex: sel.favorites[0] };
+    }
+  }
+
+  // Fallback to nested structure
+  const nestedSelections = profile.session?.progress?.[categoryId]?.selections || [];
+  for (const sel of nestedSelections) {
+    if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
+      return { quadId: sel.quadId, positionIndex: sel.selectedIndex };
+    }
+  }
+
+  return null;
+}
+
 // ============================================
 // MAIN REPORT GENERATOR CLASS
 // ============================================
@@ -280,687 +158,599 @@ export class TasteReportGenerator {
     this.doc = new jsPDF('p', 'pt', 'letter');
     this.profileP = profileP;
     this.profileS = profileS;
-    this.isCouple = !!profileS;
     this.options = options;
+    this.kycData = options.kycData || null;
 
     // Page dimensions
     this.pageWidth = 612;
     this.pageHeight = 792;
-    this.margin = 40;
+    this.margin = 36;
     this.contentWidth = this.pageWidth - (this.margin * 2);
 
     // Pagination
     this.currentPage = 1;
-    this.totalPages = this.isCouple ? 4 : 3;
+    this.totalPages = 4;
 
-    // Calculate metrics
-    this.metricsP = calculateOverallMetrics(profileP);
-    this.metricsS = profileS ? calculateOverallMetrics(profileS) : null;
+    // Pre-calculate all category selections and metrics
+    this.categoryData = this.calculateAllCategoryData();
   }
 
-  /**
-   * Generate the complete report
-   */
-  async generate() {
-    // Page 1: Profile overview + first 4 categories
-    this.addPage1();
+  calculateAllCategoryData() {
+    const data = {};
+    let totalStyleEra = 0;
+    let totalMaterialComplexity = 0;
+    let totalMoodPalette = 0;
+    let count = 0;
 
-    // Page 2: Remaining 5 categories
+    CATEGORY_ORDER.forEach(cat => {
+      const selection = getSelectionForCategory(this.profileP, cat.id);
+      if (selection) {
+        const metrics = getCategoryMetricsFromSelection(selection.quadId, selection.positionIndex);
+        data[cat.id] = {
+          ...cat,
+          selection,
+          metrics,
+          hasSelection: true
+        };
+        totalStyleEra += metrics.styleEra;
+        totalMaterialComplexity += metrics.materialComplexity;
+        totalMoodPalette += metrics.moodPalette;
+        count++;
+      } else {
+        data[cat.id] = {
+          ...cat,
+          selection: null,
+          metrics: { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5 },
+          hasSelection: false
+        };
+      }
+    });
+
+    // Calculate overall averages
+    this.overallMetrics = count > 0 ? {
+      styleEra: totalStyleEra / count,
+      materialComplexity: totalMaterialComplexity / count,
+      moodPalette: totalMoodPalette / count,
+      styleLabel: getStyleLabel(totalStyleEra / count)
+    } : {
+      styleEra: 2.5,
+      materialComplexity: 2.5,
+      moodPalette: 2.5,
+      styleLabel: 'Transitional'
+    };
+
+    return data;
+  }
+
+  async generate() {
+    // Page 1: Cover/Overview
+    this.addPage1Cover();
+
+    // Page 2: Categories 1-4 (EA, LS, DS, KT)
     this.doc.addPage();
     this.currentPage = 2;
-    this.addPage2();
+    await this.addSelectionsPage([0, 1, 2, 3]);
 
-    // Page 3: Partner Alignment (if couple)
-    if (this.isCouple && this.profileS) {
-      this.doc.addPage();
-      this.currentPage = 3;
-      this.addPage3Alignment();
-    }
-
-    // Final Page: Selection gallery
+    // Page 3: Categories 5-8 (FA, PB, PBT, GB)
     this.doc.addPage();
-    this.currentPage = this.totalPages;
-    await this.addPageGallery();
+    this.currentPage = 3;
+    await this.addSelectionsPage([4, 5, 6, 7]);
+
+    // Page 4: Category 9 (OL)
+    this.doc.addPage();
+    this.currentPage = 4;
+    await this.addSelectionsPage([8]);
 
     return this.doc;
   }
 
-  /**
-   * Add page footer
-   */
-  addPageFooter(isLastPage = false) {
-    const footerY = this.pageHeight - 30;
+  // Get client info from various sources
+  getClientName() {
+    const kyc = this.kycData?.principal?.portfolioContext;
+    if (kyc?.firstName || kyc?.lastName) {
+      return `${kyc.firstName || ''} ${kyc.lastName || ''}`.trim();
+    }
+    return this.profileP.clientId || this.profileP.clientName || 'Client';
+  }
 
-    // Date (left)
-    this.doc.setFontSize(7);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
+  getProjectName() {
+    return this.kycData?.principal?.projectParameters?.projectName || '';
+  }
+
+  getLocation() {
+    const params = this.kycData?.principal?.projectParameters;
+    if (params?.projectCity || params?.projectCountry) {
+      return `${params.projectCity || ''}, ${params.projectCountry || ''}`.replace(/^, |, $/g, '');
+    }
+    return this.options.location || '';
+  }
+
+  addPageFooter() {
+    const footerY = this.pageHeight - 25;
+
+    this.doc.setFontSize(8);
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
     this.doc.text(formatDate(new Date()), this.margin, footerY);
-
-    // Page number (right)
     this.doc.text(
       `Page ${this.currentPage} of ${this.totalPages}`,
       this.pageWidth - this.margin,
       footerY,
       { align: 'right' }
     );
-
-    // Copyright (only on last page)
-    if (isLastPage) {
-      this.doc.setFontSize(7);
-      this.doc.text(
-        'This report was generated by the N4S Taste Exploration system. Use this profile as a starting point for discussions with your design team.',
-        this.margin,
-        footerY - 25
-      );
-      this.doc.text(
-        '© 2026 Not4Sale Luxury Residential Advisory',
-        this.pageWidth / 2,
-        footerY - 12,
-        { align: 'center' }
-      );
-    }
   }
 
-  /**
-   * Draw a slider with marker
-   */
-  drawSlider(x, y, width, value, maxVal, leftLabel, rightLabel, showValue = true) {
-    const trackHeight = 6;
-    const markerPos = ((value - 1) / (maxVal - 1)) * width;
+  drawSlider5(x, y, width, value, label) {
+    const trackHeight = 8;
+    const normalizedValue = Math.max(1, Math.min(5, value));
+    const fillWidth = ((normalizedValue - 1) / 4) * width;
+
+    // Label
+    this.doc.setFontSize(9);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+    this.doc.text(label, x, y);
+
+    // Value
+    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.text(normalizedValue.toFixed(1), x + width + 10, y);
+
+    y += 6;
 
     // Track background
     this.doc.setFillColor(226, 232, 240);
-    this.doc.roundedRect(x, y, width, trackHeight, 3, 3, 'F');
+    this.doc.roundedRect(x, y, width, trackHeight, 4, 4, 'F');
 
-    // Filled portion (gold)
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.roundedRect(x, y, markerPos, trackHeight, 3, 3, 'F');
-
-    // Marker dot (navy)
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.circle(x + markerPos, y + trackHeight / 2, 5, 'F');
-
-    // Labels
-    this.doc.setFontSize(6);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text(leftLabel, x, y + trackHeight + 10);
-    this.doc.text(rightLabel, x + width, y + trackHeight + 10, { align: 'right' });
-
-    // Value display
-    if (showValue) {
-      this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-      this.doc.text(value.toFixed(1), x + width + 10, y + trackHeight / 2 + 2);
+    // Filled portion
+    if (fillWidth > 0) {
+      this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+      this.doc.roundedRect(x, y, fillWidth, trackHeight, 4, 4, 'F');
     }
+
+    // Marker
+    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.circle(x + fillWidth, y + trackHeight / 2, 6, 'F');
+
+    return y + trackHeight + 8;
   }
 
-  /**
-   * Draw comparison slider with P and S markers
-   */
-  drawComparisonSlider(x, y, width, valueP, valueS, maxVal, leftLabel, rightLabel) {
-    const trackHeight = 6;
-    const posP = ((valueP - 1) / (maxVal - 1)) * width;
-    const posS = ((valueS - 1) / (maxVal - 1)) * width;
+  addPage1Cover() {
+    let y = 0;
 
-    // Track background
-    this.doc.setFillColor(226, 232, 240);
-    this.doc.roundedRect(x, y, width, trackHeight, 3, 3, 'F');
-
-    // Principal marker (gold) with P label
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.circle(x + posP, y + trackHeight / 2, 6, 'F');
-    this.doc.setFontSize(6);
-    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    this.doc.text('P', x + posP - 2, y + trackHeight / 2 + 2);
-
-    // Secondary marker (navy) with S label
+    // Navy header bar
     this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.circle(x + posS, y + trackHeight / 2, 6, 'F');
-    this.doc.text('S', x + posS - 2, y + trackHeight / 2 + 2);
+    this.doc.rect(0, 0, this.pageWidth, 50, 'F');
 
-    // Labels
-    this.doc.setFontSize(6);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text(leftLabel, x, y + trackHeight + 10);
-    this.doc.text(rightLabel, x + width, y + trackHeight + 10, { align: 'right' });
-  }
-
-  /**
-   * Draw a category card with 3 DNA sliders
-   */
-  drawCategoryCard(x, y, catName, metrics) {
-    const cardWidth = 170;
-    const cardHeight = 95;
-
-    // Card background
-    this.doc.setFillColor(WARM_GRAY.r, WARM_GRAY.g, WARM_GRAY.b);
-    this.doc.roundedRect(x, y, cardWidth, cardHeight, 4, 4, 'F');
-
-    // Category header bar
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.roundedRect(x, y, cardWidth, 18, 4, 4, 'F');
-    this.doc.rect(x, y + 10, cardWidth, 8, 'F'); // Fill bottom corners
-
-    // Category name
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    this.doc.text(catName, x + cardWidth / 2, y + 12, { align: 'center' });
-
-    // DNA label
-    this.doc.setFontSize(7);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Design DNA', x + cardWidth / 2, y + 30, { align: 'center' });
-
-    const sliderX = x + 8;
-    const sliderWidth = cardWidth - 45;
-    let sliderY = y + 38;
-
-    // Style Era slider
-    this.doc.setFontSize(6);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('Style Era', sliderX, sliderY);
-    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.text(metrics.ct.toFixed(1), sliderX + sliderWidth + 8, sliderY);
-
-    this.doc.setFillColor(226, 232, 240);
-    this.doc.roundedRect(sliderX, sliderY + 3, sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.roundedRect(sliderX, sliderY + 3, (metrics.ct / 5) * sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.circle(sliderX + (metrics.ct / 5) * sliderWidth, sliderY + 4.5, 3, 'F');
-
-    this.doc.setFontSize(5);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('Contemporary', sliderX, sliderY + 12);
-    this.doc.text('Traditional', sliderX + sliderWidth - 22, sliderY + 12);
-
-    sliderY += 18;
-
-    // Material Complexity slider
-    this.doc.setFontSize(6);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('Material Complexity', sliderX, sliderY);
-    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.text(metrics.ml.toFixed(1), sliderX + sliderWidth + 8, sliderY);
-
-    this.doc.setFillColor(226, 232, 240);
-    this.doc.roundedRect(sliderX, sliderY + 3, sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.roundedRect(sliderX, sliderY + 3, (metrics.ml / 5) * sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.circle(sliderX + (metrics.ml / 5) * sliderWidth, sliderY + 4.5, 3, 'F');
-
-    this.doc.setFontSize(5);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('Minimal', sliderX, sliderY + 12);
-    this.doc.text('Layered', sliderX + sliderWidth - 15, sliderY + 12);
-
-    sliderY += 18;
-
-    // Mood Palette slider
-    this.doc.setFontSize(6);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('Mood Palette', sliderX, sliderY);
-    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.text(metrics.mp.toFixed(1), sliderX + sliderWidth + 8, sliderY);
-
-    this.doc.setFillColor(226, 232, 240);
-    this.doc.roundedRect(sliderX, sliderY + 3, sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.roundedRect(sliderX, sliderY + 3, (metrics.mp / 5) * sliderWidth, 3, 1, 1, 'F');
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.circle(sliderX + (metrics.mp / 5) * sliderWidth, sliderY + 4.5, 3, 'F');
-
-    this.doc.setFontSize(5);
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('Warm', sliderX, sliderY + 12);
-    this.doc.text('Cool', sliderX + sliderWidth - 10, sliderY + 12);
-  }
-
-  /**
-   * Page 1: Profile Overview
-   */
-  addPage1() {
-    let y = this.margin;
-
-    // Header
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.rect(0, 0, this.pageWidth, 45, 'F');
-
-    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.rect(0, 45, this.pageWidth, 3, 'F');
-
-    this.doc.setFontSize(18);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    this.doc.text('N4S', this.margin, 28);
-
+    // Header text
     this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'normal');
-    this.doc.text('Your Design Profile', this.margin + 40, 28);
+    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+    this.doc.text('N4S Your Design Profile', this.margin, 32);
+
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.text('Taste Exploration', this.pageWidth / 2, 32, { align: 'center' });
 
     y = 65;
 
-    // Client info
+    // Client info line
     this.doc.setFontSize(10);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('Client:', this.margin, y);
     this.doc.setFont('helvetica', 'normal');
-    this.doc.text(this.profileP.clientName || this.profileP.clientId || 'Unknown', this.margin + 40, y);
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
-    // Location from P1.A.3 (if available)
-    if (this.options.location) {
-      y += 12;
-      this.doc.setFont('helvetica', 'bold');
-      this.doc.text('Location:', this.margin, y);
-      this.doc.setFont('helvetica', 'normal');
-      this.doc.text(this.options.location, this.margin + 50, y);
-    }
+    const clientName = this.getClientName();
+    const projectName = this.getProjectName();
+    const location = this.getLocation();
+
+    let infoText = `Client: ${clientName}`;
+    if (projectName) infoText += `    Project: ${projectName}`;
+    if (location) infoText += `    Location: ${location}`;
+    this.doc.text(infoText, this.margin, y);
 
     y += 25;
 
-    // Style Label (large, centered)
-    this.doc.setFillColor(LIGHT_GOLD.r, LIGHT_GOLD.g, LIGHT_GOLD.b);
-    this.doc.roundedRect(this.margin, y, this.contentWidth, 35, 4, 4, 'F');
+    // Cream banner with style label
+    this.doc.setFillColor(CREAM.r, CREAM.g, CREAM.b);
+    this.doc.roundedRect(this.margin, y, this.contentWidth, 50, 6, 6, 'F');
 
-    this.doc.setFontSize(20);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text(this.metricsP?.styleLabel || 'Transitional', this.pageWidth / 2, y + 22, { align: 'center' });
-
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('Your overall design aesthetic', this.pageWidth / 2, y + 32, { align: 'center' });
-
-    y += 50;
-
-    // Design DNA Section
-    this.doc.setFontSize(12);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Design DNA: Style Axes', this.margin, y);
-    y += 18;
-
-    // Three main sliders
-    const sliderWidth = 250;
-
-    // Style Era
     this.doc.setFontSize(9);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text(`Style Era — ${(this.metricsP?.ctScale5 || 2.5).toFixed(1)}`, this.margin, y);
-    y += 8;
-    this.drawSlider(this.margin, y, sliderWidth, this.metricsP?.ctScale5 || 2.5, 5, 'Contemporary', 'Traditional', false);
-    y += 25;
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.text('Your overall design aesthetic', this.margin + 12, y + 18);
 
-    // Material Complexity
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text(`Material Complexity — ${(this.metricsP?.mlScale5 || 2.5).toFixed(1)}`, this.margin, y);
-    y += 8;
-    this.drawSlider(this.margin, y, sliderWidth, this.metricsP?.mlScale5 || 2.5, 5, 'Minimal', 'Layered', false);
-    y += 25;
-
-    // Mood Palette
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text(`Mood Palette — ${(this.metricsP?.mpScale5 || 2.5).toFixed(1)}`, this.margin, y);
-    y += 8;
-    this.drawSlider(this.margin, y, sliderWidth, this.metricsP?.mpScale5 || 2.5, 5, 'Warm', 'Cool', false);
-    y += 30;
-
-    // Style Preferences (two columns)
-    this.doc.setFontSize(12);
+    this.doc.setFontSize(24);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Style Preferences', this.margin, y);
-    y += 15;
+    this.doc.text(this.overallMetrics.styleLabel, this.pageWidth / 2, y + 35, { align: 'center' });
 
-    const colWidth = this.contentWidth / 2 - 10;
+    y += 65;
 
-    // Regional Influences
-    this.doc.setFontSize(9);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('Regional Influences', this.margin, y);
-
-    // Material Preferences
-    this.doc.text('Material Preferences', this.margin + colWidth + 20, y);
-    y += 12;
-
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(8);
-
-    const regional = this.metricsP?.regionalPreferences || ['Contemporary', 'Modern'];
-    const materials = this.metricsP?.materialPreferences || ['Natural', 'Neutral'];
-
-    regional.forEach((item, i) => {
-      this.doc.text(`• ${item}`, this.margin, y + (i * 10));
-    });
-
-    materials.forEach((item, i) => {
-      this.doc.text(`• ${item}`, this.margin + colWidth + 20, y + (i * 10));
-    });
-
-    y += Math.max(regional.length, materials.length) * 10 + 15;
-
-    // Per-Category Design Profile
-    this.doc.setFontSize(12);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Per-Category Design Profile', this.margin, y);
-    y += 15;
-
-    // First 4 category cards (2x2 grid)
-    const cardSpacing = 10;
-    const cardWidth = 170;
-    const categories = Object.entries(CATEGORY_MAP).slice(0, 4);
-
-    categories.forEach((entry, i) => {
-      const [catId, catInfo] = entry;
-      const selections = this.profileP.session?.progress?.[catId]?.selections || [];
-      const catMetrics = getCategoryMetrics(selections);
-
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const cardX = this.margin + (col * (cardWidth + cardSpacing));
-      const cardY = y + (row * 100);
-
-      this.drawCategoryCard(cardX, cardY, catInfo.name, catMetrics);
-    });
-
-    this.addPageFooter();
-  }
-
-  /**
-   * Page 2: Remaining Categories
-   */
-  addPage2() {
-    let y = this.margin;
-
-    // Header
-    this.doc.setFontSize(12);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Per-Category Design Profile', this.margin, y);
-
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('(continued)', this.margin + 165, y);
-    y += 20;
-
-    // Remaining 5 category cards (3 + 2 layout)
-    const cardSpacing = 10;
-    const cardWidth = 170;
-    const categories = Object.entries(CATEGORY_MAP).slice(4);
-
-    categories.forEach((entry, i) => {
-      const [catId, catInfo] = entry;
-      const selections = this.profileP.session?.progress?.[catId]?.selections || [];
-      const catMetrics = getCategoryMetrics(selections);
-
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const cardX = this.margin + (col * (cardWidth + cardSpacing));
-      const cardY = y + (row * 105);
-
-      this.drawCategoryCard(cardX, cardY, catInfo.name, catMetrics);
-    });
-
-    this.addPageFooter();
-  }
-
-  /**
-   * Page 3: Partner Alignment Analysis
-   */
-  addPage3Alignment() {
-    if (!this.profileS || !this.metricsS) return;
-
-    let y = this.margin;
-
-    // Title
+    // Design DNA: Style Axes section
     this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Partner Alignment Analysis', this.margin, y);
+    this.doc.text('Design DNA: Style Axes', this.margin, y);
     y += 25;
 
-    // Overall alignment percentage
-    const alignmentPct = calculateAlignment(this.metricsP, this.metricsS);
-    let alignColor = SUCCESS_GREEN;
-    if (alignmentPct < 70) alignColor = WARNING_ORANGE;
-    if (alignmentPct < 50) alignColor = ERROR_RED;
+    const sliderWidth = 200;
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.styleEra, 'Style Era');
+    y += 5;
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.materialComplexity, 'Material Complexity');
+    y += 5;
+    y = this.drawSlider5(this.margin, y, sliderWidth, this.overallMetrics.moodPalette, 'Mood Palette');
 
-    this.doc.setFontSize(16);
-    this.doc.setTextColor(alignColor.r, alignColor.g, alignColor.b);
-    this.doc.text(`Overall Alignment: ${alignmentPct}%`, this.margin, y);
-    y += 30;
-
-    // DNA Axis Comparison
-    this.doc.setFontSize(11);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('DNA Axis Comparison', this.margin, y);
     y += 15;
 
-    // Legend
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text('P = Principal (gold)    S = Secondary (navy)', this.margin, y);
-    y += 20;
-
-    const sliderWidth = 300;
-
-    // Style Era comparison
-    this.doc.setFontSize(9);
+    // Style Preferences section (two columns)
+    this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Style Era', this.margin, y);
-    y += 12;
-    this.drawComparisonSlider(this.margin, y, sliderWidth, this.metricsP.ctScale5, this.metricsS.ctScale5, 5, 'Contemporary', 'Traditional');
-    y += 30;
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('Style Preferences', this.margin, y);
+    y += 18;
 
-    // Material Complexity comparison
-    this.doc.text('Material Complexity', this.margin, y);
-    y += 12;
-    this.drawComparisonSlider(this.margin, y, sliderWidth, this.metricsP.mlScale5, this.metricsS.mlScale5, 5, 'Minimal', 'Layered');
-    y += 30;
+    const colWidth = this.contentWidth / 2 - 20;
 
-    // Mood Palette comparison
-    this.doc.text('Mood Palette', this.margin, y);
-    y += 12;
-    this.drawComparisonSlider(this.margin, y, sliderWidth, this.metricsP.mpScale5, this.metricsS.mpScale5, 5, 'Warm', 'Cool');
-    y += 40;
+    // Regional Influences
+    this.doc.setFontSize(10);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+    this.doc.text('Regional Influences', this.margin, y);
+    this.doc.text('Material Preferences', this.margin + colWidth + 40, y);
+    y += 14;
 
-    // Flagged Divergences
-    const divergences = findDivergences(this.profileP, this.profileS);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setFontSize(9);
+
+    const regionItems = ['European Contemporary', 'California Modern', 'Mediterranean'];
+    const materialItems = ['Natural Stone', 'Warm Woods', 'Organic Textures'];
+
+    regionItems.forEach((item, i) => {
+      this.doc.text(`• ${item}`, this.margin, y + (i * 12));
+    });
+    materialItems.forEach((item, i) => {
+      this.doc.text(`• ${item}`, this.margin + colWidth + 40, y + (i * 12));
+    });
+
+    y += 50;
+
+    // Design Preferences card
+    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.roundedRect(this.margin, y, this.contentWidth, 24, 4, 4, 'F');
+    this.doc.rect(this.margin, y + 16, this.contentWidth, 8, 'F');
 
     this.doc.setFontSize(11);
     this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+    this.doc.text('Design Preferences', this.margin + 10, y + 16);
+
+    y += 28;
+
+    // Card body
+    this.doc.setFillColor(CARD_BG.r, CARD_BG.g, CARD_BG.b);
+    this.doc.roundedRect(this.margin, y, this.contentWidth, 180, 4, 4, 'F');
+
+    // Top row: Style Direction, Formality, Mood
+    const boxY = y + 10;
+    const boxWidth = (this.contentWidth - 30) / 3;
+
+    this.doc.setFontSize(9);
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.text('Style Direction', this.margin + 15, boxY + 12);
+    this.doc.text('Formality', this.margin + boxWidth + 20, boxY + 12);
+    this.doc.text('Mood', this.margin + boxWidth * 2 + 25, boxY + 12);
+
+    this.doc.setFontSize(14);
+    this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('Flagged Divergences', this.margin, y);
-    y += 12;
+    this.doc.text(this.overallMetrics.styleLabel, this.margin + 15, boxY + 28);
+    this.doc.text('Relaxed', this.margin + boxWidth + 20, boxY + 28);
+    this.doc.text('Warm', this.margin + boxWidth * 2 + 25, boxY + 28);
 
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-    this.doc.text('Categories where preferences differ significantly (more than one style position apart):', this.margin, y);
-    y += 18;
+    // 2x3 DNA metric boxes
+    const metricStartY = boxY + 50;
+    const metricBoxWidth = (this.contentWidth - 40) / 3;
+    const metricBoxHeight = 50;
 
-    if (divergences.length === 0) {
-      this.doc.setTextColor(SUCCESS_GREEN.r, SUCCESS_GREEN.g, SUCCESS_GREEN.b);
-      this.doc.text('✓ No significant divergences detected. Your style preferences are well-aligned across all categories.', this.margin, y);
-    } else {
-      divergences.forEach(div => {
-        // Category name
-        this.doc.setFont('helvetica', 'bold');
-        this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-        this.doc.text(div.category, this.margin, y);
-        y += 12;
+    const dnaMetrics = [
+      { label: 'Tradition', value: this.overallMetrics.styleEra },
+      { label: 'Formality', value: 2.8 },
+      { label: 'Warmth', value: 3.5 },
+      { label: 'Drama', value: 2.2 },
+      { label: 'Openness', value: 3.8 },
+      { label: 'Art Focus', value: 3.0 }
+    ];
 
-        // Principal vs Secondary
-        this.doc.setFont('helvetica', 'normal');
-        this.doc.setFontSize(7);
-        this.doc.text(`Principal: ${div.styleP} (${div.codeP}) | Secondary: ${div.styleS} (${div.codeS})`, this.margin, y);
-        y += 10;
+    dnaMetrics.forEach((metric, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const bx = this.margin + 10 + col * (metricBoxWidth + 10);
+      const by = metricStartY + row * (metricBoxHeight + 10);
 
-        // Discussion prompt
-        const prompt = div.gap >= 4
-          ? `■ Significant divergence (${div.gap} positions apart). This warrants detailed discussion about design direction for this space.`
-          : `■ Notable difference (${div.gap} positions apart). Consider discussing preferences to find common ground.`;
+      this.doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
+      this.doc.roundedRect(bx, by, metricBoxWidth, metricBoxHeight, 4, 4, 'F');
 
-        this.doc.setTextColor(WARNING_ORANGE.r, WARNING_ORANGE.g, WARNING_ORANGE.b);
-        this.doc.text(prompt, this.margin, y);
-        y += 18;
+      this.doc.setFontSize(9);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+      this.doc.text(metric.label, bx + 8, by + 14);
 
+      this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+      this.doc.text(metric.value.toFixed(1), bx + metricBoxWidth - 25, by + 14);
+
+      // Mini slider
+      const sliderY = by + 28;
+      const sliderW = metricBoxWidth - 16;
+      const fillW = ((metric.value - 1) / 4) * sliderW;
+
+      this.doc.setFillColor(226, 232, 240);
+      this.doc.roundedRect(bx + 8, sliderY, sliderW, 6, 3, 3, 'F');
+      this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+      this.doc.roundedRect(bx + 8, sliderY, fillW, 6, 3, 3, 'F');
+      this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+      this.doc.circle(bx + 8 + fillW, sliderY + 3, 4, 'F');
+    });
+
+    y = metricStartY + 130;
+
+    // Partner note if not completed
+    if (this.profileS === null && this.options.partnerName) {
+      this.doc.setFontSize(9);
+      this.doc.setTextColor(221, 107, 32); // Warning orange
+      this.doc.text(`Note: ${this.options.partnerName} has not completed Taste Exploration...`, this.margin, y);
+      y += 20;
+    }
+
+    // Bottom section: 4 MVP cards
+    y += 10;
+    const cardWidth = (this.contentWidth - 30) / 4;
+    const cardHeight = 70;
+
+    const mvpCards = [
+      { title: 'Property Configuration', items: this.getPropertyConfigItems() },
+      { title: 'Household Composition', items: this.getHouseholdItems() },
+      { title: 'Lifestyle', items: this.getLifestyleItems() },
+      { title: 'Wellness Program', items: this.getWellnessItems() }
+    ];
+
+    mvpCards.forEach((card, i) => {
+      const cx = this.margin + i * (cardWidth + 10);
+
+      this.doc.setFillColor(CARD_BG.r, CARD_BG.g, CARD_BG.b);
+      this.doc.roundedRect(cx, y, cardWidth, cardHeight, 4, 4, 'F');
+
+      this.doc.setFontSize(8);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+      this.doc.text(card.title, cx + 6, y + 14);
+
+      this.doc.setFont('helvetica', 'normal');
+      this.doc.setFontSize(7);
+      this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+      card.items.slice(0, 3).forEach((item, j) => {
+        this.doc.text(item, cx + 6, y + 28 + j * 12);
+      });
+    });
+
+    y += cardHeight + 15;
+
+    // Selected Amenities as green chips
+    const amenities = this.getSelectedAmenities();
+    if (amenities.length > 0) {
+      this.doc.setFontSize(9);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+      this.doc.text('Selected Amenities', this.margin, y);
+      y += 14;
+
+      let chipX = this.margin;
+      amenities.forEach(amenity => {
+        const chipWidth = this.doc.getTextWidth(amenity) + 16;
+        if (chipX + chipWidth > this.pageWidth - this.margin) {
+          chipX = this.margin;
+          y += 20;
+        }
+
+        this.doc.setFillColor(SUCCESS_GREEN.r, SUCCESS_GREEN.g, SUCCESS_GREEN.b);
+        this.doc.roundedRect(chipX, y - 10, chipWidth, 16, 8, 8, 'F');
         this.doc.setFontSize(8);
+        this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+        this.doc.text(amenity, chipX + 8, y);
+
+        chipX += chipWidth + 8;
       });
     }
 
     this.addPageFooter();
   }
 
-  /**
-   * Final Page: Selection Gallery with Images
-   */
-  async addPageGallery() {
+  async addSelectionsPage(categoryIndices) {
     let y = this.margin;
 
     // Title
-    this.doc.setFontSize(14);
+    this.doc.setFontSize(16);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     this.doc.text('Your Selections', this.margin, y);
-    y += 12;
+    y += 14;
 
-    this.doc.setFontSize(8);
+    this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
     this.doc.text('The images you selected during Taste Exploration', this.margin, y);
-    y += 20;
+    y += 25;
 
-    // Grid of selection images (3x3)
-    const thumbSize = 140;
-    const thumbSpacing = 15;
-    const categories = Object.entries(CATEGORY_MAP);
+    // Calculate card dimensions for 2x2 grid
+    const cardWidth = (this.contentWidth - 20) / 2;
+    const imageHeight = cardWidth * 0.625; // 16:10 aspect ratio
+    const cardHeight = imageHeight + 100; // Image + title bar + sliders
 
-    for (let i = 0; i < categories.length; i++) {
-      const [catId, catInfo] = categories[i];
-      const col = i % 3;
-      const row = Math.floor(i / 3);
+    // Handle single card centering (for page 4 with only OL)
+    const isSingleCard = categoryIndices.length === 1;
 
-      const thumbX = this.margin + (col * (thumbSize + thumbSpacing));
-      const thumbY = y + (row * (thumbSize + 35));
+    for (let i = 0; i < categoryIndices.length; i++) {
+      const catIndex = categoryIndices[i];
+      if (catIndex >= CATEGORY_ORDER.length) continue;
 
-      // Get first valid selection for this category
-      // Support both formats:
-      // 1. Flat: profileP.selections = { 'LS-001': { favorites: [0,2], least: 3 } }
-      // 2. Nested: profileP.session.progress.[catId].selections = [{ quadId, selectedIndex }]
-      let quadId = null;
-      let position = null;
+      const cat = CATEGORY_ORDER[catIndex];
+      const catData = this.categoryData[cat.id];
 
-      // Try flat structure first (new format)
-      const flatSelections = this.profileP.selections || this.profileP.session?.selections || {};
-      const categoryQuads = quads.filter(q => q.category === catId);
+      let col, row, cardX, cardY;
 
-      for (const quad of categoryQuads) {
-        const sel = flatSelections[quad.quadId];
-        if (sel && sel.favorites && sel.favorites.length > 0) {
-          quadId = quad.quadId;
-          position = sel.favorites[0] + 1; // Use first favorite, convert to 1-indexed
-          break;
-        }
-      }
-
-      // Fallback to nested structure (old format)
-      if (!quadId) {
-        const nestedSelections = this.profileP.session?.progress?.[catId]?.selections || [];
-        for (const sel of nestedSelections) {
-          if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
-            quadId = sel.quadId;
-            position = sel.selectedIndex + 1;
-            break;
-          }
-        }
-      }
-
-      // Placeholder box
-      this.doc.setFillColor(WARM_GRAY.r, WARM_GRAY.g, WARM_GRAY.b);
-      this.doc.setDrawColor(226, 232, 240);
-      this.doc.roundedRect(thumbX, thumbY, thumbSize, thumbSize, 4, 4, 'FD');
-
-      // Try to load and embed the image
-      const imageUrl = quadId && position ? getSelectionImageUrl(quadId, position - 1) : null;
-
-      if (imageUrl) {
-        try {
-          const imgData = await loadImageAsBase64(imageUrl);
-          if (imgData) {
-            this.doc.addImage(imgData, 'JPEG', thumbX + 2, thumbY + 2, thumbSize - 4, thumbSize - 4);
-          } else {
-            // Show placeholder text if image fails
-            this.doc.setFontSize(10);
-            this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-            this.doc.text('■■', thumbX + thumbSize/2, thumbY + thumbSize/2, { align: 'center' });
-          }
-        } catch (e) {
-          // Show placeholder on error
-          this.doc.setFontSize(10);
-          this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-          this.doc.text('■■', thumbX + thumbSize/2, thumbY + thumbSize/2, { align: 'center' });
-        }
+      if (isSingleCard) {
+        // Center single card horizontally
+        cardX = (this.pageWidth - cardWidth) / 2;
+        cardY = y;
       } else {
-        // No selection or no image URL - show placeholder
-        this.doc.setFontSize(10);
-        this.doc.setTextColor(LIGHT_TEXT.r, LIGHT_TEXT.g, LIGHT_TEXT.b);
-        this.doc.text('■■', thumbX + thumbSize/2, thumbY + thumbSize/2, { align: 'center' });
+        col = i % 2;
+        row = Math.floor(i / 2);
+        cardX = this.margin + col * (cardWidth + 20);
+        cardY = y + row * (cardHeight + 20);
       }
 
-      // Category label (code + name)
-      this.doc.setFontSize(8);
+      // Card background
+      this.doc.setFillColor(CARD_BG.r, CARD_BG.g, CARD_BG.b);
+      this.doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 6, 6, 'F');
+
+      // Image area
+      this.doc.setFillColor(226, 232, 240);
+      this.doc.roundedRect(cardX + 8, cardY + 8, cardWidth - 16, imageHeight, 4, 4, 'F');
+
+      // Try to load image
+      if (catData.selection) {
+        const imageUrl = getSelectionImageUrl(catData.selection.quadId, catData.selection.positionIndex);
+        if (imageUrl) {
+          try {
+            const imgData = await loadImageAsBase64(imageUrl);
+            if (imgData) {
+              this.doc.addImage(imgData, 'JPEG', cardX + 8, cardY + 8, cardWidth - 16, imageHeight);
+            }
+          } catch (e) {
+            // Keep placeholder
+          }
+        }
+      }
+
+      // Navy title bar below image
+      const titleBarY = cardY + 8 + imageHeight;
+      this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+      this.doc.rect(cardX + 8, titleBarY, cardWidth - 16, 24, 'F');
+
+      this.doc.setFontSize(11);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+      this.doc.text(cat.name, cardX + cardWidth / 2, titleBarY + 16, { align: 'center' });
+
+      // Design DNA subtitle
+      let sliderY = titleBarY + 32;
+      this.doc.setFontSize(9);
       this.doc.setFont('helvetica', 'bold');
       this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-      this.doc.text(`${catInfo.code}`, thumbX, thumbY + thumbSize + 12);
+      this.doc.text('Design DNA', cardX + 12, sliderY);
+      sliderY += 12;
 
-      this.doc.setFont('helvetica', 'normal');
-      this.doc.text(catInfo.name, thumbX + 25, thumbY + thumbSize + 12);
+      // 3 sliders with per-category values
+      const sliderWidth = cardWidth - 60;
+      const metrics = catData.metrics;
+
+      // Style Era
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.styleEra, 'Style Era');
+      sliderY += 18;
+
+      // Material Complexity
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.materialComplexity, 'Material Complexity');
+      sliderY += 18;
+
+      // Mood Palette
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.moodPalette, 'Mood Palette');
     }
 
-    this.addPageFooter(true);
+    this.addPageFooter();
   }
 
-  /**
-   * Download PDF
-   */
+  drawCategorySlider(x, y, width, value, label) {
+    const normalizedValue = Math.max(1, Math.min(5, value));
+    const fillWidth = ((normalizedValue - 1) / 4) * width;
+
+    this.doc.setFontSize(7);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+    this.doc.text(label, x, y);
+
+    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.text(normalizedValue.toFixed(1), x + width + 8, y);
+
+    const trackY = y + 4;
+    this.doc.setFillColor(226, 232, 240);
+    this.doc.roundedRect(x, trackY, width, 4, 2, 2, 'F');
+
+    if (fillWidth > 0) {
+      this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+      this.doc.roundedRect(x, trackY, fillWidth, 4, 2, 2, 'F');
+    }
+
+    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.circle(x + fillWidth, trackY + 2, 3, 'F');
+  }
+
+  // Helper methods to get MVP data
+  getPropertyConfigItems() {
+    const params = this.kycData?.principal?.projectParameters;
+    if (!params) return ['No data'];
+    return [
+      params.targetGSF ? `${params.targetGSF.toLocaleString()} SF` : '',
+      params.bedroomCount ? `${params.bedroomCount} Bedrooms` : '',
+      params.bathroomCount ? `${params.bathroomCount} Bathrooms` : ''
+    ].filter(Boolean);
+  }
+
+  getHouseholdItems() {
+    const family = this.kycData?.principal?.familyHousehold;
+    if (!family) return ['No data'];
+    return [
+      family.householdSize ? `${family.householdSize} People` : '',
+      family.childrenCount ? `${family.childrenCount} Children` : '',
+      family.staffCount ? `${family.staffCount} Staff` : ''
+    ].filter(Boolean);
+  }
+
+  getLifestyleItems() {
+    const lifestyle = this.kycData?.principal?.lifestyleLiving;
+    if (!lifestyle) return ['No data'];
+    return [
+      lifestyle.entertainingStyle || '',
+      lifestyle.cookingLevel || '',
+      lifestyle.workFromHome ? 'Works from Home' : ''
+    ].filter(Boolean);
+  }
+
+  getWellnessItems() {
+    const wellness = this.kycData?.principal?.lifestyleLiving;
+    if (!wellness) return ['No data'];
+    return [
+      wellness.fitnessLevel || '',
+      wellness.spaAmenities ? 'Spa Amenities' : '',
+      wellness.meditationSpace ? 'Meditation Space' : ''
+    ].filter(Boolean);
+  }
+
+  getSelectedAmenities() {
+    const space = this.kycData?.principal?.spaceRequirements;
+    if (!space?.amenities) return [];
+    return space.amenities.slice(0, 6);
+  }
+
   download(filename) {
-    const name = filename || `N4S-Taste-Profile-${this.profileP.clientId || 'Report'}.pdf`;
+    const name = filename || `N4S-Design-Profile-${this.getClientName().replace(/\s+/g, '-')}.pdf`;
     this.doc.save(name);
   }
 
-  /**
-   * Open PDF in new tab
-   */
   openInNewTab() {
     const blob = this.doc.output('blob');
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   }
 
-  /**
-   * Get PDF as blob
-   */
   getBlob() {
     return this.doc.output('blob');
   }
 
-  /**
-   * Get PDF as base64
-   */
   getBase64() {
     return this.doc.output('datauristring');
   }
@@ -970,27 +760,18 @@ export class TasteReportGenerator {
 // CONVENIENCE FUNCTIONS
 // ============================================
 
-/**
- * Generate and download report
- */
 export async function downloadTasteReport(profileP, profileS = null, options = {}) {
   const generator = new TasteReportGenerator(profileP, profileS, options);
   await generator.generate();
   generator.download();
 }
 
-/**
- * Generate and view report in new tab
- */
 export async function viewTasteReport(profileP, profileS = null, options = {}) {
   const generator = new TasteReportGenerator(profileP, profileS, options);
   await generator.generate();
   generator.openInNewTab();
 }
 
-/**
- * Generate and return blob for email
- */
 export async function getTasteReportBlob(profileP, profileS = null, options = {}) {
   const generator = new TasteReportGenerator(profileP, profileS, options);
   await generator.generate();
