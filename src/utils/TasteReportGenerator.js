@@ -684,30 +684,30 @@ export class TasteReportGenerator {
 
     y = 65;
 
-    // Client info line(s)
-    this.doc.setFontSize(10);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-
+    // Client info line
     const clientName = this.getClientName();
     const projectName = this.getProjectName();
     const location = this.getLocation();
 
-    // Line 1: Client, Project, Location
-    let infoText = `Client: ${clientName}`;
-    if (projectName) infoText += `    Project: ${projectName}`;
-    if (location) infoText += `    Location: ${location}`;
+    this.doc.setFontSize(10);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+
+    // Build info parts
+    let infoText = `Client:  ${clientName}`;
+    if (projectName) infoText += `     Project: ${projectName}`;
+    if (location) infoText += `     Location: ${location}`;
     this.doc.text(infoText, this.margin, y);
 
-    // Line 2: Partner name (if exists), indented to align under principal name
+    // If partner exists, show secondary name on next line aligned under principal
     if (this.hasPartnerData) {
       const secondaryName = this.getSecondaryName();
-      // "Client: " is about 35pt wide, indent partner name to align
-      this.doc.text(`           ${secondaryName}`, this.margin, y + 14);
       y += 14;
+      // Indent to align under principal name (after "Client:  ")
+      this.doc.text(`         ${secondaryName}`, this.margin, y);
     }
 
-    y += 25;
+    y += 20;
 
     // Cream banner with style label
     this.doc.setFillColor(CREAM.r, CREAM.g, CREAM.b);
