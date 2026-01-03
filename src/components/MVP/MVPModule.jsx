@@ -118,21 +118,10 @@ const MVPModule = () => {
   const materialsP = tasteProfileP?.profile?.topMaterials || [];
   const materialsS = tasteProfileS?.profile?.topMaterials || [];
   
-  // Combined/averaged scores for couple
+  // Always use principal's scores only - partner data is for divergence analysis only
   const combinedScores = useMemo(() => {
-    if (!tasteProfileP) return null;
-    if (!tasteProfileS) return scoresP;
-    
-    // Average the scores
-    const axes = ['warmth', 'formality', 'drama', 'tradition', 'openness', 'art_focus'];
-    const averaged = {};
-    axes.forEach(axis => {
-      const p = scoresP[axis] || 5;
-      const s = scoresS[axis] || 5;
-      averaged[axis] = (p + s) / 2;
-    });
-    return averaged;
-  }, [tasteProfileP, tasteProfileS, scoresP, scoresS]);
+    return scoresP || null;
+  }, [scoresP]);
   
   // Transform KYC data to MVP brief inputs
   const briefInputs = useMemo(() => {
@@ -397,7 +386,9 @@ const MVPModule = () => {
             </div>
             <div className="mvp-field">
               <span className="mvp-field__label">Children</span>
-              <StatusBadge active={summary?.household.hasChildren} label={summary?.household.hasChildren ? 'Yes' : 'No'} />
+              <span className="mvp-field__value">
+                {summary?.household.childrenCount > 0 ? summary.household.childrenCount : 'None'}
+              </span>
             </div>
             <div className="mvp-field">
               <span className="mvp-field__label">School-Age</span>

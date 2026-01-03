@@ -34,6 +34,19 @@ function hasSchoolAgeChildren(familyMembers) {
 }
 
 /**
+ * Get count of children in household
+ */
+function getChildrenCount(familyMembers) {
+  if (!familyMembers || !Array.isArray(familyMembers)) return 0;
+  return familyMembers.filter(member => {
+    const age = parseInt(member.age);
+    if (!isNaN(age) && age < 18) return true;
+    const role = member.role || '';
+    return ['child', 'young-child', 'teenager'].includes(role);
+  }).length;
+}
+
+/**
  * Map KYC staffing fields to MVP staffingLevel enum
  */
 function mapStaffingLevel(familyHousehold) {
@@ -160,6 +173,7 @@ export function transformKYCToMVPBrief(kycData, respondent = 'principal') {
     
     // Household Composition (derived)
     hasChildren: hasChildrenInHousehold(familyHousehold.familyMembers),
+    childrenCount: getChildrenCount(familyHousehold.familyMembers),
     hasSchoolAgeChildren: hasSchoolAgeChildren(familyHousehold.familyMembers),
     
     // Pets
@@ -245,6 +259,7 @@ export function getMVPBriefSummary(briefInputs) {
       totalBedrooms: briefInputs.totalBedroomCount,
       guestBedrooms: briefInputs.guestBedroomCount,
       hasChildren: briefInputs.hasChildren,
+      childrenCount: briefInputs.childrenCount,
       hasSchoolAge: briefInputs.hasSchoolAgeChildren,
       hasPets: briefInputs.hasPets,
       petsDescription: briefInputs.petsDescription,
