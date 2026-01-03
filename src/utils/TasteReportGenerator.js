@@ -34,6 +34,19 @@ const CATEGORY_ORDER = [
   { id: 'outdoor_living', code: 'OL', name: 'Outdoor Living' }
 ];
 
+// Architectural Style labels (AS1-AS9)
+const AS_LABELS = {
+  1: 'Avant-Contemporary',
+  2: 'Architectural Modern',
+  3: 'Curated Minimalism',
+  4: 'Nordic Contemporary',
+  5: 'Mid-Century Refined',
+  6: 'Modern Classic',
+  7: 'Classical Contemporary',
+  8: 'Formal Classical',
+  9: 'Heritage Estate'
+};
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -167,29 +180,57 @@ export class TasteReportGenerator {
     this.margin = 36;
     this.contentWidth = this.pageWidth - (this.margin * 2);
 
-    // Pagination
-    this.currentPage = 1;
-    this.totalPages = 4;
+    // Pre-calculate category selections and metrics for principal
+    const { data: categoryDataP, metrics: metricsP } = this.calculateCategoryDataFor(this.profileP);
+    this.categoryData = categoryDataP;
+    this.overallMetrics = metricsP;
 
-    // Pre-calculate all category selections and metrics
-    this.categoryData = this.calculateAllCategoryData();
+    // Calculate for secondary if exists
+    this.categoryDataS = null;
+    this.overallMetricsS = null;
+    this.hasPartnerData = false;
+
+    if (this.profileS) {
+      const { data: categoryDataS, metrics: metricsS } = this.calculateCategoryDataFor(this.profileS);
+      // Check if secondary has any actual selections
+      const hasSelections = Object.values(categoryDataS).some(cat => cat.hasSelection);
+      if (hasSelections) {
+        this.categoryDataS = categoryDataS;
+        this.overallMetricsS = metricsS;
+        this.hasPartnerData = true;
+      }
+    }
+
+    // Pagination - adjust based on whether we have partner data
+    this.currentPage = 1;
+    this.totalPages = this.hasPartnerData ? 5 : 4;
   }
 
-  calculateAllCategoryData() {
+  calculateCategoryDataFor(profile) {
     const data = {};
     let totalStyleEra = 0;
     let totalMaterialComplexity = 0;
     let totalMoodPalette = 0;
     let count = 0;
 
+    if (!profile) {
+      return {
+        data: {},
+        metrics: { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5, styleLabel: 'Transitional' }
+      };
+    }
+
     CATEGORY_ORDER.forEach(cat => {
-      const selection = getSelectionForCategory(this.profileP, cat.id);
+      const selection = getSelectionForCategory(profile, cat.id);
       if (selection) {
+        const imageUrl = getSelectionImageUrl(selection.quadId, selection.positionIndex);
+        const codes = extractCodesFromFilename(imageUrl);
         const metrics = getCategoryMetricsFromSelection(selection.quadId, selection.positionIndex);
         data[cat.id] = {
           ...cat,
           selection,
           metrics,
+          asCode: codes?.as || 5,
           hasSelection: true
         };
         totalStyleEra += metrics.styleEra;
@@ -201,13 +242,13 @@ export class TasteReportGenerator {
           ...cat,
           selection: null,
           metrics: { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5 },
+          asCode: 5,
           hasSelection: false
         };
       }
     });
 
-    // Calculate overall averages
-    this.overallMetrics = count > 0 ? {
+    const metrics = count > 0 ? {
       styleEra: totalStyleEra / count,
       materialComplexity: totalMaterialComplexity / count,
       moodPalette: totalMoodPalette / count,
@@ -219,27 +260,109 @@ export class TasteReportGenerator {
       styleLabel: 'Transitional'
     };
 
-    return data;
+    return { data, metrics };
+  }
+
+  // Calculate alignment score between partners (0-100%)
+  calculateAlignmentScore() {
+    if (!this.hasPartnerData) return null;
+
+    let totalDifference = 0;
+    let categoryCount = 0;
+
+    CATEGORY_ORDER.forEach(cat => {
+      const pData = this.categoryData[cat.id];
+      const sData = this.categoryDataS[cat.id];
+
+      if (pData?.hasSelection && sData?.hasSelection) {
+        const diff = Math.abs(pData.asCode - sData.asCode);
+        totalDifference += diff;
+        categoryCount++;
+      }
+    });
+
+    if (categoryCount === 0) return null;
+
+    // Average difference (0-8 range), convert to percentage
+    // 0 difference = 100%, 8 difference = 0%
+    const avgDiff = totalDifference / categoryCount;
+    const alignment = Math.max(0, 100 - (avgDiff * 12.5));
+    return Math.round(alignment);
+  }
+
+  // Find significant divergences between partners
+  findDivergences() {
+    if (!this.hasPartnerData) return [];
+
+    const divergences = [];
+
+    CATEGORY_ORDER.forEach(cat => {
+      const pData = this.categoryData[cat.id];
+      const sData = this.categoryDataS[cat.id];
+
+      if (pData?.hasSelection && sData?.hasSelection) {
+        const diff = Math.abs(pData.asCode - sData.asCode);
+
+        if (diff >= 3) {
+          divergences.push({
+            category: cat.name,
+            categoryCode: cat.code,
+            principalAS: pData.asCode,
+            secondaryAS: sData.asCode,
+            principalLabel: AS_LABELS[pData.asCode] || `AS${pData.asCode}`,
+            secondaryLabel: AS_LABELS[sData.asCode] || `AS${sData.asCode}`,
+            difference: diff,
+            severity: diff >= 5 ? 'significant' : 'notable'
+          });
+        }
+      }
+    });
+
+    return divergences;
   }
 
   async generate() {
     // Page 1: Cover/Overview
     this.addPage1Cover();
 
-    // Page 2: Categories 1-4 (EA, LS, DS, KT)
-    this.doc.addPage();
-    this.currentPage = 2;
-    await this.addSelectionsPage([0, 1, 2, 3]);
+    // If we have partner data, add alignment analysis page
+    if (this.hasPartnerData) {
+      // Page 2: Partner Alignment Analysis
+      this.doc.addPage();
+      this.currentPage = 2;
+      this.addPartnerAlignmentPage();
 
-    // Page 3: Categories 5-8 (FA, PB, PBT, GB)
-    this.doc.addPage();
-    this.currentPage = 3;
-    await this.addSelectionsPage([4, 5, 6, 7]);
+      // Page 3: Categories 1-4 (EA, LS, DS, KT)
+      this.doc.addPage();
+      this.currentPage = 3;
+      await this.addSelectionsPage([0, 1, 2, 3]);
 
-    // Page 4: Category 9 (OL)
-    this.doc.addPage();
-    this.currentPage = 4;
-    await this.addSelectionsPage([8]);
+      // Page 4: Categories 5-8 (FA, PB, PBT, GB)
+      this.doc.addPage();
+      this.currentPage = 4;
+      await this.addSelectionsPage([4, 5, 6, 7]);
+
+      // Page 5: Category 9 (OL)
+      this.doc.addPage();
+      this.currentPage = 5;
+      await this.addSelectionsPage([8]);
+    } else {
+      // No partner - original 4-page layout
+      // Page 2: Categories 1-4 (EA, LS, DS, KT)
+      this.doc.addPage();
+      this.currentPage = 2;
+      await this.addSelectionsPage([0, 1, 2, 3]);
+
+      // Page 3: Categories 5-8 (FA, PB, PBT, GB)
+      this.doc.addPage();
+      this.currentPage = 3;
+      await this.addSelectionsPage([4, 5, 6, 7]);
+
+      // Page 4: Category 9 (OL)
+      this.doc.addPage();
+      this.currentPage = 4;
+      await this.addSelectionsPage([8]);
+    }
 
     return this.doc;
   }
@@ -263,6 +386,222 @@ export class TasteReportGenerator {
       return `${params.projectCity || ''}, ${params.projectCountry || ''}`.replace(/^, |, $/g, '');
     }
     return this.options.location || '';
+  }
+
+  getSecondaryName() {
+    const kyc = this.kycData?.principal?.portfolioContext;
+    if (kyc?.secondaryFirstName || kyc?.secondaryLastName) {
+      return `${kyc.secondaryFirstName || ''} ${kyc.secondaryLastName || ''}`.trim();
+    }
+    return this.profileS?.clientId || 'Partner';
+  }
+
+  // Partner Alignment Analysis page
+  addPartnerAlignmentPage() {
+    let y = this.margin;
+
+    // Title
+    this.doc.setFontSize(18);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('Partner Alignment Analysis', this.margin, y);
+    y += 25;
+
+    // Subtitle with names
+    const principalName = this.getClientName();
+    const secondaryName = this.getSecondaryName();
+    this.doc.setFontSize(11);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.text(`Comparing design preferences: ${principalName} & ${secondaryName}`, this.margin, y);
+    y += 30;
+
+    // Overall Alignment Score
+    const alignmentScore = this.calculateAlignmentScore();
+
+    // Score box
+    this.doc.setFillColor(CREAM.r, CREAM.g, CREAM.b);
+    this.doc.roundedRect(this.margin, y, this.contentWidth, 60, 8, 8, 'F');
+
+    this.doc.setFontSize(12);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('Overall Design Alignment', this.margin + 20, y + 25);
+
+    // Score percentage
+    this.doc.setFontSize(28);
+    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.text(`${alignmentScore || 0}%`, this.pageWidth - this.margin - 20, y + 35, { align: 'right' });
+
+    // Score interpretation
+    this.doc.setFontSize(9);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    const interpretation = alignmentScore >= 80 ? 'Strong alignment - minimal compromise needed' :
+                          alignmentScore >= 60 ? 'Good alignment - some areas for discussion' :
+                          alignmentScore >= 40 ? 'Moderate alignment - focused discussions recommended' :
+                          'Significant divergence - detailed mediation advised';
+    this.doc.text(interpretation, this.margin + 20, y + 45);
+
+    y += 80;
+
+    // DNA Axis Comparison section
+    this.doc.setFontSize(14);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('DNA Axis Comparison', this.margin, y);
+    y += 15;
+
+    // Legend
+    this.doc.setFontSize(9);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+
+    // Principal legend dot
+    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.circle(this.margin + 5, y - 3, 4, 'F');
+    this.doc.text(`P = ${principalName}`, this.margin + 15, y);
+
+    // Secondary legend dot
+    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.circle(this.margin + 150, y - 3, 4, 'F');
+    this.doc.text(`S = ${secondaryName}`, this.margin + 160, y);
+
+    y += 25;
+
+    // Dual sliders
+    const sliderWidth = this.contentWidth - 100;
+
+    // Style Era dual slider
+    y = this.drawDualSlider(this.margin, y, sliderWidth,
+      this.overallMetrics.styleEra, this.overallMetricsS.styleEra,
+      'Style Era', 'Contemporary', 'Traditional');
+    y += 30;
+
+    // Material Complexity dual slider
+    y = this.drawDualSlider(this.margin, y, sliderWidth,
+      this.overallMetrics.materialComplexity, this.overallMetricsS.materialComplexity,
+      'Material Complexity', 'Minimal', 'Layered');
+    y += 30;
+
+    // Mood Palette dual slider
+    y = this.drawDualSlider(this.margin, y, sliderWidth,
+      this.overallMetrics.moodPalette, this.overallMetricsS.moodPalette,
+      'Mood Palette', 'Warm', 'Cool');
+    y += 40;
+
+    // Flagged Divergences section
+    const divergences = this.findDivergences();
+
+    this.doc.setFontSize(14);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('Flagged Divergences', this.margin, y);
+    y += 8;
+
+    this.doc.setFontSize(9);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.text('Categories where partners differ by 3+ style positions', this.margin, y);
+    y += 20;
+
+    if (divergences.length === 0) {
+      // No divergences message
+      this.doc.setFillColor(SUCCESS_GREEN.r, SUCCESS_GREEN.g, SUCCESS_GREEN.b);
+      this.doc.roundedRect(this.margin, y, this.contentWidth, 40, 6, 6, 'F');
+      this.doc.setFontSize(11);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+      this.doc.text('No significant divergences detected', this.margin + 20, y + 25);
+    } else {
+      // List divergences
+      divergences.forEach((div, index) => {
+        if (y > this.pageHeight - 100) return; // Don't overflow page
+
+        const cardHeight = 55;
+        const severityColor = div.severity === 'significant'
+          ? { r: 220, g: 38, b: 38 }  // Red
+          : { r: 234, g: 179, b: 8 };  // Yellow/Orange
+
+        // Card background
+        this.doc.setFillColor(CARD_BG.r, CARD_BG.g, CARD_BG.b);
+        this.doc.roundedRect(this.margin, y, this.contentWidth, cardHeight, 6, 6, 'F');
+
+        // Severity indicator bar
+        this.doc.setFillColor(severityColor.r, severityColor.g, severityColor.b);
+        this.doc.rect(this.margin, y, 4, cardHeight, 'F');
+
+        // Category name
+        this.doc.setFontSize(11);
+        this.doc.setFont('helvetica', 'bold');
+        this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+        this.doc.text(div.category, this.margin + 15, y + 18);
+
+        // Positions apart badge
+        this.doc.setFillColor(severityColor.r, severityColor.g, severityColor.b);
+        this.doc.roundedRect(this.pageWidth - this.margin - 80, y + 8, 70, 18, 9, 9, 'F');
+        this.doc.setFontSize(9);
+        this.doc.setFont('helvetica', 'bold');
+        this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+        this.doc.text(`${div.difference} positions`, this.pageWidth - this.margin - 45, y + 20, { align: 'center' });
+
+        // Style labels
+        this.doc.setFontSize(9);
+        this.doc.setFont('helvetica', 'normal');
+        this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+        this.doc.text(`${principalName}: ${div.principalLabel}`, this.margin + 15, y + 32);
+        this.doc.text(`${secondaryName}: ${div.secondaryLabel}`, this.margin + 15, y + 44);
+
+        y += cardHeight + 10;
+      });
+    }
+
+    this.addPageFooter();
+  }
+
+  // Draw dual-marker slider showing both P and S positions
+  drawDualSlider(x, y, width, valueP, valueS, label, leftLabel, rightLabel) {
+    const trackHeight = 10;
+    const normalizedP = Math.max(1, Math.min(5, valueP));
+    const normalizedS = Math.max(1, Math.min(5, valueS));
+    const posP = ((normalizedP - 1) / 4) * width;
+    const posS = ((normalizedS - 1) / 4) * width;
+
+    // Label
+    this.doc.setFontSize(10);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+    this.doc.text(label, x, y);
+    y += 12;
+
+    // Track background
+    this.doc.setFillColor(226, 232, 240);
+    this.doc.roundedRect(x, y, width, trackHeight, 5, 5, 'F');
+
+    // Principal marker (Gold) - circle with P
+    this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.circle(x + posP, y + trackHeight / 2, 8, 'F');
+    this.doc.setFontSize(7);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+    this.doc.text('P', x + posP, y + trackHeight / 2 + 2.5, { align: 'center' });
+
+    // Secondary marker (Navy) - circle with S
+    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.circle(x + posS, y + trackHeight / 2, 8, 'F');
+    this.doc.setFontSize(7);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+    this.doc.text('S', x + posS, y + trackHeight / 2 + 2.5, { align: 'center' });
+
+    // Endpoint labels
+    this.doc.setFontSize(8);
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.text(leftLabel, x, y + trackHeight + 12);
+    this.doc.text(rightLabel, x + width, y + trackHeight + 12, { align: 'right' });
+
+    return y + trackHeight + 20;
   }
 
   addPageFooter() {
