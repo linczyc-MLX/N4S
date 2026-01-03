@@ -897,6 +897,172 @@
   border-left: 4px solid #e91e63;
 }
 
+/* ============================================================================
+   DIAGRAM VIEW
+   ============================================================================ */
+
+.diagram-view {
+  max-width: 100%;
+}
+
+.diagram-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.control-group select {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.control-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.control-group.checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+.diagram-legend {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.legend-line {
+  width: 30px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.legend-line.adjacent {
+  background: #4caf50;
+  height: 6px;
+}
+
+.legend-line.near {
+  background: #2196f3;
+}
+
+.legend-line.buffered {
+  background: #ff9800;
+  border-style: dashed;
+  border-width: 2px;
+  border-color: #ff9800;
+  background: transparent;
+}
+
+.legend-line.separate {
+  background: #f44336;
+}
+
+.diagram-container {
+  min-height: 400px;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: auto;
+}
+
+.diagram-container .mermaid {
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-placeholder {
+  text-align: center;
+  color: #999;
+  padding: 40px;
+}
+
+.mermaid-placeholder .hint {
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+.diagram-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.code-preview {
+  margin-top: 16px;
+}
+
+.code-preview summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.code-preview pre {
+  margin-top: 8px;
+  padding: 16px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 .validation-success {
   text-align: center;
   padding: 24px;

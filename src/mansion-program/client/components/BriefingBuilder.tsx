@@ -12,6 +12,7 @@ import AdjacencyMatrix from './AdjacencyMatrix';
 import BridgePanel from './BridgePanel';
 import ValidationPanel from './ValidationPanel';
 import ChangesLog from './ChangesLog';
+import DiagramView from './DiagramView';
 import './BriefingBuilder.css';
 
 export interface BriefingBuilderProps {
@@ -23,7 +24,7 @@ export interface BriefingBuilderProps {
   onCancel?: () => void;
 }
 
-type TabId = 'spaces' | 'adjacency' | 'bridges' | 'validation' | 'changes';
+type TabId = 'spaces' | 'adjacency' | 'diagram' | 'bridges' | 'validation' | 'changes';
 
 const PRESET_OPTIONS = [
   { id: '10k' as const, name: '10K Signature', targetSF: 10000 },
@@ -186,6 +187,7 @@ export function BriefingBuilder({
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: 'spaces', label: 'Spaces', count: state.spaces.length },
     { id: 'adjacency', label: 'Adjacency', count: state.adjacencyMatrix.length },
+    { id: 'diagram', label: 'Diagram' },
     { id: 'bridges', label: 'Bridges' },
     { id: 'validation', label: 'Validation' },
     { id: 'changes', label: 'Changes', count: state.appliedChanges.length }
@@ -238,6 +240,12 @@ export function BriefingBuilder({
 
         {activeTab === 'spaces' && renderSpacesTab()}
         {activeTab === 'adjacency' && renderAdjacencyTab()}
+        {activeTab === 'diagram' && (
+          <DiagramView
+            spaces={state.spaces}
+            adjacencyMatrix={state.adjacencyMatrix}
+          />
+        )}
         {activeTab === 'bridges' && renderBridgesTab()}
         {activeTab === 'validation' && renderValidationTab()}
         {activeTab === 'changes' && renderChangesTab()}

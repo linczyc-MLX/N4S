@@ -97,3 +97,14 @@ export { AdjacencyMatrix, type AdjacencyMatrixProps } from './client/components/
 export { BridgePanel, type BridgePanelProps } from './client/components/BridgePanel';
 export { ValidationPanel, type ValidationPanelProps } from './client/components/ValidationPanel';
 export { ChangesLog, type ChangesLogProps } from './client/components/ChangesLog';
+
+// Mermaid diagram generation
+export {
+  generateMermaidDiagram,
+  generateBubbleDiagram,
+  generateCirculationDiagram,
+  generateSeparationDiagram,
+  type MermaidOptions
+} from './client/utils/mermaid-generator';
+
+export { DiagramView, type DiagramViewProps } from './client/components/DiagramView';
