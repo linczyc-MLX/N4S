@@ -373,8 +373,8 @@ function evaluateCondition(
       }
     }
     if (condition === 'wellnessInterest === "casual"') {
-      if (kyc.wellnessProfile?.interest === 'casual') {
-        return { matches: true, reason: 'You have casual wellness interest' };
+      if (kyc.wellnessProfile?.interest === 'basic') {
+        return { matches: true, reason: 'You have basic wellness interest' };
       }
     }
     if (condition === 'poolDesired === true') {
