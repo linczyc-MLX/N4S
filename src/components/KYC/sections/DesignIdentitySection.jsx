@@ -12,6 +12,7 @@ import {
   getTasteReportBlob
 } from '../../../utils/TasteReportGenerator';
 import TasteExploration from '../../TasteExploration/TasteExploration';
+import { quads, categoryOrder } from '../../../data/tasteQuads';
 
 // ============================================
 // CONFIGURATION
@@ -287,33 +288,64 @@ const CompletedView = ({
     }, 500);
   };
 
-  // Calculate metrics from profile
+  // Calculate metrics from profile (same algorithm as TasteReportGenerator)
   const getMetrics = (profile) => {
-    if (!profile?.session?.progress) return { ct: 3, ml: 3, mp: 3 };
+    if (!profile) return { ct: 3, ml: 3, mp: 3 };
+
+    // Helper to extract AS/VD/MP codes from image filename
+    const extractCodes = (imageUrl) => {
+      if (!imageUrl) return null;
+      const filename = imageUrl.split('/').pop();
+      const asMatch = filename.match(/AS(\d)/);
+      const vdMatch = filename.match(/VD(\d)/);
+      const mpMatch = filename.match(/MP(\d)/);
+      if (!asMatch || !vdMatch || !mpMatch) return null;
+      return {
+        as: parseInt(asMatch[1]),
+        vd: parseInt(vdMatch[1]),
+        mp: parseInt(mpMatch[1])
+      };
+    };
+
+    // Helper to get selection for a category
+    const getSelectionForCategory = (categoryId) => {
+      const flatSelections = profile.selections || profile.session?.selections || {};
+      const categoryQuads = quads.filter(q => q.category === categoryId);
+
+      for (const quad of categoryQuads) {
+        const sel = flatSelections[quad.quadId];
+        if (sel && sel.favorites && sel.favorites.length > 0) {
+          const quadData = quads.find(q => q.quadId === quad.quadId);
+          if (quadData && quadData.images && quadData.images[sel.favorites[0]]) {
+            return quadData.images[sel.favorites[0]];
+          }
+        }
+      }
+      return null;
+    };
+
+    // Normalize 1-9 scale to 1-5 scale
+    const normalize9to5 = (value) => ((value - 1) / 8) * 4 + 1;
 
     let totalAS = 0, totalVD = 0, totalMP = 0, count = 0;
 
-    Object.values(profile.session.progress).forEach(cat => {
-      if (cat.selections) {
-        cat.selections.forEach(sel => {
-          if (sel.selectedIndex >= 0) {
-            // Extract values from quad metadata if available
-            const asNum = 5; // Default
-            const vdNum = 3;
-            const mpNum = 3;
-            totalAS += asNum;
-            totalVD += vdNum;
-            totalMP += mpNum;
-            count++;
-          }
-        });
+    categoryOrder.forEach(categoryId => {
+      const imageUrl = getSelectionForCategory(categoryId);
+      if (imageUrl) {
+        const codes = extractCodes(imageUrl);
+        if (codes) {
+          totalAS += normalize9to5(codes.as);
+          totalVD += normalize9to5(codes.vd);
+          totalMP += normalize9to5(codes.mp);
+          count++;
+        }
       }
     });
 
     if (count === 0) return { ct: 3, ml: 3, mp: 3 };
 
     return {
-      ct: ((totalAS / count - 1) / 8) * 4 + 1,
+      ct: totalAS / count,
       ml: totalVD / count,
       mp: totalMP / count
     };
@@ -486,6 +518,40 @@ const CompletedView = ({
               <p className="comparison-note">
                 Full partner alignment analysis is included in the PDF report above.
               </p>
+              <div className="partner-report-buttons" style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                <button
+                  className="report-btn report-btn--view"
+                  onClick={async () => {
+                    setIsGenerating(true);
+                    try {
+                      await viewTasteReport(profileS, null, buildReportOptions());
+                    } catch (e) {
+                      console.error('Error generating report:', e);
+                    }
+                    setIsGenerating(false);
+                  }}
+                  disabled={isGenerating}
+                >
+                  <span className="report-btn__icon">👁️</span>
+                  <span className="report-btn__text">View {secondaryName || 'Partner'}'s Report</span>
+                </button>
+                <button
+                  className="report-btn report-btn--download"
+                  onClick={async () => {
+                    setIsGenerating(true);
+                    try {
+                      await downloadTasteReport(profileS, null, buildReportOptions());
+                    } catch (e) {
+                      console.error('Error downloading report:', e);
+                    }
+                    setIsGenerating(false);
+                  }}
+                  disabled={isGenerating}
+                >
+                  <span className="report-btn__icon">📥</span>
+                  <span className="report-btn__text">Download {secondaryName || 'Partner'}'s PDF</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="partner-pending">
