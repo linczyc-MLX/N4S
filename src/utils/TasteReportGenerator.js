@@ -597,7 +597,7 @@ export class TasteReportGenerator {
     // Calculate card dimensions for 2x2 grid
     const cardWidth = (this.contentWidth - 20) / 2;
     const imageHeight = cardWidth * 0.625; // 16:10 aspect ratio
-    const cardHeight = imageHeight + 110; // Image + title bar + padding + sliders
+    const cardHeight = imageHeight + 130; // Image + title bar + padding + sliders with labels
 
     // Handle single card centering (for page 4 with only OL)
     const isSingleCard = categoryIndices.length === 1;
@@ -668,21 +668,21 @@ export class TasteReportGenerator {
       const metrics = catData.metrics;
 
       // Style Era
-      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.styleEra, 'Style Era');
-      sliderY += 18;
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.styleEra, 'Style Era', 'Contemporary', 'Traditional');
+      sliderY += 24;
 
       // Material Complexity
-      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.materialComplexity, 'Material Complexity');
-      sliderY += 18;
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.materialComplexity, 'Material Complexity', 'Minimal', 'Layered');
+      sliderY += 24;
 
       // Mood Palette
-      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.moodPalette, 'Mood Palette');
+      this.drawCategorySlider(cardX + 12, sliderY, sliderWidth, metrics.moodPalette, 'Mood Palette', 'Warm', 'Cool');
     }
 
     this.addPageFooter();
   }
 
-  drawCategorySlider(x, y, width, value, label) {
+  drawCategorySlider(x, y, width, value, label, leftLabel = '', rightLabel = '') {
     const normalizedValue = Math.max(1, Math.min(5, value));
     const fillWidth = ((normalizedValue - 1) / 4) * width;
 
@@ -705,6 +705,19 @@ export class TasteReportGenerator {
 
     this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
     this.doc.circle(x + fillWidth, trackY + 2, 3, 'F');
+
+    // Endpoint labels below slider
+    if (leftLabel || rightLabel) {
+      this.doc.setFontSize(6);
+      this.doc.setFont('helvetica', 'normal');
+      this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+      if (leftLabel) {
+        this.doc.text(leftLabel, x, trackY + 12);
+      }
+      if (rightLabel) {
+        this.doc.text(rightLabel, x + width, trackY + 12, { align: 'right' });
+      }
+    }
   }
 
   // Helper methods to get MVP data
