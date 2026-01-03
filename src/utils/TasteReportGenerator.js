@@ -247,8 +247,8 @@ export class TasteReportGenerator {
   // Get client info from various sources
   getClientName() {
     const kyc = this.kycData?.principal?.portfolioContext;
-    if (kyc?.firstName || kyc?.lastName) {
-      return `${kyc.firstName || ''} ${kyc.lastName || ''}`.trim();
+    if (kyc?.principalFirstName || kyc?.principalLastName) {
+      return `${kyc.principalFirstName || ''} ${kyc.principalLastName || ''}`.trim();
     }
     return this.profileP.clientId || this.profileP.clientName || 'Client';
   }
@@ -575,6 +575,10 @@ export class TasteReportGenerator {
   }
 
   async addSelectionsPage(categoryIndices) {
+    // Light blue-gray page background (#F8FAFC)
+    this.doc.setFillColor(248, 250, 252);
+    this.doc.rect(0, 0, this.pageWidth, this.pageHeight, 'F');
+
     let y = this.margin;
 
     // Title
@@ -593,7 +597,7 @@ export class TasteReportGenerator {
     // Calculate card dimensions for 2x2 grid
     const cardWidth = (this.contentWidth - 20) / 2;
     const imageHeight = cardWidth * 0.625; // 16:10 aspect ratio
-    const cardHeight = imageHeight + 100; // Image + title bar + sliders
+    const cardHeight = imageHeight + 110; // Image + title bar + padding + sliders
 
     // Handle single card centering (for page 4 with only OL)
     const isSingleCard = categoryIndices.length === 1;
@@ -651,8 +655,8 @@ export class TasteReportGenerator {
       this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
       this.doc.text(cat.name, cardX + cardWidth / 2, titleBarY + 16, { align: 'center' });
 
-      // Design DNA subtitle
-      let sliderY = titleBarY + 32;
+      // Design DNA subtitle (with extra padding from title bar)
+      let sliderY = titleBarY + 42;
       this.doc.setFontSize(9);
       this.doc.setFont('helvetica', 'bold');
       this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
@@ -717,31 +721,57 @@ export class TasteReportGenerator {
   getHouseholdItems() {
     const family = this.kycData?.principal?.familyHousehold;
     if (!family) return ['No data'];
-    return [
-      family.householdSize ? `${family.householdSize} People` : '',
-      family.childrenCount ? `${family.childrenCount} Children` : '',
-      family.staffCount ? `${family.staffCount} Staff` : ''
-    ].filter(Boolean);
+    const items = [];
+    // Count family members
+    if (family.familyMembers && family.familyMembers.length > 0) {
+      items.push(`${family.familyMembers.length} Family Members`);
+      // Count children (roles: child, young-child, teenager)
+      const children = family.familyMembers.filter(m =>
+        ['child', 'young-child', 'teenager'].includes(m.role)
+      );
+      if (children.length > 0) items.push(`${children.length} Children`);
+    }
+    // Staff info
+    if (family.staffingLevel && family.staffingLevel !== 'none') {
+      const staffLabel = family.staffingLevel === 'live_in'
+        ? `${family.liveInStaff || 1} Live-in Staff`
+        : family.staffingLevel === 'full_time' ? 'Full-Time Staff' : 'Part-Time Staff';
+      items.push(staffLabel);
+    }
+    if (family.pets) items.push('Has Pets');
+    return items.length > 0 ? items : ['No data'];
   }
 
   getLifestyleItems() {
     const lifestyle = this.kycData?.principal?.lifestyleLiving;
     if (!lifestyle) return ['No data'];
-    return [
-      lifestyle.entertainingStyle || '',
-      lifestyle.cookingLevel || '',
-      lifestyle.workFromHome ? 'Works from Home' : ''
-    ].filter(Boolean);
+    const items = [];
+    // Entertaining style with proper label
+    if (lifestyle.entertainingStyle) {
+      const styleLabels = { formal: 'Formal Entertaining', casual: 'Casual Entertaining', both: 'Both Formal & Casual' };
+      items.push(styleLabels[lifestyle.entertainingStyle] || lifestyle.entertainingStyle);
+    }
+    if (lifestyle.entertainingFrequency) {
+      const freqLabels = { rarely: 'Entertains Rarely', monthly: 'Entertains Monthly', weekly: 'Entertains Weekly', daily: 'Entertains Daily' };
+      items.push(freqLabels[lifestyle.entertainingFrequency] || '');
+    }
+    // Work from home
+    if (lifestyle.workFromHome && lifestyle.workFromHome !== 'never') {
+      const wfhLabels = { sometimes: 'WFH 1-2 days', often: 'WFH 3-4 days', always: 'Full Remote' };
+      items.push(wfhLabels[lifestyle.workFromHome] || 'Works from Home');
+    }
+    return items.length > 0 ? items : ['No data'];
   }
 
   getWellnessItems() {
-    const wellness = this.kycData?.principal?.lifestyleLiving;
-    if (!wellness) return ['No data'];
-    return [
-      wellness.fitnessLevel || '',
-      wellness.spaAmenities ? 'Spa Amenities' : '',
-      wellness.meditationSpace ? 'Meditation Space' : ''
-    ].filter(Boolean);
+    const lifestyle = this.kycData?.principal?.lifestyleLiving;
+    if (!lifestyle?.wellnessPriorities || lifestyle.wellnessPriorities.length === 0) return ['No data'];
+    // Map wellness codes to labels
+    const wellnessLabels = {
+      gym: 'Home Gym', pool: 'Pool', spa: 'Spa/Sauna', yoga: 'Yoga Studio',
+      massage: 'Massage Room', meditation: 'Meditation Space', 'cold-plunge': 'Cold Plunge'
+    };
+    return lifestyle.wellnessPriorities.slice(0, 3).map(w => wellnessLabels[w] || w);
   }
 
   getSelectedAmenities() {

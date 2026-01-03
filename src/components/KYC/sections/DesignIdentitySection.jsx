@@ -272,6 +272,20 @@ const CompletedView = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [emailStatus, setEmailStatus] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState('');
+
+  // Handle refresh with visual feedback
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setRefreshMessage('');
+    onRefresh();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setRefreshMessage('Profiles refreshed!');
+      setTimeout(() => setRefreshMessage(''), 2000);
+    }, 500);
+  };
 
   // Calculate metrics from profile
   const getMetrics = (profile) => {
@@ -486,9 +500,14 @@ const CompletedView = ({
 
       {/* Actions */}
       <div className="completed-view__actions">
-        <button className="btn-refresh" onClick={onRefresh}>
-          🔄 Refresh Profiles
+        <button
+          className={`btn-refresh ${isRefreshing ? 'btn-refresh--loading' : ''}`}
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? '⏳ Refreshing...' : '🔄 Refresh Profiles'}
         </button>
+        {refreshMessage && <span className="refresh-message">{refreshMessage}</span>}
         <button className="btn-retake" onClick={onRetake}>
           ↩️ Retake Exploration
         </button>
