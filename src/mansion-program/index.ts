@@ -164,6 +164,6 @@ export {
 } from './client/components/DecisionDetail';
 
 export {
-  PersonalizationResult,
+  PersonalizationResult as PersonalizationResultView,
   type PersonalizationResultProps
 } from './client/components/PersonalizationResult';
