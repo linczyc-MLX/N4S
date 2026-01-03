@@ -3,9 +3,10 @@ import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
   Home, Users, ChefHat, Dumbbell, Wine, Tv, BookOpen,
   Sofa, Gamepad2, Beer, BedDouble, Coffee, TreePine,
-  Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer
+  Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer, FileText
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
+import BriefingBuilderView from './BriefingBuilderView';
 import { transformKYCToMVPBrief, getMVPBriefSummary, countSelectedAmenities } from '../../lib/mvp-bridge';
 import { quads, categoryOrder } from '../../data/tasteQuads';
 
@@ -143,6 +144,7 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
 const MVPModule = () => {
   const { kycData, activeRespondent } = useAppContext();
   const [showRawData, setShowRawData] = useState(false);
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' or 'builder'
   
   // Get design identity config from KYC
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
@@ -214,6 +216,28 @@ const MVPModule = () => {
   // Check if taste exploration is complete
   const hasTasteProfile = !!tasteProfileP;
   const hasBothProfiles = clientType === 'couple' ? (!!tasteProfileP && !!tasteProfileS) : !!tasteProfileP;
+
+  // Derive project info for BriefingBuilderView
+  const projectId = clientBaseName || 'project-001';
+  const projectName = kycData[activeRespondent]?.projectParameters?.projectName || 'New Project';
+
+  // If in builder mode, show Briefing Builder
+  if (viewMode === 'builder') {
+    return (
+      <BriefingBuilderView
+        kycData={kycData}
+        mvpData={briefInputs}
+        tasteProfile={tasteProfileP}
+        projectId={projectId}
+        projectName={projectName}
+        onBack={() => setViewMode('overview')}
+        onSave={(brief) => {
+          console.log('Brief saved:', brief);
+          setViewMode('overview');
+        }}
+      />
+    );
+  }
 
   if (!briefInputs) {
     return (
@@ -569,13 +593,19 @@ const MVPModule = () => {
       <div className="mvp-next-steps">
         <h3>
           <ArrowRight size={20} />
-          Next: Full Validation Engine
+          Next: Briefing Builder
         </h3>
         <p>
-          The complete MVP validation engine will generate your detailed area program, 
-          run adjacency validation, and produce pass/fail gates. This preview shows 
-          how your KYC inputs translate to MVP brief parameters.
+          Open the Briefing Builder to configure spaces, adjacencies, and operational bridges.
+          Run validation preview and export your completed PlanBrief.
         </p>
+        <button
+          onClick={() => setViewMode('builder')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <FileText className="w-4 h-4" />
+          Open Briefing Builder
+        </button>
       </div>
     </div>
   );
