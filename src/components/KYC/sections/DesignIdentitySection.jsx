@@ -265,6 +265,7 @@ const CompletedView = ({
   principalName,
   secondaryName,
   location,
+  kycData,
   onRetake,
   onRefresh,
   onLaunchSecondary
@@ -776,6 +777,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
           principalName={principalName}
           secondaryName={secondaryName}
           location={location}
+          kycData={kycData}
           onRetake={handleRetake}
           onRefresh={refreshProfiles}
           onLaunchSecondary={() => handleLaunch(clientIdS)}
