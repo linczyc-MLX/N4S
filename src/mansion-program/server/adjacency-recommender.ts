@@ -418,7 +418,8 @@ function evaluateCondition(
     
     // Composition
     if (condition === 'composition === "family_with_children"') {
-      if (kyc.householdProfile?.composition === 'family_with_children') {
+      const comp = kyc.householdProfile?.composition;
+      if (comp === 'couple_young_children' || comp === 'couple_teenagers' || comp === 'blended_family') {
         return { matches: true, reason: 'Family with children' };
       }
     }
