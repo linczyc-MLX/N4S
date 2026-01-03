@@ -108,3 +108,35 @@ export {
 } from './client/utils/mermaid-generator';
 
 export { DiagramView, type DiagramViewProps } from './client/components/DiagramView';
+
+// Adjacency Decisions
+export {
+  ADJACENCY_DECISIONS,
+  getDecisionById,
+  getDecisionsForPreset,
+  getDefaultOption,
+  getOptionById,
+  type AdjacencyDecision,
+  type DecisionOption,
+  type PersonalizationChoice,
+  type PersonalizationResult
+} from './shared/adjacency-decisions';
+
+// Adjacency Recommender
+export {
+  recommendAdjacencies,
+  evaluateDecision,
+  evaluatePersonalization,
+  applyDecisionsToMatrix,
+  deriveBridgeConfigFromChoices,
+  type RecommendedDecision,
+  type EvaluationResult
+} from './server/adjacency-recommender';
+
+// Adjacency test utilities
+export {
+  executiveFamilyKYC,
+  emptyNestersKYC,
+  multiGenKYC,
+  runTests as runAdjacencyTests
+} from './test/adjacency-recommender-test';
