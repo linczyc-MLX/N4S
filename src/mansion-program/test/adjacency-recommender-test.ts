@@ -29,7 +29,7 @@ import {
  * - Entertains frequently
  * - Has pool and wellness interest
  */
-export const executiveFamilyKYC: KYCResponse = {
+export const executiveFamilyKYC: Partial<KYCResponse> = {
   propertyContext: {
     residenceType: 'primary',
     estimatedSF: 15000,
@@ -37,9 +37,9 @@ export const executiveFamilyKYC: KYCResponse = {
     hasBasement: false
   },
   householdProfile: {
-    composition: 'family_with_children',
-    primaryResidents: 2,
-    childrenCount: 2,
+    composition: 'couple_young_children',
+    primaryResidents: 4,
+    childrenAges: [8, 12],
     pets: [{ type: 'dog', count: 1, size: 'large' }],
     elderlyResidents: false,
     mobilityConsiderations: false
@@ -47,13 +47,16 @@ export const executiveFamilyKYC: KYCResponse = {
   entertainingProfile: {
     frequency: 'frequently',
     typicalScale: 'large',
+    maxEventScale: 'grand',
     formalDiningImportance: 4,
+    outdoorEntertainingImportance: 3,
+    barEntertainingImportance: 3,
     wineCollection: true,
     wineBottleCount: 300
   },
   staffingProfile: {
     preference: 'regular',
-    securityRequirements: 'standard'
+    securityRequirements: 'moderate'
   },
   privacyProfile: {
     preference: 'selective',
@@ -61,11 +64,14 @@ export const executiveFamilyKYC: KYCResponse = {
     clientMeetingsAtHome: true,
     lateNightMediaUse: true,
     guestStayFrequency: 'occasionally',
+    typicalGuestStayDuration: 'weekend',
     multiGenerationalHosting: false
   },
   kitchenProfile: {
     cookingStyle: 'enthusiast',
-    primaryCook: 'family',
+    primaryCook: 'both',
+    breakfastStyle: 'casual',
+    dailyMealsAtHome: 2,
     showKitchenImportance: 4
   },
   wellnessProfile: {
@@ -84,7 +90,7 @@ export const executiveFamilyKYC: KYCResponse = {
  * - Formal entertaining
  * - Full-service staffing
  */
-export const emptyNestersKYC: KYCResponse = {
+export const emptyNestersKYC: Partial<KYCResponse> = {
   propertyContext: {
     residenceType: 'primary',
     estimatedSF: 12000,
@@ -92,9 +98,9 @@ export const emptyNestersKYC: KYCResponse = {
     hasBasement: true
   },
   householdProfile: {
-    composition: 'couple',
+    composition: 'couple_adult_children',
     primaryResidents: 2,
-    childrenCount: 0,
+    childrenAges: [],
     pets: [],
     elderlyResidents: false,
     mobilityConsiderations: false
@@ -102,13 +108,16 @@ export const emptyNestersKYC: KYCResponse = {
   entertainingProfile: {
     frequency: 'frequently',
     typicalScale: 'moderate',
+    maxEventScale: 'large',
     formalDiningImportance: 5,
+    outdoorEntertainingImportance: 3,
+    barEntertainingImportance: 4,
     wineCollection: true,
     wineBottleCount: 500
   },
   staffingProfile: {
     preference: 'full_service',
-    securityRequirements: 'standard'
+    securityRequirements: 'moderate'
   },
   privacyProfile: {
     preference: 'formal',
@@ -122,12 +131,14 @@ export const emptyNestersKYC: KYCResponse = {
   kitchenProfile: {
     cookingStyle: 'casual',
     primaryCook: 'staff',
+    breakfastStyle: 'casual',
+    dailyMealsAtHome: 2,
     showKitchenImportance: 3
   },
   wellnessProfile: {
-    interest: 'casual',
+    interest: 'basic',
     poolDesired: false,
-    fitnessRoutine: 'occasional'
+    fitnessRoutine: 'light'
   }
 };
 
@@ -137,7 +148,7 @@ export const emptyNestersKYC: KYCResponse = {
  * - Mobility considerations
  * - Need for privacy AND proximity
  */
-export const multiGenKYC: KYCResponse = {
+export const multiGenKYC: Partial<KYCResponse> = {
   propertyContext: {
     residenceType: 'primary',
     estimatedSF: 18000,
@@ -147,7 +158,7 @@ export const multiGenKYC: KYCResponse = {
   householdProfile: {
     composition: 'multi_generational',
     primaryResidents: 4,
-    childrenCount: 1,
+    childrenAges: [10],
     pets: [{ type: 'cat', count: 2 }],
     elderlyResidents: true,
     mobilityConsiderations: true
@@ -155,7 +166,10 @@ export const multiGenKYC: KYCResponse = {
   entertainingProfile: {
     frequency: 'occasionally',
     typicalScale: 'intimate',
-    formalDiningImportance: 3
+    maxEventScale: 'moderate',
+    formalDiningImportance: 3,
+    outdoorEntertainingImportance: 2,
+    barEntertainingImportance: 2
   },
   staffingProfile: {
     preference: 'regular',
@@ -167,17 +181,20 @@ export const multiGenKYC: KYCResponse = {
     clientMeetingsAtHome: false,
     lateNightMediaUse: false,
     guestStayFrequency: 'rarely',
+    typicalGuestStayDuration: 'weekend',
     multiGenerationalHosting: false
   },
   kitchenProfile: {
     cookingStyle: 'enthusiast',
-    primaryCook: 'family',
+    primaryCook: 'both',
+    breakfastStyle: 'casual',
+    dailyMealsAtHome: 3,
     showKitchenImportance: 4
   },
   wellnessProfile: {
     interest: 'basic',
     poolDesired: false,
-    fitnessRoutine: 'occasional'
+    fitnessRoutine: 'light'
   }
 };
 
@@ -244,7 +261,7 @@ export function runTests(): void {
   
   // Test 4: Executive Family recommendations
   console.log('\nTEST 4: Executive Family recommendations');
-  const execRecs = recommendAdjacencies(executiveFamilyKYC, '15k');
+  const execRecs = recommendAdjacencies(executiveFamilyKYC as KYCResponse, '15k');
   console.log(`  Generated ${execRecs.length} recommendations`);
   
   // Check office recommendation (should be near entry for client meetings)
@@ -269,7 +286,7 @@ export function runTests(): void {
   
   // Test 5: Empty Nesters recommendations
   console.log('\nTEST 5: Empty Nesters recommendations');
-  const nesters = recommendAdjacencies(emptyNestersKYC, '10k');
+  const nesters = recommendAdjacencies(emptyNestersKYC as KYCResponse, '10k');
   
   // Check guest suite (should be independent for extended stays)
   const guestRec = nesters.find(r => r.decision.id === 'guest-independence');
@@ -293,7 +310,7 @@ export function runTests(): void {
   
   // Test 6: Multi-Gen recommendations
   console.log('\nTEST 6: Multi-Gen recommendations');
-  const multiGen = recommendAdjacencies(multiGenKYC, '20k');
+  const multiGen = recommendAdjacencies(multiGenKYC as KYCResponse, '20k');
   
   // Check primary suite (should be wing for single-level/mobility)
   const primaryRec = multiGen.find(r => r.decision.id === 'primary-privacy');
