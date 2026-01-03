@@ -625,14 +625,3 @@ export function deriveBridgeConfigFromChoices(
   return config;
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export {
-  recommendAdjacencies,
-  evaluateDecision,
-  evaluatePersonalization,
-  applyDecisionsToMatrix,
-  deriveBridgeConfigFromChoices
-};
