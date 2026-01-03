@@ -13,16 +13,47 @@ import FYIModule from './components/FYI/FYIModule';
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
+// Simple Settings Panel component
+const SettingsPanel = () => (
+  <div className="settings-panel">
+    <div className="settings-panel__header">
+      <h2>Settings</h2>
+      <p>Application settings and configuration</p>
+    </div>
+    <div className="settings-panel__content">
+      <div className="settings-section">
+        <h3>Project Settings</h3>
+        <p className="settings-section__description">
+          Configure project defaults and preferences.
+        </p>
+        <div className="settings-placeholder">
+          Settings options coming soon...
+        </div>
+      </div>
+      <div className="settings-section">
+        <h3>Export & Data</h3>
+        <p className="settings-section__description">
+          Export project data or manage backups.
+        </p>
+        <div className="settings-placeholder">
+          Export options coming soon...
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const AppContent = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { clientData, updateClientData } = useAppContext();
+  const { clientData, kycData } = useAppContext();
 
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
     { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
     { id: 'fyi', label: 'FYI', icon: Search, description: 'Find Your Inspiration' },
+    { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
   const renderModule = () => {
@@ -33,6 +64,8 @@ const AppContent = () => {
         return <MVPModule />;
       case 'fyi':
         return <FYIModule />;
+      case 'settings':
+        return <SettingsPanel />;
       default:
         return <Dashboard onNavigate={setActiveModule} />;
     }
@@ -83,14 +116,22 @@ const AppContent = () => {
         {sidebarOpen && (
           <div className="sidebar__footer">
             <div className="sidebar__client-info">
-              {clientData.principalName ? (
-                <>
-                  <span className="sidebar__client-name">{clientData.principalName}</span>
-                  <span className="sidebar__client-project">{clientData.projectName || 'New Project'}</span>
-                </>
-              ) : (
-                <span className="sidebar__client-placeholder">No client loaded</span>
-              )}
+              {(() => {
+                const firstName = kycData?.principal?.portfolioContext?.principalFirstName || '';
+                const lastName = kycData?.principal?.portfolioContext?.principalLastName || '';
+                const clientName = `${firstName} ${lastName}`.trim();
+                const projectName = kycData?.principal?.projectParameters?.projectName || clientData?.projectName || '';
+
+                if (clientName || projectName) {
+                  return (
+                    <>
+                      <span className="sidebar__client-name">{clientName || 'Client'}</span>
+                      <span className="sidebar__client-project">{projectName || 'New Project'}</span>
+                    </>
+                  );
+                }
+                return <span className="sidebar__client-placeholder">No client loaded</span>;
+              })()}
             </div>
           </div>
         )}
@@ -105,7 +146,11 @@ const AppContent = () => {
             </span>
           </div>
           <div className="main-header__actions">
-            <button className="btn btn--ghost" title="Settings">
+            <button
+              className="btn btn--ghost"
+              title="Settings"
+              onClick={() => setActiveModule('settings')}
+            >
               <Settings size={20} />
             </button>
           </div>
