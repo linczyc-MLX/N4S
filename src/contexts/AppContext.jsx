@@ -177,6 +177,24 @@ const initialKYCData = {
 
 // Initial FYI data
 const initialFYIData = {
+  // Brief data from FYI module
+  brief: null,
+  completedAt: null,
+
+  // Settings used to generate the brief
+  settings: {
+    targetSF: 15000,
+    deltaPct: 10,
+    circulationPct: 0.14,
+    lockToTarget: true,
+    programTier: '15k',
+    hasBasement: false
+  },
+
+  // Space selections
+  selections: {},
+
+  // Legacy fields (preserved for backward compatibility)
   architectShortlist: [],
   idShortlist: [],
   compatibilityMatrix: {},
