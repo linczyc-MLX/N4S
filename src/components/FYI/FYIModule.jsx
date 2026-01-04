@@ -1,536 +1,304 @@
-import React, { useState } from 'react';
-import { 
-  Building2, Palette, GitCompare, Search, Filter, 
-  ChevronRight, Star, MapPin, DollarSign, Users,
-  CheckCircle2, AlertTriangle, XCircle
-} from 'lucide-react';
+/**
+ * FYIModule - Find Your Inspiration
+ * 
+ * Luxury residence interior area brief application.
+ * Allows clients to define their conditioned interior space requirements
+ * by selecting S/M/L sizes for each space with automatic circulation calculations.
+ * 
+ * Position in N4S workflow: KYC → FYI → MVP → VMX
+ */
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import useFYIState from './hooks/useFYIState';
+import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
+import { getSpaceByCode } from '../../shared/space-registry';
+
+// Components
+import FYIZoneStepper from './components/FYIZoneStepper';
+import FYISpaceCard from './components/FYISpaceCard';
+import FYITotalsPanel from './components/FYITotalsPanel';
+
+import './FYIModule.css';
 
 const FYIModule = () => {
-  const [activeTab, setActiveTab] = useState('architects');
-  const { fyiData, updateFYIData, kycData } = useAppContext();
-
-  const tabs = [
-    { id: 'architects', label: 'Architect Matching', icon: Building2, color: 'blue' },
-    { id: 'designers', label: 'ID Matching', icon: Palette, color: 'purple' },
-    { id: 'compatibility', label: 'Team Compatibility', icon: GitCompare, color: 'gold' },
-  ];
-
-  const renderTab = () => {
-    switch (activeTab) {
-      case 'architects':
-        return <ArchitectMatchingTab />;
-      case 'designers':
-        return <DesignerMatchingTab />;
-      case 'compatibility':
-        return <CompatibilityTab />;
-      default:
-        return null;
+  const { kycData, activeRespondent, updateFYIData } = useAppContext();
+  const [isExporting, setIsExporting] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  
+  // Get consolidated KYC data
+  const consolidatedKYC = kycData?.consolidated || kycData?.[activeRespondent] || null;
+  
+  // Initialize FYI state
+  const {
+    settings,
+    selections,
+    activeZone,
+    isLoaded,
+    totals,
+    zonesWithCounts,
+    setActiveZone,
+    updateSettings,
+    updateSpaceSelection,
+    toggleSpaceIncluded,
+    setSpaceSize,
+    setSpaceLevel,
+    setSpaceImage,
+    getSpaceSelection,
+    getSpacesForZone,
+    calculateArea,
+    resetToDefaults,
+    applyKYCDefaults,
+    generateMVPBrief
+  } = useFYIState();
+  
+  // Apply KYC defaults on first load
+  useEffect(() => {
+    if (isLoaded && consolidatedKYC && !initialized) {
+      const { settings: kycSettings, selections: kycSelections } = generateFYIFromKYC(consolidatedKYC);
+      
+      // Only apply if we don't have existing selections
+      const hasExistingSelections = Object.keys(selections).length > 0;
+      if (!hasExistingSelections) {
+        updateSettings(kycSettings);
+        // Note: applyKYCDefaults will be called by useFYIState internally
+      }
+      setInitialized(true);
     }
-  };
-
-  return (
-    <div className="fyi-module">
-      {/* Header */}
-      <div className="fyi-module__header">
-        <h2 className="fyi-module__title">Find Your Inspiration</h2>
-        <p className="fyi-module__subtitle">
-          Three-dimensional matching: Client ↔ Architect ↔ Interior Designer
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <div className="fyi-module__tabs">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`fyi-tab fyi-tab--${tab.color} ${isActive ? 'fyi-tab--active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon size={20} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Content */}
-      <div className="fyi-module__content">
-        {renderTab()}
-      </div>
-    </div>
-  );
-};
-
-// Architect Matching Tab
-const ArchitectMatchingTab = () => {
-  const { fyiData, updateFYIData, kycData } = useAppContext();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({
-    style: [],
-    location: '',
-    budgetMin: '',
-  });
-
-  // Sample architect data (would come from database)
-  const sampleArchitects = [
-    {
-      id: 1,
-      name: 'Studio Collective',
-      location: 'Los Angeles, USA',
-      styleMatch: 92,
-      scaleMatch: 88,
-      budgetMatch: 95,
-      overallScore: 91,
-      styles: ['Contemporary', 'Minimalist'],
-      typicalBudget: '$15M - $50M',
-      mediaPresence: 3,
-      status: 'green',
-    },
-    {
-      id: 2,
-      name: 'Horizon Architecture',
-      location: 'Dubai, UAE',
-      styleMatch: 88,
-      scaleMatch: 95,
-      budgetMatch: 90,
-      overallScore: 89,
-      styles: ['Desert Modern', 'Contemporary'],
-      typicalBudget: '$20M - $100M',
-      mediaPresence: 4,
-      status: 'green',
-    },
-    {
-      id: 3,
-      name: 'Classic Design Partners',
-      location: 'London, UK',
-      styleMatch: 75,
-      scaleMatch: 85,
-      budgetMatch: 88,
-      overallScore: 78,
-      styles: ['Traditional', 'European Classical'],
-      typicalBudget: '$10M - $40M',
-      mediaPresence: 2,
-      status: 'amber',
-    },
-  ];
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'green': return <CheckCircle2 className="status-icon--green" size={20} />;
-      case 'amber': return <AlertTriangle className="status-icon--amber" size={20} />;
-      case 'red': return <XCircle className="status-icon--red" size={20} />;
-      default: return null;
+  }, [isLoaded, consolidatedKYC, initialized]);
+  
+  // Get spaces for active zone
+  const activeSpaces = getSpacesForZone(activeZone);
+  const activeZoneInfo = zonesWithCounts.find(z => z.code === activeZone);
+  
+  // Handle PDF export
+  const handleExportPDF = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const brief = generateMVPBrief();
+      
+      // Call PDF generation API (to be implemented)
+      const response = await fetch('/api/fyi/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings,
+          selections,
+          spaces: activeSpaces.map(s => ({
+            ...s,
+            selection: getSpaceSelection(s.code),
+            calculatedArea: calculateArea(s.code)
+          })),
+          zones: zonesWithCounts,
+          totals
+        })
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'FYI-Interior-Brief.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Fallback: generate client-side summary
+        console.warn('PDF API not available, generating summary');
+        generateClientSideSummary();
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      generateClientSideSummary();
+    } finally {
+      setIsExporting(false);
     }
+  }, [settings, selections, totals, zonesWithCounts]);
+  
+  // Client-side summary fallback
+  const generateClientSideSummary = () => {
+    const summary = [];
+    summary.push('FYI - Interior Brief Summary');
+    summary.push('=' .repeat(40));
+    summary.push(`Target SF: ${settings.targetSF.toLocaleString()}`);
+    summary.push(`Program Tier: ${settings.programTier}`);
+    summary.push('');
+    summary.push('TOTALS');
+    summary.push(`Net Program: ${totals.net.toLocaleString()} SF`);
+    summary.push(`Circulation (${totals.circulationPct}%): ${totals.circulation.toLocaleString()} SF`);
+    summary.push(`Total: ${totals.total.toLocaleString()} SF`);
+    summary.push(`Delta: ${totals.deltaFromTarget > 0 ? '+' : ''}${totals.deltaFromTarget.toLocaleString()} SF`);
+    summary.push('');
+    summary.push('SPACES BY ZONE');
+    
+    zonesWithCounts.forEach(zone => {
+      if (zone.includedCount > 0) {
+        summary.push('');
+        summary.push(`${zone.name} (${zone.totalSF.toLocaleString()} SF)`);
+        const spaces = getSpacesForZone(zone.code);
+        spaces.forEach(space => {
+          const sel = getSpaceSelection(space.code);
+          if (sel.included) {
+            const area = calculateArea(space.code);
+            summary.push(`  • ${space.abbrev} [${sel.size}]: ${area.toLocaleString()} SF`);
+          }
+        });
+      }
+    });
+    
+    // Create text file download
+    const blob = new Blob([summary.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'FYI-Brief-Summary.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
-
-  const addToShortlist = (architect) => {
-    if (!fyiData.architectShortlist.find(a => a.id === architect.id)) {
+  
+  // Handle proceed to MVP
+  const handleProceedToMVP = useCallback(() => {
+    const mvpBrief = generateMVPFromFYI(generateMVPBrief());
+    
+    // Save to context for MVP to pick up
+    if (updateFYIData) {
       updateFYIData({
-        architectShortlist: [...fyiData.architectShortlist, architect]
+        brief: mvpBrief,
+        completedAt: new Date().toISOString()
       });
     }
-  };
-
-  return (
-    <div className="matching-tab">
-      <div className="matching-tab__intro">
-        <h3>Step 1: Find Your Architect</h3>
-        <p>Based on your KYC profile, we've scored architects across 7 categories. Select up to 5 for your shortlist.</p>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="matching-tab__controls">
-        <div className="search-box">
-          <Search size={18} />
-          <input 
-            type="text"
-            placeholder="Search architects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button className="btn btn--secondary">
-          <Filter size={18} />
-          Filters
-        </button>
-      </div>
-
-      {/* Shortlist Summary */}
-      {fyiData.architectShortlist.length > 0 && (
-        <div className="shortlist-summary">
-          <span className="shortlist-summary__count">
-            {fyiData.architectShortlist.length}/5 architects shortlisted
-          </span>
-          <div className="shortlist-summary__chips">
-            {fyiData.architectShortlist.map(arch => (
-              <span key={arch.id} className="shortlist-chip">
-                {arch.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      <div className="matching-results">
-        {sampleArchitects.map(architect => (
-          <div key={architect.id} className="match-card">
-            <div className="match-card__header">
-              <div className="match-card__status">
-                {getStatusIcon(architect.status)}
-                <span className="match-card__score">{architect.overallScore}% Match</span>
-              </div>
-              <Building2 className="match-card__type-icon" size={24} />
-            </div>
-
-            <h4 className="match-card__name">{architect.name}</h4>
-            <p className="match-card__location">
-              <MapPin size={14} />
-              {architect.location}
-            </p>
-
-            <div className="match-card__styles">
-              {architect.styles.map(style => (
-                <span key={style} className="style-tag">{style}</span>
-              ))}
-            </div>
-
-            <div className="match-card__scores">
-              <div className="score-bar">
-                <span className="score-bar__label">Design DNA</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill" style={{ width: `${architect.styleMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{architect.styleMatch}%</span>
-              </div>
-              <div className="score-bar">
-                <span className="score-bar__label">Scale & Scope</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill" style={{ width: `${architect.scaleMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{architect.scaleMatch}%</span>
-              </div>
-              <div className="score-bar">
-                <span className="score-bar__label">Budget Caliber</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill" style={{ width: `${architect.budgetMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{architect.budgetMatch}%</span>
-              </div>
-            </div>
-
-            <div className="match-card__meta">
-              <span><DollarSign size={14} /> {architect.typicalBudget}</span>
-              <span><Star size={14} /> Profile: {architect.mediaPresence}/5</span>
-            </div>
-
-            <button 
-              className="btn btn--primary btn--full"
-              onClick={() => addToShortlist(architect)}
-              disabled={fyiData.architectShortlist.find(a => a.id === architect.id) || fyiData.architectShortlist.length >= 5}
-            >
-              {fyiData.architectShortlist.find(a => a.id === architect.id) 
-                ? 'Added to Shortlist' 
-                : 'Add to Shortlist'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Designer Matching Tab (similar structure)
-const DesignerMatchingTab = () => {
-  const { fyiData, updateFYIData } = useAppContext();
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const sampleDesigners = [
-    {
-      id: 1,
-      name: 'Atelier Moderne',
-      location: 'New York, USA',
-      styleMatch: 94,
-      scaleMatch: 90,
-      budgetMatch: 92,
-      overallScore: 93,
-      styles: ['Contemporary', 'Organic Modern'],
-      typicalBudget: '$5M - $20M Interior',
-      mediaPresence: 4,
-      status: 'green',
-    },
-    {
-      id: 2,
-      name: 'Desert Interiors Co.',
-      location: 'Dubai, UAE',
-      styleMatch: 91,
-      scaleMatch: 95,
-      budgetMatch: 88,
-      overallScore: 90,
-      styles: ['Desert Modern', 'Minimalist'],
-      typicalBudget: '$8M - $30M Interior',
-      mediaPresence: 3,
-      status: 'green',
-    },
-    {
-      id: 3,
-      name: 'Heritage Design Studio',
-      location: 'Paris, France',
-      styleMatch: 78,
-      scaleMatch: 85,
-      budgetMatch: 90,
-      overallScore: 81,
-      styles: ['Traditional', 'Art Deco'],
-      typicalBudget: '$3M - $15M Interior',
-      mediaPresence: 2,
-      status: 'amber',
-    },
-  ];
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'green': return <CheckCircle2 className="status-icon--green" size={20} />;
-      case 'amber': return <AlertTriangle className="status-icon--amber" size={20} />;
-      case 'red': return <XCircle className="status-icon--red" size={20} />;
-      default: return null;
+    
+    // Navigate to MVP (this would typically be handled by parent/router)
+    console.log('MVP Brief generated:', mvpBrief);
+    alert('Brief saved! Navigate to MVP module to validate adjacencies.');
+  }, [generateMVPBrief, updateFYIData]);
+  
+  // Handle reset
+  const handleReset = () => {
+    if (window.confirm('Reset all selections to defaults? This cannot be undone.')) {
+      resetToDefaults();
+      setInitialized(false);
     }
   };
-
-  const addToShortlist = (designer) => {
-    if (!fyiData.idShortlist.find(d => d.id === designer.id)) {
-      updateFYIData({
-        idShortlist: [...fyiData.idShortlist, designer]
-      });
-    }
-  };
-
-  return (
-    <div className="matching-tab">
-      <div className="matching-tab__intro">
-        <h3>Step 2: Find Your Interior Designer</h3>
-        <p>Based on your KYC profile, we've scored interior designers across 7 categories. Select up to 5 for your shortlist.</p>
-      </div>
-
-      {/* Search */}
-      <div className="matching-tab__controls">
-        <div className="search-box">
-          <Search size={18} />
-          <input 
-            type="text"
-            placeholder="Search interior designers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button className="btn btn--secondary">
-          <Filter size={18} />
-          Filters
-        </button>
-      </div>
-
-      {/* Shortlist Summary */}
-      {fyiData.idShortlist.length > 0 && (
-        <div className="shortlist-summary shortlist-summary--purple">
-          <span className="shortlist-summary__count">
-            {fyiData.idShortlist.length}/5 designers shortlisted
-          </span>
-          <div className="shortlist-summary__chips">
-            {fyiData.idShortlist.map(designer => (
-              <span key={designer.id} className="shortlist-chip shortlist-chip--purple">
-                {designer.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      <div className="matching-results">
-        {sampleDesigners.map(designer => (
-          <div key={designer.id} className="match-card match-card--purple">
-            <div className="match-card__header">
-              <div className="match-card__status">
-                {getStatusIcon(designer.status)}
-                <span className="match-card__score">{designer.overallScore}% Match</span>
-              </div>
-              <Palette className="match-card__type-icon" size={24} />
-            </div>
-
-            <h4 className="match-card__name">{designer.name}</h4>
-            <p className="match-card__location">
-              <MapPin size={14} />
-              {designer.location}
-            </p>
-
-            <div className="match-card__styles">
-              {designer.styles.map(style => (
-                <span key={style} className="style-tag">{style}</span>
-              ))}
-            </div>
-
-            <div className="match-card__scores">
-              <div className="score-bar">
-                <span className="score-bar__label">Design DNA</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill score-bar__fill--purple" style={{ width: `${designer.styleMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{designer.styleMatch}%</span>
-              </div>
-              <div className="score-bar">
-                <span className="score-bar__label">Scale & Scope</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill score-bar__fill--purple" style={{ width: `${designer.scaleMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{designer.scaleMatch}%</span>
-              </div>
-              <div className="score-bar">
-                <span className="score-bar__label">Budget Caliber</span>
-                <div className="score-bar__track">
-                  <div className="score-bar__fill score-bar__fill--purple" style={{ width: `${designer.budgetMatch}%` }} />
-                </div>
-                <span className="score-bar__value">{designer.budgetMatch}%</span>
-              </div>
-            </div>
-
-            <div className="match-card__meta">
-              <span><DollarSign size={14} /> {designer.typicalBudget}</span>
-              <span><Star size={14} /> Profile: {designer.mediaPresence}/5</span>
-            </div>
-
-            <button 
-              className="btn btn--primary btn--full"
-              onClick={() => addToShortlist(designer)}
-              disabled={fyiData.idShortlist.find(d => d.id === designer.id) || fyiData.idShortlist.length >= 5}
-            >
-              {fyiData.idShortlist.find(d => d.id === designer.id) 
-                ? 'Added to Shortlist' 
-                : 'Add to Shortlist'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Compatibility Tab
-const CompatibilityTab = () => {
-  const { fyiData } = useAppContext();
-
-  const hasShortlists = fyiData.architectShortlist.length > 0 && fyiData.idShortlist.length > 0;
-
-  // Sample compatibility data
-  const sampleCompatibility = [
-    { archId: 1, idId: 1, score: 88, status: 'green', factors: { aesthetic: 92, process: 85, ego: 90, history: 'New' } },
-    { archId: 1, idId: 2, score: 72, status: 'amber', factors: { aesthetic: 78, process: 70, ego: 65, history: 'None' } },
-    { archId: 2, idId: 1, score: 85, status: 'green', factors: { aesthetic: 88, process: 82, ego: 85, history: 'Proven' } },
-    { archId: 2, idId: 2, score: 94, status: 'green', factors: { aesthetic: 95, process: 92, ego: 95, history: 'Proven' } },
-  ];
-
-  if (!hasShortlists) {
+  
+  // Loading state
+  if (!isLoaded) {
     return (
-      <div className="matching-tab">
-        <div className="compatibility-empty">
-          <GitCompare size={48} />
-          <h3>Build Your Shortlists First</h3>
-          <p>
-            Select at least one architect and one interior designer to see compatibility analysis.
-          </p>
-          <div className="compatibility-empty__status">
-            <span className={fyiData.architectShortlist.length > 0 ? 'status--complete' : 'status--pending'}>
-              Architects: {fyiData.architectShortlist.length}/5
-            </span>
-            <span className={fyiData.idShortlist.length > 0 ? 'status--complete' : 'status--pending'}>
-              Interior Designers: {fyiData.idShortlist.length}/5
-            </span>
-          </div>
-        </div>
+      <div className="fyi-module fyi-module--loading">
+        <div className="fyi-module__loader">Loading...</div>
       </div>
     );
   }
-
+  
   return (
-    <div className="matching-tab">
-      <div className="matching-tab__intro">
-        <h3>Step 3: Assess Team Compatibility</h3>
-        <p>
-          Not all excellent professionals work well together. This matrix shows how each Architect + Interior Designer 
-          pairing scores across 8 compatibility factors.
-        </p>
-      </div>
-
-      {/* Compatibility Matrix */}
-      <div className="compatibility-matrix">
-        <table className="matrix-table">
-          <thead>
-            <tr>
-              <th></th>
-              {fyiData.idShortlist.map(designer => (
-                <th key={designer.id} className="matrix-header--designer">
-                  <Palette size={16} />
-                  {designer.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {fyiData.architectShortlist.map(architect => (
-              <tr key={architect.id}>
-                <td className="matrix-header--architect">
-                  <Building2 size={16} />
-                  {architect.name}
-                </td>
-                {fyiData.idShortlist.map(designer => {
-                  const compat = sampleCompatibility.find(
-                    c => c.archId === architect.id && c.idId === designer.id
-                  ) || { score: 75, status: 'amber', factors: {} };
-                  
-                  return (
-                    <td key={`${architect.id}-${designer.id}`} className="matrix-cell">
-                      <div className={`matrix-cell__score matrix-cell__score--${compat.status}`}>
-                        {compat.score}
-                        {compat.factors.history === 'Proven' && <span className="proven-badge">P</span>}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Legend */}
-      <div className="compatibility-legend">
-        <div className="legend-item">
-          <span className="legend-color legend-color--green"></span>
-          <span>≥75: Recommended</span>
+    <div className="fyi-module">
+      {/* Header */}
+      <header className="fyi-module__header">
+        <div className="fyi-module__header-content">
+          <div className="fyi-module__title-group">
+            <h1 className="fyi-module__title">FYI – Find Your Inspiration</h1>
+            <p className="fyi-module__subtitle">Luxury Residence Interior Area Brief</p>
+          </div>
+          <button 
+            className="fyi-module__reset-btn"
+            onClick={handleReset}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Reset
+          </button>
         </div>
-        <div className="legend-item">
-          <span className="legend-color legend-color--amber"></span>
-          <span>60-74: Workable</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color legend-color--red"></span>
-          <span>&lt;60: Not Recommended</span>
-        </div>
-        <div className="legend-item">
-          <span className="proven-badge">P</span>
-          <span>Proven Partnership</span>
-        </div>
-      </div>
-
-      {/* Warning */}
-      <div className="compatibility-warning">
-        <AlertTriangle size={20} />
-        <div>
-          <strong>Starchitect + Star ID Alert</strong>
-          <p>High-profile pairings without collaboration history may have ego collision risk.</p>
-        </div>
+        
+        {/* KYC Context Banner */}
+        {consolidatedKYC?.projectParameters?.targetGSF && (
+          <div className="fyi-module__kyc-banner">
+            <span className="fyi-module__kyc-label">From KYC:</span>
+            <span className="fyi-module__kyc-value">
+              {consolidatedKYC.projectParameters.targetGSF.toLocaleString()} SF target
+            </span>
+            {consolidatedKYC.projectParameters.bedroomCount && (
+              <span className="fyi-module__kyc-value">
+                {consolidatedKYC.projectParameters.bedroomCount} bedrooms
+              </span>
+            )}
+            {consolidatedKYC.projectParameters.hasBasement && (
+              <span className="fyi-module__kyc-value">
+                Basement included
+              </span>
+            )}
+          </div>
+        )}
+      </header>
+      
+      {/* Main Content */}
+      <div className="fyi-module__content">
+        {/* Left: Zone Stepper */}
+        <aside className="fyi-module__sidebar fyi-module__sidebar--left">
+          <FYIZoneStepper
+            zones={zonesWithCounts}
+            activeZone={activeZone}
+            onZoneChange={setActiveZone}
+            totals={totals}
+          />
+        </aside>
+        
+        {/* Center: Space Cards */}
+        <main className="fyi-module__main">
+          <div className="fyi-module__zone-header">
+            <h2 className="fyi-module__zone-title">{activeZoneInfo?.name}</h2>
+            <p className="fyi-module__zone-stats">
+              {activeZoneInfo?.includedCount} of {activeZoneInfo?.spaceCount} spaces • 
+              {activeZoneInfo?.totalSF.toLocaleString()} SF
+            </p>
+          </div>
+          
+          <div className="fyi-module__cards-grid">
+            {activeSpaces.map(space => {
+              const selection = getSpaceSelection(space.code);
+              const area = calculateArea(space.code);
+              
+              return (
+                <FYISpaceCard
+                  key={space.code}
+                  space={space}
+                  selection={selection}
+                  calculatedArea={area}
+                  settings={settings}
+                  onSizeChange={(size) => setSpaceSize(space.code, size)}
+                  onToggleIncluded={() => toggleSpaceIncluded(space.code)}
+                  onImageUpload={(url) => setSpaceImage(space.code, url)}
+                  onLevelChange={(level) => setSpaceLevel(space.code, level)}
+                  onNotesChange={(notes) => updateSpaceSelection(space.code, { notes })}
+                />
+              );
+            })}
+          </div>
+          
+          {activeSpaces.length === 0 && (
+            <div className="fyi-module__empty">
+              <p>No spaces available for this zone at the {settings.programTier} tier.</p>
+            </div>
+          )}
+        </main>
+        
+        {/* Right: Totals Panel */}
+        <aside className="fyi-module__sidebar fyi-module__sidebar--right">
+          <FYITotalsPanel
+            settings={settings}
+            totals={totals}
+            selections={selections}
+            onSettingsChange={updateSettings}
+            onExportPDF={handleExportPDF}
+            onProceedToMVP={handleProceedToMVP}
+            isExporting={isExporting}
+          />
+        </aside>
       </div>
     </div>
   );
