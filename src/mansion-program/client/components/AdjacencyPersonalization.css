@@ -1217,3 +1217,233 @@
     flex-direction: column;
   }
 }
+/**
+ * CSS ADDITIONS FOR PHASE 5D
+ * 
+ * Add these styles to AdjacencyPersonalization.css
+ * (append to end of file)
+ */
+
+/* ============================================================================
+   DIAGRAM SECTION (PersonalizationResult)
+   ============================================================================ */
+
+.diagram-section {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.diagram-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.diagram-section .section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.diagram-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.control-btn .btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.diagram-container {
+  padding: 20px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  transition: all 0.3s;
+}
+
+.diagram-container.expanded {
+  min-height: 400px;
+}
+
+.mermaid-diagram {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.diagram-loading {
+  color: #999;
+  font-size: 0.875rem;
+}
+
+/* ============================================================================
+   CHOICE RELATIONSHIP INDICATOR
+   ============================================================================ */
+
+.choice-relationship {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 4px;
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+/* ============================================================================
+   EXPORT BUTTONS ENHANCEMENT
+   ============================================================================ */
+
+.result-footer .btn-secondary:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.result-footer .btn-primary {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+}
+
+.result-footer .btn-primary:hover {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@media print {
+  .adjacency-personalization {
+    background: white !important;
+  }
+  
+  .personalization-header,
+  .result-header,
+  .result-footer,
+  .diagram-controls,
+  .control-btn {
+    display: none !important;
+  }
+  
+  .personalization-result {
+    padding: 0;
+  }
+  
+  .result-content {
+    box-shadow: none;
+    padding: 0;
+  }
+  
+  .diagram-container {
+    page-break-inside: avoid;
+  }
+  
+  .choices-section,
+  .bridges-section,
+  .warnings-section {
+    page-break-inside: avoid;
+  }
+}
+
+/* ============================================================================
+   STATUS BANNER POLISH
+   ============================================================================ */
+
+.status-banner.pass {
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+}
+
+.status-banner.advisory {
+  background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+}
+
+.status-banner.warning {
+  background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+}
+
+/* ============================================================================
+   SUMMARY CARDS POLISH
+   ============================================================================ */
+
+.summary-cards .summary-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.summary-cards .summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ============================================================================
+   RESPONSIVE IMPROVEMENTS
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .diagram-section .section-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .diagram-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .diagram-container {
+    padding: 12px;
+  }
+  
+  .diagram-container.expanded {
+    min-height: 300px;
+  }
+}
+
+/* ============================================================================
+   MERMAID DIAGRAM CUSTOM STYLING
+   ============================================================================ */
+
+.mermaid-diagram .node rect {
+  rx: 8;
+  ry: 8;
+}
+
+.mermaid-diagram .edgeLabel {
+  background: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}

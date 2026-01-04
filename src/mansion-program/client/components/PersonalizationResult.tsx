@@ -1,11 +1,13 @@
 /**
- * PersonalizationResult Component
+ * PersonalizationResult Component (Phase 5D Update)
  * 
- * Screen 3: Shows final validation summary before export.
- * Displays all choices, warnings, and SF impact.
+ * Screen 3: Shows final validation summary with Mermaid diagram preview
+ * and PDF export capability.
+ * 
+ * REPLACES: src/mansion-program/client/components/PersonalizationResult.tsx
  */
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -13,6 +15,7 @@ import {
   FileText,
   Download,
   Eye,
+  EyeOff,
   Briefcase,
   ChefHat,
   Tv,
@@ -20,10 +23,13 @@ import {
   BedDouble,
   Wine,
   Dumbbell,
-  Home
+  Home,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import type { PersonalizationChoice, PersonalizationResult as PersonalizationResultType } from '../../shared/adjacency-decisions';
 import type { AdjacencyDecision } from '../../shared/adjacency-decisions';
+import { generateBubbleDiagram } from '../utils/mermaid-generator';
 
 export interface PersonalizationResultProps {
   result: PersonalizationResultType;
@@ -63,10 +69,125 @@ export function PersonalizationResult({
   const hasRedFlags = result.redFlagCount > 0;
   const status = hasRedFlags ? 'warning' : hasWarnings ? 'advisory' : 'pass';
   
-  // Group choices by type
+  // Diagram state
+  const [showDiagram, setShowDiagram] = useState(true);
+  const [diagramExpanded, setDiagramExpanded] = useState(false);
+  const [diagramReady, setDiagramReady] = useState(false);
+  const diagramRef = useRef<HTMLDivElement>(null);
+  
+  // Group choices
   const recommendedChoices = result.choices.filter(c => c.isDefault);
   const customChoices = result.choices.filter(c => !c.isDefault);
   const choicesWithWarnings = result.choices.filter(c => c.warnings.length > 0);
+  
+  // Generate Mermaid diagram
+  const mermaidCode = React.useMemo(() => {
+    // Build a simple adjacency matrix from choices for the diagram
+    const adjacencyMatrix = result.choices.map(choice => {
+      const decision = decisions.find(d => d.id === choice.decisionId);
+      const option = decision?.options.find(o => o.id === choice.selectedOptionId);
+      if (!decision || !option) return null;
+      return {
+        fromSpaceCode: decision.primarySpace,
+        toSpaceCode: option.targetSpace,
+        relationship: option.relationship
+      };
+    }).filter(Boolean);
+    
+    try {
+      return generateBubbleDiagram(adjacencyMatrix as any, { direction: 'LR' });
+    } catch (e) {
+      console.error('Failed to generate diagram:', e);
+      return null;
+    }
+  }, [result.choices, decisions]);
+  
+  // Render Mermaid diagram
+  useEffect(() => {
+    if (!mermaidCode || !diagramRef.current || !showDiagram) return;
+    
+    const renderDiagram = async () => {
+      try {
+        // Check if mermaid is available
+        const mermaid = (window as any).mermaid;
+        if (!mermaid) {
+          console.warn('Mermaid not loaded');
+          return;
+        }
+        
+        // Clear previous
+        diagramRef.current!.innerHTML = '';
+        
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'mermaid';
+        container.textContent = mermaidCode;
+        diagramRef.current!.appendChild(container);
+        
+        // Render
+        await mermaid.init(undefined, container);
+        setDiagramReady(true);
+      } catch (e) {
+        console.error('Mermaid render error:', e);
+      }
+    };
+    
+    renderDiagram();
+  }, [mermaidCode, showDiagram]);
+  
+  // PDF Export
+  const handleExportPDF = async () => {
+    try {
+      const { generatePersonalizationPDF } = await import('../utils/pdf-export');
+      await generatePersonalizationPDF({
+        result,
+        decisions,
+        presetName,
+        baseSF,
+        totalSF,
+        mermaidCode
+      });
+    } catch (e) {
+      console.error('PDF export failed:', e);
+      // Fallback to JSON export
+      handleExportJSON();
+    }
+  };
+  
+  // JSON Export (fallback)
+  const handleExportJSON = () => {
+    const summary = {
+      exportDate: new Date().toISOString(),
+      preset: presetName,
+      baseSF,
+      totalSF,
+      sfImpact: result.totalSfImpact,
+      decisions: result.choices.map(choice => {
+        const decision = decisions.find(d => d.id === choice.decisionId);
+        const option = decision?.options.find(o => o.id === choice.selectedOptionId);
+        return {
+          decision: decision?.title,
+          selection: option?.label,
+          relationship: option?.relationship,
+          targetSpace: option?.targetSpace,
+          isRecommended: choice.isDefault,
+          warnings: choice.warnings,
+          sfImpact: option?.sfImpact || 0
+        };
+      }),
+      bridges: result.requiredBridges,
+      totalWarnings: result.warningCount,
+      status
+    };
+    
+    const blob = new Blob([JSON.stringify(summary, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adjacency-personalization-${presetName.replace(/[^a-z0-9]/gi, '')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   
   return (
     <div className="personalization-result">
@@ -148,6 +269,47 @@ export function PersonalizationResult({
           </div>
         </div>
         
+        {/* Mermaid Diagram Section */}
+        {mermaidCode && (
+          <section className="diagram-section">
+            <div className="section-header">
+              <h3>
+                <Eye className="section-icon" />
+                Relationship Diagram
+              </h3>
+              <div className="diagram-controls">
+                <button 
+                  className="control-btn"
+                  onClick={() => setShowDiagram(!showDiagram)}
+                >
+                  {showDiagram ? <EyeOff className="btn-icon" /> : <Eye className="btn-icon" />}
+                  {showDiagram ? 'Hide' : 'Show'}
+                </button>
+                {showDiagram && (
+                  <button 
+                    className="control-btn"
+                    onClick={() => setDiagramExpanded(!diagramExpanded)}
+                  >
+                    {diagramExpanded ? <Minimize2 className="btn-icon" /> : <Maximize2 className="btn-icon" />}
+                    {diagramExpanded ? 'Collapse' : 'Expand'}
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {showDiagram && (
+              <div className={`diagram-container ${diagramExpanded ? 'expanded' : ''}`}>
+                <div ref={diagramRef} className="mermaid-diagram" />
+                {!diagramReady && (
+                  <div className="diagram-loading">
+                    Loading diagram...
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+        
         <section className="choices-section">
           <h3>Your Selections</h3>
           
@@ -184,6 +346,9 @@ export function PersonalizationResult({
                       )}
                     </div>
                     <span className="choice-selection">{option.label}</span>
+                    <span className="choice-relationship">
+                      {decision.primarySpace} → {option.targetSpace} ({option.relationship})
+                    </span>
                     {choice.warnings.length > 0 && (
                       <div className="choice-warnings">
                         {choice.warnings.map((warning, i) => (
@@ -253,11 +418,11 @@ export function PersonalizationResult({
       <footer className="result-footer">
         <button className="btn-secondary" onClick={onViewDiagram}>
           <Eye className="btn-icon" />
-          View Diagram
+          Full Diagram View
         </button>
-        <button className="btn-secondary" onClick={onExport}>
+        <button className="btn-secondary" onClick={handleExportPDF}>
           <Download className="btn-icon" />
-          Export Summary
+          Export PDF
         </button>
         <button className="btn-primary" onClick={onContinueToBuilder}>
           <FileText className="btn-icon" />
