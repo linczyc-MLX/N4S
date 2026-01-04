@@ -82,20 +82,41 @@ export function PersonalizationResult({
   
   // Generate Mermaid diagram
   const mermaidCode = React.useMemo(() => {
-    // Build a simple adjacency matrix from choices for the diagram
-    const adjacencyMatrix = result.choices.map(choice => {
-      const decision = decisions.find(d => d.id === choice.decisionId);
-      const option = decision?.options.find(o => o.id === choice.selectedOptionId);
-      if (!decision || !option) return null;
-      return {
-        fromSpaceCode: decision.primarySpace,
-        toSpaceCode: option.targetSpace,
-        relationship: option.relationship
-      };
-    }).filter(Boolean);
-    
     try {
-      return generateBubbleDiagram(adjacencyMatrix as any, { direction: 'LR' });
+      // Build simple flowchart from choices
+      const lines = ['flowchart LR'];
+      const addedNodes = new Set<string>();
+
+      result.choices.forEach(choice => {
+        const decision = decisions.find(d => d.id === choice.decisionId);
+        const option = decision?.options.find(o => o.id === choice.selectedOptionId);
+        if (!decision || !option) return;
+
+        const from = decision.primarySpace;
+        const to = option.targetSpace;
+
+        // Add node definitions
+        if (!addedNodes.has(from)) {
+          lines.push(`  ${from}[${from}]`);
+          addedNodes.add(from);
+        }
+        if (!addedNodes.has(to)) {
+          lines.push(`  ${to}[${to}]`);
+          addedNodes.add(to);
+        }
+
+        // Add edge based on relationship
+        const rel = option.relationship;
+        if (rel === 'A') {
+          lines.push(`  ${from} === ${to}`);
+        } else if (rel === 'B') {
+          lines.push(`  ${from} --- ${to}`);
+        } else if (rel === 'S') {
+          lines.push(`  ${from} -.- ${to}`);
+        }
+      });
+
+      return lines.join('\n');
     } catch (e) {
       console.error('Failed to generate diagram:', e);
       return null;
