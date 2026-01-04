@@ -475,7 +475,7 @@ export function validateFYISelections(selections, settings) {
   }
   
   // Check for required spaces
-  const requiredCodes = ['FOY', 'KIT', 'FAM', 'PBD', 'PBT', 'PCL'];
+  const requiredCodes = ['FOY', 'KIT', 'FR', 'PRI', 'PRIBATH', 'PRICL'];
   requiredCodes.forEach(code => {
     if (!selections[code]?.included) {
       errors.push({

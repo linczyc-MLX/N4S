@@ -19,10 +19,12 @@ import FYIZoneStepper from './components/FYIZoneStepper';
 import FYISpaceCard from './components/FYISpaceCard';
 import FYITotalsPanel from './components/FYITotalsPanel';
 
+import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
+
 import './FYIModule.css';
 
 const FYIModule = () => {
-  const { kycData, activeRespondent, updateFYIData } = useAppContext();
+  const { kycData, activeRespondent, updateFYIData, clientData } = useAppContext();
   const [isExporting, setIsExporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
@@ -75,47 +77,34 @@ const FYIModule = () => {
   const handleExportPDF = useCallback(async () => {
     setIsExporting(true);
     try {
-      const brief = generateMVPBrief();
+      // Get client/project info
+      const projectName = clientData?.projectName || 
+        consolidatedKYC?.projectParameters?.projectName || '';
+      const clientName = consolidatedKYC?.portfolioContext 
+        ? `${consolidatedKYC.portfolioContext.principalFirstName || ''} ${consolidatedKYC.portfolioContext.principalLastName || ''}`.trim()
+        : '';
       
-      // Call PDF generation API (to be implemented)
-      const response = await fetch('/api/fyi/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          settings,
-          selections,
-          spaces: activeSpaces.map(s => ({
-            ...s,
-            selection: getSpaceSelection(s.code),
-            calculatedArea: calculateArea(s.code)
-          })),
-          zones: zonesWithCounts,
-          totals
-        })
-      });
+      // Build PDF data
+      const pdfData = buildFYIPDFData(
+        settings,
+        selections,
+        totals,
+        getSpacesForZone,
+        calculateArea,
+        projectName,
+        clientName
+      );
       
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'FYI-Interior-Brief.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        // Fallback: generate client-side summary
-        console.warn('PDF API not available, generating summary');
-        generateClientSideSummary();
-      }
+      // Generate PDF
+      await generateFYIPDF(pdfData);
     } catch (error) {
       console.error('Export failed:', error);
+      // Fallback to text summary
       generateClientSideSummary();
     } finally {
       setIsExporting(false);
     }
-  }, [settings, selections, totals, zonesWithCounts]);
+  }, [settings, selections, totals, getSpacesForZone, calculateArea, clientData, consolidatedKYC]);
   
   // Client-side summary fallback
   const generateClientSideSummary = () => {

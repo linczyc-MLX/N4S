@@ -54,9 +54,9 @@ const Dashboard = ({ onNavigate }) => {
         return mvpProgress === 0 ? 'not-started' : mvpProgress < 100 ? 'in-progress' : 'complete';
       case 'B': // KYM
         return 'not-started'; // Coming soon
-      case 'C': // FYI
-        return fyiData.selectedArchitect && fyiData.selectedID ? 'complete' : 
-               fyiData.architectShortlist.length > 0 ? 'in-progress' : 'not-started';
+      case 'C': // FYI - Space Program Brief
+        return fyiData.completedAt ? 'complete' : 
+               (fyiData.brief || Object.keys(fyiData.selections || {}).length > 0) ? 'in-progress' : 'not-started';
       case 'D': // VMX
         return 'not-started'; // Coming soon
       default:
@@ -141,10 +141,10 @@ const Dashboard = ({ onNavigate }) => {
       id: 'fyi',
       title: 'Module C: FYI',
       subtitle: 'Find Your Inspiration',
-      description: 'Architect & Interior Designer matchmaking with compatibility assessment',
+      description: 'Interior area brief with S/M/L space sizing and circulation calculations',
       icon: Search,
-      progress: fyiData.selectedArchitect && fyiData.selectedID ? 100 : 
-               fyiData.architectShortlist.length > 0 ? 50 : 0,
+      progress: fyiData.completedAt ? 100 : 
+               Object.keys(fyiData.selections || {}).length > 0 ? 50 : 0,
       status: getModuleStatus('C'),
       color: 'purple',
       enabled: true,
@@ -405,8 +405,10 @@ const Dashboard = ({ onNavigate }) => {
               <Building2 size={24} />
             </div>
             <div className="stat-card__content">
-              <span className="stat-card__value">{fyiData.architectShortlist.length}</span>
-              <span className="stat-card__label">Architects Shortlisted</span>
+              <span className="stat-card__value">
+                {Object.values(fyiData.selections || {}).filter(s => s?.included).length}
+              </span>
+              <span className="stat-card__label">Spaces Selected</span>
             </div>
           </div>
           
@@ -415,8 +417,10 @@ const Dashboard = ({ onNavigate }) => {
               <Palette size={24} />
             </div>
             <div className="stat-card__content">
-              <span className="stat-card__value">{fyiData.idShortlist.length}</span>
-              <span className="stat-card__label">IDs Shortlisted</span>
+              <span className="stat-card__value">
+                {fyiData.settings?.targetSF ? fyiData.settings.targetSF.toLocaleString() : '—'}
+              </span>
+              <span className="stat-card__label">Target SF</span>
             </div>
           </div>
           
@@ -426,9 +430,9 @@ const Dashboard = ({ onNavigate }) => {
             </div>
             <div className="stat-card__content">
               <span className="stat-card__value">
-                {Object.keys(fyiData.compatibilityMatrix).length}
+                {fyiData.settings?.programTier?.toUpperCase() || '—'}
               </span>
-              <span className="stat-card__label">Pairings Assessed</span>
+              <span className="stat-card__label">Program Tier</span>
             </div>
           </div>
         </section>

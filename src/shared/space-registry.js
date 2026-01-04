@@ -1,5 +1,5 @@
 /**
- * N4S Space Registry
+ * N4S Space Registry (JavaScript version)
  * 
  * Master definition of all zones, spaces, and codes used across KYC, FYI, MVP, and VMX.
  * This is the single source of truth for the entire N4S platform.
@@ -9,74 +9,10 @@
  */
 
 // =============================================================================
-// TYPE DEFINITIONS
-// =============================================================================
-
-export type ZoneCode = 
-  | 'Z1_APB'   // Arrival + Public
-  | 'Z2_FAM'   // Family + Kitchen
-  | 'Z3_ENT'   // Entertainment
-  | 'Z4_WEL'   // Wellness
-  | 'Z5_PRI'   // Primary Suite
-  | 'Z6_GST'   // Guest + Secondary
-  | 'Z7_SVC'   // Service + BOH
-  | 'Z8_OUT';  // Outdoor Spaces
-
-export type Level = 2 | 1 | -1 | -2;  // L2 (upper), L1 (ground), L-1 (basement), L-2 (sub-basement)
-
-export type SizeOption = 'S' | 'M' | 'L';
-
-export type ProgramTier = '10k' | '15k' | '20k';
-
-export type SpaceTier = 'core' | '15k+' | '20k+';
-
-export interface Zone {
-  code: ZoneCode;
-  name: string;
-  order: number;
-  description: string;
-}
-
-export interface SpaceDefinition {
-  code: string;
-  name: string;
-  abbrev: string;
-  zone: ZoneCode;
-  defaultLevel: Level;
-  baseSF: {
-    '10k': number | null;
-    '15k': number | null;
-    '20k': number | null;
-  };
-  basementEligible: boolean;
-  outdoorSpace: boolean;
-  tier: SpaceTier;
-  notes?: string;
-}
-
-export interface SpaceSelection {
-  code: string;
-  size: SizeOption;
-  level: Level;
-  customSF?: number;
-  included: boolean;
-  imageUrl?: string;
-  notes?: string;
-}
-
-export interface ProjectSettings {
-  targetSF: number;
-  deltaPct: number;
-  circulationPct: number;
-  hasBasement: boolean;
-  programTier: ProgramTier;
-}
-
-// =============================================================================
 // ZONE DEFINITIONS
 // =============================================================================
 
-export const zones: Zone[] = [
+export const zones = [
   {
     code: 'Z1_APB',
     name: 'Arrival + Public',
@@ -131,7 +67,7 @@ export const zones: Zone[] = [
 // SPACE DEFINITIONS
 // =============================================================================
 
-export const spaceRegistry: SpaceDefinition[] = [
+export const spaceRegistry = [
   // ---------------------------------------------------------------------------
   // Zone 1: Arrival + Public (Z1_APB)
   // ---------------------------------------------------------------------------
@@ -171,7 +107,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Home office / study'
   },
   {
-    code: 'GRT',
+    code: 'GR',
     name: 'Great Room',
     abbrev: 'Great Room',
     zone: 'Z1_APB',
@@ -183,7 +119,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Formal living / showcase room'
   },
   {
-    code: 'DIN',
+    code: 'DR',
     name: 'Formal Dining',
     abbrev: 'Dining',
     zone: 'Z1_APB',
@@ -195,7 +131,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Seats 10-14'
   },
   {
-    code: 'WIN',
+    code: 'WINE',
     name: 'Wine Room',
     abbrev: 'Wine',
     zone: 'Z1_APB',
@@ -235,7 +171,7 @@ export const spaceRegistry: SpaceDefinition[] = [
   // Zone 2: Family + Kitchen (Z2_FAM)
   // ---------------------------------------------------------------------------
   {
-    code: 'FAM',
+    code: 'FR',
     name: 'Family Room',
     abbrev: 'Family',
     zone: 'Z2_FAM',
@@ -271,7 +207,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Casual daily meals'
   },
   {
-    code: 'SCL',
+    code: 'SCUL',
     name: 'Scullery / Pantry',
     abbrev: 'Scullery',
     zone: 'Z2_FAM',
@@ -283,7 +219,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Prep, cleanup, storage'
   },
   {
-    code: 'CHF',
+    code: 'CHEF',
     name: "Chef's Kitchen",
     abbrev: "Chef's",
     zone: 'Z2_FAM',
@@ -295,7 +231,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Service kitchen for formal dining'
   },
   {
-    code: 'MDA',
+    code: 'MEDIA',
     name: 'Media Room',
     abbrev: 'Media',
     zone: 'Z2_FAM',
@@ -335,7 +271,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Built-in bar'
   },
   {
-    code: 'GAM',
+    code: 'GAME',
     name: 'Game Room',
     abbrev: 'Game',
     zone: 'Z3_ENT',
@@ -447,7 +383,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Separate structure'
   },
   {
-    code: 'PSP',
+    code: 'POOLSUP',
     name: 'Pool Support',
     abbrev: 'Pool Sup',
     zone: 'Z4_WEL',
@@ -463,7 +399,7 @@ export const spaceRegistry: SpaceDefinition[] = [
   // Zone 5: Primary Suite (Z5_PRI)
   // ---------------------------------------------------------------------------
   {
-    code: 'PBD',
+    code: 'PRI',
     name: 'Primary Bedroom',
     abbrev: 'Primary Bed',
     zone: 'Z5_PRI',
@@ -475,7 +411,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Master bedroom'
   },
   {
-    code: 'PBT',
+    code: 'PRIBATH',
     name: 'Primary Bath',
     abbrev: 'Primary Bath',
     zone: 'Z5_PRI',
@@ -487,7 +423,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Double vanity, wet room'
   },
   {
-    code: 'PCL',
+    code: 'PRICL',
     name: 'Primary Closets',
     abbrev: 'Primary Closet',
     zone: 'Z5_PRI',
@@ -499,7 +435,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'His/hers dressing'
   },
   {
-    code: 'PLG',
+    code: 'PRILNG',
     name: 'Primary Lounge',
     abbrev: 'Primary Lounge',
     zone: 'Z5_PRI',
@@ -796,7 +732,7 @@ export const spaceRegistry: SpaceDefinition[] = [
   // Zone 8: Outdoor Spaces (Z8_OUT) - NOT included in conditioned SF
   // ---------------------------------------------------------------------------
   {
-    code: 'TER',
+    code: 'TERR',
     name: 'Main Terrace',
     abbrev: 'Terrace',
     zone: 'Z8_OUT',
@@ -808,7 +744,7 @@ export const spaceRegistry: SpaceDefinition[] = [
     notes: 'Outdoor living; not in conditioned total'
   },
   {
-    code: 'POL',
+    code: 'POOL',
     name: 'Pool + Deck',
     abbrev: 'Pool',
     zone: 'Z8_OUT',
@@ -888,21 +824,21 @@ export const spaceRegistry: SpaceDefinition[] = [
 /**
  * Get a space definition by code
  */
-export function getSpaceByCode(code: string): SpaceDefinition | undefined {
+export function getSpaceByCode(code) {
   return spaceRegistry.find(s => s.code === code);
 }
 
 /**
  * Get all spaces for a specific zone
  */
-export function getSpacesByZone(zoneCode: ZoneCode): SpaceDefinition[] {
+export function getSpacesByZone(zoneCode) {
   return spaceRegistry.filter(s => s.zone === zoneCode);
 }
 
 /**
  * Get all spaces available for a given tier
  */
-export function getSpacesForTier(tier: ProgramTier): SpaceDefinition[] {
+export function getSpacesForTier(tier) {
   return spaceRegistry.filter(s => {
     if (s.tier === 'core') return true;
     if (s.tier === '15k+' && (tier === '15k' || tier === '20k')) return true;
@@ -914,26 +850,21 @@ export function getSpacesForTier(tier: ProgramTier): SpaceDefinition[] {
 /**
  * Get conditioned spaces only (excludes outdoor)
  */
-export function getConditionedSpaces(): SpaceDefinition[] {
+export function getConditionedSpaces() {
   return spaceRegistry.filter(s => !s.outdoorSpace);
 }
 
 /**
  * Get basement-eligible spaces
  */
-export function getBasementEligibleSpaces(): SpaceDefinition[] {
+export function getBasementEligibleSpaces() {
   return spaceRegistry.filter(s => s.basementEligible);
 }
 
 /**
  * Calculate area for a space based on size selection
  */
-export function calculateSpaceArea(
-  space: SpaceDefinition,
-  tier: ProgramTier,
-  size: SizeOption,
-  deltaPct: number = 10
-): number {
+export function calculateSpaceArea(space, tier, size, deltaPct = 10) {
   const baseArea = space.baseSF[tier];
   if (baseArea === null) return 0;
   
@@ -948,14 +879,14 @@ export function calculateSpaceArea(
 /**
  * Get zone by code
  */
-export function getZoneByCode(code: ZoneCode): Zone | undefined {
+export function getZoneByCode(code) {
   return zones.find(z => z.code === code);
 }
 
 /**
  * Get zones in order
  */
-export function getZonesInOrder(): Zone[] {
+export function getZonesInOrder() {
   return [...zones].sort((a, b) => a.order - b.order);
 }
 
@@ -968,21 +899,21 @@ const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload';
 /**
  * Get space render image URL
  */
-export function getSpaceRenderUrl(code: string, size: SizeOption = 'M'): string {
+export function getSpaceRenderUrl(code, size = 'M') {
   return `${CLOUDINARY_BASE}/N4S/space-renders/${code}_${size}.jpg`;
 }
 
 /**
  * Get floor plan SVG URL
  */
-export function getFloorPlanUrl(code: string): string {
+export function getFloorPlanUrl(code) {
   return `${CLOUDINARY_BASE}/N4S/floor-plans/${code}_plan.svg`;
 }
 
 /**
  * Get zone cover image URL
  */
-export function getZoneCoverUrl(zoneCode: ZoneCode): string {
+export function getZoneCoverUrl(zoneCode) {
   return `${CLOUDINARY_BASE}/N4S/zone-covers/${zoneCode}_cover.jpg`;
 }
 
@@ -990,26 +921,26 @@ export function getZoneCoverUrl(zoneCode: ZoneCode): string {
 // LEGACY MAPPING (for KYC chip value migration)
 // =============================================================================
 
-export const legacyToCodeMap: Record<string, string> = {
+export const legacyToCodeMap = {
   // Interior spaces from KYC SpaceRequirementsSection
-  'primary-suite': 'PBD',
+  'primary-suite': 'PRI',
   'secondary-suites': 'GST1',
   'kids-bedrooms': 'KID1',
-  'great-room': 'GRT',
-  'formal-living': 'GRT',
-  'family-room': 'FAM',
-  'formal-dining': 'DIN',
+  'great-room': 'GR',
+  'formal-living': 'GR',
+  'family-room': 'FR',
+  'formal-dining': 'DR',
   'casual-dining': 'BKF',
   'chef-kitchen': 'KIT',
-  'catering-kitchen': 'CHF',
+  'catering-kitchen': 'CHEF',
   'home-office': 'OFF',
   'library': 'LIB',
-  'media-room': 'MDA',
-  'game-room': 'GAM',
-  'wine-cellar': 'WIN',
+  'media-room': 'MEDIA',
+  'game-room': 'GAME',
+  'wine-cellar': 'WINE',
   'gym': 'GYM',
   'spa-wellness': 'SPA',
-  'pool-indoor': 'PSP',
+  'pool-indoor': 'POOLSUP',
   'sauna': 'SPA',
   'steam-room': 'SPA',
   'staff-quarters': 'STF',
@@ -1023,7 +954,7 @@ export const legacyToCodeMap: Record<string, string> = {
 /**
  * Convert legacy KYC chip value to space code
  */
-export function legacyToCode(legacyValue: string): string | undefined {
+export function legacyToCode(legacyValue) {
   return legacyToCodeMap[legacyValue];
 }
 
@@ -1031,7 +962,7 @@ export function legacyToCode(legacyValue: string): string | undefined {
 // CIRCULATION DEFAULTS
 // =============================================================================
 
-export const circulationDefaults: Record<ProgramTier, { min: number; max: number; default: number }> = {
+export const circulationDefaults = {
   '10k': { min: 0.12, max: 0.15, default: 0.13 },
   '15k': { min: 0.13, max: 0.16, default: 0.14 },
   '20k': { min: 0.14, max: 0.18, default: 0.15 }
@@ -1040,13 +971,7 @@ export const circulationDefaults: Record<ProgramTier, { min: number; max: number
 /**
  * Calculate circulation SF
  */
-export function calculateCirculation(
-  netSF: number,
-  targetSF: number,
-  lockToTarget: boolean,
-  circulationPct: number,
-  tier: ProgramTier
-): number {
+export function calculateCirculation(netSF, targetSF, lockToTarget, circulationPct, tier) {
   if (lockToTarget) {
     // Balance to target, clamped
     const targetCirc = targetSF - netSF;
@@ -1063,15 +988,15 @@ export function calculateCirculation(
 // PRIORITY SPACES FOR IMAGES
 // =============================================================================
 
-export const prioritySpacesForImages: string[] = [
-  'FOY',  // Foyer
-  'GRT',  // Great Room
-  'DIN',  // Formal Dining
-  'FAM',  // Family Room
-  'KIT',  // Kitchen
-  'PBD',  // Primary Bedroom
-  'PBT',  // Primary Bath
-  'GST1', // Guest Suite 1
-  'GYM',  // Gym
-  'TER'   // Terrace
+export const prioritySpacesForImages = [
+  'FOY',     // Foyer
+  'GR',      // Great Room
+  'DR',      // Formal Dining
+  'FR',      // Family Room
+  'KIT',     // Kitchen
+  'PRI',     // Primary Bedroom
+  'PRIBATH', // Primary Bath
+  'GST1',    // Guest Suite 1
+  'GYM',     // Gym
+  'TERR'     // Terrace
 ];
