@@ -11,7 +11,7 @@ import {
   getSpacesForTier,
   legacyToCode,
   zones
-} from '../../shared/space-registry';
+} from '../../../shared/space-registry';
 
 /**
  * Transform KYC data into FYI initial state

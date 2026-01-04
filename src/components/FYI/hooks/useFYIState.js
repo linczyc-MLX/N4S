@@ -16,7 +16,7 @@ import {
   calculateCirculation,
   getSpaceByCode,
   getZonesInOrder
-} from '../../shared/space-registry';
+} from '../../../shared/space-registry';
 
 const STORAGE_KEY = 'n4s_fyi_state';
 

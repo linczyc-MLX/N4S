@@ -1,62 +1,19 @@
 /**
  * FYI PDF Export Utility
- * 
+ *
  * Generates downloadable PDF summary of the space program brief.
  * Uses printable HTML approach for compatibility.
  */
 
-import { zones, getSpaceByCode } from '../../shared/space-registry';
-
-/**
- * FYI Brief data structure for PDF generation
- */
-export interface FYIPDFData {
-  settings: {
-    targetSF: number;
-    deltaPct: number;
-    circulationPct: number;
-    programTier: string;
-    hasBasement: boolean;
-  };
-  selections: Record<string, {
-    included: boolean;
-    size: 'S' | 'M' | 'L';
-    level: number;
-    notes?: string;
-  }>;
-  totals: {
-    net: number;
-    circulation: number;
-    circulationPct: string;
-    total: number;
-    deltaFromTarget: number;
-    outdoorTotal: number;
-  };
-  zonesData: Array<{
-    code: string;
-    name: string;
-    spaces: Array<{
-      code: string;
-      name: string;
-      size: string;
-      area: number;
-      level: number;
-      notes?: string;
-    }>;
-    totalSF: number;
-  }>;
-  projectName?: string;
-  clientName?: string;
-  generatedAt: string;
-}
+import { zones, getSpaceByCode } from '../../../shared/space-registry';
 
 /**
  * Generate FYI Brief PDF
  */
-export async function generateFYIPDF(data: FYIPDFData): Promise<void> {
+export async function generateFYIPDF(data) {
   // Try jsPDF first
   try {
-    const jsPDF = (window as any).jspdf?.jsPDF;
+    const jsPDF = window.jspdf?.jsPDF;
     if (jsPDF) {
       await generateWithJsPDF(data, jsPDF);
       return;
@@ -64,7 +21,7 @@ export async function generateFYIPDF(data: FYIPDFData): Promise<void> {
   } catch (e) {
     console.warn('jsPDF not available, using printable HTML');
   }
-  
+
   // Fallback to printable HTML
   generatePrintableHTML(data);
 }
@@ -72,28 +29,28 @@ export async function generateFYIPDF(data: FYIPDFData): Promise<void> {
 /**
  * Generate PDF using jsPDF
  */
-async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
+async function generateWithJsPDF(data, jsPDF) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = 20;
-  
+
   // Helper to add text
-  const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
+  const addText = (text, fontSize = 10, isBold = false) => {
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', isBold ? 'bold' : 'normal');
     doc.text(text, margin, y);
     y += fontSize * 0.5;
   };
-  
+
   // Helper to check page break
-  const checkPageBreak = (neededSpace: number = 30) => {
+  const checkPageBreak = (neededSpace = 30) => {
     if (y > 270) {
       doc.addPage();
       y = 20;
     }
   };
-  
+
   // Title
   addText('N4S Interior Area Brief', 18, true);
   y += 5;
@@ -101,20 +58,20 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
   if (data.projectName) addText(`Project: ${data.projectName}`, 9);
   if (data.clientName) addText(`Client: ${data.clientName}`, 9);
   y += 10;
-  
+
   // Summary Box
   doc.setDrawColor(139, 115, 85); // Gold/brown accent
   doc.setLineWidth(0.5);
   doc.rect(margin, y, pageWidth - 2 * margin, 35);
   y += 8;
-  
+
   addText('PROGRAM SUMMARY', 12, true);
   y += 3;
   addText(`Target SF: ${data.settings.targetSF.toLocaleString()}`, 10);
   addText(`Program Tier: ${data.settings.programTier.toUpperCase()}`, 10);
   addText(`Basement: ${data.settings.hasBasement ? 'Yes' : 'No'}`, 10);
   y += 10;
-  
+
   // Totals
   addText('TOTALS', 12, true);
   y += 3;
@@ -127,22 +84,22 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
     addText(`Outdoor (non-conditioned): ${data.totals.outdoorTotal.toLocaleString()} SF`, 10);
   }
   y += 10;
-  
+
   // Zones
   addText('SPACES BY ZONE', 14, true);
   y += 5;
-  
+
   data.zonesData.forEach(zone => {
     if (zone.spaces.length === 0) return;
-    
+
     checkPageBreak(40);
-    
+
     // Zone header
     doc.setFillColor(245, 240, 232); // Light accent
     doc.rect(margin, y - 3, pageWidth - 2 * margin, 8, 'F');
     addText(`${zone.name} — ${zone.totalSF.toLocaleString()} SF`, 11, true);
     y += 5;
-    
+
     // Space table header
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -151,7 +108,7 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
     doc.text('SF', margin + 90, y);
     doc.text('Level', margin + 115, y);
     y += 5;
-    
+
     // Spaces
     doc.setFont('helvetica', 'normal');
     zone.spaces.forEach(space => {
@@ -161,7 +118,7 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
       doc.text(space.area.toLocaleString(), margin + 90, y);
       doc.text(`L${space.level > 0 ? space.level : space.level}`, margin + 115, y);
       y += 4;
-      
+
       if (space.notes) {
         doc.setFontSize(7);
         doc.setTextColor(100);
@@ -171,10 +128,10 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
         y += 4;
       }
     });
-    
+
     y += 8;
   });
-  
+
   // Footer
   checkPageBreak(30);
   y = 280;
@@ -182,9 +139,9 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
   doc.setTextColor(128);
   doc.text('N4S - Not For Sale | Luxury Residential Advisory', margin, y);
   doc.text(`Page 1`, pageWidth - margin - 20, y);
-  
+
   // Save
-  const filename = data.projectName 
+  const filename = data.projectName
     ? `FYI-Brief-${data.projectName.replace(/\s+/g, '-')}.pdf`
     : `FYI-Interior-Brief.pdf`;
   doc.save(filename);
@@ -193,7 +150,7 @@ async function generateWithJsPDF(data: FYIPDFData, jsPDF: any): Promise<void> {
 /**
  * Generate printable HTML and open print dialog
  */
-function generatePrintableHTML(data: FYIPDFData): void {
+function generatePrintableHTML(data) {
   const html = `
 <!DOCTYPE html>
 <html>
@@ -201,24 +158,24 @@ function generatePrintableHTML(data: FYIPDFData): void {
   <title>N4S Interior Area Brief</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
+    body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       font-size: 11px;
       line-height: 1.4;
       color: #1a1a1a;
       padding: 20px;
     }
-    .header { 
+    .header {
       border-bottom: 2px solid #8b7355;
       padding-bottom: 15px;
       margin-bottom: 20px;
     }
-    .header h1 { 
+    .header h1 {
       font-size: 22px;
       font-weight: 500;
       color: #1a1a1a;
     }
-    .header .meta { 
+    .header .meta {
       color: #6b6b6b;
       font-size: 10px;
       margin-top: 5px;
@@ -253,7 +210,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
     }
     .summary-row.delta.over { color: #c53030; }
     .summary-row.delta.under { color: #2f855a; }
-    
+
     .zones { margin-top: 20px; }
     .zone {
       margin-bottom: 20px;
@@ -276,7 +233,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
       font-size: 12px;
       color: #6b6b6b;
     }
-    
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -302,7 +259,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
       color: #6b6b6b;
       font-style: italic;
     }
-    
+
     .footer {
       margin-top: 30px;
       padding-top: 15px;
@@ -312,7 +269,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
       display: flex;
       justify-content: space-between;
     }
-    
+
     @media print {
       body { padding: 0; }
       .zone { page-break-inside: avoid; }
@@ -328,7 +285,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
       ${data.clientName ? ` | Client: ${data.clientName}` : ''}
     </div>
   </div>
-  
+
   <div class="summary-box">
     <div class="summary-section">
       <h3>Program Settings</h3>
@@ -349,7 +306,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
         <span>${data.settings.hasBasement ? 'Yes' : 'No'}</span>
       </div>
     </div>
-    
+
     <div class="summary-section">
       <h3>Totals</h3>
       <div class="summary-row">
@@ -376,7 +333,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
       ` : ''}
     </div>
   </div>
-  
+
   <div class="zones">
     ${data.zonesData.map(zone => zone.spaces.length > 0 ? `
     <div class="zone">
@@ -409,12 +366,12 @@ function generatePrintableHTML(data: FYIPDFData): void {
     </div>
     ` : '').join('')}
   </div>
-  
+
   <div class="footer">
     <span>N4S - Not For Sale | Luxury Residential Advisory</span>
     <span>Generated ${data.generatedAt}</span>
   </div>
-  
+
   <script>
     window.onload = function() {
       window.print();
@@ -423,7 +380,7 @@ function generatePrintableHTML(data: FYIPDFData): void {
 </body>
 </html>
   `.trim();
-  
+
   // Open in new window for printing
   const printWindow = window.open('', '_blank');
   if (printWindow) {
@@ -447,14 +404,14 @@ function generatePrintableHTML(data: FYIPDFData): void {
  * Build PDF data from FYI state
  */
 export function buildFYIPDFData(
-  settings: FYIPDFData['settings'],
-  selections: FYIPDFData['selections'],
-  totals: FYIPDFData['totals'],
-  getSpacesForZone: (zoneCode: string) => any[],
-  calculateArea: (code: string) => number,
-  projectName?: string,
-  clientName?: string
-): FYIPDFData {
+  settings,
+  selections,
+  totals,
+  getSpacesForZone,
+  calculateArea,
+  projectName,
+  clientName
+) {
   const zonesData = zones.map(zone => {
     const zoneSpaces = getSpacesForZone(zone.code);
     const includedSpaces = zoneSpaces
@@ -467,7 +424,7 @@ export function buildFYIPDFData(
         level: selections[s.code].level || s.defaultLevel,
         notes: selections[s.code].notes
       }));
-    
+
     return {
       code: zone.code,
       name: zone.name,
@@ -475,7 +432,7 @@ export function buildFYIPDFData(
       totalSF: includedSpaces.reduce((sum, s) => sum + s.area, 0)
     };
   });
-  
+
   return {
     settings,
     selections,
