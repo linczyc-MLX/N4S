@@ -5,150 +5,118 @@
 **Account**: `drhp5e0kl`
 **Base URL**: `https://res.cloudinary.com/drhp5e0kl/image/upload`
 
-## Required Folder Structure
-
-Create these folders in your Cloudinary Media Library:
+## Actual Folder Structure (as uploaded)
 
 ```
 N4S/
-├── space-renders/          # Room visualization images
-│   ├── FOY_S.jpg          # Foyer - Small
-│   ├── FOY_M.jpg          # Foyer - Medium
-│   ├── FOY_L.jpg          # Foyer - Large
-│   ├── KIT_M.jpg          # Kitchen - Medium (priority)
-│   ├── PBD_M.jpg          # Primary Bedroom - Medium (priority)
+├── Space_Renders/          # Room visualization images (PNG)
+│   ├── FOY_M_xatei3.png
+│   ├── GR_M_u47amm.png
+│   ├── DR_M_aojuh0.png
+│   ├── FR_M_jk6ujp.png
+│   ├── KIT_M_bskgph.png
+│   ├── PRI_M_ka98yn.png
+│   ├── PRIBATH_M_hmsaqt.png
+│   ├── GST1_M_g7lhny.png
+│   ├── GYM_M_gvxtck.png
+│   └── TERR_M_gtjpaj.png
+│
+├── floor-plans/           # SVG floor plan diagrams (future)
 │   └── ...
 │
-├── floor-plans/           # SVG floor plan diagrams
-│   ├── FOY_plan.svg
-│   ├── KIT_plan.svg
-│   └── ...
-│
-└── zone-covers/           # Zone header images
-    ├── Z1_APB_cover.jpg   # Arrival + Public
-    ├── Z2_FAM_cover.jpg   # Family + Kitchen
-    ├── Z3_ENT_cover.jpg   # Entertainment
-    ├── Z4_WEL_cover.jpg   # Wellness
-    ├── Z5_PRI_cover.jpg   # Primary Suite
-    ├── Z6_GST_cover.jpg   # Guest + Secondary
-    ├── Z7_SVC_cover.jpg   # Service + BOH
-    └── Z8_OUT_cover.jpg   # Outdoor Spaces
+└── zone-covers/           # Zone header images (future)
+    └── ...
 ```
 
-## Naming Convention
+## Important: Cloudinary Behavior
 
-### Space Renders
-```
-{SPACE_CODE}_{SIZE}.jpg
-```
-- SPACE_CODE: 3-4 letter code (FOY, KIT, PBD, GST1)
-- SIZE: S (Small), M (Medium), L (Large)
-- Examples: `KIT_M.jpg`, `PBD_L.jpg`, `GST1_M.jpg`
+Cloudinary automatically:
+1. Adds unique suffixes to filenames (e.g., `_ka98yn`)
+2. Preserves the file format you upload (PNG in this case)
+3. Uses the folder path exactly as created
 
-### Floor Plans
-```
-{SPACE_CODE}_plan.svg
-```
-- Prefer SVG for scalability
-- Examples: `KIT_plan.svg`, `FAM_plan.svg`
+The `space-registry.js` now includes a mapping of these actual public IDs.
 
-### Zone Covers
-```
-{ZONE_CODE}_cover.jpg
-```
-- 8 zones total
-- Examples: `Z1_APB_cover.jpg`, `Z2_FAM_cover.jpg`
+## Priority Spaces Uploaded ✓
 
-## Priority Images (Phase 1)
+All 10 priority spaces now have images:
 
-Upload these 10 spaces first (M size only):
+| Code | Space | Public ID |
+|------|-------|-----------|
+| FOY | Foyer | `N4S/Space_Renders/FOY_M_xatei3` |
+| GR | Great Room | `N4S/Space_Renders/GR_M_u47amm` |
+| DR | Formal Dining | `N4S/Space_Renders/DR_M_aojuh0` |
+| FR | Family Room | `N4S/Space_Renders/FR_M_jk6ujp` |
+| KIT | Kitchen | `N4S/Space_Renders/KIT_M_bskgph` |
+| PRI | Primary Bedroom | `N4S/Space_Renders/PRI_M_ka98yn` |
+| PRIBATH | Primary Bath | `N4S/Space_Renders/PRIBATH_M_hmsaqt` |
+| GST1 | Guest Suite 1 | `N4S/Space_Renders/GST1_M_g7lhny` |
+| GYM | Gym | `N4S/Space_Renders/GYM_M_gvxtck` |
+| TERR | Terrace | `N4S/Space_Renders/TERR_M_gtjpaj` |
 
-| Code | Space Name | Filename |
-|------|-----------|----------|
-| FOY | Foyer / Gallery | `FOY_M.jpg` |
-| GRT | Great Room | `GRT_M.jpg` |
-| DIN | Formal Dining | `DIN_M.jpg` |
-| FAM | Family Room | `FAM_M.jpg` |
-| KIT | Kitchen | `KIT_M.jpg` |
-| PBD | Primary Bedroom | `PBD_M.jpg` |
-| PBT | Primary Bath | `PBT_M.jpg` |
-| GST1 | Guest Suite 1 | `GST1_M.jpg` |
-| GYM | Fitness / Gym | `GYM_M.jpg` |
-| TER | Main Terrace | `TER_M.jpg` |
+## Adding New Images
 
-## Image Specifications
+When uploading new space renders:
 
-### Space Renders
-- **Dimensions**: 1600×1000px (16:10 aspect ratio)
-- **Format**: JPEG, optimized
-- **Quality**: 80-85%
-- **Style**: Luxury residential interior photography
-- **Note**: Can use ArchiPrompt-generated images from Midjourney
-
-### Floor Plans
-- **Format**: SVG (preferred) or PNG with transparency
-- **Style**: Clean architectural diagram
-- **Colors**: Monochrome or subtle palette
-
-### Zone Covers
-- **Dimensions**: 1200×400px (3:1 aspect ratio)
-- **Format**: JPEG
-- **Style**: Atmospheric, evocative of zone purpose
-
-## URL Patterns in Code
-
-The space-registry.js uses these URL generators:
+1. Upload to `N4S/Space_Renders/` folder in Cloudinary
+2. Name the file `{CODE}_{SIZE}` (e.g., `BAR_M`)
+3. After upload, note the full public ID with suffix (e.g., `BAR_M_abc123`)
+4. Add the mapping to `src/shared/space-registry.js`:
 
 ```javascript
-// Space render
-const url = `https://res.cloudinary.com/drhp5e0kl/image/upload/N4S/space-renders/KIT_M.jpg`;
-
-// Floor plan
-const url = `https://res.cloudinary.com/drhp5e0kl/image/upload/N4S/floor-plans/KIT_plan.svg`;
-
-// Zone cover
-const url = `https://res.cloudinary.com/drhp5e0kl/image/upload/N4S/zone-covers/Z2_FAM_cover.jpg`;
+const spaceRenderIds = {
+  // ... existing entries
+  'BAR_M': 'N4S/Space_Renders/BAR_M_abc123',
+};
 ```
 
-## Migration from Current Structure
+## URL Pattern
 
-Your current "Floor Plans" folder contains:
+```javascript
+// Generated URL format:
+https://res.cloudinary.com/drhp5e0kl/image/upload/N4S/Space_Renders/PRI_M_ka98yn.png
 ```
-Primary_Bedroom_satyyp.jpg
-```
-
-**Rename to**:
-```
-PBD_M.jpg
-```
-
-And move to `N4S/space-renders/` folder.
-
-## Batch Upload Script
-
-If you have images locally, use Cloudinary's upload API:
-
-```bash
-# Using Cloudinary CLI
-cloudinary uploader upload my_foyer.jpg \
-  public_id="N4S/space-renders/FOY_M" \
-  folder="N4S/space-renders"
-```
-
-Or use the Cloudinary console's Upload widget with folder selection.
 
 ## Fallback Behavior
 
-When an image is not found in Cloudinary, the FYI module:
-1. Shows a placeholder icon
-2. Displays "Add Image" prompt
-3. Allows user to upload their own inspiration image
-4. Stores user uploads in localStorage (base64)
+When an image is not in the mapping:
+1. `getSpaceRenderUrl()` returns `null`
+2. FYI card shows placeholder with "Add Image" prompt
+3. User can upload their own inspiration image
+4. User uploads stored in localStorage (base64)
 
-## Next Steps
+## Image Specifications
 
-1. [ ] Create `N4S` folder in Cloudinary
-2. [ ] Create `space-renders`, `floor-plans`, `zone-covers` subfolders
-3. [ ] Upload 10 priority space images (M size)
-4. [ ] Test URLs in browser
-5. [ ] Upload remaining spaces as available
+### Current Uploads
+- **Dimensions**: 1456×816px
+- **Format**: PNG
+- **Size**: ~1.5-2MB each
+- **Style**: Luxury residential interior renders
+
+### For Future Uploads
+Consider optimizing:
+- Use JPG for smaller file sizes (~200-400KB)
+- Resize to 1600×1000px max
+- Use Cloudinary transformations for responsive delivery:
+  ```
+  /c_fill,w_800,h_500,q_auto,f_auto/
+  ```
+
+## Zone Covers (Future)
+
+When ready to add zone cover images:
+
+1. Create `N4S/zone-covers/` folder
+2. Upload 8 images named `{ZONE_CODE}_cover` (e.g., `Z1_APB_cover`)
+3. Add mapping to space-registry.js if Cloudinary adds suffixes
+
+| Zone Code | Zone Name |
+|-----------|-----------|
+| Z1_APB | Arrival + Public |
+| Z2_FAM | Family + Kitchen |
+| Z3_ENT | Entertainment |
+| Z4_WEL | Wellness |
+| Z5_PRI | Primary Suite |
+| Z6_GST | Guest + Secondary |
+| Z7_SVC | Service + BOH |
+| Z8_OUT | Outdoor Spaces |

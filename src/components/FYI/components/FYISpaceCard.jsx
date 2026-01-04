@@ -85,7 +85,7 @@ const FYISpaceCard = ({
     <div className={`fyi-space-card ${!included ? 'fyi-space-card--excluded' : ''} ${isOutdoor ? 'fyi-space-card--outdoor' : ''}`}>
       {/* Image area */}
       <div className="fyi-space-card__image-container">
-        {imageUrl ? (
+        {displayImage ? (
           <img 
             src={displayImage} 
             alt={space.name}
@@ -98,7 +98,7 @@ const FYISpaceCard = ({
         ) : null}
         <div 
           className="fyi-space-card__image-placeholder"
-          style={{ display: imageUrl ? 'none' : 'flex' }}
+          style={{ display: displayImage ? 'none' : 'flex' }}
         >
           <svg className="fyi-space-card__placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -120,7 +120,7 @@ const FYISpaceCard = ({
           className="fyi-space-card__upload-btn"
           onClick={() => fileInputRef.current?.click()}
         >
-          {imageUrl ? 'Change' : 'Upload'}
+          {imageUrl ? 'Change' : displayImage ? 'Replace' : 'Upload'}
         </button>
         
         {getKYCBadge()}

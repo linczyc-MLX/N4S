@@ -897,10 +897,53 @@ export function getZonesInOrder() {
 const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload';
 
 /**
+ * Cloudinary public ID mapping for uploaded space renders
+ * Format: { 'CODE_SIZE': 'public_id' }
+ * Cloudinary adds unique suffixes to filenames
+ */
+const spaceRenderIds = {
+  // Priority 10 spaces - Medium size
+  'FOY_M': 'N4S/Space_Renders/FOY_M_xatei3',
+  'GR_M': 'N4S/Space_Renders/GR_M_u47amm',
+  'DR_M': 'N4S/Space_Renders/DR_M_aojuh0',
+  'FR_M': 'N4S/Space_Renders/FR_M_jk6ujp',
+  'KIT_M': 'N4S/Space_Renders/KIT_M_bskgph',
+  'PRI_M': 'N4S/Space_Renders/PRI_M_ka98yn',
+  'PRIBATH_M': 'N4S/Space_Renders/PRIBATH_M_hmsaqt',
+  'GST1_M': 'N4S/Space_Renders/GST1_M_g7lhny',
+  'GYM_M': 'N4S/Space_Renders/GYM_M_gvxtck',
+  'TERR_M': 'N4S/Space_Renders/TERR_M_gtjpaj',
+};
+
+/**
  * Get space render image URL
+ * Returns mapped Cloudinary URL if available, otherwise returns null
  */
 export function getSpaceRenderUrl(code, size = 'M') {
-  return `${CLOUDINARY_BASE}/N4S/space-renders/${code}_${size}.jpg`;
+  const key = `${code}_${size}`;
+  const publicId = spaceRenderIds[key];
+  
+  if (publicId) {
+    return `${CLOUDINARY_BASE}/${publicId}.png`;
+  }
+  
+  // Fallback: try M size if S or L requested but not available
+  if (size !== 'M') {
+    const fallbackId = spaceRenderIds[`${code}_M`];
+    if (fallbackId) {
+      return `${CLOUDINARY_BASE}/${fallbackId}.png`;
+    }
+  }
+  
+  // No image available
+  return null;
+}
+
+/**
+ * Check if a space has a render image available
+ */
+export function hasSpaceRenderImage(code, size = 'M') {
+  return !!spaceRenderIds[`${code}_${size}`] || !!spaceRenderIds[`${code}_M`];
 }
 
 /**
