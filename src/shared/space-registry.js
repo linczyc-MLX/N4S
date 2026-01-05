@@ -902,17 +902,81 @@ const CLOUDINARY_BASE = 'https://res.cloudinary.com/drhp5e0kl/image/upload';
  * Cloudinary adds unique suffixes to filenames
  */
 const spaceRenderIds = {
-  // Priority 10 spaces - Medium size
-  'FOY_M': 'N4S/Space_Renders/FOY_M_xatei3',
-  'GR_M': 'N4S/Space_Renders/GR_M_u47amm',
-  'DR_M': 'N4S/Space_Renders/DR_M_aojuh0',
-  'FR_M': 'N4S/Space_Renders/FR_M_jk6ujp',
-  'KIT_M': 'N4S/Space_Renders/KIT_M_bskgph',
-  'PRI_M': 'N4S/Space_Renders/PRI_M_ka98yn',
-  'PRIBATH_M': 'N4S/Space_Renders/PRIBATH_M_hmsaqt',
-  'GST1_M': 'N4S/Space_Renders/GST1_M_g7lhny',
-  'GYM_M': 'N4S/Space_Renders/GYM_M_gvxtck',
-  'TERR_M': 'N4S/Space_Renders/TERR_M_gtjpaj',
+  // Zone 1: Arrival + Public (Z1_APB)
+  'FOY_M': 'FOY_M_xatei3',
+  'PWD_M': 'PWD_M_z1syjl',
+  'OFF_M': 'OFF_M_uvx9ci',
+  'GR_M': 'GR_M_u47amm',
+  'DR_M': 'DR_M_aojuh0',
+  'WINE_M': 'WINE_M_btnxlc',
+  'SAL_M': 'SAL_M_jllzsj',
+  'LIB_M': 'LIB_M_jmwsay',
+  
+  // Zone 2: Family + Kitchen (Z2_FAM)
+  'FR_M': 'FR_M_jk6ujp',
+  'KIT_M': 'KIT_M_bskgph',
+  'BKF_M': 'BKF_M_w9udgb',
+  'SCUL_M': 'SCUL_M_qpdfeb',
+  'CHEF_M': 'CHEF_M_moztip',
+  'MEDIA_M': 'MEDIA_M_zhc5vf',
+  'NKF_M': 'NKF_M_bw8at0',
+  
+  // Zone 3: Entertainment (Z3_ENT)
+  'BAR_M': 'BAR_M_iuexss',
+  'GAME_M': 'GAME_M_vzu5lf',
+  'THR_M': 'THR_M_bmf1vs',
+  'BIL_M': 'BIL_M_mqnfiw',
+  'MUS_M': 'MUS_M_a3ih8o',
+  'ART_M': 'ART_M_bkopxz',
+  
+  // Zone 4: Wellness (Z4_WEL)
+  'GYM_M': 'GYM_M_gvxtck',
+  'SPA_M': 'SPA_M_xvpdst',
+  'MAS_M': 'MAS_M_wehgk5',
+  'PLH_M': 'PLH_M_wyyayn',
+  'POOLSUP_M': 'POOLSUP_M_ihrxiz',
+  
+  // Zone 5: Primary Suite (Z5_PRI)
+  'PRI_M': 'PRI_M_ka98yn',
+  'PRIBATH_M': 'PRIBATH_M_hmsaqt',
+  'PRICL_M': 'PRICL_M_s0wfmq',
+  'PRILNG_M': 'PRILNG_M_gfskim',
+  'POF_M': 'POF_M_bgmist',
+  
+  // Zone 6: Guest + Secondary (Z6_GST)
+  'GST1_M': 'GST1_M_g7lhny',
+  'GST2_M': 'GST2_M_wmagho',
+  'GST3_M': 'GST3_M_yvbnl3',
+  'GST4_M': 'GST4_M_s2zpd2',
+  'VIP_M': 'VIP_M_nr242n',
+  'KID1_M': 'KID1_M_d8hob8',
+  'KID2_M': 'KID2_M_kxuslm',
+  'BNK_M': 'BNK_M_tjjg7k',
+  'PLY_M': 'PLY_M_bmf9kz',
+  'HWK_M': 'HWK_M_guyo5i',
+  'NNY_M': 'NNY_M_o7vr9y',
+  'STF_M': 'STF_M_cjcliy',
+  
+  // Zone 7: Service + BOH (Z7_SVC)
+  'MUD_M': 'MUD_M_ftf7l3',
+  'LND_M': 'LND_M_xjlniy',
+  'LN2_M': 'LN2_M_xn7rb9',
+  'MEP_M': 'MEP_M_mutb57',
+  'STR_M': 'STR_M_i22tsu',
+  'GAR_M': 'GAR_M_piyvgz',
+  'WRK_M': 'WRK_M_xmcshf',
+  'SKT_M': 'SKT_M_gien1l',
+  'SLG_M': 'SLG_M_znjt0g',
+  'COR_M': 'COR_M_tugeyb',
+  
+  // Zone 8: Outdoor Spaces (Z8_OUT)
+  'TERR_M': 'TERR_M_gtjpaj',
+  'POOL_M': 'POOL_M_jda5qd',
+  'OKT_M': 'OKT_M_mitdyw',
+  'FPT_M': 'FPT_M_ilx6g1',
+  'ODN_M': 'ODN_M_juflbh',
+  'CTY_M': 'CTY_M_pg9ila',
+  'DRV_M': 'DRV_M_yzmztf',
 };
 
 /**
