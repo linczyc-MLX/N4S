@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown, CheckCircle2, Circle, AlertTriangle
+  CheckCircle, Circle, AlertTriangle, ChevronDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -72,9 +72,9 @@ const KYCModule = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'complete': return <CheckCircle2 size={16} className="status-icon status-icon--complete" />;
-      case 'partial': return <AlertTriangle size={16} className="status-icon status-icon--partial" />;
-      default: return <Circle size={16} className="status-icon status-icon--empty" />;
+      case 'complete': return <CheckCircle size={10} className="status-icon status-icon--complete" />;
+      case 'partial': return <Circle size={10} className="status-icon status-icon--partial" />;
+      default: return <Circle size={10} className="status-icon status-icon--empty" />;
     }
   };
 
