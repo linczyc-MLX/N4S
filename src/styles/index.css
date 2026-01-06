@@ -368,8 +368,8 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 
 /* Status Icons */
 .status-icon { flex-shrink: 0; }
-.status-icon--complete { color: var(--success); }
-.status-icon--partial { color: var(--warning); }
+.status-icon--complete { color: var(--teal); }
+.status-icon--partial { color: var(--gold); }
 .status-icon--empty { color: var(--gray-300); }
 
 /* KYC Content */
