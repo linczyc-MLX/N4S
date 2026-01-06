@@ -489,16 +489,29 @@ export const AppProvider = ({ children }) => {
     sectionsToCount.forEach(sectionKey => {
       const fields = REQUIRED_FIELDS[sectionKey] || [];
       const sectionData = data[sectionKey];
-      if (!sectionData || fields.length === 0) return;
+      if (!sectionData) return;
 
-      totalRequired += fields.length;
-      fields.forEach(field => {
-        const value = sectionData[field];
-        if (value !== '' && value !== null && value !== undefined &&
-            !(Array.isArray(value) && value.length === 0)) {
-          filledRequired++;
-        }
-      });
+      if (fields.length > 0) {
+        // Section has required fields - count those
+        totalRequired += fields.length;
+        fields.forEach(field => {
+          const value = sectionData[field];
+          if (value !== '' && value !== null && value !== undefined &&
+              !(Array.isArray(value) && value.length === 0)) {
+            filledRequired++;
+          }
+        });
+      } else {
+        // Section has NO required fields - check if ANY meaningful data exists
+        const values = Object.values(sectionData);
+        const hasData = values.some(v =>
+          v !== '' && v !== null && v !== undefined &&
+          !(Array.isArray(v) && v.length === 0) &&
+          v !== 3 && v !== 5 && v !== 'moderate' // Exclude default values
+        );
+        totalRequired += 1;
+        if (hasData) filledRequired += 1;
+      }
     });
     
     return totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
