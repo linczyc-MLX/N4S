@@ -366,13 +366,26 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .kyc-nav-item__icon { flex-shrink: 0; }
 .kyc-nav-item__label { flex: 1; }
 
-/* Status Icons */
+/* Status Icons - Hard-locked sizing */
 .status-icon {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  display: inline-block;
-  vertical-align: middle;
-  vector-effect: non-scaling-stroke;
+  flex: 0 0 14px;
 }
+
+.status-icon svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
 .status-icon--complete { color: var(--teal); }
 .status-icon--partial { color: var(--gold); }
 .status-icon--empty { color: var(--gray-300); }
