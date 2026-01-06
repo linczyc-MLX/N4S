@@ -192,7 +192,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
         />
       </div>
 
-      {/* Level Configuration */}
+      {/* Level Configuration - NEW */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Level Configuration</h3>
         <p className="kyc-section__group-description">
@@ -246,7 +246,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
         )}
       </div>
 
-      {/* Additional Structures */}
+      {/* Additional Structures - NEW */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Additional Structures</h3>
         <p className="kyc-section__group-description">

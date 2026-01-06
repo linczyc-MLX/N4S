@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
@@ -30,7 +30,6 @@ const KYCModule = () => {
     getSectionCompletionStatus
   } = useAppContext();
 
-  // All sections with their configuration
   const sections = [
     { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
     { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
@@ -43,13 +42,13 @@ const KYCModule = () => {
     { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.9' },
   ];
 
-  // Respondent tabs - Principal and Secondary only
+  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6/7
   const respondentTabs = [
     { id: 'principal', label: 'Principal', color: 'navy', description: 'Primary decision-maker' },
     { id: 'secondary', label: 'Secondary', color: 'teal', description: 'Spouse / Co-decision-maker' },
   ];
 
-  // Disclosure tier options
+  // REMOVED: fyi-extended option
   const tierOptions = [
     { id: 'mvp', label: 'Quick Capture', description: '15-20 min' },
     { id: 'enhanced', label: 'Full Discovery', description: '45-60 min' },
@@ -59,9 +58,9 @@ const KYCModule = () => {
   const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
 
   // Check if section is visible based on tier and respondent
-  const isSectionVisible = (section, respondent = activeRespondent) => {
+  const isSectionVisible = (section) => {
     // Secondary can only see P1.A.5/6/7
-    if (respondent === 'secondary' && !secondarySections.includes(section.id)) {
+    if (activeRespondent === 'secondary' && !secondarySections.includes(section.id)) {
       return false;
     }
     // Tier filtering
@@ -69,28 +68,8 @@ const KYCModule = () => {
     return section.tier === 'mvp';
   };
 
-  // Get visible sections for current respondent
-  const visibleSections = useMemo(() => {
-    return sections.filter(s => isSectionVisible(s, activeRespondent));
-  }, [activeRespondent, disclosureTier]);
+  const visibleSections = sections.filter(s => isSectionVisible(s));
 
-  // Get visible sections for a specific respondent (used when switching)
-  const getVisibleSectionsFor = (respondent) => {
-    return sections.filter(s => isSectionVisible(s, respondent));
-  };
-
-  // State for remaining sections dropdown
-  const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
-
-  // Get incomplete sections for the dropdown
-  const incompleteSections = visibleSections.filter(section => {
-    const status = getSectionCompletionStatus(activeRespondent, section.id);
-    return status !== 'complete';
-  });
-
-  const completionPercentage = calculateCompleteness(activeRespondent);
-
-  // Status icon renderer
   const getStatusIcon = (status) => {
     const size = 14;
     const strokeWidth = 1.25;
@@ -146,31 +125,6 @@ const KYCModule = () => {
     }
   };
 
-  // Handle respondent tab click - STAY ON SAME SECTION when possible
-  const handleRespondentSwitch = (newRespondent) => {
-    // Get the ID of the current section
-    const currentSectionId = visibleSections[currentKYCSection]?.id;
-    
-    // Switch respondent
-    setActiveRespondent(newRespondent);
-    
-    // Get visible sections for the new respondent
-    const targetSections = getVisibleSectionsFor(newRespondent);
-    
-    // Find the same section in the new respondent's visible sections
-    const newIndex = targetSections.findIndex(s => s.id === currentSectionId);
-    
-    if (newIndex >= 0) {
-      // Same section exists - stay on it
-      setCurrentKYCSection(newIndex);
-    } else {
-      // Section doesn't exist for this respondent - go to first section
-      // This only happens when switching from Principal to Secondary while on a non-shared section
-      setCurrentKYCSection(0);
-    }
-  };
-
-  // Render the current section
   const renderSection = () => {
     const section = visibleSections[currentKYCSection];
     if (!section) return null;
@@ -194,6 +148,17 @@ const KYCModule = () => {
     }
   };
 
+  // State for remaining sections dropdown
+  const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
+
+  // Get incomplete sections for the dropdown
+  const incompleteSections = visibleSections.filter(section => {
+    const status = getSectionCompletionStatus(activeRespondent, section.id);
+    return status !== 'complete';
+  });
+
+  const completionPercentage = calculateCompleteness(activeRespondent);
+
   return (
     <div className="kyc-module">
       {/* Tier Selector */}
@@ -213,7 +178,7 @@ const KYCModule = () => {
         </div>
       </div>
 
-      {/* Respondent Tabs - FIXED: Stay on same section when switching */}
+      {/* Respondent Tabs */}
       <div className="kyc-module__respondent-tabs">
         {respondentTabs.map(tab => (
           <button
@@ -221,7 +186,33 @@ const KYCModule = () => {
             className={`respondent-tab respondent-tab--${tab.color} ${
               activeRespondent === tab.id ? 'respondent-tab--active' : ''
             }`}
-            onClick={() => handleRespondentSwitch(tab.id)}
+            onClick={() => {
+              // Get current section ID before switching
+              const currentSectionId = visibleSections[currentKYCSection]?.id;
+              
+              // Switch respondent
+              setActiveRespondent(tab.id);
+              
+              // Calculate new visible sections for the target respondent
+              const targetSections = sections.filter(section => {
+                if (tab.id === 'secondary' && !secondarySections.includes(section.id)) {
+                  return false;
+                }
+                if (disclosureTier === 'enhanced') return true;
+                return section.tier === 'mvp';
+              });
+              
+              // Try to stay on the same section if it exists for the new respondent
+              const newSectionIndex = targetSections.findIndex(s => s.id === currentSectionId);
+              
+              if (newSectionIndex >= 0) {
+                // Section exists for new respondent - stay on it
+                setCurrentKYCSection(newSectionIndex);
+              } else {
+                // Section doesn't exist - go to first available section
+                setCurrentKYCSection(0);
+              }
+            }}
           >
             <User size={18} />
             <div className="respondent-tab__content">
@@ -286,76 +277,69 @@ const KYCModule = () => {
             </div>
           )}
 
-          {/* Section List */}
           <ul className="kyc-module__nav-list">
-            {visibleSections.map((section, idx) => {
+            {visibleSections.map((section, index) => {
               const Icon = section.icon;
               const status = getSectionCompletionStatus(activeRespondent, section.id);
+              const isActive = currentKYCSection === index;
+
               return (
                 <li key={section.id}>
                   <button
-                    className={`kyc-module__nav-item ${currentKYCSection === idx ? 'kyc-module__nav-item--active' : ''}`}
-                    onClick={() => setCurrentKYCSection(idx)}
+                    className={`kyc-nav-item ${isActive ? 'kyc-nav-item--active' : ''}`}
+                    onClick={() => setCurrentKYCSection(index)}
                   >
-                    <div className="kyc-module__nav-item-icon">
-                      <Icon size={16} />
+                    <span className="kyc-nav-item__code">{section.taskCode}</span>
+                    <div className="kyc-nav-item__icon">
+                      <Icon size={18} />
                     </div>
-                    <div className="kyc-module__nav-item-content">
-                      <span className="kyc-module__nav-item-code">{section.taskCode}</span>
-                      <span className="kyc-module__nav-item-label">{section.label}</span>
-                    </div>
+                    <span className="kyc-nav-item__label">{section.label}</span>
                     {getStatusIcon(status)}
                   </button>
                 </li>
               );
             })}
           </ul>
-
-          {/* Completion Bar */}
-          <div className="kyc-module__completion">
-            <div className="kyc-module__completion-bar">
-              <div 
-                className="kyc-module__completion-fill"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
-            <span className="kyc-module__completion-text">{completionPercentage}% Complete</span>
-          </div>
         </nav>
 
         {/* Section Content */}
         <div className="kyc-module__content">
           <div className="kyc-module__section-header">
-            <span className="kyc-module__section-code">
-              {visibleSections[currentKYCSection]?.taskCode}
+            <div className="kyc-module__section-title-group">
+              <span className="kyc-module__task-code">{visibleSections[currentKYCSection]?.taskCode}</span>
+              <h2 className="kyc-module__section-title">
+                {visibleSections[currentKYCSection]?.label}
+              </h2>
+            </div>
+            <span className="kyc-module__section-counter">
+              Section {currentKYCSection + 1} of {visibleSections.length}
             </span>
-            <h2 className="kyc-module__section-title">
-              {visibleSections[currentKYCSection]?.label}
-            </h2>
           </div>
-          
+
           <div className="kyc-module__section-body">
             {renderSection()}
           </div>
 
           {/* Navigation Buttons */}
-          <div className="kyc-module__nav-buttons">
+          <div className="kyc-module__section-nav">
             <button
-              className="kyc-module__nav-btn kyc-module__nav-btn--prev"
+              className="btn btn--secondary"
               onClick={() => setCurrentKYCSection(Math.max(0, currentKYCSection - 1))}
               disabled={currentKYCSection === 0}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
               Previous
             </button>
-            <button
-              className="kyc-module__nav-btn kyc-module__nav-btn--next"
-              onClick={() => setCurrentKYCSection(Math.min(visibleSections.length - 1, currentKYCSection + 1))}
-              disabled={currentKYCSection === visibleSections.length - 1}
-            >
-              Next
-              <ChevronRight size={16} />
-            </button>
+            
+            {currentKYCSection < visibleSections.length - 1 && (
+              <button
+                className="btn btn--primary"
+                onClick={() => setCurrentKYCSection(currentKYCSection + 1)}
+              >
+                Next
+                <ChevronRight size={18} />
+              </button>
+            )}
           </div>
         </div>
       </div>

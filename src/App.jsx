@@ -14,7 +14,6 @@ import FYIModule from './components/FYI/FYIModule';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
 // Module color mapping (matches Task Matrix)
-// A=KYC (Navy), C=FYI (Teal), M=MVP (Green), B=KYM (Purple), D=VMX (Gold)
 const moduleColors = {
   dashboard: { bg: 'transparent', text: 'inherit' },
   kyc: { bg: 'rgba(26, 54, 93, 0.1)', text: '#1a365d', accent: '#1a365d' },      // Navy - A
@@ -60,7 +59,7 @@ const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { clientData, kycData } = useAppContext();
 
-  // Module order: Dashboard, KYC, FYI (before MVP), MVP, Settings
+  // Module order: Dashboard, KYC, FYI, MVP, Settings
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
@@ -161,15 +160,21 @@ const AppContent = () => {
               : '1px solid var(--gray-200)'
           }}
         >
-          <h1 
-            className="main-header__title"
-            style={{ color: moduleColors[activeModule]?.text || 'inherit' }}
-          >
-            {modules.find(m => m.id === activeModule)?.label}
-          </h1>
+          <div className="main-header__breadcrumb">
+            <span 
+              className="main-header__module"
+              style={{ color: moduleColors[activeModule]?.text || 'inherit' }}
+            >
+              {modules.find(m => m.id === activeModule)?.label || 'Dashboard'}
+            </span>
+          </div>
           <div className="main-header__actions">
-            <button className="header-btn" title="Settings">
-              <Settings size={18} />
+            <button
+              className="btn btn--ghost"
+              title="Settings"
+              onClick={() => setActiveModule('settings')}
+            >
+              <Settings size={20} />
             </button>
           </div>
         </header>
@@ -182,10 +187,12 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <AppProvider>
-    <AppContent />
-  </AppProvider>
-);
+const App = () => {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+};
 
 export default App;

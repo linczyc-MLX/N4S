@@ -3132,5 +3132,3 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   background: var(--gray-100);
   color: var(--gray-500);
 }
-
-@import './kyc-additions.css';
