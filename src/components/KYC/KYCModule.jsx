@@ -72,26 +72,54 @@ const KYCModule = () => {
 
   const getStatusIcon = (status) => {
     const size = 14;
-    const strokeWidth = 1;
+    const strokeWidth = 1.25;
 
     switch (status) {
       case 'complete':
         return (
-          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth={strokeWidth} className="status-icon">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9 12l2 2 4-4" />
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="var(--teal)"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="status-icon"
+          >
+            <circle cx="8" cy="8" r="6.5" />
+            <path d="M5.2 8.3l1.6 1.6 3.4-3.6" />
           </svg>
         );
+
       case 'partial':
         return (
-          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth={strokeWidth} className="status-icon">
-            <circle cx="12" cy="12" r="10" />
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="var(--gold)"
+            strokeWidth={strokeWidth}
+            className="status-icon"
+          >
+            <circle cx="8" cy="8" r="6.5" />
           </svg>
         );
+
       default:
         return (
-          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth={strokeWidth} className="status-icon">
-            <circle cx="12" cy="12" r="10" />
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="var(--gray-300)"
+            strokeWidth={strokeWidth}
+            className="status-icon"
+          >
+            <circle cx="8" cy="8" r="6.5" />
           </svg>
         );
     }
