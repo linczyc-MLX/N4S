@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown
+  ChevronDown, CheckCircle2, Circle, AlertTriangle
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -69,6 +69,14 @@ const KYCModule = () => {
   };
 
   const visibleSections = sections.filter(s => isSectionVisible(s));
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'complete': return <CheckCircle2 size={16} className="status-icon status-icon--complete" />;
+      case 'partial': return <AlertTriangle size={16} className="status-icon status-icon--partial" />;
+      default: return <Circle size={16} className="status-icon status-icon--empty" />;
+    }
+  };
 
   const renderSection = () => {
     const section = visibleSections[currentKYCSection];
@@ -205,6 +213,7 @@ const KYCModule = () => {
           <ul className="kyc-module__nav-list">
             {visibleSections.map((section, index) => {
               const Icon = section.icon;
+              const status = getSectionCompletionStatus(activeRespondent, section.id);
               const isActive = currentKYCSection === index;
 
               return (
@@ -218,6 +227,7 @@ const KYCModule = () => {
                       <Icon size={18} />
                     </div>
                     <span className="kyc-nav-item__label">{section.label}</span>
+                    {getStatusIcon(status)}
                   </button>
                 </li>
               );

@@ -367,9 +367,9 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .kyc-nav-item__label { flex: 1; }
 
 /* Status Icons */
-.status-icon { flex-shrink: 0; stroke-width: 1; }
-.status-icon--complete { color: var(--teal); }
-.status-icon--partial { color: var(--gold); }
+.status-icon { flex-shrink: 0; }
+.status-icon--complete { color: var(--success); }
+.status-icon--partial { color: var(--warning); }
 .status-icon--empty { color: var(--gray-300); }
 
 /* KYC Content */
