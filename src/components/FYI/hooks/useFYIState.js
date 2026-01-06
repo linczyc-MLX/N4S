@@ -287,7 +287,7 @@ export function useFYIState(initialKYCData = null) {
     // Calculate net SF (sum of all included conditioned spaces)
     let net = 0;
     const byZone = {};
-    const byLevel = { 2: 0, 1: 0, '-1': 0, '-2': 0 };
+    const byLevel = {};
     
     conditionedSpaces.forEach(space => {
       const selection = selections[space.code];
@@ -299,7 +299,7 @@ export function useFYIState(initialKYCData = null) {
         if (!byZone[space.zone]) byZone[space.zone] = 0;
         byZone[space.zone] += area;
         
-        // Sum by level
+        // Sum by level (using actual selection level, not space.defaultLevel)
         const level = selection.level || space.defaultLevel;
         byLevel[level] = (byLevel[level] || 0) + area;
       }
@@ -338,6 +338,54 @@ export function useFYIState(initialKYCData = null) {
       outdoorTotal,
       targetSF: settings.targetSF
     };
+  }, [selections, settings, calculateArea]);
+
+  // Calculate structure-specific totals
+  const structureTotals = useMemo(() => {
+    const results = {
+      main: { enabled: true, net: 0, circulation: 0, total: 0, byLevel: {}, spaceCount: 0 },
+      guestHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 },
+      poolHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 }
+    };
+    
+    spaceRegistry.forEach(space => {
+      const selection = selections[space.code];
+      if (!selection?.included) return;
+      if (space.outdoorSpace) return; // Skip outdoor spaces
+      
+      const area = calculateArea(space.code);
+      const structure = space.structure || 'main';
+      
+      if (structure === 'main') {
+        results.main.net += area;
+        results.main.spaceCount++;
+        const level = selection.level || space.defaultLevel;
+        results.main.byLevel[level] = (results.main.byLevel[level] || 0) + area;
+      } else if (structure === 'guestHouse') {
+        results.guestHouse.enabled = true;
+        results.guestHouse.net += area;
+        results.guestHouse.total += area;
+        results.guestHouse.spaceCount++;
+      } else if (structure === 'poolHouse') {
+        results.poolHouse.enabled = true;
+        results.poolHouse.net += area;
+        results.poolHouse.total += area;
+        results.poolHouse.spaceCount++;
+      }
+    });
+    
+    // Apply circulation only to main residence
+    const mainCirculation = calculateCirculation(
+      results.main.net,
+      settings.targetSF,
+      settings.lockToTarget,
+      settings.circulationPct,
+      settings.programTier
+    );
+    results.main.circulation = mainCirculation;
+    results.main.total = results.main.net + mainCirculation;
+    
+    return results;
   }, [selections, settings, calculateArea]);
 
   // Get spaces for current zone
@@ -423,6 +471,7 @@ export function useFYIState(initialKYCData = null) {
     isLoaded,
     totals,
     zonesWithCounts,
+    structureTotals,
     
     // Setters
     setActiveZone,

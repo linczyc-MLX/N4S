@@ -12,6 +12,7 @@ const FYISpaceCard = ({
   selection,
   calculatedArea,
   settings,
+  availableLevels,    // NEW: Array from buildAvailableLevels()
   onSizeChange,
   onToggleIncluded,
   onImageUpload,
@@ -23,6 +24,7 @@ const FYISpaceCard = ({
   
   const { included, size, level, imageUrl, notes, kycSource } = selection;
   const isOutdoor = space.outdoorSpace;
+  const isSecondaryStructure = space.structure === 'guestHouse' || space.structure === 'poolHouse';
   
   // Calculate S/M/L areas for display
   const delta = settings.deltaPct / 100;
@@ -61,6 +63,7 @@ const FYISpaceCard = ({
       wantsBreakfastNook: { label: 'KYC', className: 'fyi-space-card__badge--kyc' },
       staffingLevel: { label: 'Staff', className: 'fyi-space-card__badge--kyc' },
       staffingWithKids: { label: 'Nanny', className: 'fyi-space-card__badge--kyc' },
+      secondary: { label: 'Partner', className: 'fyi-space-card__badge--secondary' },
     };
     const badge = badges[kycSource];
     if (!badge) return null;
@@ -71,15 +74,17 @@ const FYISpaceCard = ({
     );
   };
   
-  // Level options
-  const levelOptions = settings.hasBasement 
-    ? [{ value: 2, label: 'L2' }, { value: 1, label: 'L1' }, { value: -1, label: 'L-1' }]
-    : [{ value: 2, label: 'L2' }, { value: 1, label: 'L1' }];
+  // Build level options from availableLevels or fallback
+  const levelOptions = availableLevels || [
+    { value: 2, label: 'L2' },
+    { value: 1, label: 'L1 (Arrival)' }
+  ];
   
-  // Filter level options for basement-eligible spaces
-  const availableLevels = space.basementEligible 
-    ? levelOptions 
-    : levelOptions.filter(l => l.value > 0);
+  // Filter level options based on space eligibility
+  // Secondary structures (guest house, pool house) only have L1
+  const filteredLevels = isSecondaryStructure
+    ? [{ value: 1, label: 'L1' }]
+    : levelOptions;
 
   return (
     <div className={`fyi-space-card ${!included ? 'fyi-space-card--excluded' : ''} ${isOutdoor ? 'fyi-space-card--outdoor' : ''}`}>
@@ -171,6 +176,23 @@ const FYISpaceCard = ({
           </div>
           
           {/* Expandable details */}
+          {/* Level selector - PROMINENT */}
+          {!isOutdoor && !isSecondaryStructure && filteredLevels.length > 1 && (
+            <div className="fyi-space-card__level-selector">
+              <label>Level</label>
+              <select 
+                value={level}
+                onChange={(e) => onLevelChange(parseInt(e.target.value))}
+                className="fyi-space-card__level-select"
+              >
+                {filteredLevels.map(l => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {/* More options toggle */}
           <button 
             className="fyi-space-card__details-toggle"
             onClick={() => setShowDetails(!showDetails)}
@@ -188,22 +210,6 @@ const FYISpaceCard = ({
           
           {showDetails && (
             <div className="fyi-space-card__details">
-              {/* Level selector */}
-              {!isOutdoor && availableLevels.length > 1 && (
-                <div className="fyi-space-card__detail-row">
-                  <label>Level</label>
-                  <select 
-                    value={level}
-                    onChange={(e) => onLevelChange(parseInt(e.target.value))}
-                    className="fyi-space-card__level-select"
-                  >
-                    {availableLevels.map(l => (
-                      <option key={l.value} value={l.value}>{l.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
               {/* Notes */}
               <div className="fyi-space-card__detail-row">
                 <label>Notes</label>

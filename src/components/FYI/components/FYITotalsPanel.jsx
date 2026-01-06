@@ -2,21 +2,26 @@
  * FYITotalsPanel Component
  * 
  * Right sidebar showing project settings, running totals, and export options.
+ * Supports multi-structure display (Main, Guest House, Pool House).
  */
 
 import React, { useState } from 'react';
 import { validateFYISelections } from '../utils/fyiBridges';
+import { getLevelLabel } from '../../../shared/space-registry';
 
 const FYITotalsPanel = ({
   settings,
   totals,
   selections,
+  structureTotals,   // { main: {...}, guestHouse: {...}, poolHouse: {...} }
+  availableLevels,   // Array from buildAvailableLevels()
   onSettingsChange,
   onExportPDF,
   onProceedToMVP,
   isExporting
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [expandedStructures, setExpandedStructures] = useState({ main: true });
   
   // Validate current state
   const validation = validateFYISelections(selections, settings);
@@ -34,14 +39,45 @@ const FYITotalsPanel = ({
     });
   };
   
-  // Progress bar percentage
-  const progressPct = Math.min(100, Math.max(0, (totals.total / totals.targetSF) * 100));
-  const isOverTarget = totals.total > totals.targetSF;
-  const isUnderTarget = totals.total < totals.targetSF * 0.9;
+  // Calculate grand total across all structures
+  const grandTotal = Object.values(structureTotals || {})
+    .filter(s => s?.enabled)
+    .reduce((sum, s) => sum + (s.total || 0), 0);
+  
+  // Progress bar percentage (using grand total)
+  const progressPct = Math.min(120, Math.max(0, (grandTotal / settings.targetSF) * 100));
+  const isOverTarget = grandTotal > settings.targetSF;
+  const isUnderTarget = grandTotal < settings.targetSF * 0.9;
+  
+  // Toggle structure expansion
+  const toggleStructure = (structureId) => {
+    setExpandedStructures(prev => ({
+      ...prev,
+      [structureId]: !prev[structureId]
+    }));
+  };
+  
+  // Render level breakdown for a structure
+  const renderLevelBreakdown = (byLevel) => {
+    if (!byLevel || !availableLevels) return null;
+    
+    return availableLevels.map(level => {
+      const levelKey = level.value === 1 ? 1 : level.value;
+      const sf = byLevel[levelKey] || 0;
+      if (sf === 0) return null;
+      
+      return (
+        <div key={level.value} className="fyi-totals-panel__level-row">
+          <span>{getLevelLabel(level.value)}</span>
+          <span>{sf.toLocaleString()} SF</span>
+        </div>
+      );
+    });
+  };
   
   return (
     <div className="fyi-totals-panel">
-      <h3 className="fyi-totals-panel__title">Project Brief</h3>
+      <h3 className="fyi-totals-panel__title">Program Summary</h3>
       
       {/* Program Tier Selection */}
       <div className="fyi-totals-panel__section">
@@ -53,9 +89,9 @@ const FYITotalsPanel = ({
               className={`fyi-totals-panel__tier-btn ${settings.programTier === tier ? 'fyi-totals-panel__tier-btn--active' : ''}`}
               onClick={() => handleTierChange(tier)}
             >
-              {tier === '10k' && '10,000 SF'}
-              {tier === '15k' && '15,000 SF'}
-              {tier === '20k' && '20,000 SF'}
+              {tier === '10k' && '10K'}
+              {tier === '15k' && '15K'}
+              {tier === '20k' && '20K'}
             </button>
           ))}
         </div>
@@ -63,7 +99,7 @@ const FYITotalsPanel = ({
       
       {/* Target SF Input */}
       <div className="fyi-totals-panel__section">
-        <label className="fyi-totals-panel__label">Target Conditioned SF</label>
+        <label className="fyi-totals-panel__label">Target SF (All Structures)</label>
         <div className="fyi-totals-panel__input-group">
           <input
             type="number"
@@ -96,32 +132,107 @@ const FYITotalsPanel = ({
             }`}
             style={{ width: `${Math.min(100, progressPct)}%` }}
           />
-          <div className="fyi-totals-panel__progress-target" style={{ left: '100%' }} />
+          <div className="fyi-totals-panel__progress-target" />
         </div>
       </div>
       
-      {/* Totals Breakdown */}
-      <div className="fyi-totals-panel__section fyi-totals-panel__breakdown">
-        <div className="fyi-totals-panel__row">
-          <span>Net Program</span>
-          <strong>{totals.net.toLocaleString()} SF</strong>
-        </div>
-        <div className="fyi-totals-panel__row fyi-totals-panel__row--sub">
-          <span>Circulation ({totals.circulationPct}%)</span>
-          <span>{totals.circulation.toLocaleString()} SF</span>
-        </div>
+      {/* Structure-by-Structure Breakdown */}
+      <div className="fyi-totals-panel__structures">
+        {/* Main Residence */}
+        {structureTotals?.main?.enabled && (
+          <div className="fyi-totals-panel__structure">
+            <button 
+              className="fyi-totals-panel__structure-header"
+              onClick={() => toggleStructure('main')}
+            >
+              <span>Main Residence</span>
+              <span>{structureTotals.main.total?.toLocaleString() || 0} SF</span>
+              <svg className={`fyi-totals-panel__chevron ${expandedStructures.main ? 'fyi-totals-panel__chevron--open' : ''}`} viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor"/>
+              </svg>
+            </button>
+            {expandedStructures.main && (
+              <div className="fyi-totals-panel__structure-details">
+                <div className="fyi-totals-panel__row">
+                  <span>Net Program</span>
+                  <span>{structureTotals.main.net?.toLocaleString() || 0} SF</span>
+                </div>
+                <div className="fyi-totals-panel__row fyi-totals-panel__row--sub">
+                  <span>Circulation ({structureTotals.main.circulationPct || 0}%)</span>
+                  <span>{structureTotals.main.circulation?.toLocaleString() || 0} SF</span>
+                </div>
+                <div className="fyi-totals-panel__levels">
+                  <label className="fyi-totals-panel__label fyi-totals-panel__label--small">By Level</label>
+                  {renderLevelBreakdown(structureTotals.main.byLevel)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Guest House */}
+        {structureTotals?.guestHouse?.enabled && (
+          <div className="fyi-totals-panel__structure">
+            <button 
+              className="fyi-totals-panel__structure-header"
+              onClick={() => toggleStructure('guestHouse')}
+            >
+              <span>Guest House</span>
+              <span>{structureTotals.guestHouse.total?.toLocaleString() || 0} SF</span>
+              <svg className={`fyi-totals-panel__chevron ${expandedStructures.guestHouse ? 'fyi-totals-panel__chevron--open' : ''}`} viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor"/>
+              </svg>
+            </button>
+            {expandedStructures.guestHouse && (
+              <div className="fyi-totals-panel__structure-details">
+                <div className="fyi-totals-panel__row">
+                  <span>Spaces</span>
+                  <span>{structureTotals.guestHouse.spaceCount || 0}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Pool House */}
+        {structureTotals?.poolHouse?.enabled && (
+          <div className="fyi-totals-panel__structure">
+            <button 
+              className="fyi-totals-panel__structure-header"
+              onClick={() => toggleStructure('poolHouse')}
+            >
+              <span>Pool House</span>
+              <span>{structureTotals.poolHouse.total?.toLocaleString() || 0} SF</span>
+              <svg className={`fyi-totals-panel__chevron ${expandedStructures.poolHouse ? 'fyi-totals-panel__chevron--open' : ''}`} viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor"/>
+              </svg>
+            </button>
+            {expandedStructures.poolHouse && (
+              <div className="fyi-totals-panel__structure-details">
+                <div className="fyi-totals-panel__row">
+                  <span>Spaces</span>
+                  <span>{structureTotals.poolHouse.spaceCount || 0}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Grand Total */}
+      <div className="fyi-totals-panel__section fyi-totals-panel__grand-total">
         <div className="fyi-totals-panel__row fyi-totals-panel__row--total">
-          <span>Total Conditioned</span>
-          <strong>{totals.total.toLocaleString()} SF</strong>
+          <span>Grand Total</span>
+          <strong>{grandTotal.toLocaleString()} SF</strong>
         </div>
         <div className={`fyi-totals-panel__row fyi-totals-panel__row--delta ${
-          totals.deltaFromTarget > 0 ? 'fyi-totals-panel__row--over' :
-          totals.deltaFromTarget < 0 ? 'fyi-totals-panel__row--under' : ''
+          grandTotal > settings.targetSF ? 'fyi-totals-panel__row--over' :
+          grandTotal < settings.targetSF ? 'fyi-totals-panel__row--under' : ''
         }`}>
           <span>Delta from Target</span>
           <span>
-            {totals.deltaFromTarget > 0 ? '+' : ''}
-            {totals.deltaFromTarget.toLocaleString()} SF
+            {grandTotal > settings.targetSF ? '+' : ''}
+            {(grandTotal - settings.targetSF).toLocaleString()} SF
           </span>
         </div>
         
@@ -133,37 +244,12 @@ const FYITotalsPanel = ({
         )}
       </div>
       
-      {/* Level Breakdown */}
-      <div className="fyi-totals-panel__section">
-        <label className="fyi-totals-panel__label">By Level</label>
-        <div className="fyi-totals-panel__levels">
-          {totals.byLevel[2] > 0 && (
-            <div className="fyi-totals-panel__level-row">
-              <span>Level 2</span>
-              <span>{totals.byLevel[2].toLocaleString()} SF</span>
-            </div>
-          )}
-          {totals.byLevel[1] > 0 && (
-            <div className="fyi-totals-panel__level-row">
-              <span>Level 1</span>
-              <span>{totals.byLevel[1].toLocaleString()} SF</span>
-            </div>
-          )}
-          {settings.hasBasement && totals.byLevel[-1] > 0 && (
-            <div className="fyi-totals-panel__level-row">
-              <span>Level -1</span>
-              <span>{totals.byLevel[-1].toLocaleString()} SF</span>
-            </div>
-          )}
-        </div>
-      </div>
-      
       {/* Advanced Settings */}
       <button 
         className="fyi-totals-panel__advanced-toggle"
         onClick={() => setShowAdvanced(!showAdvanced)}
       >
-        Advanced Settings
+        Settings
         <svg 
           className={`fyi-totals-panel__chevron ${showAdvanced ? 'fyi-totals-panel__chevron--open' : ''}`}
           viewBox="0 0 24 24"
@@ -192,14 +278,14 @@ const FYITotalsPanel = ({
           
           {/* Circulation Mode */}
           <div className="fyi-totals-panel__row">
-            <label>Circulation Mode</label>
+            <label>Circulation</label>
             <select
               value={settings.lockToTarget ? 'balance' : 'fixed'}
               onChange={(e) => onSettingsChange({ lockToTarget: e.target.value === 'balance' })}
               className="fyi-totals-panel__select"
             >
               <option value="balance">Balance to Target</option>
-              <option value="fixed">Fixed Percentage</option>
+              <option value="fixed">Fixed %</option>
             </select>
           </div>
           
@@ -220,19 +306,6 @@ const FYITotalsPanel = ({
               </div>
             </div>
           )}
-          
-          {/* Basement Toggle */}
-          <div className="fyi-totals-panel__row">
-            <label>Include Basement</label>
-            <label className="fyi-totals-panel__toggle">
-              <input
-                type="checkbox"
-                checked={settings.hasBasement}
-                onChange={(e) => onSettingsChange({ hasBasement: e.target.checked })}
-              />
-              <span className="fyi-totals-panel__toggle-slider" />
-            </label>
-          </div>
         </div>
       )}
       
@@ -241,7 +314,7 @@ const FYITotalsPanel = ({
         <div className="fyi-totals-panel__validation">
           {validation.errors.map((error, i) => (
             <div key={`error-${i}`} className="fyi-totals-panel__validation-error">
-              <svg viewBox="0 0 24 24" fill="currentColor">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
               {error.message}
@@ -249,7 +322,7 @@ const FYITotalsPanel = ({
           ))}
           {validation.warnings.map((warning, i) => (
             <div key={`warning-${i}`} className="fyi-totals-panel__validation-warning">
-              <svg viewBox="0 0 24 24" fill="currentColor">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                 <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
               </svg>
               {warning.message}

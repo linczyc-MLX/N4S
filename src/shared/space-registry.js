@@ -41,13 +41,13 @@ export const zones = [
     code: 'Z5_PRI',
     name: 'Primary Suite',
     order: 50,
-    description: 'Master bedroom, bath, closets, and private retreat'
+    description: 'Primary bedroom, bath, closets, and private retreat'
   },
   {
     code: 'Z6_GST',
     name: 'Guest + Secondary',
     order: 60,
-    description: 'Guest suites, kids rooms, staff quarters, and secondary bedrooms'
+    description: 'Jr. Primary, guest suites, kids rooms, staff quarters'
   },
   {
     code: 'Z7_SVC',
@@ -60,6 +60,20 @@ export const zones = [
     name: 'Outdoor Spaces',
     order: 80,
     description: 'Terrace, pool, outdoor kitchen, and exterior living (not conditioned)'
+  },
+  {
+    code: 'Z9_GH',
+    name: 'Guest House',
+    order: 90,
+    description: 'Separate guest house structure with suites, living, kitchen',
+    structure: 'guestHouse'
+  },
+  {
+    code: 'Z10_PH',
+    name: 'Pool House',
+    order: 100,
+    description: 'Separate pool house / wellness pavilion structure',
+    structure: 'poolHouse'
   }
 ];
 
@@ -423,16 +437,30 @@ export const spaceRegistry = [
     notes: 'Double vanity, wet room'
   },
   {
-    code: 'PRICL',
-    name: 'Primary Closets',
-    abbrev: 'Primary Closet',
+    code: 'PRICL_HIS',
+    name: 'His Walk-in Closet',
+    abbrev: 'His Closet',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': 200, '15k': 300, '20k': 400 },
+    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
-    notes: 'His/hers dressing'
+    notes: 'Primary suite his dressing room',
+    linkedTo: 'PRICL_HER' // Always paired
+  },
+  {
+    code: 'PRICL_HER',
+    name: 'Her Walk-in Closet',
+    abbrev: 'Her Closet',
+    zone: 'Z5_PRI',
+    defaultLevel: 2,
+    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: 'core',
+    notes: 'Primary suite her dressing room',
+    linkedTo: 'PRICL_HIS' // Always paired
   },
   {
     code: 'PRILNG',
@@ -508,16 +536,40 @@ export const spaceRegistry = [
     tier: '20k+'
   },
   {
-    code: 'VIP',
-    name: 'VIP Suite',
-    abbrev: 'VIP',
+    code: 'JRPRI',
+    name: 'Jr. Primary Bedroom',
+    abbrev: 'Jr. Primary',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 600, '20k': 700 },
+    baseSF: { '10k': null, '15k': 400, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
-    notes: 'Enhanced guest suite'
+    notes: 'First/best guest suite - VIP or adult children'
+  },
+  {
+    code: 'JRPRIBATH',
+    name: 'Jr. Primary Bath',
+    abbrev: 'Jr. Primary Bath',
+    zone: 'Z6_GST',
+    defaultLevel: 2,
+    baseSF: { '10k': null, '15k': 150, '20k': 200 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    notes: 'En-suite for Jr. Primary'
+  },
+  {
+    code: 'JRPRICL',
+    name: 'Jr. Primary Walk-in',
+    abbrev: 'Jr. Primary Closet',
+    zone: 'Z6_GST',
+    defaultLevel: 2,
+    baseSF: { '10k': null, '15k': 80, '20k': 100 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    notes: 'Single large walk-in for Jr. Primary'
   },
   {
     code: 'KID1',
@@ -814,6 +866,183 @@ export const spaceRegistry = [
     outdoorSpace: true,
     tier: 'core',
     notes: 'Arrival drive; not in conditioned total'
+  },
+
+  // ---------------------------------------------------------------------------
+  // Zone 9: Guest House (Z9_GH) - Separate Structure
+  // ---------------------------------------------------------------------------
+  {
+    code: 'GH_GST1',
+    name: 'Guest House Suite 1',
+    abbrev: 'GH Suite 1',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 450, '20k': 500 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Guest house bedroom with en-suite'
+  },
+  {
+    code: 'GH_GST2',
+    name: 'Guest House Suite 2',
+    abbrev: 'GH Suite 2',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 450, '20k': 500 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Guest house bedroom with en-suite'
+  },
+  {
+    code: 'GH_GST3',
+    name: 'Guest House Suite 3',
+    abbrev: 'GH Suite 3',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': null, '20k': 500 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '20k+',
+    structure: 'guestHouse',
+    notes: 'Guest house bedroom with en-suite'
+  },
+  {
+    code: 'GH_PWD',
+    name: 'Guest House Powder Room',
+    abbrev: 'GH Powder',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 50, '20k': 60 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Half bath for guest house common areas'
+  },
+  {
+    code: 'GH_LIV',
+    name: 'Guest House Living',
+    abbrev: 'GH Living',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 300, '20k': 400 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Family/living area in guest house'
+  },
+  {
+    code: 'GH_KIT',
+    name: 'Guest House Kitchen',
+    abbrev: 'GH Kitchen',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 150, '20k': 200 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Full kitchen in guest house'
+  },
+  {
+    code: 'GH_DIN',
+    name: 'Guest House Dining',
+    abbrev: 'GH Dining',
+    zone: 'Z9_GH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 120, '20k': 150 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'guestHouse',
+    notes: 'Dining area in guest house'
+  },
+
+  // ---------------------------------------------------------------------------
+  // Zone 10: Pool House / Wellness Pavilion (Z10_PH) - Separate Structure
+  // ---------------------------------------------------------------------------
+  {
+    code: 'PH_SHW',
+    name: 'Pool House Showers',
+    abbrev: 'PH Showers',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 80, '20k': 120 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'Outdoor shower facilities'
+  },
+  {
+    code: 'PH_CHG',
+    name: 'Pool House Changing',
+    abbrev: 'PH Changing',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 100, '20k': 150 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'His/hers changing rooms'
+  },
+  {
+    code: 'PH_BATH',
+    name: 'Pool House Bathroom',
+    abbrev: 'PH Bath',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 60, '20k': 80 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'Full bathroom at pool'
+  },
+  {
+    code: 'PH_ENT',
+    name: 'Pool House Entertainment',
+    abbrev: 'PH Entertainment',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 250, '20k': 350 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'Entertainment/gaming area at pool'
+  },
+  {
+    code: 'PH_KIT',
+    name: 'Pool House Kitchen',
+    abbrev: 'PH Kitchen',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 120, '20k': 180 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'Kitchen/bar at pool house'
+  },
+  {
+    code: 'PH_DIN',
+    name: 'Pool House Dining',
+    abbrev: 'PH Dining',
+    zone: 'Z10_PH',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 100, '20k': 150 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: '15k+',
+    structure: 'poolHouse',
+    notes: 'Covered dining at pool'
   }
 ];
 
@@ -890,6 +1119,84 @@ export function getZonesInOrder() {
   return [...zones].sort((a, b) => a.order - b.order);
 }
 
+/**
+ * Get zones for main residence only (excludes guest house, pool house)
+ */
+export function getMainResidenceZones() {
+  return zones.filter(z => !z.structure).sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Get zones for a specific structure
+ * @param {string} structure - 'main' | 'guestHouse' | 'poolHouse'
+ */
+export function getZonesForStructure(structure) {
+  if (structure === 'main') {
+    return getMainResidenceZones();
+  }
+  return zones.filter(z => z.structure === structure).sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Get spaces for a specific structure
+ * @param {string} structure - 'main' | 'guestHouse' | 'poolHouse'
+ */
+export function getSpacesForStructure(structure) {
+  if (structure === 'main') {
+    return spaceRegistry.filter(s => !s.structure);
+  }
+  return spaceRegistry.filter(s => s.structure === structure);
+}
+
+/**
+ * Get conditioned spaces for a specific structure
+ */
+export function getConditionedSpacesForStructure(structure) {
+  return getSpacesForStructure(structure).filter(s => !s.outdoorSpace);
+}
+
+/**
+ * Build available levels based on KYC configuration
+ * @param {number} levelsAboveArrival - Levels above L1 (0-3)
+ * @param {number} levelsBelowArrival - Levels below L1 (0-3)
+ * @returns {Array} Array of level objects with value and label
+ */
+export function buildAvailableLevels(levelsAboveArrival = 1, levelsBelowArrival = 0) {
+  const levels = [];
+  
+  // Add levels above arrival (L2, L3, L4...)
+  for (let i = levelsAboveArrival + 1; i >= 2; i--) {
+    levels.push({ value: i, label: `L${i}` });
+  }
+  
+  // Add arrival level (L1)
+  levels.push({ value: 1, label: 'L1 (Arrival)' });
+  
+  // Add levels below arrival (L-1, L-2, L-3...)
+  for (let i = -1; i >= -levelsBelowArrival; i--) {
+    levels.push({ value: i, label: `L${i}` });
+  }
+  
+  return levels;
+}
+
+/**
+ * Get level label from value
+ */
+export function getLevelLabel(levelValue) {
+  if (levelValue === 1) return 'L1 (Arrival)';
+  if (levelValue > 0) return `L${levelValue}`;
+  return `L${levelValue}`;
+}
+
+/**
+ * Check if a space belongs to a separate structure
+ */
+export function isSecondaryStructureSpace(spaceCode) {
+  const space = getSpaceByCode(spaceCode);
+  return space?.structure === 'guestHouse' || space?.structure === 'poolHouse';
+}
+
 // =============================================================================
 // CLOUDINARY IMAGE HELPERS
 // =============================================================================
@@ -939,16 +1246,19 @@ const spaceRenderIds = {
   // Zone 5: Primary Suite (Z5_PRI)
   'PRI_M': 'PRI_M_ka98yn',
   'PRIBATH_M': 'PRIBATH_M_hmsaqt',
-  'PRICL_M': 'PRICL_M_s0wfmq',
+  'PRICL_HIS_M': 'PRICL_M_s0wfmq',  // Reuse existing closet image
+  'PRICL_HER_M': 'PRICL_M_s0wfmq',  // Reuse existing closet image
   'PRILNG_M': 'PRILNG_M_gfskim',
   'POF_M': 'POF_M_bgmist',
   
   // Zone 6: Guest + Secondary (Z6_GST)
+  'JRPRI_M': 'VIP_M_nr242n',        // Reuse VIP image for Jr. Primary
+  'JRPRIBATH_M': 'PRIBATH_M_hmsaqt', // Reuse bath image
+  'JRPRICL_M': 'PRICL_M_s0wfmq',    // Reuse closet image
   'GST1_M': 'GST1_M_g7lhny',
   'GST2_M': 'GST2_M_wmagho',
   'GST3_M': 'GST3_M_yvbnl3',
   'GST4_M': 'GST4_M_s2zpd2',
-  'VIP_M': 'VIP_M_nr242n',
   'KID1_M': 'KID1_M_d8hob8',
   'KID2_M': 'KID2_M_kxuslm',
   'BNK_M': 'BNK_M_tjjg7k',
@@ -1031,8 +1341,12 @@ export function getZoneCoverUrl(zoneCode) {
 export const legacyToCodeMap = {
   // Interior spaces from KYC SpaceRequirementsSection
   'primary-suite': 'PRI',
+  'primary-bedroom-suite': 'PRI',
+  'jr-primary-suite': 'JRPRI',
   'secondary-suites': 'GST1',
+  'guest-suite': 'GST1',
   'kids-bedrooms': 'KID1',
+  'kids-bunk-room': 'BNK',
   'great-room': 'GR',
   'formal-living': 'GR',
   'family-room': 'FR',
@@ -1054,8 +1368,12 @@ export const legacyToCodeMap = {
   'mudroom': 'MUD',
   'laundry': 'LND',
   'art-gallery': 'FOY',
+  'art-studio': 'ART',
   'music-room': 'MUS',
   'safe-room': 'STR',
+  'theater': 'THR',
+  'billiards': 'BIL',
+  'bar': 'BAR',
 };
 
 /**
@@ -1103,7 +1421,58 @@ export const prioritySpacesForImages = [
   'KIT',     // Kitchen
   'PRI',     // Primary Bedroom
   'PRIBATH', // Primary Bath
+  'JRPRI',   // Jr. Primary Suite
   'GST1',    // Guest Suite 1
   'GYM',     // Gym
   'TERR'     // Terrace
 ];
+
+// =============================================================================
+// BEDROOM CONFIGURATION HELPERS
+// =============================================================================
+
+/**
+ * Bedroom types in order of hierarchy
+ */
+export const bedroomTypes = [
+  { code: 'PRI', name: 'Primary Bedroom Suite', closets: ['PRICL_HIS', 'PRICL_HER'], bath: 'PRIBATH' },
+  { code: 'JRPRI', name: 'Jr. Primary Suite', closets: ['JRPRICL'], bath: 'JRPRIBATH' },
+  { code: 'GST1', name: 'Guest Suite 1', bath: 'GST1_BATH' },
+  { code: 'GST2', name: 'Guest Suite 2', bath: 'GST2_BATH' },
+  { code: 'GST3', name: 'Guest Suite 3', bath: 'GST3_BATH' },
+  { code: 'GST4', name: 'Guest Suite 4', bath: 'GST4_BATH' },
+  { code: 'KID1', name: 'Kids Bedroom 1', bath: 'KID_BATH' },
+  { code: 'KID2', name: 'Kids Bedroom 2', bath: 'KID_BATH' },
+  { code: 'BNK', name: "Kid's Bunk Room", bath: 'BNK_BATH' },
+];
+
+/**
+ * Get bedroom configuration including closets
+ * @param {string} bedroomCode - The bedroom code (PRI, JRPRI, GST1, etc.)
+ * @param {string} closetType - 'walk-in' | 'standard' (for guest suites)
+ */
+export function getBedroomComponents(bedroomCode, closetType = 'walk-in') {
+  const config = bedroomTypes.find(b => b.code === bedroomCode);
+  if (!config) return null;
+  
+  const components = [bedroomCode];
+  
+  // Add bath if defined
+  if (config.bath) {
+    components.push(config.bath);
+  }
+  
+  // Add closets based on type and bedroom
+  if (config.closets) {
+    // Primary and Jr. Primary always have walk-in(s)
+    components.push(...config.closets);
+  } else if (bedroomCode.startsWith('GST')) {
+    // Guest suites depend on closetType setting
+    if (closetType === 'walk-in') {
+      components.push(`${bedroomCode}_WIC`);
+    }
+    // Standard closets don't add separate SF - built into suite
+  }
+  
+  return components;
+}
