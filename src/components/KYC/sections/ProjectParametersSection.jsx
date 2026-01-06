@@ -166,12 +166,14 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.hasBasement ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('hasBasement', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.hasBasement ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('hasBasement', false)}
               >

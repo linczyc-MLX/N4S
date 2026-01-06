@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
@@ -7,6 +8,12 @@ import SliderField from '../../shared/SliderField';
 const LifestyleLivingSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
+
+  // Get principal's WFH data for Secondary confirmation
+  const principalLifestyle = kycData.principal?.lifestyleLiving || {};
+  const principalWfhCount = principalLifestyle.wfhPeopleCount || 0;
+  const principalFirstName = kycData.principal?.portfolioContext?.principalFirstName || 'Principal';
+  const showWfhConfirmation = respondent === 'secondary' && principalWfhCount >= 2;
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'lifestyleLiving', { [field]: value });
@@ -67,9 +74,44 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
   return (
     <div className="kyc-section">
+      {/* WFH Confirmation for Secondary when Principal indicated 2+ offices */}
+      {showWfhConfirmation && (
+        <div className="kyc-section__group">
+          <div className={`wfh-confirmation ${data.wfhConfirmation === false ? 'wfh-confirmation--discuss' : ''}`}>
+            <div className="wfh-confirmation__message">
+              <strong>{principalFirstName}</strong> has indicated requirement for <strong>{principalWfhCount} dedicated Home Offices</strong>.
+            </div>
+            <div className="wfh-confirmation__actions">
+              <div className="toggle-group">
+                <button
+                  type="button"
+                  className={`toggle-btn ${data.wfhConfirmation === true ? 'toggle-btn--active' : ''}`}
+                  onClick={() => handleChange('wfhConfirmation', true)}
+                >
+                  ✓ Confirm
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-btn ${data.wfhConfirmation === false ? 'toggle-btn--active toggle-btn--warning' : ''}`}
+                  onClick={() => handleChange('wfhConfirmation', false)}
+                >
+                  ⚠ Discuss
+                </button>
+              </div>
+            </div>
+            {data.wfhConfirmation === false && (
+              <div className="wfh-confirmation__flag">
+                <AlertTriangle size={16} />
+                <span>Flagged for discussion - WFH requirements need alignment</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Work From Home</h3>
-        
+
         <SelectField
           label="Work From Home Frequency"
           value={data.workFromHome}
@@ -127,12 +169,14 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           </p>
           <div className="toggle-group">
             <button
+              type="button"
               className={`toggle-btn ${data.lateNightMediaUse ? 'toggle-btn--active' : ''}`}
               onClick={() => handleChange('lateNightMediaUse', true)}
             >
               Yes
             </button>
             <button
+              type="button"
               className={`toggle-btn ${!data.lateNightMediaUse ? 'toggle-btn--active' : ''}`}
               onClick={() => handleChange('lateNightMediaUse', false)}
             >

@@ -267,6 +267,7 @@ const CompletedView = ({
   secondaryName,
   location,
   kycData,
+  kycComplete,
   onRetake,
   onRefresh,
   onLaunchSecondary
@@ -478,7 +479,7 @@ const CompletedView = ({
         <h4>📄 Taste Profile Report</h4>
         <div className="report-buttons">
           <button
-            className="report-btn report-btn--view"
+            className={`report-btn report-btn--view ${kycComplete ? 'report-btn--complete' : 'report-btn--incomplete'}`}
             onClick={handleViewReport}
             disabled={isGenerating}
           >
@@ -487,7 +488,7 @@ const CompletedView = ({
           </button>
 
           <button
-            className="report-btn report-btn--download"
+            className={`report-btn report-btn--download ${kycComplete ? 'report-btn--complete' : 'report-btn--incomplete'}`}
             onClick={handleDownloadReport}
             disabled={isGenerating}
           >
@@ -496,7 +497,7 @@ const CompletedView = ({
           </button>
 
           <button
-            className="report-btn report-btn--email"
+            className={`report-btn report-btn--email ${kycComplete ? 'report-btn--complete' : 'report-btn--incomplete'}`}
             onClick={handleEmailReport}
             disabled={isGenerating}
           >
@@ -520,6 +521,18 @@ const CompletedView = ({
                 value={metricsS.ct}
                 leftLabel="Contemporary"
                 rightLabel="Traditional"
+              />
+              <DesignDNASlider
+                label="Material Complexity"
+                value={metricsS.ml}
+                leftLabel="Minimal"
+                rightLabel="Layered"
+              />
+              <DesignDNASlider
+                label="Mood Palette"
+                value={metricsS.mp}
+                leftLabel="Warm"
+                rightLabel="Cool"
               />
               <p className="comparison-note">
                 Full partner alignment analysis is included in the PDF report above.
@@ -546,7 +559,7 @@ const CompletedView = ({
                   onClick={async () => {
                     setIsGenerating(true);
                     try {
-                      await downloadTasteReport(profileS, null, buildReportOptions());
+                      await downloadTasteReport(profileS, null, buildReportOptions(), secondaryName || 'Partner');
                     } catch (e) {
                       console.error('Error downloading report:', e);
                     }
@@ -625,12 +638,14 @@ const WelcomeView = ({
 
         <div className="client-type-toggle">
           <button
+            type="button"
             className={`toggle-btn ${clientType === 'individual' ? 'active' : ''}`}
             onClick={() => setClientType('individual')}
           >
             👤 Individual
           </button>
           <button
+            type="button"
             className={`toggle-btn ${clientType === 'couple' ? 'active' : ''}`}
             onClick={() => setClientType('couple')}
           >
@@ -716,8 +731,11 @@ const WelcomeView = ({
 // ============================================
 
 const DesignIdentitySection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData } = useAppContext();
+  const { kycData, updateKYCData, calculateCompleteness } = useAppContext();
   const data = kycData[respondent]?.designIdentity || {};
+
+  // Calculate KYC completion for report button styling
+  const kycComplete = calculateCompleteness(respondent) === 100;
 
   // Client configuration state
   const [clientType, setClientType] = useState(data.clientType || 'couple');
@@ -869,6 +887,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
           secondaryName={secondaryName}
           location={location}
           kycData={kycData}
+          kycComplete={kycComplete}
           onRetake={handleRetake}
           onRefresh={refreshProfiles}
           onLaunchSecondary={() => handleLaunch(clientIdS)}

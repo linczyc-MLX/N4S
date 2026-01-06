@@ -196,12 +196,14 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.earlyContractorInvolvement ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('earlyContractorInvolvement', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.earlyContractorInvolvement ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('earlyContractorInvolvement', false)}
               >

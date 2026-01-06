@@ -201,12 +201,14 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
               </p>
               <div className="toggle-group">
                 <button
+                  type="button"
                   className={`toggle-btn ${data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('artBudgetSeparate', true)}
                 >
                   Yes, Separate
                 </button>
                 <button
+                  type="button"
                   className={`toggle-btn ${!data.artBudgetSeparate ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('artBudgetSeparate', false)}
                 >

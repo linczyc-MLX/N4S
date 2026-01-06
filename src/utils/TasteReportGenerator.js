@@ -1143,8 +1143,9 @@ export class TasteReportGenerator {
     return space.amenities.slice(0, 6);
   }
 
-  download(filename) {
-    const name = filename || `N4S-Design-Profile-${this.getClientName().replace(/\s+/g, '-')}.pdf`;
+  download(filename, clientName) {
+    const displayName = clientName || this.getClientName();
+    const name = filename || `N4S-Design-Profile-${displayName.replace(/\s+/g, '-')}.pdf`;
     this.doc.save(name);
   }
 
@@ -1167,10 +1168,10 @@ export class TasteReportGenerator {
 // CONVENIENCE FUNCTIONS
 // ============================================
 
-export async function downloadTasteReport(profileP, profileS = null, options = {}) {
+export async function downloadTasteReport(profileP, profileS = null, options = {}, clientName = null) {
   const generator = new TasteReportGenerator(profileP, profileS, options);
   await generator.generate();
-  generator.download();
+  generator.download(null, clientName);
 }
 
 export async function viewTasteReport(profileP, profileS = null, options = {}) {

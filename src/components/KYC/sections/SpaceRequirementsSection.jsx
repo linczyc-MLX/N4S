@@ -228,12 +228,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.wantsSeparateFamilyRoom ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsSeparateFamilyRoom', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.wantsSeparateFamilyRoom ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsSeparateFamilyRoom', false)}
               >
@@ -249,12 +251,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.wantsSecondFormalLiving ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsSecondFormalLiving', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.wantsSecondFormalLiving ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsSecondFormalLiving', false)}
               >
@@ -270,12 +274,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.wantsBar ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBar', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.wantsBar ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBar', false)}
               >
@@ -291,12 +297,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.wantsBunkRoom ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBunkRoom', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.wantsBunkRoom ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBunkRoom', false)}
               >
@@ -312,12 +320,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             </p>
             <div className="toggle-group">
               <button
+                type="button"
                 className={`toggle-btn ${data.wantsBreakfastNook ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBreakfastNook', true)}
               >
                 Yes
               </button>
               <button
+                type="button"
                 className={`toggle-btn ${!data.wantsBreakfastNook ? 'toggle-btn--active' : ''}`}
                 onClick={() => handleChange('wantsBreakfastNook', false)}
               >

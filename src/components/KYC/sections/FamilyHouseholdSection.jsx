@@ -140,12 +140,14 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               </p>
               <div className="toggle-group">
                 <button
+                  type="button"
                   className={`toggle-btn ${data.petGroomingRoom ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('petGroomingRoom', true)}
                 >
                   Yes
                 </button>
                 <button
+                  type="button"
                   className={`toggle-btn ${!data.petGroomingRoom ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('petGroomingRoom', false)}
                 >
@@ -160,12 +162,14 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               </p>
               <div className="toggle-group">
                 <button
+                  type="button"
                   className={`toggle-btn ${data.petDogRun ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('petDogRun', true)}
                 >
                   Yes
                 </button>
                 <button
+                  type="button"
                   className={`toggle-btn ${!data.petDogRun ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('petDogRun', false)}
                 >
@@ -210,12 +214,14 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
                   <label className="form-field__label">Staff Quarters Required?</label>
                   <div className="toggle-group">
                     <button
+                      type="button"
                       className={`toggle-btn ${data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
                       onClick={() => handleChange('staffAccommodationRequired', true)}
                     >
                       Yes
                     </button>
                     <button
+                      type="button"
                       className={`toggle-btn ${!data.staffAccommodationRequired ? 'toggle-btn--active' : ''}`}
                       onClick={() => handleChange('staffAccommodationRequired', false)}
                     >
@@ -233,12 +239,14 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               </p>
               <div className="toggle-group">
                 <button
+                  type="button"
                   className={`toggle-btn ${data.multigenerationalNeeds ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('multigenerationalNeeds', true)}
                 >
                   Yes
                 </button>
                 <button
+                  type="button"
                   className={`toggle-btn ${!data.multigenerationalNeeds ? 'toggle-btn--active' : ''}`}
                   onClick={() => handleChange('multigenerationalNeeds', false)}
                 >
