@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  CheckCircle, Circle, AlertTriangle, ChevronDown
+  ChevronDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -71,10 +71,29 @@ const KYCModule = () => {
   const visibleSections = sections.filter(s => isSectionVisible(s));
 
   const getStatusIcon = (status) => {
+    const size = 14;
+    const strokeWidth = 1;
+
     switch (status) {
-      case 'complete': return <CheckCircle size={10} className="status-icon status-icon--complete" />;
-      case 'partial': return <Circle size={10} className="status-icon status-icon--partial" />;
-      default: return <Circle size={10} className="status-icon status-icon--empty" />;
+      case 'complete':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth={strokeWidth} className="status-icon">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+        );
+      case 'partial':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth={strokeWidth} className="status-icon">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+        );
+      default:
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth={strokeWidth} className="status-icon">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+        );
     }
   };
 
