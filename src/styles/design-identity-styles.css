@@ -213,7 +213,7 @@
   color: var(--n4s-light-text);
 }
 
-.toggle-btn.active {
+.toggle-btn--active {
   background: var(--n4s-navy);
   color: #fff;
 }
@@ -777,7 +777,7 @@
   background: #fffbeb;
 }
 
-.toggle-btn--stacked.active {
+.toggle-btn--stacked.toggle-btn--active {
   border-color: #1e3a5f;
   background: #1e3a5f;
   color: #fff;
@@ -795,8 +795,8 @@
   letter-spacing: 0.5px;
 }
 
-.toggle-btn--stacked.active .toggle-btn__icon,
-.toggle-btn--stacked.active .toggle-btn__label {
+.toggle-btn--stacked.toggle-btn--active .toggle-btn__icon,
+.toggle-btn--stacked.toggle-btn--active .toggle-btn__label {
   color: #fff;
 }
 

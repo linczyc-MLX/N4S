@@ -100,9 +100,9 @@ const KYCModule = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'complete': return <CheckCircle2 size={16} className="status-icon status-icon--complete" />;
-      case 'partial': return <AlertTriangle size={16} className="status-icon status-icon--partial" />;
-      default: return <Circle size={16} className="status-icon status-icon--empty" />;
+      case 'complete': return <CheckCircle2 size={14} className="status-icon status-icon--complete" />;
+      case 'partial': return <AlertTriangle size={14} className="status-icon status-icon--partial" />;
+      default: return <Circle size={14} className="status-icon status-icon--empty" />;
     }
   };
 
