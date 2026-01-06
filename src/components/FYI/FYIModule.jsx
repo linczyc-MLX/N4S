@@ -79,7 +79,13 @@ const FYIModule = () => {
       poolHouse: { enabled: projectParams.hasPoolHouse || false }
     };
   }, [consolidatedKYC]);
-  
+
+  // Memoize the config object to prevent new reference on every render
+  const fyiStateConfig = useMemo(() => ({
+    availableLevels,
+    structureConfig
+  }), [availableLevels, structureConfig]);
+
   // Initialize FYI state
   const {
     settings,
@@ -102,7 +108,7 @@ const FYIModule = () => {
     resetToDefaults,
     applyKYCDefaults,
     generateMVPBrief
-  } = useFYIState({ availableLevels, structureConfig });
+  } = useFYIState(fyiStateConfig);
   
   // Apply KYC defaults on first load
   useEffect(() => {
@@ -412,7 +418,6 @@ const FYIModule = () => {
             {activeSpaces.map(space => {
               const selection = getSpaceSelection(space.code);
               const area = calculateArea(space.code);
-              
               return (
                 <FYISpaceCard
                   key={space.code}
