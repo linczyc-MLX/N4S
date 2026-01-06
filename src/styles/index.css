@@ -417,6 +417,84 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .kyc-section__group-title { font-size: 1.1rem; font-weight: 600; color: var(--gray-800); margin-bottom: 8px; }
 .kyc-section__group-description { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 24px; }
 
+/* Form Subsection (indented for conditional fields) */
+.form-subsection {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-100);
+}
+
+/* Level Configuration Preview */
+.level-config-preview {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+}
+
+.level-config-preview__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.level-config-preview__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-config-preview__level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.level-config-preview__level--arrival {
+  background: rgba(201, 162, 39, 0.1);
+  border-color: var(--gold);
+}
+
+.level-config-preview__level-label {
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.level-config-preview__arrival-badge {
+  font-size: 0.75rem;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.level-config-preview__total {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  text-align: center;
+}
+
+/* Toggle Group Small Variant */
+.toggle-group--small {
+  gap: 4px;
+}
+
+.toggle-btn--small {
+  padding: 4px 12px !important;
+  font-size: 0.8rem !important;
+}
+
 /* Insight Box */
 .kyc-section__insight {
   background: rgba(26,54,93,0.05);

@@ -13,6 +13,17 @@ import FYIModule from './components/FYI/FYIModule';
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
+// Module color mapping (matches Task Matrix)
+const moduleColors = {
+  dashboard: { bg: 'transparent', text: 'inherit' },
+  kyc: { bg: 'rgba(26, 54, 93, 0.1)', text: '#1a365d', accent: '#1a365d' },      // Navy - A
+  fyi: { bg: 'rgba(49, 151, 149, 0.15)', text: '#285e61', accent: '#319795' },   // Teal - C
+  mvp: { bg: 'rgba(72, 187, 120, 0.15)', text: '#276749', accent: '#48bb78' },   // Green - M
+  kym: { bg: 'rgba(128, 90, 213, 0.1)', text: '#553c9a', accent: '#805ad5' },    // Purple - B
+  vmx: { bg: 'rgba(201, 169, 98, 0.15)', text: '#8b7355', accent: '#c9a962' },   // Gold - D
+  settings: { bg: 'transparent', text: 'inherit' },
+};
+
 // Simple Settings Panel component
 const SettingsPanel = () => (
   <div className="settings-panel">
@@ -48,11 +59,12 @@ const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { clientData, kycData } = useAppContext();
 
+  // Module order: Dashboard, KYC, FYI, MVP, Settings
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
-    { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
     { id: 'fyi', label: 'FYI', icon: Search, description: 'Find Your Inspiration' },
+    { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
@@ -139,9 +151,20 @@ const AppContent = () => {
 
       {/* Main Content */}
       <main className="main-content">
-        <header className="main-header">
+        <header 
+          className="main-header"
+          style={{
+            background: moduleColors[activeModule]?.bg || 'transparent',
+            borderBottom: moduleColors[activeModule]?.accent 
+              ? `2px solid ${moduleColors[activeModule].accent}` 
+              : '1px solid var(--gray-200)'
+          }}
+        >
           <div className="main-header__breadcrumb">
-            <span className="main-header__module">
+            <span 
+              className="main-header__module"
+              style={{ color: moduleColors[activeModule]?.text || 'inherit' }}
+            >
               {modules.find(m => m.id === activeModule)?.label || 'Dashboard'}
             </span>
           </div>

@@ -55,12 +55,39 @@ const ProjectParametersSection = ({ respondent, tier }) => {
     { value: 'desert', label: 'Desert' },
   ];
 
+  const guestHouseBedroomOptions = [
+    { value: 1, label: '1 Bedroom' },
+    { value: 2, label: '2 Bedrooms' },
+    { value: 3, label: '3 Bedrooms' },
+  ];
+
+  const poolHouseLocationOptions = [
+    { value: 'attached', label: 'Attached to Main Residence' },
+    { value: 'detached', label: 'Separate Structure' },
+  ];
+
   const toggleComplexityFactor = (factor) => {
     const current = data.complexityFactors || [];
     const updated = current.includes(factor)
       ? current.filter(f => f !== factor)
       : [...current, factor];
     handleChange('complexityFactors', updated);
+  };
+
+  // Calculate total levels for display
+  const totalLevels = 1 + (data.levelsAboveArrival || 0) + (data.levelsBelowArrival || 0);
+
+  // Build level labels for visual diagram
+  const getLevelLabels = () => {
+    const labels = [];
+    for (let i = (data.levelsAboveArrival || 0); i >= 1; i--) {
+      labels.push(`L${i + 1}`);
+    }
+    labels.push('L1 (Arrival)');
+    for (let i = 1; i <= (data.levelsBelowArrival || 0); i++) {
+      labels.push(`L-${i}`);
+    }
+    return labels;
   };
 
   return (
@@ -97,24 +124,20 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           />
         </div>
 
-        {tier !== 'mvp' && (
-          <>
-            <FormField
-              label="Specific Address / Site"
-              value={data.specificAddress}
-              onChange={(v) => handleChange('specificAddress', v)}
-              placeholder="If known - street address or development name"
-            />
-            <SelectField
-              label="Site Typology"
-              value={data.siteTypology}
-              onChange={(v) => handleChange('siteTypology', v)}
-              options={siteTypologyOptions}
-              placeholder="Select site type..."
-              helpText="Affects architect matching and design approach"
-            />
-          </>
-        )}
+        <FormField
+          label="Specific Address / Site"
+          value={data.specificAddress}
+          onChange={(v) => handleChange('specificAddress', v)}
+          placeholder="If known - street address or development name"
+        />
+        <SelectField
+          label="Site Typology"
+          value={data.siteTypology}
+          onChange={(v) => handleChange('siteTypology', v)}
+          options={siteTypologyOptions}
+          placeholder="Select site type..."
+          helpText="Affects architect matching and design approach"
+        />
       </div>
 
       <div className="kyc-section__group">
@@ -158,49 +181,247 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           />
         </div>
 
+        <FormField
+          label="SF Budget Cap (Optional)"
+          type="number"
+          value={data.sfCapConstraint}
+          onChange={(v) => handleChange('sfCapConstraint', parseInt(v) || null)}
+          placeholder="Leave blank for Discovery Mode"
+          min={0}
+          helpText="Set a maximum SF constraint, or leave blank to explore"
+        />
+      </div>
+
+      {/* Level Configuration - NEW */}
+      <div className="kyc-section__group">
+        <h3 className="kyc-section__group-title">Level Configuration</h3>
+        <p className="kyc-section__group-description">
+          Configure the vertical stacking of your residence. L1 is always the Arrival Level.
+        </p>
+
         <div className="form-grid form-grid--2col">
-          <div className="form-field">
-            <label className="form-field__label">Include Basement Level?</label>
-            <p className="form-field__help" style={{ marginBottom: '8px' }}>
-              Basement spaces have different adjacency rules (acoustic separation)
-            </p>
-            <div className="toggle-group">
-              <button
-                type="button"
-                className={`toggle-btn ${data.hasBasement ? 'toggle-btn--active' : ''}`}
-                onClick={() => handleChange('hasBasement', true)}
-              >
-                Yes
-              </button>
-              <button
-                type="button"
-                className={`toggle-btn ${!data.hasBasement ? 'toggle-btn--active' : ''}`}
-                onClick={() => handleChange('hasBasement', false)}
-              >
-                No
-              </button>
-            </div>
-          </div>
           <FormField
-            label="SF Budget Cap (Optional)"
+            label="Levels Above Arrival (L2, L3...)"
             type="number"
-            value={data.sfCapConstraint}
-            onChange={(v) => handleChange('sfCapConstraint', parseInt(v) || null)}
-            placeholder="Leave blank for Discovery Mode"
+            value={data.levelsAboveArrival}
+            onChange={(v) => handleChange('levelsAboveArrival', Math.min(3, Math.max(0, parseInt(v) || 0)))}
+            placeholder="0-3"
             min={0}
-            helpText="Set a maximum SF constraint, or leave blank to explore"
+            max={3}
+            helpText="How many floors above the entry level?"
+          />
+          <FormField
+            label="Levels Below Arrival (L-1, L-2...)"
+            type="number"
+            value={data.levelsBelowArrival}
+            onChange={(v) => handleChange('levelsBelowArrival', Math.min(3, Math.max(0, parseInt(v) || 0)))}
+            placeholder="0-3"
+            min={0}
+            max={3}
+            helpText="Below-grade or down-slope levels"
           />
         </div>
 
-        {tier !== 'mvp' && (
-          <FormField
-            label="Floors / Levels"
-            type="number"
-            value={data.floors}
-            onChange={(v) => handleChange('floors', parseInt(v) || null)}
-            placeholder="Number of floors"
-            min={1}
-          />
+        {/* Visual Level Diagram */}
+        {totalLevels > 0 && (
+          <div className="level-config-preview">
+            <div className="level-config-preview__label">Building Section Preview</div>
+            <div className="level-config-preview__stack">
+              {getLevelLabels().map((label, idx) => (
+                <div 
+                  key={label}
+                  className={`level-config-preview__level ${label.includes('Arrival') ? 'level-config-preview__level--arrival' : ''}`}
+                >
+                  <span className="level-config-preview__level-label">{label}</span>
+                  {label.includes('Arrival') && (
+                    <span className="level-config-preview__arrival-badge">← Entry</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="level-config-preview__total">
+              Total: {totalLevels} level{totalLevels !== 1 ? 's' : ''}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Additional Structures - NEW */}
+      <div className="kyc-section__group">
+        <h3 className="kyc-section__group-title">Additional Structures</h3>
+        <p className="kyc-section__group-description">
+          Beyond the main residence, will there be separate structures on the property?
+        </p>
+
+        {/* Guest House */}
+        <div className="form-field">
+          <label className="form-field__label">Include Guest House?</label>
+          <p className="form-field__help" style={{ marginBottom: '8px' }}>
+            A separate structure for guest accommodation
+          </p>
+          <div className="toggle-group">
+            <button
+              type="button"
+              className={`toggle-btn ${data.hasGuestHouse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('hasGuestHouse', true)}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`toggle-btn ${!data.hasGuestHouse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('hasGuestHouse', false)}
+            >
+              No
+            </button>
+          </div>
+        </div>
+
+        {data.hasGuestHouse && (
+          <div className="form-subsection">
+            <SelectField
+              label="Guest House Bedrooms"
+              value={data.guestHouseBedrooms}
+              onChange={(v) => handleChange('guestHouseBedrooms', parseInt(v))}
+              options={guestHouseBedroomOptions}
+              placeholder="Select bedroom count..."
+            />
+            <div className="form-grid form-grid--3col">
+              <div className="form-field">
+                <label className="form-field__label">Include Living Area?</label>
+                <div className="toggle-group toggle-group--small">
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${data.guestHouseIncludesLiving ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesLiving', true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${!data.guestHouseIncludesLiving ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesLiving', false)}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              <div className="form-field">
+                <label className="form-field__label">Include Kitchen?</label>
+                <div className="toggle-group toggle-group--small">
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${data.guestHouseIncludesKitchen ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesKitchen', true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${!data.guestHouseIncludesKitchen ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesKitchen', false)}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              <div className="form-field">
+                <label className="form-field__label">Include Dining?</label>
+                <div className="toggle-group toggle-group--small">
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${data.guestHouseIncludesDining ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesDining', true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${!data.guestHouseIncludesDining ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('guestHouseIncludesDining', false)}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pool House / Wellness Pavilion */}
+        <div className="form-field" style={{ marginTop: '1.5rem' }}>
+          <label className="form-field__label">Include Pool House / Wellness Pavilion?</label>
+          <p className="form-field__help" style={{ marginBottom: '8px' }}>
+            Changing rooms, showers, and optional entertainment/kitchen
+          </p>
+          <div className="toggle-group">
+            <button
+              type="button"
+              className={`toggle-btn ${data.hasPoolHouse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('hasPoolHouse', true)}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`toggle-btn ${!data.hasPoolHouse ? 'toggle-btn--active' : ''}`}
+              onClick={() => handleChange('hasPoolHouse', false)}
+            >
+              No
+            </button>
+          </div>
+        </div>
+
+        {data.hasPoolHouse && (
+          <div className="form-subsection">
+            <SelectField
+              label="Pool House Location"
+              value={data.poolHouseLocation}
+              onChange={(v) => handleChange('poolHouseLocation', v)}
+              options={poolHouseLocationOptions}
+              placeholder="Select location..."
+            />
+            <div className="form-grid form-grid--2col">
+              <div className="form-field">
+                <label className="form-field__label">Include Entertainment Area?</label>
+                <div className="toggle-group toggle-group--small">
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${data.poolHouseIncludesEntertainment ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('poolHouseIncludesEntertainment', true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${!data.poolHouseIncludesEntertainment ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('poolHouseIncludesEntertainment', false)}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              <div className="form-field">
+                <label className="form-field__label">Include Outdoor Kitchen?</label>
+                <div className="toggle-group toggle-group--small">
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${data.poolHouseIncludesKitchen ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('poolHouseIncludesKitchen', true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn toggle-btn--small ${!data.poolHouseIncludesKitchen ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('poolHouseIncludesKitchen', false)}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -121,14 +121,58 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         />
 
         {data.workFromHome && data.workFromHome !== 'never' && (
-          <FormField
-            label="Number of People WFH"
-            type="number"
-            value={data.wfhPeopleCount}
-            onChange={(v) => handleChange('wfhPeopleCount', parseInt(v) || null)}
-            placeholder="How many people need home office space?"
-            min={1}
-          />
+          <>
+            <FormField
+              label="Number of People WFH"
+              type="number"
+              value={data.wfhPeopleCount}
+              onChange={(v) => handleChange('wfhPeopleCount', parseInt(v) || null)}
+              placeholder="How many people need home office space?"
+              min={1}
+              helpText="Include anyone who regularly works from home"
+            />
+
+            {/* Second Office Question - appears when 2+ people WFH */}
+            {(data.wfhPeopleCount >= 2) && (
+              <div className="form-field">
+                <label className="form-field__label">Separate Offices Required?</label>
+                <p className="form-field__help" style={{ marginBottom: '8px' }}>
+                  Do you need separate, private office spaces for each person working from home?
+                </p>
+                <div className="toggle-group">
+                  <button
+                    type="button"
+                    className={`toggle-btn ${data.separateOfficesRequired === true ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('separateOfficesRequired', true)}
+                  >
+                    Yes, separate offices
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn ${data.separateOfficesRequired === false ? 'toggle-btn--active' : ''}`}
+                    onClick={() => handleChange('separateOfficesRequired', false)}
+                  >
+                    No, can share space
+                  </button>
+                </div>
+                {data.separateOfficesRequired && (
+                  <p className="form-field__note" style={{ marginTop: '8px', color: 'var(--teal)' }}>
+                    ✓ Program will include {data.wfhPeopleCount} separate home offices
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Office needs details */}
+            <FormField
+              label="Office Requirements"
+              type="textarea"
+              value={data.officeRequirements}
+              onChange={(v) => handleChange('officeRequirements', v)}
+              placeholder="Any specific requirements? Video calls, client meetings, specialized equipment..."
+              rows={2}
+            />
+          </>
         )}
       </div>
 

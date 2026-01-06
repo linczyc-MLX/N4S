@@ -530,4 +530,81 @@ Before creating any new UI component or report template, verify:
 
 ---
 
+## 13. Module Color System
+
+Each N4S module has an assigned color that appears in the Task Matrix and module header bars. These colors help users understand where they are in the workflow.
+
+| Module | Letter | Color Name | Background | Text | Accent |
+|--------|--------|------------|------------|------|--------|
+| KYC | A | Navy | `rgba(26, 54, 93, 0.1)` | `#1a365d` | `#1a365d` |
+| FYI | C | Teal | `rgba(49, 151, 149, 0.15)` | `#285e61` | `#319795` |
+| MVP | M | Green | `rgba(72, 187, 120, 0.15)` | `#276749` | `#48bb78` |
+| KYM | B | Purple | `rgba(128, 90, 213, 0.1)` | `#553c9a` | `#805ad5` |
+| VMX | D | Gold | `rgba(201, 169, 98, 0.15)` | `#8b7355` | `#c9a962` |
+
+### Module Header Implementation
+
+Each module's top header bar uses the module's background color with a 2px accent border:
+
+```css
+/* Example: FYI Module Header */
+.main-header {
+  background: rgba(49, 151, 149, 0.15);
+  border-bottom: 2px solid #319795;
+}
+
+.main-header__module {
+  color: #285e61;
+}
+```
+
+### Task Matrix Cells
+
+Task Matrix cells use the same color mapping:
+- Background matches module color (10-15% opacity)
+- Text uses the darker text color for readability
+- Completed cells show checkmark in module accent color
+
+---
+
+## Appendix A: Revision History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-01-06 | 1.0 | Initial brand guide created |
+| 2026-01-06 | 1.1 | Added Module Color System (Section 13) |
+
+---
+
+## Appendix B: Quick Reference Card
+
+### Colors (Copy-Paste)
+```
+Navy:       #1e3a5f
+Gold:       #c9a227
+Teal:       #319795
+Background: #fafaf8
+Border:     #e5e5e0
+Text:       #1a1a1a
+Text Muted: #6b6b6b
+```
+
+### Fonts
+```
+Headings: font-family: 'Playfair Display', Georgia, serif;
+Body:     font-family: 'Inter', -apple-system, sans-serif;
+```
+
+### Report Sliders
+```
+[Label Text]
+├─────────●───────────┤
+Low                High
+```
+- Label ABOVE track
+- Endpoints BELOW track
+- NO tick marks
+
+---
+
 *This guide is the source of truth for N4S visual standards. When in doubt, reference this document. When adding new patterns, update this document.*

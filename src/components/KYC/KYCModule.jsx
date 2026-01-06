@@ -187,9 +187,29 @@ const KYCModule = () => {
               activeRespondent === tab.id ? 'respondent-tab--active' : ''
             }`}
             onClick={() => {
+              // Get current section ID before switching
+              const currentSectionId = visibleSections[currentKYCSection]?.id;
+              
+              // Switch respondent
               setActiveRespondent(tab.id);
-              // When switching to secondary, reset to first visible section (P1.A.5)
-              if (tab.id === 'secondary') {
+              
+              // Calculate new visible sections for the target respondent
+              const targetSections = sections.filter(section => {
+                if (tab.id === 'secondary' && !secondarySections.includes(section.id)) {
+                  return false;
+                }
+                if (disclosureTier === 'enhanced') return true;
+                return section.tier === 'mvp';
+              });
+              
+              // Try to stay on the same section if it exists for the new respondent
+              const newSectionIndex = targetSections.findIndex(s => s.id === currentSectionId);
+              
+              if (newSectionIndex >= 0) {
+                // Section exists for new respondent - stay on it
+                setCurrentKYCSection(newSectionIndex);
+              } else {
+                // Section doesn't exist - go to first available section
                 setCurrentKYCSection(0);
               }
             }}
