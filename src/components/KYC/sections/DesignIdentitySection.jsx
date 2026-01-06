@@ -256,6 +256,41 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
 };
 
 // ============================================
+// COMPARISON SLIDER COMPONENT (for Partner Alignment)
+// ============================================
+
+const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, principalName, secondaryName }) => {
+  const positionP = ((valueP || 2.5) / 5) * 100;
+  const positionS = ((valueS || 2.5) / 5) * 100;
+
+  return (
+    <div className="comparison-slider">
+      <div className="comparison-slider__header">
+        <span className="comparison-slider__label">{label}</span>
+      </div>
+      <div className="comparison-slider__track-container">
+        <div className="comparison-slider__track">
+          <div
+            className="comparison-slider__marker comparison-slider__marker--principal"
+            style={{ left: `${positionP}%` }}
+            title={`${principalName || 'Principal'}: ${valueP?.toFixed(1)}`}
+          />
+          <div
+            className="comparison-slider__marker comparison-slider__marker--secondary"
+            style={{ left: `${positionS}%` }}
+            title={`${secondaryName || 'Secondary'}: ${valueS?.toFixed(1)}`}
+          />
+        </div>
+        <div className="comparison-slider__labels">
+          <span className="comparison-slider__left-label">{leftLabel}</span>
+          <span className="comparison-slider__right-label">{rightLabel}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // COMPLETED VIEW COMPONENT (with Report Buttons)
 // ============================================
 
@@ -354,6 +389,17 @@ const CompletedView = ({
 
   const metricsP = getMetrics(profileP);
   const metricsS = profileS ? getMetrics(profileS) : null;
+
+  // Calculate alignment percentage between Principal and Secondary
+  const calculateAlignment = () => {
+    if (!metricsP || !metricsS) return 0;
+    const ctDiff = Math.abs((metricsP.ct || 2.5) - (metricsS.ct || 2.5));
+    const mlDiff = Math.abs((metricsP.ml || 2.5) - (metricsS.ml || 2.5));
+    const mpDiff = Math.abs((metricsP.mp || 2.5) - (metricsS.mp || 2.5));
+    const avgDiff = (ctDiff + mlDiff + mpDiff) / 3;
+    return Math.max(0, Math.round(100 - (avgDiff / 5 * 100)));
+  };
+  const alignmentPercentage = calculateAlignment();
 
   // Get style label
   const getStyleLabel = (ctValue) => {
@@ -473,6 +519,83 @@ const CompletedView = ({
           rightLabel="Cool"
         />
       </div>
+
+      {/* Partner Alignment Section */}
+      {profileP && profileS && (
+        <div className="kyc-section__group">
+          <h3 className="kyc-section__group-title">Partner Alignment</h3>
+          <p className="kyc-section__group-description">
+            Comparison of {principalName || 'Principal'} and {secondaryName || 'Secondary'} preferences.
+          </p>
+
+          <div className="partner-comparison">
+            <div className="alignment-score">
+              <span className="alignment-score__label">Overall Alignment</span>
+              <span className={`alignment-score__value ${
+                alignmentPercentage >= 70 ? 'alignment-score__value--good' :
+                alignmentPercentage >= 50 ? 'alignment-score__value--moderate' :
+                'alignment-score__value--low'
+              }`}>
+                {alignmentPercentage}%
+              </span>
+            </div>
+
+            <div className="comparison-legend">
+              <span className="comparison-legend__item comparison-legend__item--p">● {principalName || 'Principal'}</span>
+              <span className="comparison-legend__item comparison-legend__item--s">● {secondaryName || 'Secondary'}</span>
+            </div>
+
+            <div className="comparison-sliders">
+              <ComparisonSlider
+                label="Style Era"
+                valueP={metricsP?.ct}
+                valueS={metricsS?.ct}
+                leftLabel="Contemporary"
+                rightLabel="Traditional"
+                principalName={principalName}
+                secondaryName={secondaryName}
+              />
+              <ComparisonSlider
+                label="Material Complexity"
+                valueP={metricsP?.ml}
+                valueS={metricsS?.ml}
+                leftLabel="Minimal"
+                rightLabel="Layered"
+                principalName={principalName}
+                secondaryName={secondaryName}
+              />
+              <ComparisonSlider
+                label="Mood Palette"
+                valueP={metricsP?.mp}
+                valueS={metricsS?.mp}
+                leftLabel="Warm"
+                rightLabel="Cool"
+                principalName={principalName}
+                secondaryName={secondaryName}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Partner Pending Notice */}
+      {profileP && !profileS && (
+        <div className="kyc-section__group">
+          <div className="partner-pending-notice">
+            <span className="partner-pending-notice__icon">◐</span>
+            <div>
+              <strong>Partner Profile Pending</strong>
+              <p>
+                Once {secondaryName || 'Secondary'} completes their Taste Exploration,
+                a Partner Alignment Analysis will be available.
+              </p>
+              <button className="refresh-btn refresh-btn--inline" onClick={onRefresh}>
+                ↻ Check for Updates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report Buttons */}
       <div className="completed-view__reports">
@@ -817,7 +940,8 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   const statusS = getProfileStatus(profileS);
 
   // Determine if we should show completed view
-  const showCompletedView = statusP === 'complete';
+  const currentStatus = respondent === 'principal' ? statusP : statusS;
+  const showCompletedView = currentStatus === 'complete';
 
   // Launch Taste Exploration
   const handleLaunch = (who) => {

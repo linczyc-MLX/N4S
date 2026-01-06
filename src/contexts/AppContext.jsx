@@ -215,6 +215,9 @@ const STORAGE_KEYS = {
 // Get project-specific storage key
 const getProjectKey = (projectId) => `n4s_project_${projectId}`;
 
+// Sections available to Secondary respondent
+const SECONDARY_SECTIONS = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
+
 // Required fields for completion status (section-based)
 const REQUIRED_FIELDS = {
   portfolioContext: ['principalFirstName', 'principalLastName', 'thisPropertyRole'],
@@ -482,10 +485,12 @@ export const AppProvider = ({ children }) => {
     let totalRequired = 0;
     let filledRequired = 0;
     
-    Object.entries(REQUIRED_FIELDS).forEach(([sectionId, fields]) => {
-      const sectionData = data[sectionId];
+    const sectionsToCount = respondent === 'secondary' ? SECONDARY_SECTIONS : Object.keys(REQUIRED_FIELDS);
+    sectionsToCount.forEach(sectionKey => {
+      const fields = REQUIRED_FIELDS[sectionKey] || [];
+      const sectionData = data[sectionKey];
       if (!sectionData || fields.length === 0) return;
-      
+
       totalRequired += fields.length;
       fields.forEach(field => {
         const value = sectionData[field];
