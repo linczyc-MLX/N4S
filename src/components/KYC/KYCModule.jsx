@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  CheckCircle, Circle, AlertTriangle, ChevronDown
+  ChevronDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -57,11 +57,6 @@ const KYCModule = () => {
   // Sections available to Secondary (Partner) - only P1.A.5, P1.A.6, P1.A.7
   const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
 
-  // Calculate section completeness - use context function
-  const getSectionStatus = (sectionId) => {
-    return getSectionCompletionStatus(activeRespondent, sectionId);
-  };
-
   // Check if section is visible based on tier and respondent
   const isSectionVisible = (section) => {
     // Secondary can only see P1.A.5/6/7
@@ -95,14 +90,6 @@ const KYCModule = () => {
       case 'culturalContext': return <CulturalContextSection {...props} />;
       case 'workingPreferences': return <WorkingPreferencesSection {...props} />;
       default: return null;
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'complete': return <CheckCircle size={10} className="status-icon status-icon--complete" />;
-      case 'partial': return <Circle size={10} className="status-icon status-icon--partial" />;
-      default: return <Circle size={10} className="status-icon status-icon--empty" />;
     }
   };
 
@@ -218,9 +205,8 @@ const KYCModule = () => {
           <ul className="kyc-module__nav-list">
             {visibleSections.map((section, index) => {
               const Icon = section.icon;
-              const status = getSectionStatus(section.id);
               const isActive = currentKYCSection === index;
-              
+
               return (
                 <li key={section.id}>
                   <button
@@ -232,7 +218,6 @@ const KYCModule = () => {
                       <Icon size={18} />
                     </div>
                     <span className="kyc-nav-item__label">{section.label}</span>
-                    {getStatusIcon(status)}
                   </button>
                 </li>
               );
