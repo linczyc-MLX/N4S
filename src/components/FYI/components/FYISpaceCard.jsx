@@ -1,11 +1,11 @@
 /**
  * FYISpaceCard Component
- * 
- * Individual space card with S/M/L selection, image upload, and calculated SF.
+ *
+ * Individual space card with S/M/L selection and calculated SF.
  */
 
-import React, { useRef, useState } from 'react';
-import { getSpaceRenderUrl, getFloorPlanUrl } from '../../../shared/space-registry';
+import React, { useState } from 'react';
+import { getSpaceRenderUrl } from '../../../shared/space-registry';
 
 const FYISpaceCard = ({
   space,
@@ -15,14 +15,12 @@ const FYISpaceCard = ({
   availableLevels,    // NEW: Array from buildAvailableLevels()
   onSizeChange,
   onToggleIncluded,
-  onImageUpload,
   onLevelChange,
   onNotesChange
 }) => {
-  const fileInputRef = useRef(null);
   const [showDetails, setShowDetails] = useState(false);
   
-  const { included, size, level, imageUrl, notes, kycSource } = selection;
+  const { included, size, level, notes, kycSource } = selection;
   const isOutdoor = space.outdoorSpace;
   const isSecondaryStructure = space.structure === 'guestHouse' || space.structure === 'poolHouse';
   
@@ -35,20 +33,8 @@ const FYISpaceCard = ({
     L: Math.round(baseArea * (1 + delta))
   };
   
-  // Determine image source
-  const displayImage = imageUrl || getSpaceRenderUrl(space.code, size);
-  
-  // Handle file upload
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      onImageUpload(event.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
+  // Determine image source (Cloudinary only)
+  const displayImage = getSpaceRenderUrl(space.code, size);
   
   // KYC source badge
   const getKYCBadge = () => {
@@ -112,22 +98,7 @@ const FYISpaceCard = ({
           </svg>
           <span>Add Image</span>
         </div>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="fyi-space-card__file-input"
-          onChange={handleFileSelect}
-        />
-        
-        <button 
-          className="fyi-space-card__upload-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {imageUrl ? 'Change' : displayImage ? 'Replace' : 'Upload'}
-        </button>
-        
+
         {getKYCBadge()}
       </div>
       

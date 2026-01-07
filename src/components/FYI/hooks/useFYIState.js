@@ -233,17 +233,6 @@ export function useFYIState(initialKYCData = null) {
     }));
   }, []);
 
-  // Set space image
-  const setSpaceImage = useCallback((code, imageUrl) => {
-    setSelections(prev => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        imageUrl
-      }
-    }));
-  }, []);
-
   // Update settings
   const updateSettings = useCallback((updates) => {
     setSettings(prev => {
@@ -480,8 +469,7 @@ export function useFYIState(initialKYCData = null) {
     toggleSpaceIncluded,
     setSpaceSize,
     setSpaceLevel,
-    setSpaceImage,
-    
+
     // Helpers
     getSpaceSelection,
     getSpacesForZone,

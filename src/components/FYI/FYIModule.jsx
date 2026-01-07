@@ -101,7 +101,6 @@ const FYIModule = () => {
     toggleSpaceIncluded,
     setSpaceSize,
     setSpaceLevel,
-    setSpaceImage,
     getSpaceSelection,
     getSpacesForZone,
     calculateArea,
@@ -428,7 +427,6 @@ const FYIModule = () => {
                   availableLevels={availableLevels}
                   onSizeChange={(size) => setSpaceSize(space.code, size)}
                   onToggleIncluded={() => toggleSpaceIncluded(space.code)}
-                  onImageUpload={(url) => setSpaceImage(space.code, url)}
                   onLevelChange={(level) => setSpaceLevel(space.code, level)}
                   onNotesChange={(notes) => updateSpaceSelection(space.code, { notes })}
                 />
