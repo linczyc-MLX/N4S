@@ -186,15 +186,7 @@ function buildInitialSelections(kycData, tier, hasBasement) {
       selections['BKF'].kycSource = 'wantsBreakfastNook';
     }
   }
-  
-  // Second formal living (Salon)
-  if (kycData.spaceRequirements?.wantsSecondFormalLiving) {
-    if (selections['SAL']) {
-      selections['SAL'].included = true;
-      selections['SAL'].kycSource = 'wantsSecondFormalLiving';
-    }
-  }
-  
+
   // Staffing level affects staff spaces
   const staffing = kycData.familyHousehold?.staffingLevel;
   if (staffing === 'live_in' || staffing === 'full_time') {
@@ -235,12 +227,13 @@ function buildInitialSelections(kycData, tier, hasBasement) {
   }).length;
   
   if (kidsCount === 0) {
-    if (selections['KID1']) selections['KID1'].included = false;
-    if (selections['KID2']) selections['KID2'].included = false;
-    if (selections['PLY']) selections['PLY'].included = false;
     if (selections['BNK']) selections['BNK'].included = false;
-  } else if (kidsCount === 1) {
-    if (selections['KID2']) selections['KID2'].included = false;
+    if (selections['PLY']) selections['PLY'].included = false;
+  } else {
+    if (selections['BNK']) {
+      selections['BNK'].included = true;
+      selections['BNK'].kycSource = 'kidsCount';
+    }
   }
   
   // Nanny suite based on kids + staffing
@@ -275,7 +268,7 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     // Downsize entertainment spaces
     if (selections['GAM']) selections['GAM'].size = 'S';
     if (selections['BAR']) selections['BAR'].included = false;
-    if (selections['BIL']) selections['BIL'].included = false;
+    if (selections['GAME']) selections['GAME'].included = false;
   } else if (entertaining === 'weekly' || entertaining === 'daily') {
     // Upsize entertainment
     if (selections['GAM']) selections['GAM'].size = 'L';
@@ -288,7 +281,7 @@ function buildInitialSelections(kycData, tier, hasBasement) {
   // Basement eligible spaces - move to basement if hasBasement
   if (hasBasement) {
     // Consider moving these to basement
-    const basementCandidates = ['THR', 'GAM', 'BIL', 'MUS', 'WIN', 'GYM', 'SPA', 'STR', 'MEP'];
+    const basementCandidates = ['THR', 'GAM', 'GAME', 'MUS', 'WIN', 'GYM', 'SPA', 'STR', 'MEP'];
     basementCandidates.forEach(code => {
       const space = getSpaceByCode(code);
       if (space?.basementEligible && selections[code]) {
@@ -332,9 +325,9 @@ function generateRecommendations(kycData, selections) {
   }
   
   // Frequent entertainers need larger great room
-  if (kycData.lifestyleLiving?.entertainingFrequency === 'weekly' && selections['GRT']?.size !== 'L') {
+  if (kycData.lifestyleLiving?.entertainingFrequency === 'weekly' && selections['GR']?.size !== 'L') {
     recommendations.push({
-      code: 'GRT',
+      code: 'GR',
       type: 'upsize',
       reason: 'Weekly entertaining suggests need for larger formal space',
       action: 'Consider sizing Great Room to Large'

@@ -157,18 +157,6 @@ export const spaceRegistry = [
     notes: 'Climate controlled; can move to basement'
   },
   {
-    code: 'SAL',
-    name: 'Salon',
-    abbrev: 'Salon',
-    zone: 'Z1_APB',
-    defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 350, '20k': 450 },
-    basementEligible: false,
-    outdoorSpace: false,
-    tier: '15k+',
-    notes: 'Secondary formal sitting room'
-  },
-  {
     code: 'LIB',
     name: 'Library',
     abbrev: 'Library',
@@ -256,18 +244,6 @@ export const spaceRegistry = [
     tier: 'core',
     notes: 'Casual TV / movies; can move to basement'
   },
-  {
-    code: 'NKF',
-    name: 'Nook / Flex',
-    abbrev: 'Nook',
-    zone: 'Z2_FAM',
-    defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 150, '20k': 200 },
-    basementEligible: false,
-    outdoorSpace: false,
-    tier: '15k+',
-    notes: 'Homework, reading area'
-  },
 
   // ---------------------------------------------------------------------------
   // Zone 3: Entertainment (Z3_ENT)
@@ -307,18 +283,6 @@ export const spaceRegistry = [
     outdoorSpace: false,
     tier: '15k+',
     notes: 'Dedicated cinema; basement ideal for sound'
-  },
-  {
-    code: 'BIL',
-    name: 'Billiards',
-    abbrev: 'Billiards',
-    zone: 'Z3_ENT',
-    defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 280, '20k': 350 },
-    basementEligible: true,
-    outdoorSpace: false,
-    tier: '15k+',
-    notes: 'Pool table room'
   },
   {
     code: 'MUS',
@@ -570,30 +534,6 @@ export const spaceRegistry = [
     outdoorSpace: false,
     tier: '15k+',
     notes: 'Single large walk-in for Jr. Primary'
-  },
-  {
-    code: 'KID1',
-    name: 'Kids Bedroom 1',
-    abbrev: 'Kids 1',
-    zone: 'Z6_GST',
-    defaultLevel: 2,
-    baseSF: { '10k': 350, '15k': 400, '20k': 450 },
-    basementEligible: false,
-    outdoorSpace: false,
-    tier: 'core',
-    notes: "Children's room"
-  },
-  {
-    code: 'KID2',
-    name: 'Kids Bedroom 2',
-    abbrev: 'Kids 2',
-    zone: 'Z6_GST',
-    defaultLevel: 2,
-    baseSF: { '10k': 350, '15k': 400, '20k': 450 },
-    basementEligible: false,
-    outdoorSpace: false,
-    tier: 'core',
-    notes: "Children's room"
   },
   {
     code: 'BNK',
@@ -1216,7 +1156,6 @@ const spaceRenderIds = {
   'GR_M': 'GR_M_u47amm',
   'DR_M': 'DR_M_aojuh0',
   'WINE_M': 'WINE_M_btnxlc',
-  'SAL_M': 'SAL_M_jllzsj',
   'LIB_M': 'LIB_M_jmwsay',
   
   // Zone 2: Family + Kitchen (Z2_FAM)
@@ -1226,13 +1165,11 @@ const spaceRenderIds = {
   'SCUL_M': 'SCUL_M_qpdfeb',
   'CHEF_M': 'CHEF_M_moztip',
   'MEDIA_M': 'MEDIA_M_zhc5vf',
-  'NKF_M': 'NKF_M_bw8at0',
-  
+
   // Zone 3: Entertainment (Z3_ENT)
   'BAR_M': 'BAR_M_iuexss',
   'GAME_M': 'GAME_M_vzu5lf',
   'THR_M': 'THR_M_bmf1vs',
-  'BIL_M': 'BIL_M_mqnfiw',
   'MUS_M': 'MUS_M_a3ih8o',
   'ART_M': 'ART_M_bkopxz',
   
@@ -1259,8 +1196,6 @@ const spaceRenderIds = {
   'GST2_M': 'GST2_M_wmagho',
   'GST3_M': 'GST3_M_yvbnl3',
   'GST4_M': 'GST4_M_s2zpd2',
-  'KID1_M': 'KID1_M_d8hob8',
-  'KID2_M': 'KID2_M_kxuslm',
   'BNK_M': 'BNK_M_tjjg7k',
   'PLY_M': 'PLY_M_bmf9kz',
   'HWK_M': 'HWK_M_guyo5i',
@@ -1345,7 +1280,7 @@ export const legacyToCodeMap = {
   'jr-primary-suite': 'JRPRI',
   'secondary-suites': 'GST1',
   'guest-suite': 'GST1',
-  'kids-bedrooms': 'KID1',
+  'kids-bedrooms': 'BNK',
   'kids-bunk-room': 'BNK',
   'great-room': 'GR',
   'formal-living': 'GR',
@@ -1372,7 +1307,7 @@ export const legacyToCodeMap = {
   'music-room': 'MUS',
   'safe-room': 'STR',
   'theater': 'THR',
-  'billiards': 'BIL',
+  'billiards': 'GAME',
   'bar': 'BAR',
 };
 
@@ -1441,8 +1376,6 @@ export const bedroomTypes = [
   { code: 'GST2', name: 'Guest Suite 2', bath: 'GST2_BATH' },
   { code: 'GST3', name: 'Guest Suite 3', bath: 'GST3_BATH' },
   { code: 'GST4', name: 'Guest Suite 4', bath: 'GST4_BATH' },
-  { code: 'KID1', name: 'Kids Bedroom 1', bath: 'KID_BATH' },
-  { code: 'KID2', name: 'Kids Bedroom 2', bath: 'KID_BATH' },
   { code: 'BNK', name: "Kid's Bunk Room", bath: 'BNK_BATH' },
 ];
 
