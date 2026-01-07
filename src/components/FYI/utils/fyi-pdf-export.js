@@ -567,9 +567,10 @@ export class FYIReportGenerator {
   // ============================================
 
   save() {
+    const modeLabel = this.mode === 'level' ? 'ByLevel' : 'ByZone';
     const filename = this.data.projectName
-      ? `FYI-Space-Program-${this.data.projectName.replace(/\s+/g, '-')}.pdf`
-      : 'FYI-Space-Program.pdf';
+      ? `FYI-Space-Program-${modeLabel}-${this.data.projectName.replace(/\s+/g, '-')}.pdf`
+      : `FYI-Space-Program-${modeLabel}.pdf`;
     this.doc.save(filename);
   }
 }
