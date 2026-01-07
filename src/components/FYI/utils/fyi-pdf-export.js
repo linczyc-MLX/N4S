@@ -4,6 +4,7 @@
 // Version: 2.0 - Class-based architecture
 // ============================================
 
+import jsPDF from 'jspdf';
 import { zones } from '../../../shared/space-registry';
 
 // ============================================
@@ -59,12 +60,6 @@ export class FYIReportGenerator {
   }
 
   async generate() {
-    // Dynamically import jsPDF
-    const jsPDF = window.jspdf?.jsPDF;
-    if (!jsPDF) {
-      throw new Error('jsPDF not available');
-    }
-
     this.doc = new jsPDF('p', 'pt', 'letter');
 
     // Calculate total pages based on content
