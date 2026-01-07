@@ -60,7 +60,7 @@ async function generateWithJsPDF(data, jsPDF) {
   y += 10;
 
   // Summary Box
-  doc.setDrawColor(139, 115, 85); // Gold/brown accent
+  doc.setDrawColor(30, 58, 95); // NAVY #1e3a5f
   doc.setLineWidth(0.5);
   doc.rect(margin, y, pageWidth - 2 * margin, 35);
   y += 8;
@@ -95,7 +95,7 @@ async function generateWithJsPDF(data, jsPDF) {
     checkPageBreak(40);
 
     // Zone header
-    doc.setFillColor(245, 240, 232); // Light accent
+    doc.setFillColor(250, 250, 248); // Background #fafaf8
     doc.rect(margin, y - 3, pageWidth - 2 * margin, 8, 'F');
     addText(`${zone.name} — ${zone.totalSF.toLocaleString()} SF`, 11, true);
     y += 5;
@@ -159,21 +159,22 @@ function generatePrintableHTML(data) {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 11px;
       line-height: 1.4;
       color: #1a1a1a;
       padding: 20px;
     }
     .header {
-      border-bottom: 2px solid #8b7355;
+      border-bottom: 2px solid #1e3a5f;
       padding-bottom: 15px;
       margin-bottom: 20px;
     }
     .header h1 {
-      font-size: 22px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 24px;
       font-weight: 500;
-      color: #1a1a1a;
+      color: #1e3a5f;
     }
     .header .meta {
       color: #6b6b6b;
@@ -181,8 +182,9 @@ function generatePrintableHTML(data) {
       margin-top: 5px;
     }
     .summary-box {
-      background: #f5f0e8;
+      background: #fafaf8;
       border: 1px solid #e5e5e0;
+      border-left: 4px solid #c9a227;
       border-radius: 6px;
       padding: 15px;
       margin-bottom: 20px;
@@ -217,7 +219,8 @@ function generatePrintableHTML(data) {
       page-break-inside: avoid;
     }
     .zone-header {
-      background: #f5f0e8;
+      background: #1e3a5f;
+      color: white;
       padding: 8px 12px;
       border-radius: 4px;
       margin-bottom: 10px;
@@ -227,11 +230,12 @@ function generatePrintableHTML(data) {
     }
     .zone-header h2 {
       font-size: 13px;
+      color: white;
       font-weight: 600;
     }
     .zone-header .sf {
       font-size: 12px;
-      color: #6b6b6b;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     table {
@@ -407,6 +411,8 @@ export function buildFYIPDFData(
   settings,
   selections,
   totals,
+  structureTotals,
+  availableLevels,
   getSpacesForZone,
   calculateArea,
   projectName,
