@@ -301,7 +301,36 @@ function buildInitialSelections(kycData, tier, hasBasement) {
       }
     });
   }
-  
+
+  // Default powder rooms by zone
+  // PWD (Z1_APB) - already handled as core space
+  // PWD2 (Z2_FAM) - always included (core tier, family zone)
+  if (selections['PWD2']) {
+    selections['PWD2'].included = true;
+    selections['PWD2'].kycSource = 'default_family_zone';
+  }
+
+  // PWD3 (Z3_ENT) - included if any entertainment spaces are selected (15k+ tier)
+  const hasEntertainment = selections['MEDIA']?.included || selections['THR']?.included ||
+                           selections['BAR']?.included || selections['GAME']?.included;
+  if (hasEntertainment && selections['PWD3']) {
+    selections['PWD3'].included = true;
+    selections['PWD3'].kycSource = 'entertainment_zone';
+  }
+
+  // PWD4 (Z4_WEL) - always included (core tier, wellness zone)
+  if (selections['PWD4']) {
+    selections['PWD4'].included = true;
+    selections['PWD4'].kycSource = 'default_wellness_zone';
+  }
+
+  // POOL_BATH (Z8_OUT) - included if outdoor pool is selected
+  const hasPool = selections['POOL']?.included || selections['POOL_OUT']?.included;
+  if (hasPool && selections['POOL_BATH']) {
+    selections['POOL_BATH'].included = true;
+    selections['POOL_BATH'].kycSource = 'pool_selected';
+  }
+
   return selections;
 }
 
