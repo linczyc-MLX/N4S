@@ -244,6 +244,18 @@ export const spaceRegistry = [
     tier: 'core',
     notes: 'Casual TV / movies; can move to basement'
   },
+  {
+    code: 'PWD2',
+    name: 'Powder Room 2',
+    abbrev: 'Powder 2',
+    zone: 'Z2_FAM',
+    defaultLevel: 1,
+    baseSF: { '10k': 60, '15k': 60, '20k': 60 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: 'core',
+    notes: 'Family zone powder room'
+  },
 
   // ---------------------------------------------------------------------------
   // Zone 3: Entertainment (Z3_ENT)
@@ -308,6 +320,18 @@ export const spaceRegistry = [
     tier: '20k+',
     notes: 'Creative workspace; needs natural light'
   },
+  {
+    code: 'PWD3',
+    name: 'Powder Room 3',
+    abbrev: 'Powder 3',
+    zone: 'Z3_ENT',
+    defaultLevel: 1,
+    baseSF: { '10k': null, '15k': 60, '20k': 60 },
+    basementEligible: true,
+    outdoorSpace: false,
+    tier: '15k+',
+    notes: 'Entertainment zone powder room'
+  },
 
   // ---------------------------------------------------------------------------
   // Zone 4: Wellness (Z4_WEL)
@@ -371,6 +395,18 @@ export const spaceRegistry = [
     outdoorSpace: false,
     tier: 'core',
     notes: 'Equipment, changing, bath'
+  },
+  {
+    code: 'PWD4',
+    name: 'Powder Room 4',
+    abbrev: 'Powder 4',
+    zone: 'Z4_WEL',
+    defaultLevel: 1,
+    baseSF: { '10k': 60, '15k': 60, '20k': 60 },
+    basementEligible: false,
+    outdoorSpace: false,
+    tier: 'core',
+    notes: 'Wellness zone powder room'
   },
 
   // ---------------------------------------------------------------------------
@@ -796,6 +832,18 @@ export const spaceRegistry = [
     notes: 'Interior court; not in conditioned total'
   },
   {
+    code: 'POOL_BATH',
+    name: 'Pool Bathroom',
+    abbrev: 'Pool Bath',
+    zone: 'Z8_OUT',
+    defaultLevel: 1,
+    baseSF: { '10k': 80, '15k': 80, '20k': 100 },
+    basementEligible: false,
+    outdoorSpace: true,
+    tier: 'core',
+    notes: 'Outdoor pool bathroom - separate from main house'
+  },
+  {
     code: 'DRV',
     name: 'Motor Court',
     abbrev: 'Motor Court',
@@ -1165,6 +1213,7 @@ const spaceRenderIds = {
   'SCUL_M': 'SCUL_M_qpdfeb',
   'CHEF_M': 'CHEF_M_moztip',
   'MEDIA_M': 'MEDIA_M_zhc5vf',
+  'PWD2_M': 'PWD_M_z1syjl',  // Use same image as PWD for now
 
   // Zone 3: Entertainment (Z3_ENT)
   'BAR_M': 'BAR_M_iuexss',
@@ -1172,14 +1221,16 @@ const spaceRenderIds = {
   'THR_M': 'THR_M_bmf1vs',
   'MUS_M': 'MUS_M_a3ih8o',
   'ART_M': 'ART_M_bkopxz',
-  
+  'PWD3_M': 'PWD_M_z1syjl',  // Use same image as PWD for now
+
   // Zone 4: Wellness (Z4_WEL)
   'GYM_M': 'GYM_M_gvxtck',
   'SPA_M': 'SPA_M_xvpdst',
   'MAS_M': 'MAS_M_wehgk5',
   'PLH_M': 'PLH_M_wyyayn',
   'POOLSUP_M': 'POOLSUP_M_ihrxiz',
-  
+  'PWD4_M': 'PWD_M_z1syjl',  // Use same image as PWD for now
+
   // Zone 5: Primary Suite (Z5_PRI)
   'PRI_M': 'PRI_M_ka98yn',
   'PRIBATH_M': 'PRIBATH_M_hmsaqt',
@@ -1221,6 +1272,7 @@ const spaceRenderIds = {
   'FPT_M': 'FPT_M_ilx6g1',
   'ODN_M': 'ODN_M_juflbh',
   'CTY_M': 'CTY_M_pg9ila',
+  'POOL_BATH_M': 'PWD_M_z1syjl',  // Placeholder until proper outdoor bath image
   'DRV_M': 'DRV_M_yzmztf',
 };
 
