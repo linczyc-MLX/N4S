@@ -1,7 +1,8 @@
 // API Service for N4S Database
 // Connects to the PHP backend on IONOS
+// Both sites (website.not-4.sale and home-5019238456.app-ionos.space) use this same API
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+const API_BASE_URL = 'https://website.not-4.sale/api';
 
 class ApiService {
   constructor() {
