@@ -530,6 +530,17 @@ export const AppProvider = ({ children }) => {
       const sectionData = data[sectionKey];
       if (!sectionData) return;
 
+      // Special handling for designIdentity - requires taste profile completion
+      if (sectionKey === 'designIdentity') {
+        totalRequired += 1;
+        // Check for completed taste profile based on respondent type
+        const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
+        if (sectionData[tasteKey]?.completedAt) {
+          filledRequired += 1;
+        }
+        return;
+      }
+
       if (fields.length > 0) {
         totalRequired += fields.length;
         fields.forEach(field => {
