@@ -62,10 +62,7 @@ export class FYIReportGenerator {
   async generate() {
     this.doc = new jsPDF('p', 'pt', 'letter');
 
-    // Calculate total pages based on content
-    this.totalPages = this.calculateTotalPages();
-
-    // Generate report
+    // Generate report content first (without footers)
     this.addHeader();
     this.addClientInfo();
     this.addSummaryBox();
@@ -76,16 +73,19 @@ export class FYIReportGenerator {
       this.addSpacesByZone();
     }
 
-    this.addFooter();
+    // Now we know the actual total pages
+    this.totalPages = this.currentPage;
+
+    // Add footers to all pages
+    this.addAllFooters();
 
     return this.doc;
   }
 
   calculateTotalPages() {
-    // Estimate pages based on number of zones/spaces
-    const spaceCount = this.data.zonesData.reduce((sum, z) => sum + z.spaces.length, 0);
-    // Roughly 15 spaces per page after header
-    return Math.max(1, Math.ceil(spaceCount / 15));
+    // This will be updated after rendering is complete
+    // Return 1 as placeholder - actual count happens in generate()
+    return 1;
   }
 
   // ============================================
@@ -517,7 +517,7 @@ export class FYIReportGenerator {
 
   checkPageBreak(neededSpace = 50) {
     if (this.y > this.pageHeight - this.margin - neededSpace) {
-      this.addFooter();
+      // Don't add footer here - will be added at the end
       this.doc.addPage();
       this.currentPage++;
       this.y = this.margin;
@@ -541,7 +541,15 @@ export class FYIReportGenerator {
     this.y = 45;
   }
 
-  addFooter() {
+  addAllFooters() {
+    // Add footers to all pages with correct page numbers
+    for (let page = 1; page <= this.totalPages; page++) {
+      this.doc.setPage(page);
+      this.addFooterToPage(page);
+    }
+  }
+
+  addFooterToPage(pageNum) {
     const footerY = this.pageHeight - 25;
 
     // Footer line
@@ -559,7 +567,7 @@ export class FYIReportGenerator {
     this.doc.text('N4S - Not For Sale | Luxury Residential Advisory', this.pageWidth / 2, footerY, { align: 'center' });
 
     // Page number (right)
-    this.doc.text(`Page ${this.currentPage} of ${this.totalPages}`, this.pageWidth - this.margin, footerY, { align: 'right' });
+    this.doc.text(`Page ${pageNum} of ${this.totalPages}`, this.pageWidth - this.margin, footerY, { align: 'right' });
   }
 
   // ============================================
@@ -610,7 +618,12 @@ export function buildFYIPDFData(
   projectName,
   clientName
 ) {
-  const zonesData = zones.map(zone => {
+  // Only include Main Residence zones (exclude Guest House Z9_GH and Pool House Z10_PH)
+  const mainResidenceZones = zones.filter(z =>
+    z.code !== 'Z9_GH' && z.code !== 'Z10_PH'
+  );
+
+  const zonesData = mainResidenceZones.map(zone => {
     const zoneSpaces = getSpacesForZone(zone.code);
     const includedSpaces = zoneSpaces
       .filter(s => selections[s.code]?.included)
@@ -631,10 +644,25 @@ export function buildFYIPDFData(
     };
   });
 
+  // Use Main Residence totals from structureTotals
+  const mainTotals = structureTotals?.main || totals;
+  const pdfTotals = {
+    net: mainTotals.net,
+    circulation: mainTotals.circulation,
+    circulationPct: mainTotals.net > 0
+      ? ((mainTotals.circulation / mainTotals.net) * 100).toFixed(1)
+      : '0.0',
+    total: mainTotals.total,
+    deltaFromTarget: mainTotals.total - settings.targetSF,
+    byLevel: mainTotals.byLevel || {},
+    outdoorTotal: totals.outdoorTotal || 0,
+    targetSF: settings.targetSF
+  };
+
   return {
     settings,
     selections,
-    totals,
+    totals: pdfTotals,
     structureTotals,
     availableLevels,
     zonesData,
