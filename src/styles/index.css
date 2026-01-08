@@ -303,6 +303,48 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .tier-tab__label { font-weight: 600; font-size: 0.9rem; color: var(--gray-700); }
 .tier-tab__duration { font-size: 0.75rem; color: var(--gray-500); }
 
+/* KYC Save Button */
+.kyc-module__save-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.kyc-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.kyc-save-btn:hover:not(:disabled) {
+  background: #2c7a7b;
+  transform: translateY(-1px);
+}
+.kyc-save-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.kyc-save-btn--unsaved {
+  background: var(--warning);
+  animation: pulse-kyc 2s infinite;
+}
+.kyc-save-btn--unsaved:hover:not(:disabled) { background: #b7791f; }
+@keyframes pulse-kyc {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(214, 158, 46, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(214, 158, 46, 0); }
+}
+.kyc-save-btn--saving { background: var(--gray-500); }
+.kyc-save-indicator { font-size: 0.75rem; color: var(--warning); font-weight: 500; }
+.kyc-save-message { font-size: 0.75rem; font-weight: 500; padding: 4px 8px; border-radius: 4px; }
+.kyc-save-message--success { background: var(--success-bg); color: var(--success); }
+.kyc-save-message--error { background: var(--danger-bg); color: var(--danger); }
+.kyc-save-time { font-size: 0.75rem; color: var(--gray-500); }
+
 /* Respondent Tabs */
 .kyc-module__respondent-tabs { display: flex; gap: 16px; margin-bottom: 32px; }
 .respondent-tab {

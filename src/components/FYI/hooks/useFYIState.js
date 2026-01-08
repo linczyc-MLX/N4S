@@ -1,26 +1,21 @@
 /**
- * useFYIState Hook
+ * useFYIState Hook - CALCULATION ONLY
  *
- * Manages FYI module state including space selections, settings, and calculations.
- * Integrates with the shared space-registry for consistent zone/space definitions.
+ * This hook does NOT maintain its own state.
+ * All data lives in AppContext. This hook:
+ * 1. Reads fyiData from AppContext
+ * 2. Computes derived values (totals, zones, etc.)
+ * 3. Returns wrapped action functions that update AppContext directly
  *
- * NOTE: This hook does NOT persist to localStorage. All persistence is handled
- * by AppContext which saves to the database. Pass initialData from AppContext.fyiData.
- *
- * IMPORTANT: Data flows ONE DIRECTION only:
- *   - On mount: initialData (from API via AppContext) → useFYIState
- *   - After mount: useFYIState → AppContext (via updateFYIData callback)
- *   - We do NOT continuously sync FROM initialData to avoid infinite loops
+ * THERE IS NO LOCAL STATE FOR SELECTIONS OR SETTINGS.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
-  zones,
   spaceRegistry,
   getSpacesForTier,
   getConditionedSpaces,
   calculateSpaceArea,
-  circulationDefaults,
   calculateCirculation,
   getSpaceByCode,
   getZonesInOrder
@@ -37,12 +32,11 @@ const defaultSettings = {
 };
 
 // Initialize selections with all available spaces for tier set to 'M'
-const initializeSelections = (tier, hasBasement) => {
+export const initializeSelectionsForTier = (tier, hasBasement = false) => {
   const availableSpaces = getSpacesForTier(tier);
   const selections = {};
 
   availableSpaces.forEach(space => {
-    // Only include spaces that have SF defined for this tier
     if (space.baseSF[tier] !== null) {
       selections[space.code] = {
         included: true,
@@ -58,226 +52,118 @@ const initializeSelections = (tier, hasBasement) => {
   return selections;
 };
 
-export function useFYIState(initialData = null) {
-  // Track if we've loaded initial data from API (only do this ONCE)
-  const hasLoadedFromAPI = useRef(false);
+/**
+ * useFYIState - Calculation-only hook
+ *
+ * @param {Object} fyiData - fyiData from AppContext
+ * @param {Function} updateFYISelection - from AppContext
+ * @param {Function} updateFYISettings - from AppContext
+ * @param {Function} initializeFYISelections - from AppContext
+ */
+export function useFYIState(fyiData, updateFYISelection, updateFYISettings, initializeFYISelections) {
+  // Read settings and selections from AppContext's fyiData
+  const settings = fyiData?.settings || defaultSettings;
+  const selections = fyiData?.selections || {};
 
-  // Track if initial hydration is complete (prevents effects from writing defaults)
-  const [isHydrated, setIsHydrated] = useState(() => {
-    // If initialData has selections on first render, we're already hydrated
-    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
-    return hasData;
-  });
-
-  // Initialize from passed data (from AppContext.fyiData) or defaults
-  const [settings, setSettings] = useState(() => {
-    if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
-      hasLoadedFromAPI.current = true;
-      console.log('[FYI-DEBUG] useState settings: loaded from initialData', initialData.settings);
-      return { ...defaultSettings, ...initialData.settings };
-    }
-    console.log('[FYI-DEBUG] useState settings: using defaults');
-    return defaultSettings;
-  });
-
-  // Space selections: { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
-  const [selections, setSelections] = useState(() => {
-    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
-    console.log('[FYI-DEBUG] useState selections: hasData=', hasData, 'FOY size=', initialData?.selections?.FOY?.size);
-    if (hasData) {
-      hasLoadedFromAPI.current = true;
-      return initialData.selections;
-    }
-    console.log('[FYI-DEBUG] useState selections: initializing with defaults (all M)');
-    return initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement);
-  });
-
-  // Loading state - immediate since we initialize from props
-  const [isLoaded, setIsLoaded] = useState(true);
-
-  // Active zone for navigation
+  // Local UI state (not persisted)
   const [activeZone, setActiveZone] = useState('Z1_APB');
 
-  // Load from API data ONCE when it becomes available (if not already loaded on mount)
-  // This handles the case where AppContext loads from API after component mounts
-  useEffect(() => {
-    console.log('[FYI-DEBUG] useEffect: hasLoadedFromAPI=', hasLoadedFromAPI.current, 'FOY in initialData=', initialData?.selections?.FOY?.size);
+  // Check if we have any selections loaded
+  const hasSelections = Object.keys(selections).length > 0;
 
-    // Only load from initialData ONCE, and only if we haven't loaded yet
-    if (hasLoadedFromAPI.current) {
-      console.log('[FYI-DEBUG] useEffect: SKIPPING - already loaded');
-      // Mark as hydrated even if we skip (we already have data)
-      if (!isHydrated) setIsHydrated(true);
-      return; // Already loaded, don't sync again (prevents infinite loop)
+  // ---------------------------------------------------------------------------
+  // ACTION FUNCTIONS - These call AppContext directly
+  // ---------------------------------------------------------------------------
+
+  // Update a single space selection field
+  const updateSpaceSelection = useCallback((code, updates) => {
+    if (updateFYISelection) {
+      updateFYISelection(code, updates);
     }
+  }, [updateFYISelection]);
 
-    // Check if initialData has any selections data at all
-    const hasSelectionsData = initialData?.selections && Object.keys(initialData.selections).length > 0;
-
-    if (hasSelectionsData) {
-      console.log('[FYI-DEBUG] useEffect: LOADING selections from initialData, FOY=', initialData.selections.FOY?.size);
-      // Load all selections from initialData (from database/localStorage)
-      setSelections(initialData.selections);
-      if (initialData.settings && Object.keys(initialData.settings).length > 0) {
-        setSettings(prev => ({ ...prev, ...initialData.settings }));
-      }
-      hasLoadedFromAPI.current = true;
-      setIsHydrated(true);
-    } else {
-      console.log('[FYI-DEBUG] useEffect: NO selections data in initialData - marking hydrated with defaults');
-      // No data from API/localStorage, mark as hydrated with defaults
-      setIsHydrated(true);
+  // Toggle space inclusion
+  const toggleSpaceIncluded = useCallback((code) => {
+    const current = selections[code];
+    if (updateFYISelection) {
+      updateFYISelection(code, { included: !current?.included });
     }
-  }, [initialData, isHydrated]);
+  }, [selections, updateFYISelection]);
 
-  // Apply KYC defaults to FYI selections
+  // Set space size
+  const setSpaceSize = useCallback((code, size) => {
+    if (updateFYISelection) {
+      updateFYISelection(code, { size });
+    }
+  }, [updateFYISelection]);
+
+  // Set space level
+  const setSpaceLevel = useCallback((code, level) => {
+    if (updateFYISelection) {
+      updateFYISelection(code, { level });
+    }
+  }, [updateFYISelection]);
+
+  // Update settings
+  const updateSettings = useCallback((updates) => {
+    if (updateFYISettings) {
+      updateFYISettings(updates);
+    }
+  }, [updateFYISettings]);
+
+  // Reset to defaults
+  const resetToDefaults = useCallback(() => {
+    if (updateFYISettings) {
+      updateFYISettings(defaultSettings);
+    }
+    if (initializeFYISelections) {
+      const newSelections = initializeSelectionsForTier(defaultSettings.programTier, defaultSettings.hasBasement);
+      initializeFYISelections(newSelections);
+    }
+    setActiveZone('Z1_APB');
+  }, [updateFYISettings, initializeFYISelections]);
+
+  // Apply KYC defaults
   const applyKYCDefaults = useCallback((kycData) => {
-    // Extract relevant KYC values
     const targetSF = kycData?.projectParameters?.targetGSF || 15000;
     const hasBasement = kycData?.projectParameters?.hasBasement || false;
-    const bedroomCount = kycData?.projectParameters?.bedroomCount || 4;
-    
-    // Determine tier based on target SF
+
     let tier = '15k';
     if (targetSF <= 12000) tier = '10k';
     else if (targetSF >= 18000) tier = '20k';
-    
-    // Update settings
-    setSettings(prev => ({
-      ...prev,
-      targetSF,
-      hasBasement,
-      programTier: tier
-    }));
-    
-    // Re-initialize selections for new tier
-    const newSelections = initializeSelections(tier, hasBasement);
-    
-    // Apply KYC must-have spaces
-    const mustHaveSpaces = kycData?.spaceRequirements?.mustHaveSpaces || [];
-    const niceToHaveSpaces = kycData?.spaceRequirements?.niceToHaveSpaces || [];
-    
-    // Mark nice-to-have spaces as included but smaller
-    // (They start included anyway, but this could be used for recommendations)
-    
-    // Apply specific KYC flags
-    if (kycData?.familyHousehold?.petGroomingRoom) {
-      // Ensure mudroom is sized up for pet washing
-      if (newSelections['MUD']) {
-        newSelections['MUD'].size = 'L';
-        newSelections['MUD'].notes = 'Sized for pet grooming station';
-      }
+
+    if (updateFYISettings) {
+      updateFYISettings({
+        targetSF,
+        hasBasement,
+        programTier: tier
+      });
     }
-    
-    if (kycData?.lifestyleLiving?.lateNightMediaUse) {
-      // Ensure media room is included and sized appropriately
-      if (newSelections['MDA']) {
-        newSelections['MDA'].size = 'L';
-        newSelections['MDA'].notes = 'Sound isolation required for late-night use';
-      }
+
+    if (initializeFYISelections) {
+      const newSelections = initializeSelectionsForTier(tier, hasBasement);
+      initializeFYISelections(newSelections);
     }
-    
-    if (kycData?.spaceRequirements?.wantsBar && newSelections['BAR']) {
-      newSelections['BAR'].included = true;
-      newSelections['BAR'].size = 'M';
-    }
-    
-    if (kycData?.spaceRequirements?.wantsBunkRoom && newSelections['BNK']) {
-      newSelections['BNK'].included = true;
-      newSelections['BNK'].size = 'M';
-    }
-    
-    if (kycData?.spaceRequirements?.wantsBreakfastNook && newSelections['BKF']) {
-      newSelections['BKF'].included = true;
-      newSelections['BKF'].size = 'M';
-    }
-    
-    // Adjust guest suite count based on bedroom count
-    if (bedroomCount <= 4) {
-      if (newSelections['GST3']) newSelections['GST3'].included = false;
-      if (newSelections['GST4']) newSelections['GST4'].included = false;
-    } else if (bedroomCount <= 5) {
-      if (newSelections['GST4']) newSelections['GST4'].included = false;
-    }
-    
-    setSelections(newSelections);
-  }, []);
+  }, [updateFYISettings, initializeFYISelections]);
+
+  // ---------------------------------------------------------------------------
+  // CALCULATION FUNCTIONS - Pure computations from current data
+  // ---------------------------------------------------------------------------
 
   // Get space selection
   const getSpaceSelection = useCallback((code) => {
     return selections[code] || { included: false, size: 'M', level: 1 };
   }, [selections]);
 
-  // Update space selection
-  const updateSpaceSelection = useCallback((code, updates) => {
-    setSelections(prev => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        ...updates
-      }
-    }));
-  }, []);
-
-  // Toggle space inclusion
-  const toggleSpaceIncluded = useCallback((code) => {
-    setSelections(prev => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        included: !prev[code]?.included
-      }
-    }));
-  }, []);
-
-  // Set space size (S/M/L)
-  const setSpaceSize = useCallback((code, size) => {
-    setSelections(prev => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        size
-      }
-    }));
-  }, []);
-
-  // Set space level
-  const setSpaceLevel = useCallback((code, level) => {
-    setSelections(prev => ({
-      ...prev,
-      [code]: {
-        ...prev[code],
-        level
-      }
-    }));
-  }, []);
-
-  // Update settings - NEVER resets selections implicitly
-  // Tier changes preserve existing selections (user data is sacred)
-  const updateSettings = useCallback((updates) => {
-    setSettings(prev => {
-      const newSettings = { ...prev, ...updates };
-
-      // NOTE: We intentionally do NOT reset selections on tier change.
-      // User selections are preserved across tier changes.
-      // If a space doesn't exist in the new tier, it simply won't display
-      // but its data is retained in case they switch back.
-      console.log('[FYI-DEBUG] updateSettings: tier change', prev.programTier, '->', updates.programTier, '(selections preserved)');
-
-      return newSettings;
-    });
-  }, []);
-
   // Calculate area for a specific space
   const calculateArea = useCallback((code) => {
     const space = getSpaceByCode(code);
     const selection = selections[code];
-    
+
     if (!space || !selection || !selection.included) return 0;
-    
-    // Use custom SF if provided
+
     if (selection.customSF) return selection.customSF;
-    
+
     return calculateSpaceArea(
       space,
       settings.programTier,
@@ -286,32 +172,41 @@ export function useFYIState(initialData = null) {
     );
   }, [selections, settings.programTier, settings.deltaPct]);
 
+  // Get spaces for a zone
+  const getSpacesForZone = useCallback((zoneCode) => {
+    return spaceRegistry.filter(s => {
+      if (s.zone !== zoneCode) return false;
+      if (s.baseSF[settings.programTier] === null) return false;
+      return true;
+    });
+  }, [settings.programTier]);
+
+  // ---------------------------------------------------------------------------
+  // COMPUTED VALUES - Memoized calculations
+  // ---------------------------------------------------------------------------
+
   // Calculate totals
   const totals = useMemo(() => {
     const conditionedSpaces = getConditionedSpaces();
-    
-    // Calculate net SF (sum of all included conditioned spaces)
+
     let net = 0;
     const byZone = {};
     const byLevel = {};
-    
+
     conditionedSpaces.forEach(space => {
       const selection = selections[space.code];
       if (selection?.included) {
         const area = calculateArea(space.code);
         net += area;
-        
-        // Sum by zone
+
         if (!byZone[space.zone]) byZone[space.zone] = 0;
         byZone[space.zone] += area;
-        
-        // Sum by level (using actual selection level, not space.defaultLevel)
+
         const level = selection.level || space.defaultLevel;
         byLevel[level] = (byLevel[level] || 0) + area;
       }
     });
-    
-    // Calculate circulation
+
     const circulation = calculateCirculation(
       net,
       settings.targetSF,
@@ -319,12 +214,11 @@ export function useFYIState(initialData = null) {
       settings.circulationPct,
       settings.programTier
     );
-    
+
     const circulationPct = net > 0 ? (circulation / net) * 100 : 0;
     const total = net + circulation;
     const deltaFromTarget = total - settings.targetSF;
-    
-    // Outdoor spaces (tracked separately)
+
     let outdoorTotal = 0;
     spaceRegistry.filter(s => s.outdoorSpace).forEach(space => {
       const selection = selections[space.code];
@@ -332,7 +226,7 @@ export function useFYIState(initialData = null) {
         outdoorTotal += calculateArea(space.code);
       }
     });
-    
+
     return {
       net,
       circulation,
@@ -353,15 +247,15 @@ export function useFYIState(initialData = null) {
       guestHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 },
       poolHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 }
     };
-    
+
     spaceRegistry.forEach(space => {
       const selection = selections[space.code];
       if (!selection?.included) return;
-      if (space.outdoorSpace) return; // Skip outdoor spaces
-      
+      if (space.outdoorSpace) return;
+
       const area = calculateArea(space.code);
       const structure = space.structure || 'main';
-      
+
       if (structure === 'main') {
         results.main.net += area;
         results.main.spaceCount++;
@@ -379,8 +273,7 @@ export function useFYIState(initialData = null) {
         results.poolHouse.spaceCount++;
       }
     });
-    
-    // Apply circulation only to main residence
+
     const mainCirculation = calculateCirculation(
       results.main.net,
       settings.targetSF,
@@ -390,21 +283,11 @@ export function useFYIState(initialData = null) {
     );
     results.main.circulation = mainCirculation;
     results.main.total = results.main.net + mainCirculation;
-    
+
     return results;
   }, [selections, settings, calculateArea]);
 
-  // Get spaces for current zone
-  const getSpacesForZone = useCallback((zoneCode) => {
-    return spaceRegistry.filter(s => {
-      if (s.zone !== zoneCode) return false;
-      // Only show spaces available for current tier
-      if (s.baseSF[settings.programTier] === null) return false;
-      return true;
-    });
-  }, [settings.programTier]);
-
-  // Get all zones with their space counts
+  // Get all zones with counts
   const zonesWithCounts = useMemo(() => {
     return getZonesInOrder().map(zone => {
       const spaces = getSpacesForZone(zone.code);
@@ -415,7 +298,7 @@ export function useFYIState(initialData = null) {
         }
         return sum;
       }, 0);
-      
+
       return {
         ...zone,
         spaceCount: spaces.length,
@@ -425,34 +308,10 @@ export function useFYIState(initialData = null) {
     });
   }, [getSpacesForZone, selections, calculateArea]);
 
-  // Reset to defaults
-  const resetToDefaults = useCallback(() => {
-    setSettings(defaultSettings);
-    setSelections(initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement));
-    setActiveZone('Z1_APB');
-  }, []);
-
-  // Load state from AppContext (database sync)
-  // This allows FYI to initialize from shared database data
-  const loadFromContext = useCallback((contextData) => {
-    if (!contextData) return false;
-
-    let loaded = false;
-    if (contextData.selections && Object.keys(contextData.selections).length > 0) {
-      setSelections(contextData.selections);
-      loaded = true;
-    }
-    if (contextData.settings) {
-      setSettings(prev => ({ ...prev, ...contextData.settings }));
-      loaded = true;
-    }
-    return loaded;
-  }, []);
-
-  // Generate brief for MVP
+  // Generate MVP brief
   const generateMVPBrief = useCallback(() => {
     const spaces = [];
-    
+
     Object.entries(selections).forEach(([code, selection]) => {
       if (selection.included) {
         const spaceDef = getSpaceByCode(code);
@@ -469,7 +328,7 @@ export function useFYIState(initialData = null) {
         }
       }
     });
-    
+
     return {
       settings: {
         targetSF: settings.targetSF,
@@ -486,33 +345,41 @@ export function useFYIState(initialData = null) {
     };
   }, [selections, settings, totals, calculateArea]);
 
+  // ---------------------------------------------------------------------------
+  // RETURN VALUES
+  // ---------------------------------------------------------------------------
   return {
-    // State
+    // Data (from AppContext)
     settings,
     selections,
+
+    // UI state
     activeZone,
-    isLoaded,
-    isHydrated,  // True once initial data load is complete (gates mount effects)
+    setActiveZone,
+
+    // Status
+    isLoaded: true,
+    hasSelections,
+
+    // Computed values
     totals,
     zonesWithCounts,
     structureTotals,
 
-    // Setters
-    setActiveZone,
+    // Action functions (update AppContext)
     updateSettings,
     updateSpaceSelection,
     toggleSpaceIncluded,
     setSpaceSize,
     setSpaceLevel,
+    resetToDefaults,
+    applyKYCDefaults,
 
     // Helpers
     getSpaceSelection,
     getSpacesForZone,
     calculateArea,
-    resetToDefaults,
-    applyKYCDefaults,
     generateMVPBrief,
-    loadFromContext
   };
 }
 
