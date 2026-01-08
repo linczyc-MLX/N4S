@@ -901,15 +901,54 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     }
   }, []);
 
-  // Load profiles
+  // Load profiles - check localStorage first, then fall back to kycData
   const refreshProfiles = useCallback(() => {
+    // Try localStorage first for principal
+    let pProfile = null;
     if (clientIdP) {
-      setProfileP(loadProfileFromStorage(clientIdP));
+      pProfile = loadProfileFromStorage(clientIdP);
     }
+
+    // If no localStorage, check kycData for principalTasteResults
+    if (!pProfile && kycData?.principal?.designIdentity?.principalTasteResults) {
+      const serverData = kycData.principal.designIdentity.principalTasteResults;
+      if (serverData.completedAt) {
+        // Convert server format to localStorage format
+        pProfile = {
+          clientId: clientIdP,
+          session: serverData,
+          completedAt: serverData.completedAt
+        };
+        // Sync to localStorage for next time
+        if (clientIdP) {
+          saveProfileToStorage(clientIdP, pProfile);
+        }
+      }
+    }
+    setProfileP(pProfile);
+
+    // Try localStorage first for secondary
+    let sProfile = null;
     if (clientIdS) {
-      setProfileS(loadProfileFromStorage(clientIdS));
+      sProfile = loadProfileFromStorage(clientIdS);
     }
-  }, [clientIdP, clientIdS]);
+
+    // If no localStorage, check kycData for secondaryTasteResults
+    if (!sProfile && kycData?.secondary?.designIdentity?.secondaryTasteResults) {
+      const serverData = kycData.secondary.designIdentity.secondaryTasteResults;
+      if (serverData.completedAt) {
+        sProfile = {
+          clientId: clientIdS,
+          session: serverData,
+          completedAt: serverData.completedAt
+        };
+        if (clientIdS) {
+          saveProfileToStorage(clientIdS, sProfile);
+        }
+      }
+    }
+    setProfileS(sProfile);
+  }, [clientIdP, clientIdS, kycData]);
 
   useEffect(() => {
     refreshProfiles();
