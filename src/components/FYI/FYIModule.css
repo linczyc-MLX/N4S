@@ -89,6 +89,105 @@
   height: 16px;
 }
 
+/* Save Button Area */
+.fyi-module__save-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  margin-right: 1rem;
+}
+
+.fyi-module__save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary, #2d5a27);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fyi-module__save-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark, #1e4019);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.25);
+}
+
+.fyi-module__save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.fyi-module__save-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fyi-module__save-btn--unsaved {
+  background: var(--color-warning, #c4841d);
+  animation: pulse-warning 2s infinite;
+}
+
+.fyi-module__save-btn--unsaved:hover:not(:disabled) {
+  background: var(--color-warning-dark, #a06b17);
+}
+
+@keyframes pulse-warning {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 132, 29, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(196, 132, 29, 0); }
+}
+
+.fyi-module__save-btn--saving {
+  background: var(--color-text-muted, #6b6b6b);
+}
+
+.fyi-module__save-spinner {
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fyi-module__unsaved-indicator {
+  font-size: 0.75rem;
+  color: var(--color-warning, #c4841d);
+  font-weight: 500;
+}
+
+.fyi-module__save-message {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+.fyi-module__save-message--success {
+  background: var(--color-success-light, #e8f5e9);
+  color: var(--color-success, #2e7d32);
+}
+
+.fyi-module__save-message--error {
+  background: var(--color-error-light, #ffebee);
+  color: var(--color-error, #c62828);
+}
+
+.fyi-module__last-saved {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
 .fyi-module__kyc-banner {
   display: flex;
   align-items: center;
