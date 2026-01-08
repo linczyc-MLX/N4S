@@ -1,19 +1,20 @@
 /**
  * FYIModule - Find Your Inspiration
  *
- * Lifestyle Requirements Refinement module.
- * ALL DATA IS SAVED TO SERVER - NO LOCALSTORAGE
- * Use the SAVE button to persist changes.
+ * ALL DATA LIVES IN AppContext. This component:
+ * 1. Reads fyiData from AppContext
+ * 2. Uses useFYIState for calculations only
+ * 3. Updates go directly to AppContext
+ * 4. SAVE button persists to server
  */
 
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
-import useFYIState from './hooks/useFYIState';
+import useFYIState, { initializeSelectionsForTier } from './hooks/useFYIState';
 import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
 import {
   buildAvailableLevels,
   getZonesForStructure,
-  getSpacesForStructure
 } from '../../shared/space-registry';
 
 // Components
@@ -28,27 +29,37 @@ import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
 import './FYIModule.css';
 
 const FYIModule = () => {
+  // ---------------------------------------------------------------------------
+  // GET EVERYTHING FROM APPCONTEXT
+  // ---------------------------------------------------------------------------
   const {
     kycData,
-    activeRespondent,
-    updateFYIData,
     clientData,
     fyiData,
+    updateFYISelection,
+    updateFYISettings,
+    updateFYIData,
+    initializeFYISelections,
     saveNow,
     isSaving,
     hasUnsavedChanges,
     saveError,
     lastSaved,
-    isLoading: appLoading
+    isLoading,
   } = useAppContext();
 
+  // ---------------------------------------------------------------------------
+  // LOCAL UI STATE (not persisted)
+  // ---------------------------------------------------------------------------
   const [isExporting, setIsExporting] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
-  // Get consolidated KYC data
+  // ---------------------------------------------------------------------------
+  // CONSOLIDATED KYC DATA
+  // ---------------------------------------------------------------------------
   const consolidatedKYC = useMemo(() => {
     const principal = kycData?.principal || {};
     const secondary = kycData?.secondary || {};
@@ -76,7 +87,7 @@ const FYIModule = () => {
     return buildAvailableLevels(levelsAbove, levelsBelow);
   }, [consolidatedKYC]);
 
-  // Check for additional structures
+  // Structure config
   const structureConfig = useMemo(() => {
     const projectParams = consolidatedKYC?.projectParameters || {};
     return {
@@ -86,69 +97,65 @@ const FYIModule = () => {
     };
   }, [consolidatedKYC]);
 
-  // Initialize FYI state from context (server data)
+  // ---------------------------------------------------------------------------
+  // USE FYI STATE (CALCULATION ONLY - NO LOCAL STATE)
+  // ---------------------------------------------------------------------------
   const {
     settings,
     selections,
     activeZone,
-    isLoaded,
+    setActiveZone,
+    hasSelections,
     totals,
     zonesWithCounts,
     structureTotals,
-    setActiveZone,
     updateSettings,
     updateSpaceSelection,
     toggleSpaceIncluded,
     setSpaceSize,
     setSpaceLevel,
+    resetToDefaults,
     getSpaceSelection,
     getSpacesForZone,
     calculateArea,
-    resetToDefaults,
-    applyKYCDefaults,
     generateMVPBrief,
-  } = useFYIState(fyiData);
+  } = useFYIState(fyiData, updateFYISelection, updateFYISettings, initializeFYISelections);
 
-  // Sync FYI changes to AppContext
-  const syncToContext = useCallback(() => {
-    if (isLoaded && updateFYIData && Object.keys(selections).length > 0) {
-      console.log('[FYI] Syncing to context, FOY=', selections?.FOY?.size);
-      updateFYIData({
-        selections,
-        settings
-      });
-    }
-  }, [selections, settings, isLoaded, updateFYIData]);
-
-  // Apply KYC defaults on first load (only if no existing selections)
+  // ---------------------------------------------------------------------------
+  // INITIALIZE SELECTIONS IF EMPTY
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (isLoaded && consolidatedKYC && !initialized) {
-      const hasExistingSelections = selections && Object.keys(selections).length > 0;
+    if (isLoading || initialized) return;
 
-      if (!hasExistingSelections) {
-        const { settings: kycSettings } = generateFYIFromKYC(
-          consolidatedKYC,
-          availableLevels
-        );
-        updateSettings({
-          ...kycSettings,
-          levelsAboveArrival: consolidatedKYC?.projectParameters?.levelsAboveArrival ?? 1,
-          levelsBelowArrival: consolidatedKYC?.projectParameters?.levelsBelowArrival ?? 0
-        });
-      }
-      setInitialized(true);
+    // Only initialize once, and only if no existing selections
+    if (!hasSelections) {
+      console.log('[FYI] No selections found, initializing defaults');
+
+      // Determine tier from KYC or use default
+      const targetSF = consolidatedKYC?.projectParameters?.targetGSF || 15000;
+      let tier = '15k';
+      if (targetSF <= 12000) tier = '10k';
+      else if (targetSF >= 18000) tier = '20k';
+
+      // Initialize settings
+      updateFYISettings({
+        targetSF,
+        programTier: tier,
+        hasBasement: consolidatedKYC?.projectParameters?.hasBasement || false,
+      });
+
+      // Initialize selections
+      const newSelections = initializeSelectionsForTier(tier, false);
+      initializeFYISelections(newSelections);
     }
-  }, [isLoaded, consolidatedKYC, initialized, availableLevels, selections, updateSettings]);
 
-  // MANUAL SAVE HANDLER
+    setInitialized(true);
+  }, [isLoading, initialized, hasSelections, consolidatedKYC, updateFYISettings, initializeFYISelections]);
+
+  // ---------------------------------------------------------------------------
+  // SAVE HANDLER
+  // ---------------------------------------------------------------------------
   const handleSave = useCallback(async () => {
-    // First sync local FYI state to context
-    syncToContext();
-
-    // Small delay to ensure context is updated
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Then save to server
     const success = await saveNow();
 
     if (success) {
@@ -158,20 +165,20 @@ const FYIModule = () => {
       setSaveMessage('Save failed - please try again');
       setTimeout(() => setSaveMessage(null), 5000);
     }
-  }, [syncToContext, saveNow]);
+  }, [saveNow]);
 
-  // Get zones for active structure
+  // ---------------------------------------------------------------------------
+  // ZONE/STRUCTURE NAVIGATION
+  // ---------------------------------------------------------------------------
   const activeZones = useMemo(() => {
     return getZonesForStructure(activeStructure);
   }, [activeStructure]);
 
-  // Filter zonesWithCounts to active structure
   const filteredZonesWithCounts = useMemo(() => {
     const structureZoneCodes = activeZones.map(z => z.code);
     return zonesWithCounts.filter(z => structureZoneCodes.includes(z.code));
   }, [zonesWithCounts, activeZones]);
 
-  // Get spaces for active zone
   const activeSpaces = useMemo(() => {
     let spaces = getSpacesForZone(activeZone);
     if (selectedLevel !== null) {
@@ -185,7 +192,6 @@ const FYIModule = () => {
 
   const activeZoneInfo = filteredZonesWithCounts.find(z => z.code === activeZone);
 
-  // Handle structure change
   const handleStructureChange = useCallback((structure) => {
     setActiveStructure(structure);
     setSelectedLevel(null);
@@ -195,12 +201,13 @@ const FYIModule = () => {
     }
   }, [setActiveZone]);
 
-  // Handle level selection
   const handleLevelSelect = useCallback((level) => {
     setSelectedLevel(level);
   }, []);
 
-  // Handle PDF export
+  // ---------------------------------------------------------------------------
+  // PDF EXPORT
+  // ---------------------------------------------------------------------------
   const handleExportPDF = useCallback(async (mode = 'zone') => {
     setIsExporting(true);
     try {
@@ -225,74 +232,31 @@ const FYIModule = () => {
       await generateFYIPDF(pdfData, mode);
     } catch (error) {
       console.error('Export failed:', error);
-      generateClientSideSummary();
     } finally {
       setIsExporting(false);
     }
   }, [settings, selections, totals, structureTotals, availableLevels, getSpacesForZone, calculateArea, clientData, consolidatedKYC]);
 
-  // Client-side summary fallback
-  const generateClientSideSummary = () => {
-    const summary = [];
-    summary.push('FYI - Lifestyle Requirements Summary');
-    summary.push('=' .repeat(40));
-    summary.push(`Target SF: ${settings.targetSF.toLocaleString()}`);
-    summary.push(`Program Tier: ${settings.programTier}`);
-    summary.push('');
-    summary.push('TOTALS');
-    summary.push(`Net Program: ${totals.net.toLocaleString()} SF`);
-    summary.push(`Circulation (${totals.circulationPct}%): ${totals.circulation.toLocaleString()} SF`);
-    summary.push(`Total: ${totals.total.toLocaleString()} SF`);
-    summary.push(`Delta: ${totals.deltaFromTarget > 0 ? '+' : ''}${totals.deltaFromTarget.toLocaleString()} SF`);
-    summary.push('');
-    summary.push('SPACES BY ZONE');
-
-    zonesWithCounts.forEach(zone => {
-      if (zone.includedCount > 0) {
-        summary.push('');
-        summary.push(`${zone.name} (${zone.totalSF.toLocaleString()} SF)`);
-        const spaces = getSpacesForZone(zone.code);
-        spaces.forEach(space => {
-          const sel = getSpaceSelection(space.code);
-          if (sel.included) {
-            const area = calculateArea(space.code);
-            const levelLabel = sel.level === 1 ? 'L1' : `L${sel.level}`;
-            summary.push(`  • ${space.abbrev} [${sel.size}] @ ${levelLabel}: ${area.toLocaleString()} SF`);
-          }
-        });
-      }
-    });
-
-    const blob = new Blob([summary.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'FYI-Brief-Summary.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Handle proceed to MVP
+  // ---------------------------------------------------------------------------
+  // PROCEED TO MVP
+  // ---------------------------------------------------------------------------
   const handleProceedToMVP = useCallback(async () => {
     const mvpBrief = generateMVPFromFYI(generateMVPBrief(), availableLevels);
 
-    if (updateFYIData) {
-      updateFYIData({
-        brief: mvpBrief,
-        completedAt: new Date().toISOString()
-      });
-    }
+    updateFYIData({
+      brief: mvpBrief,
+      completedAt: new Date().toISOString()
+    });
 
-    // Auto-save when proceeding to MVP
     await handleSave();
 
     console.log('MVP Brief generated:', mvpBrief);
     alert('Brief saved! Navigate to MVP module to validate adjacencies.');
   }, [generateMVPBrief, updateFYIData, availableLevels, handleSave]);
 
-  // Handle reset
+  // ---------------------------------------------------------------------------
+  // RESET
+  // ---------------------------------------------------------------------------
   const handleReset = () => {
     if (window.confirm('Reset all selections to defaults? This cannot be undone.')) {
       resetToDefaults();
@@ -300,33 +264,9 @@ const FYIModule = () => {
     }
   };
 
-  // Handle space changes - sync to context after each change
-  const handleSpaceChange = useCallback((changeType, spaceCode, value) => {
-    switch (changeType) {
-      case 'size':
-        setSpaceSize(spaceCode, value);
-        break;
-      case 'toggle':
-        toggleSpaceIncluded(spaceCode);
-        break;
-      case 'level':
-        setSpaceLevel(spaceCode, value);
-        break;
-      case 'notes':
-        updateSpaceSelection(spaceCode, { notes: value });
-        break;
-    }
-    // Sync to context after change
-    setTimeout(syncToContext, 0);
-  }, [setSpaceSize, toggleSpaceIncluded, setSpaceLevel, updateSpaceSelection, syncToContext]);
-
-  // Handle settings change
-  const handleSettingsChange = useCallback((updates) => {
-    updateSettings(updates);
-    setTimeout(syncToContext, 0);
-  }, [updateSettings, syncToContext]);
-
-  // Build structure totals for display
+  // ---------------------------------------------------------------------------
+  // DISPLAY STRUCTURE TOTALS
+  // ---------------------------------------------------------------------------
   const displayStructureTotals = useMemo(() => {
     return {
       main: {
@@ -351,7 +291,6 @@ const FYIModule = () => {
     };
   }, [structureTotals, totals, structureConfig]);
 
-  // Calculate SF by level for diagram
   const sfByLevel = useMemo(() => {
     const byLevel = {};
     availableLevels.forEach(level => {
@@ -361,8 +300,10 @@ const FYIModule = () => {
     return byLevel;
   }, [availableLevels, totals.byLevel]);
 
-  // Loading state
-  if (!isLoaded || appLoading) {
+  // ---------------------------------------------------------------------------
+  // LOADING STATE
+  // ---------------------------------------------------------------------------
+  if (isLoading) {
     return (
       <div className="fyi-module fyi-module--loading">
         <div className="fyi-module__loader">Loading from server...</div>
@@ -370,6 +311,9 @@ const FYIModule = () => {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
   return (
     <div className="fyi-module">
       {/* Header */}
@@ -380,7 +324,7 @@ const FYIModule = () => {
             <p className="fyi-module__subtitle">Lifestyle Requirements Refinement</p>
           </div>
 
-          {/* SAVE BUTTON - Prominent */}
+          {/* SAVE BUTTON */}
           <div className="fyi-module__save-area">
             <button
               className={`fyi-module__save-btn ${hasUnsavedChanges ? 'fyi-module__save-btn--unsaved' : ''} ${isSaving ? 'fyi-module__save-btn--saving' : ''}`}
@@ -403,7 +347,7 @@ const FYIModule = () => {
                     <polyline points="17 21 17 13 7 13 7 21"/>
                     <polyline points="7 3 7 8 15 8"/>
                   </svg>
-                  SAVE TO SERVER
+                  SAVE
                 </>
               )}
             </button>
@@ -417,15 +361,12 @@ const FYIModule = () => {
             )}
             {lastSaved && !saveMessage && !hasUnsavedChanges && (
               <span className="fyi-module__last-saved">
-                Last saved: {lastSaved.toLocaleTimeString()}
+                Saved: {lastSaved.toLocaleTimeString()}
               </span>
             )}
           </div>
 
-          <button
-            className="fyi-module__reset-btn"
-            onClick={handleReset}
-          >
+          <button className="fyi-module__reset-btn" onClick={handleReset}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
               <path d="M3 3v5h5"/>
@@ -446,30 +387,14 @@ const FYIModule = () => {
                 {consolidatedKYC.projectParameters.bedroomCount} bedrooms
               </span>
             )}
-            {availableLevels.length > 2 && (
-              <span className="fyi-module__kyc-value">
-                {availableLevels.length} levels ({availableLevels[0]?.label} to {availableLevels[availableLevels.length - 1]?.label})
-              </span>
-            )}
-            {structureConfig.guestHouse.enabled && (
-              <span className="fyi-module__kyc-value">
-                Guest House
-              </span>
-            )}
-            {structureConfig.poolHouse.enabled && (
-              <span className="fyi-module__kyc-value">
-                Pool House
-              </span>
-            )}
           </div>
         )}
       </header>
 
       {/* Main Content */}
       <div className="fyi-module__content">
-        {/* Left: Level Diagram + Structure Selector + Zone Stepper */}
+        {/* Left Sidebar */}
         <aside className="fyi-module__sidebar fyi-module__sidebar--left">
-          {/* Level Diagram */}
           <LevelDiagram
             levels={availableLevels}
             sfByLevel={sfByLevel}
@@ -480,7 +405,6 @@ const FYIModule = () => {
             structure={activeStructure}
           />
 
-          {/* Structure Selector (if multiple structures) */}
           {(structureConfig.guestHouse.enabled || structureConfig.poolHouse.enabled) && (
             <StructureSelector
               activeStructure={activeStructure}
@@ -489,7 +413,6 @@ const FYIModule = () => {
             />
           )}
 
-          {/* Zone Stepper */}
           <FYIZoneStepper
             zones={filteredZonesWithCounts}
             activeZone={activeZone}
@@ -498,16 +421,16 @@ const FYIModule = () => {
           />
         </aside>
 
-        {/* Center: Space Cards */}
+        {/* Center Content */}
         <main className="fyi-module__main">
           <div className="fyi-module__zone-header">
             <h2 className="fyi-module__zone-title">{activeZoneInfo?.name}</h2>
             <p className="fyi-module__zone-stats">
               {activeZoneInfo?.includedCount} of {activeZoneInfo?.spaceCount} spaces •
-              {activeZoneInfo?.totalSF.toLocaleString()} SF
+              {activeZoneInfo?.totalSF?.toLocaleString()} SF
               {selectedLevel !== null && (
                 <span className="fyi-module__level-filter">
-                  {' '}• Filtered to {selectedLevel === 1 ? 'L1' : `L${selectedLevel}`}
+                  {' '}• Filtered to L{selectedLevel}
                   <button onClick={() => setSelectedLevel(null)}>Clear</button>
                 </span>
               )}
@@ -526,10 +449,10 @@ const FYIModule = () => {
                   calculatedArea={area}
                   settings={settings}
                   availableLevels={availableLevels}
-                  onSizeChange={(size) => handleSpaceChange('size', space.code, size)}
-                  onToggleIncluded={() => handleSpaceChange('toggle', space.code)}
-                  onLevelChange={(level) => handleSpaceChange('level', space.code, level)}
-                  onNotesChange={(notes) => handleSpaceChange('notes', space.code, notes)}
+                  onSizeChange={(size) => setSpaceSize(space.code, size)}
+                  onToggleIncluded={() => toggleSpaceIncluded(space.code)}
+                  onLevelChange={(level) => setSpaceLevel(space.code, level)}
+                  onNotesChange={(notes) => updateSpaceSelection(space.code, { notes })}
                 />
               );
             })}
@@ -538,15 +461,15 @@ const FYIModule = () => {
           {activeSpaces.length === 0 && (
             <div className="fyi-module__empty">
               {selectedLevel !== null ? (
-                <p>No spaces on this level in the current zone. <button onClick={() => setSelectedLevel(null)}>Show all levels</button></p>
+                <p>No spaces on this level. <button onClick={() => setSelectedLevel(null)}>Show all</button></p>
               ) : (
-                <p>No spaces available for this zone at the {settings.programTier} tier.</p>
+                <p>No spaces available for this zone.</p>
               )}
             </div>
           )}
         </main>
 
-        {/* Right: Totals Panel */}
+        {/* Right Sidebar */}
         <aside className="fyi-module__sidebar fyi-module__sidebar--right">
           <FYITotalsPanel
             settings={settings}
@@ -554,7 +477,7 @@ const FYIModule = () => {
             selections={selections}
             structureTotals={displayStructureTotals}
             availableLevels={availableLevels}
-            onSettingsChange={handleSettingsChange}
+            onSettingsChange={updateSettings}
             onExportPDF={handleExportPDF}
             onProceedToMVP={handleProceedToMVP}
             isExporting={isExporting}

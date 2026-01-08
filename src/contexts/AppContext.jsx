@@ -1,153 +1,85 @@
+/**
+ * AppContext - SINGLE SOURCE OF TRUTH
+ *
+ * ALL application data lives here. No other component maintains its own copy.
+ * Data flows: Server → AppContext → Components → AppContext → Server
+ *
+ * Components READ from context and WRITE via update functions.
+ * SAVE button triggers saveNow() which persists to server.
+ */
+
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 
-// Generate unique project ID
+// ============================================================================
+// INITIAL DATA STRUCTURES
+// ============================================================================
+
 const generateProjectId = () => {
   return 'proj_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 };
 
-// Initial KYC data structure
+// Initial KYC data structure (per respondent)
 const initialKYCData = {
   portfolioContext: {
-    principalFirstName: '',
-    principalLastName: '',
-    principalEmail: '',
-    principalPhone: '',
-    secondaryFirstName: '',
-    secondaryLastName: '',
-    secondaryEmail: '',
-    familyOfficeContact: '',
-    familyOfficeAuthorityLevel: null,
-    authorityLevelConfirmed: false,
-    domainDelegationNotes: '',
-    currentPropertyCount: null,
-    primaryResidences: [],
-    thisPropertyRole: '',
-    investmentHorizon: '',
-    exitStrategy: '',
-    lifeStage: '',
-    decisionTimeline: '',
+    principalFirstName: '', principalLastName: '', principalEmail: '', principalPhone: '',
+    secondaryFirstName: '', secondaryLastName: '', secondaryEmail: '',
+    familyOfficeContact: '', familyOfficeAuthorityLevel: null, authorityLevelConfirmed: false,
+    domainDelegationNotes: '', currentPropertyCount: null, primaryResidences: [],
+    thisPropertyRole: '', investmentHorizon: '', exitStrategy: '', lifeStage: '', decisionTimeline: '',
   },
   familyHousehold: {
-    familyMembers: [],
-    pets: '',
-    petGroomingRoom: false,
-    petDogRun: false,
-    staffingLevel: '',
-    liveInStaff: null,
-    staffAccommodationRequired: false,
-    multigenerationalNeeds: false,
-    anticipatedFamilyChanges: '',
+    familyMembers: [], pets: '', petGroomingRoom: false, petDogRun: false,
+    staffingLevel: '', liveInStaff: null, staffAccommodationRequired: false,
+    multigenerationalNeeds: false, anticipatedFamilyChanges: '',
   },
   projectParameters: {
-    projectCity: '',
-    projectCountry: '',
-    specificAddress: '',
-    propertyType: '',
-    targetGSF: null,
-    bedroomCount: null,
-    bathroomCount: null,
-    floors: null,
-    hasBasement: false,
-    sfCapConstraint: null,
-    timeline: '',
-    complexityFactors: [],
-    architecturalIntegration: '',
-    localKnowledgeCritical: '',
+    projectCity: '', projectCountry: '', specificAddress: '', propertyType: '',
+    targetGSF: null, bedroomCount: null, bathroomCount: null, floors: null,
+    hasBasement: false, sfCapConstraint: null, timeline: '', complexityFactors: [],
+    architecturalIntegration: '', localKnowledgeCritical: '',
+    levelsAboveArrival: 1, levelsBelowArrival: 0, hasGuestHouse: false, hasPoolHouse: false,
   },
   budgetFramework: {
-    totalProjectBudget: null,
-    interiorBudget: null,
-    perSFExpectation: null,
-    budgetFlexibility: '',
-    architectFeeStructure: '',
-    interiorDesignerFeeStructure: '',
-    interiorQualityTier: '',
-    artBudgetSeparate: false,
-    artBudgetAmount: null,
+    totalProjectBudget: null, interiorBudget: null, perSFExpectation: null,
+    budgetFlexibility: '', architectFeeStructure: '', interiorDesignerFeeStructure: '',
+    interiorQualityTier: '', artBudgetSeparate: false, artBudgetAmount: null,
   },
   designIdentity: {
-    axisContemporaryTraditional: 5,
-    axisMinimalLayered: 5,
-    axisWarmCool: 5,
-    axisOrganicGeometric: 5,
-    axisRefinedEclectic: 5,
-    axisArchMinimalOrnate: 5,
-    axisArchRegionalInternational: 5,
-    inspirationImages: [],
-    aspirationKeywords: [],
-    antiInspiration: '',
-    benchmarkProperties: [],
-    architectureStyleTags: [],
-    interiorStyleTags: [],
-    materialAffinities: [],
-    materialAversions: [],
-    colorPreferences: '',
-    exteriorMaterialPreferences: [],
-    massingPreference: '',
-    roofFormPreference: '',
-    structuralAmbition: '',
+    axisContemporaryTraditional: 5, axisMinimalLayered: 5, axisWarmCool: 5,
+    axisOrganicGeometric: 5, axisRefinedEclectic: 5, axisArchMinimalOrnate: 5,
+    axisArchRegionalInternational: 5, inspirationImages: [], aspirationKeywords: [],
+    antiInspiration: '', benchmarkProperties: [], architectureStyleTags: [],
+    interiorStyleTags: [], materialAffinities: [], materialAversions: [], colorPreferences: '',
+    exteriorMaterialPreferences: [], massingPreference: '', roofFormPreference: '', structuralAmbition: '',
   },
   lifestyleLiving: {
-    dailyRoutinesSummary: '',
-    workFromHome: '',
-    wfhPeopleCount: null,
-    hobbies: [],
-    hobbyDetails: '',
-    entertainingFrequency: '',
-    typicalGuestCount: '',
-    entertainingStyle: '',
-    wellnessPriorities: [],
-    lateNightMediaUse: false,
-    privacyLevelRequired: 3,
-    noiseSensitivity: 3,
-    indoorOutdoorLiving: 3,
+    dailyRoutinesSummary: '', workFromHome: '', wfhPeopleCount: null, hobbies: [],
+    hobbyDetails: '', entertainingFrequency: '', typicalGuestCount: '', entertainingStyle: '',
+    wellnessPriorities: [], lateNightMediaUse: false,
+    privacyLevelRequired: 3, noiseSensitivity: 3, indoorOutdoorLiving: 3,
   },
   spaceRequirements: {
-    mustHaveSpaces: [],
-    niceToHaveSpaces: [],
-    currentSpacePainPoints: '',
-    viewPriorityRooms: [],
-    adjacencyRequirements: '',
-    storageNeeds: '',
-    accessibilityRequirements: '',
-    technologyRequirements: [],
-    sustainabilityPriorities: [],
-    wantsSeparateFamilyRoom: false,
-    wantsSecondFormalLiving: false,
-    wantsBar: false,
-    wantsBunkRoom: false,
-    wantsBreakfastNook: false,
+    mustHaveSpaces: [], niceToHaveSpaces: [], currentSpacePainPoints: '',
+    viewPriorityRooms: [], adjacencyRequirements: '', storageNeeds: '',
+    accessibilityRequirements: '', technologyRequirements: [], sustainabilityPriorities: [],
+    wantsSeparateFamilyRoom: false, wantsSecondFormalLiving: false, wantsBar: false,
+    wantsBunkRoom: false, wantsBreakfastNook: false,
   },
   culturalContext: {
-    culturalBackground: '',
-    regionalSensibilities: [],
-    religiousObservances: '',
-    entertainingCulturalNorms: '',
-    crossCulturalRequirements: '',
-    languagesPreferred: [],
+    culturalBackground: '', regionalSensibilities: [], religiousObservances: '',
+    entertainingCulturalNorms: '', crossCulturalRequirements: '', languagesPreferred: [],
   },
   workingPreferences: {
-    communicationStyle: '',
-    decisionCadence: '',
-    collaborationStyle: '',
-    principalInvolvementRequired: '',
-    presentationFormat: '',
-    previousDesignerExperience: '',
-    redFlagsToAvoid: '',
-    existingIndustryConnections: '',
-    architectCelebrityPreference: 3,
-    interiorDesignerCelebrityPreference: 3,
-    caRequirement: '',
-    contractorRelationshipPreference: '',
-    earlyContractorInvolvement: false,
+    communicationStyle: '', decisionCadence: '', collaborationStyle: '',
+    principalInvolvementRequired: '', presentationFormat: '', previousDesignerExperience: '',
+    redFlagsToAvoid: '', existingIndustryConnections: '',
+    architectCelebrityPreference: 3, interiorDesignerCelebrityPreference: 3,
+    caRequirement: '', contractorRelationshipPreference: '', earlyContractorInvolvement: false,
   },
   advisorAssessed: {
-    visionFlexibilityIndex: null,
-    profileCompleteness: 0,
-    dataConfidenceScore: null,
-    divergenceLog: [],
-    sessionNotes: '',
+    visionFlexibilityIndex: null, profileCompleteness: 0, dataConfidenceScore: null,
+    divergenceLog: [], sessionNotes: '',
   },
 };
 
@@ -161,23 +93,39 @@ const initialFYIData = {
     circulationPct: 0.14,
     lockToTarget: true,
     programTier: '15k',
-    hasBasement: false
+    hasBasement: false,
   },
-  selections: {},
-  architectShortlist: [],
-  idShortlist: [],
-  compatibilityMatrix: {},
-  selectedArchitect: null,
-  selectedID: null,
+  selections: {},  // { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
 };
 
-// Create context
+// Empty project template
+const getEmptyProjectData = () => ({
+  id: null,
+  clientData: {
+    projectName: '',
+    projectCode: '',
+    createdAt: null,
+    lastUpdated: null,
+  },
+  kycData: {
+    principal: JSON.parse(JSON.stringify(initialKYCData)),
+    secondary: JSON.parse(JSON.stringify(initialKYCData)),
+    advisor: JSON.parse(JSON.stringify(initialKYCData)),
+  },
+  fyiData: JSON.parse(JSON.stringify(initialFYIData)),
+  activeRespondent: 'principal',
+});
+
+// ============================================================================
+// CONTEXT CREATION
+// ============================================================================
+
 const AppContext = createContext(null);
 
 // Sections available to Secondary respondent
 const SECONDARY_SECTIONS = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
 
-// Required fields for completion status
+// Required fields for completion calculation
 const REQUIRED_FIELDS = {
   portfolioContext: ['principalFirstName', 'principalLastName', 'thisPropertyRole'],
   familyHousehold: [],
@@ -190,98 +138,114 @@ const REQUIRED_FIELDS = {
   workingPreferences: [],
 };
 
-// Default empty project data
-const getEmptyProjectData = () => ({
-  clientData: {
-    projectName: '',
-    projectCode: '',
-    createdAt: null,
-    lastUpdated: null,
-  },
-  kycData: {
-    principal: { ...initialKYCData },
-    secondary: { ...initialKYCData },
-    advisor: { ...initialKYCData },
-    consolidated: { ...initialKYCData },
-  },
-  fyiData: { ...initialFYIData },
-  activeRespondent: 'principal',
-});
+// ============================================================================
+// APP PROVIDER
+// ============================================================================
 
 export const AppProvider = ({ children }) => {
-  // Loading/saving state
+  // ---------------------------------------------------------------------------
+  // LOADING & SAVING STATE
+  // ---------------------------------------------------------------------------
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Projects list
+  // ---------------------------------------------------------------------------
+  // PROJECT LIST
+  // ---------------------------------------------------------------------------
   const [projects, setProjects] = useState([]);
+  const [activeProjectId, setActiveProjectIdState] = useState(null);
 
-  // Active project ID
-  const [activeProjectId, setActiveProjectId] = useState(null);
+  // ---------------------------------------------------------------------------
+  // THE SINGLE SOURCE OF TRUTH - PROJECT DATA
+  // ---------------------------------------------------------------------------
+  const [projectData, setProjectData] = useState(getEmptyProjectData);
 
-  // Project data - ALL DATA COMES FROM SERVER
-  const [projectData, setProjectData] = useState(() => getEmptyProjectData());
-
-  // Destructure project data
-  const { clientData, kycData, fyiData, activeRespondent: storedRespondent } = projectData;
-
-  // Active respondent
-  const [activeRespondent, setActiveRespondent] = useState(storedRespondent || 'principal');
-
-  // Current KYC section
+  // ---------------------------------------------------------------------------
+  // UI STATE (not persisted to server)
+  // ---------------------------------------------------------------------------
+  const [activeRespondent, setActiveRespondent] = useState('principal');
   const [currentKYCSection, setCurrentKYCSection] = useState(0);
-
-  // Progressive disclosure tier
   const [disclosureTier, setDisclosureTier] = useState('mvp');
 
-  // Load initial data from API on mount
+  // ---------------------------------------------------------------------------
+  // DERIVED VALUES (read-only extractions from projectData)
+  // ---------------------------------------------------------------------------
+  const clientData = projectData.clientData;
+  const kycData = projectData.kycData;
+  const fyiData = projectData.fyiData;
+
+  // ---------------------------------------------------------------------------
+  // LOAD INITIAL DATA FROM SERVER
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const loadInitialData = async () => {
+    let isMounted = true;
+
+    const loadFromServer = async () => {
       setIsLoading(true);
+      console.log('[APP] Loading data from server...');
+
       try {
-        // Load projects list from API
+        // 1. Load project list
         const projectsList = await api.getProjects();
+        if (!isMounted) return;
         setProjects(Array.isArray(projectsList) ? projectsList : []);
+        console.log('[APP] Loaded projects:', projectsList?.length || 0);
 
-        // Load app state from API
-        const state = await api.getState();
-        const activeId = state?.activeProjectId || null;
-        const tier = state?.disclosureTier || 'mvp';
+        // 2. Load app state (activeProjectId, disclosureTier)
+        let state = {};
+        try {
+          state = await api.getState() || {};
+        } catch (e) {
+          console.warn('[APP] Could not load state:', e);
+        }
 
-        setDisclosureTier(tier);
+        if (!isMounted) return;
 
-        // If we have an active project, load it
+        if (state.disclosureTier) {
+          setDisclosureTier(state.disclosureTier);
+        }
+
+        // 3. Load active project if exists
+        const activeId = state.activeProjectId;
         if (activeId) {
           try {
             const data = await api.getProject(activeId);
+            if (!isMounted) return;
+
             if (data) {
-              console.log('[APP] Loaded project from API:', activeId);
-              console.log('[APP] FYI selections FOY:', data?.fyiData?.selections?.FOY);
-              setActiveProjectId(activeId);
+              console.log('[APP] Loaded project:', activeId);
+              console.log('[APP] FYI selections:', data.fyiData?.selections);
+              setActiveProjectIdState(activeId);
               setProjectData(data);
               setActiveRespondent(data.activeRespondent || 'principal');
             }
-          } catch (err) {
-            console.error('Failed to load active project:', err);
+          } catch (e) {
+            console.error('[APP] Failed to load project:', e);
           }
         }
       } catch (error) {
-        console.error('Failed to load initial data from API:', error);
+        console.error('[APP] Failed to load from server:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          console.log('[APP] Initial load complete');
+        }
       }
     };
 
-    loadInitialData();
+    loadFromServer();
+    return () => { isMounted = false; };
   }, []);
 
-  // MANUAL SAVE - saves current project to API
+  // ---------------------------------------------------------------------------
+  // SAVE TO SERVER (MANUAL)
+  // ---------------------------------------------------------------------------
   const saveNow = useCallback(async () => {
     if (!activeProjectId) {
-      console.warn('[APP] No active project to save');
+      console.warn('[APP] No project to save');
       return false;
     }
 
@@ -290,11 +254,12 @@ export const AppProvider = ({ children }) => {
 
     const dataToSave = {
       ...projectData,
+      id: activeProjectId,
       activeRespondent,
     };
 
-    console.log('[APP] Saving to API:', activeProjectId);
-    console.log('[APP] FYI selections being saved:', dataToSave?.fyiData?.selections);
+    console.log('[APP] Saving to server...');
+    console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -304,31 +269,51 @@ export const AppProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error('[APP] Save failed:', error);
-      setSaveError(error.message || 'Failed to save');
+      setSaveError(error.message || 'Save failed');
       return false;
     } finally {
       setIsSaving(false);
     }
   }, [activeProjectId, projectData, activeRespondent]);
 
-  // Mark data as changed (for UI indicator)
-  const markAsChanged = useCallback(() => {
-    setHasUnsavedChanges(true);
-  }, []);
+  // ---------------------------------------------------------------------------
+  // PROJECT MANAGEMENT
+  // ---------------------------------------------------------------------------
+  const setActiveProjectId = useCallback(async (projectId) => {
+    if (projectId === activeProjectId) return;
 
-  // Create new project
+    setIsLoading(true);
+    setHasUnsavedChanges(false);
+
+    if (!projectId) {
+      setActiveProjectIdState(null);
+      setProjectData(getEmptyProjectData());
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const data = await api.getProject(projectId);
+      if (data) {
+        console.log('[APP] Switched to project:', projectId);
+        setActiveProjectIdState(projectId);
+        setProjectData(data);
+        setActiveRespondent(data.activeRespondent || 'principal');
+        await api.setState('activeProjectId', projectId);
+      }
+    } catch (error) {
+      console.error('[APP] Failed to load project:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeProjectId]);
+
   const createProject = useCallback(async (name = '') => {
     const newId = generateProjectId();
     const now = new Date().toISOString();
 
-    const newProject = {
-      id: newId,
-      name: name || 'Untitled Project',
-      createdAt: now,
-      lastUpdated: now,
-    };
-
     const newProjectData = {
+      ...getEmptyProjectData(),
       id: newId,
       clientData: {
         projectName: name || 'Untitled Project',
@@ -336,84 +321,26 @@ export const AppProvider = ({ children }) => {
         createdAt: now,
         lastUpdated: now,
       },
-      kycData: {
-        principal: { ...initialKYCData },
-        secondary: { ...initialKYCData },
-        advisor: { ...initialKYCData },
-        consolidated: { ...initialKYCData },
-      },
-      fyiData: { ...initialFYIData },
-      activeRespondent: 'principal',
     };
 
     try {
-      // Save to API first
       await api.createProject(newProjectData);
       await api.setState('activeProjectId', newId);
 
-      // Update local state
-      setProjects(prev => [...prev, newProject]);
-      setActiveProjectId(newId);
+      setProjects(prev => [...prev, { id: newId, name: name || 'Untitled Project', createdAt: now }]);
+      setActiveProjectIdState(newId);
       setProjectData(newProjectData);
       setActiveRespondent('principal');
-      setCurrentKYCSection(0);
       setHasUnsavedChanges(false);
 
+      console.log('[APP] Created project:', newId);
       return newId;
     } catch (error) {
-      console.error('Failed to create project:', error);
+      console.error('[APP] Failed to create project:', error);
       throw error;
     }
   }, []);
 
-  // Switch to existing project - loads from API
-  const switchProject = useCallback(async (projectId) => {
-    if (!projectId || projectId === activeProjectId) return;
-
-    setIsLoading(true);
-    setHasUnsavedChanges(false);
-
-    try {
-      const data = await api.getProject(projectId);
-      if (data) {
-        console.log('[APP] Switched to project:', projectId);
-        console.log('[APP] FYI selections loaded:', data?.fyiData?.selections);
-
-        await api.setState('activeProjectId', projectId);
-
-        setActiveProjectId(projectId);
-        setProjectData(data);
-        setActiveRespondent(data.activeRespondent || 'principal');
-        setCurrentKYCSection(0);
-      }
-    } catch (error) {
-      console.error('Failed to switch project:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeProjectId]);
-
-  // Reload current project from API (discard unsaved changes)
-  const reloadProject = useCallback(async () => {
-    if (!activeProjectId) return;
-
-    setIsLoading(true);
-    try {
-      const data = await api.getProject(activeProjectId);
-      if (data) {
-        setProjectData(data);
-        setActiveRespondent(data.activeRespondent || 'principal');
-        setHasUnsavedChanges(false);
-        console.log('[APP] Reloaded project from API');
-      }
-    } catch (error) {
-      console.error('Failed to reload project:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeProjectId]);
-
-  // Delete project
   const deleteProject = useCallback(async (projectId) => {
     try {
       await api.deleteProject(projectId);
@@ -422,19 +349,27 @@ export const AppProvider = ({ children }) => {
       if (projectId === activeProjectId) {
         const remaining = projects.filter(p => p.id !== projectId);
         if (remaining.length > 0) {
-          await switchProject(remaining[0].id);
+          await setActiveProjectId(remaining[0].id);
         } else {
-          setActiveProjectId(null);
+          setActiveProjectIdState(null);
           setProjectData(getEmptyProjectData());
-          await api.setState('activeProjectId', null);
         }
       }
     } catch (error) {
-      console.error('Failed to delete project:', error);
+      console.error('[APP] Failed to delete project:', error);
     }
-  }, [activeProjectId, projects, switchProject]);
+  }, [activeProjectId, projects, setActiveProjectId]);
 
-  // Update client data - local only, marks as changed
+  // ---------------------------------------------------------------------------
+  // DATA UPDATE FUNCTIONS - ALL UPDATES GO THROUGH THESE
+  // ---------------------------------------------------------------------------
+
+  // Mark data as changed
+  const markChanged = useCallback(() => {
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Update client data
   const updateClientData = useCallback((updates) => {
     setProjectData(prev => ({
       ...prev,
@@ -442,14 +377,14 @@ export const AppProvider = ({ children }) => {
         ...prev.clientData,
         ...updates,
         lastUpdated: new Date().toISOString(),
-        createdAt: prev.clientData.createdAt || new Date().toISOString(),
       },
     }));
-    markAsChanged();
-  }, [markAsChanged]);
+    markChanged();
+  }, [markChanged]);
 
-  // Update KYC data - local only, marks as changed
+  // Update KYC data for a specific respondent and section
   const updateKYCData = useCallback((respondent, section, data) => {
+    console.log('[APP] updateKYCData:', respondent, section, data);
     setProjectData(prev => ({
       ...prev,
       kycData: {
@@ -457,53 +392,100 @@ export const AppProvider = ({ children }) => {
         [respondent]: {
           ...prev.kycData[respondent],
           [section]: {
-            ...prev.kycData[respondent][section],
+            ...prev.kycData[respondent]?.[section],
             ...data,
           },
         },
       },
     }));
-    markAsChanged();
-  }, [markAsChanged]);
+    markChanged();
+  }, [markChanged]);
 
-  // Update FYI data - local only, marks as changed
+  // Update FYI data (settings, selections, or other fields)
   const updateFYIData = useCallback((updates) => {
-    console.log('[APP] updateFYIData called with:', updates);
-    console.log('[APP] FOY in updates:', updates?.selections?.FOY);
-
+    console.log('[APP] updateFYIData:', updates);
     setProjectData(prev => {
-      const newFyiData = {
-        ...prev.fyiData,
-        ...updates,
-      };
+      const newFyiData = { ...prev.fyiData };
 
-      // If updates include selections, merge them properly
-      if (updates.selections) {
+      // Handle selections update with proper merge
+      if (updates.selections !== undefined) {
         newFyiData.selections = {
-          ...prev.fyiData?.selections,
+          ...prev.fyiData.selections,
           ...updates.selections,
         };
       }
 
-      // If updates include settings, merge them properly
-      if (updates.settings) {
+      // Handle settings update with proper merge
+      if (updates.settings !== undefined) {
         newFyiData.settings = {
-          ...prev.fyiData?.settings,
+          ...prev.fyiData.settings,
           ...updates.settings,
         };
       }
 
-      console.log('[APP] New fyiData:', newFyiData);
+      // Handle other fields (brief, completedAt, etc.)
+      Object.keys(updates).forEach(key => {
+        if (key !== 'selections' && key !== 'settings') {
+          newFyiData[key] = updates[key];
+        }
+      });
 
-      return {
-        ...prev,
-        fyiData: newFyiData,
-      };
+      return { ...prev, fyiData: newFyiData };
     });
-    markAsChanged();
-  }, [markAsChanged]);
+    markChanged();
+  }, [markChanged]);
 
-  // Check section completion status
+  // Update a single FYI space selection
+  const updateFYISelection = useCallback((spaceCode, selectionData) => {
+    console.log('[APP] updateFYISelection:', spaceCode, selectionData);
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        selections: {
+          ...prev.fyiData.selections,
+          [spaceCode]: {
+            ...prev.fyiData.selections[spaceCode],
+            ...selectionData,
+          },
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
+  // Update FYI settings
+  const updateFYISettings = useCallback((settingsUpdates) => {
+    console.log('[APP] updateFYISettings:', settingsUpdates);
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        settings: {
+          ...prev.fyiData.settings,
+          ...settingsUpdates,
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
+  // Initialize FYI selections with defaults for a tier
+  const initializeFYISelections = useCallback((selections) => {
+    console.log('[APP] initializeFYISelections with', Object.keys(selections).length, 'spaces');
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        selections: selections,
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
+  // ---------------------------------------------------------------------------
+  // COMPLETION CALCULATIONS
+  // ---------------------------------------------------------------------------
   const getSectionCompletionStatus = useCallback((respondent, sectionId) => {
     const sectionData = kycData[respondent]?.[sectionId];
     if (!sectionData) return 'empty';
@@ -531,7 +513,6 @@ export const AppProvider = ({ children }) => {
     return 'partial';
   }, [kycData]);
 
-  // Calculate profile completeness
   const calculateCompleteness = useCallback((respondent = 'principal') => {
     const data = kycData[respondent];
     if (!data) return 0;
@@ -540,6 +521,7 @@ export const AppProvider = ({ children }) => {
     let filledRequired = 0;
 
     const sectionsToCount = respondent === 'secondary' ? SECONDARY_SECTIONS : Object.keys(REQUIRED_FIELDS);
+
     sectionsToCount.forEach(sectionKey => {
       const fields = REQUIRED_FIELDS[sectionKey] || [];
       const sectionData = data[sectionKey];
@@ -569,70 +551,70 @@ export const AppProvider = ({ children }) => {
     return totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
   }, [kycData]);
 
-  // Reset current project
+  // ---------------------------------------------------------------------------
+  // RESET FUNCTIONS
+  // ---------------------------------------------------------------------------
   const resetCurrentProject = useCallback(() => {
     if (!activeProjectId) return;
-    setProjectData(getEmptyProjectData());
-    setActiveRespondent('principal');
-    setCurrentKYCSection(0);
-    markAsChanged();
-  }, [activeProjectId, markAsChanged]);
+    setProjectData(prev => ({
+      ...getEmptyProjectData(),
+      id: prev.id,
+      clientData: prev.clientData,
+    }));
+    markChanged();
+  }, [activeProjectId, markChanged]);
 
-  // Reset all data
   const resetAllData = useCallback(async () => {
     for (const p of projects) {
       try {
         await api.deleteProject(p.id);
-      } catch (error) {
-        console.error('Failed to delete project:', error);
+      } catch (e) {
+        console.error('[APP] Failed to delete:', e);
       }
     }
-
     setProjects([]);
-    setActiveProjectId(null);
+    setActiveProjectIdState(null);
     setProjectData(getEmptyProjectData());
-    setCurrentKYCSection(0);
-    setActiveRespondent('principal');
-    setDisclosureTier('mvp');
     setHasUnsavedChanges(false);
-
-    await api.setState('activeProjectId', null);
   }, [projects]);
 
+  // ---------------------------------------------------------------------------
+  // CONTEXT VALUE
+  // ---------------------------------------------------------------------------
   const value = {
-    // Loading/saving state
+    // Loading/saving
     isLoading,
     isSaving,
     lastSaved,
     saveError,
     hasUnsavedChanges,
     saveNow,
-    reloadProject,
 
     // Project management
     projects,
     activeProjectId,
+    setActiveProjectId,
     createProject,
-    switchProject,
     deleteProject,
 
-    // Client data
+    // Data (read-only access)
     clientData,
-    updateClientData,
-
-    // KYC data
     kycData,
+    fyiData,
+
+    // Data updates
+    updateClientData,
     updateKYCData,
+    updateFYIData,
+    updateFYISelection,
+    updateFYISettings,
+    initializeFYISelections,
+
+    // UI state
     activeRespondent,
     setActiveRespondent,
     currentKYCSection,
     setCurrentKYCSection,
-
-    // FYI data
-    fyiData,
-    updateFYIData,
-
-    // Disclosure tier
     disclosureTier,
     setDisclosureTier,
 
@@ -649,6 +631,10 @@ export const AppProvider = ({ children }) => {
     </AppContext.Provider>
   );
 };
+
+// ============================================================================
+// HOOK
+// ============================================================================
 
 export const useAppContext = () => {
   const context = useContext(AppContext);

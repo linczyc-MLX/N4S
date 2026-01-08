@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown
+  ChevronDown, Save
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -18,17 +18,35 @@ import CulturalContextSection from './sections/CulturalContextSection';
 import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
 const KYCModule = () => {
-  const { 
-    kycData, 
-    activeRespondent, 
+  const {
+    kycData,
+    activeRespondent,
     setActiveRespondent,
     currentKYCSection,
     setCurrentKYCSection,
     disclosureTier,
     setDisclosureTier,
     calculateCompleteness,
-    getSectionCompletionStatus
+    getSectionCompletionStatus,
+    saveNow,
+    isSaving,
+    hasUnsavedChanges,
+    lastSaved,
   } = useAppContext();
+
+  const [saveMessage, setSaveMessage] = useState(null);
+
+  // SAVE HANDLER
+  const handleSave = useCallback(async () => {
+    const success = await saveNow();
+    if (success) {
+      setSaveMessage('Saved!');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } else {
+      setSaveMessage('Save failed');
+      setTimeout(() => setSaveMessage(null), 5000);
+    }
+  }, [saveNow]);
 
   const sections = [
     { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
@@ -161,7 +179,7 @@ const KYCModule = () => {
 
   return (
     <div className="kyc-module">
-      {/* Tier Selector */}
+      {/* Tier Selector with SAVE Button */}
       <div className="kyc-module__tier-selector">
         <span className="kyc-module__tier-label">Disclosure Level:</span>
         <div className="tier-tabs">
@@ -175,6 +193,29 @@ const KYCModule = () => {
               <span className="tier-tab__duration">{tier.description}</span>
             </button>
           ))}
+        </div>
+
+        {/* SAVE BUTTON */}
+        <div className="kyc-module__save-area">
+          <button
+            className={`kyc-save-btn ${hasUnsavedChanges ? 'kyc-save-btn--unsaved' : ''} ${isSaving ? 'kyc-save-btn--saving' : ''}`}
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            <Save size={16} />
+            {isSaving ? 'Saving...' : 'SAVE'}
+          </button>
+          {hasUnsavedChanges && !isSaving && (
+            <span className="kyc-save-indicator">Unsaved</span>
+          )}
+          {saveMessage && (
+            <span className={`kyc-save-message ${saveMessage.includes('failed') ? 'kyc-save-message--error' : 'kyc-save-message--success'}`}>
+              {saveMessage}
+            </span>
+          )}
+          {lastSaved && !saveMessage && !hasUnsavedChanges && (
+            <span className="kyc-save-time">Saved: {lastSaved.toLocaleTimeString()}</span>
+          )}
         </div>
       </div>
 
