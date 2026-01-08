@@ -1,4 +1,4 @@
-name: Deploy to website.not-4.sale (SFTP)
+name: Deploy to website.not-4.sale (FTP)
 
 on:
   push:
@@ -26,12 +26,13 @@ jobs:
       - name: Build
         run: CI=false npm run build
 
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: home148422849.1and1-data.host
           username: acc780882701
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 22
-          local_path: ./build/*
-          remote_path: /
+          port: 21
+          protocol: ftps
+          local-dir: ./build/
+          server-dir: ./
