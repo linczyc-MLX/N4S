@@ -52,15 +52,18 @@ class ApiService {
   }
 
   async updateProject(id, projectData) {
-    return this.request(`/projects.php?id=${encodeURIComponent(id)}`, {
-      method: 'PUT',
+    // Use POST with action=update to avoid hosting blocking PUT method
+    return this.request(`/projects.php?id=${encodeURIComponent(id)}&action=update`, {
+      method: 'POST',
       body: JSON.stringify(projectData),
     });
   }
 
   async deleteProject(id) {
-    return this.request(`/projects.php?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
+    // Use POST with action=delete to avoid hosting blocking DELETE method
+    return this.request(`/projects.php?id=${encodeURIComponent(id)}&action=delete`, {
+      method: 'POST',
+      body: JSON.stringify({}),
     });
   }
 
@@ -78,8 +81,10 @@ class ApiService {
   }
 
   async deleteState(key) {
-    return this.request(`/state.php?key=${encodeURIComponent(key)}`, {
-      method: 'DELETE',
+    // Use POST with action=delete to avoid hosting blocking DELETE method
+    return this.request(`/state.php?key=${encodeURIComponent(key)}&action=delete`, {
+      method: 'POST',
+      body: JSON.stringify({}),
     });
   }
 

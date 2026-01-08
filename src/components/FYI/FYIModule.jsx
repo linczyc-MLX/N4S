@@ -34,9 +34,10 @@ import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
 import './FYIModule.css';
 
 const FYIModule = () => {
-  const { kycData, activeRespondent, updateFYIData, clientData } = useAppContext();
+  const { kycData, activeRespondent, updateFYIData, clientData, fyiData } = useAppContext();
   const [isExporting, setIsExporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [syncedFromContext, setSyncedFromContext] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
   const [selectedLevel, setSelectedLevel] = useState(null); // For level filtering
   
@@ -106,18 +107,31 @@ const FYIModule = () => {
     calculateArea,
     resetToDefaults,
     applyKYCDefaults,
-    generateMVPBrief
+    generateMVPBrief,
+    loadFromContext
   } = useFYIState(fyiStateConfig);
   
-  // Apply KYC defaults on first load
+  // Load FYI data from AppContext (database) on first load
+  // This ensures data synced to the database takes precedence
+  useEffect(() => {
+    if (isLoaded && !syncedFromContext && fyiData) {
+      const loaded = loadFromContext(fyiData);
+      if (loaded) {
+        console.log('FYI: Loaded data from AppContext (database)');
+      }
+      setSyncedFromContext(true);
+    }
+  }, [isLoaded, syncedFromContext, fyiData, loadFromContext]);
+
+  // Apply KYC defaults on first load (only if no existing data)
   useEffect(() => {
     if (isLoaded && consolidatedKYC && !initialized) {
       const { settings: kycSettings, selections: kycSelections } = generateFYIFromKYC(
         consolidatedKYC,
         availableLevels
       );
-      
-      // Only apply if we don't have existing selections
+
+      // Only apply if we don't have existing selections (from localStorage or database)
       const hasExistingSelections = Object.keys(selections).length > 0;
       if (!hasExistingSelections) {
         updateSettings({
@@ -129,6 +143,17 @@ const FYIModule = () => {
       setInitialized(true);
     }
   }, [isLoaded, consolidatedKYC, initialized, availableLevels]);
+
+  // Sync FYI selections and settings to AppContext whenever they change
+  // This ensures data is saved to the database via AppContext's auto-save
+  useEffect(() => {
+    if (isLoaded && updateFYIData && Object.keys(selections).length > 0) {
+      updateFYIData({
+        selections,
+        settings
+      });
+    }
+  }, [selections, settings, isLoaded, updateFYIData]);
   
   // Get zones for active structure
   const activeZones = useMemo(() => {

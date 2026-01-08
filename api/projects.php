@@ -1,12 +1,14 @@
 <?php
 // Projects API endpoint
+// Uses POST for all write operations to avoid hosting restrictions on PUT/DELETE
 require_once 'config.php';
 
 $pdo = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
-$path = isset($_GET['action']) ? $_GET['action'] : '';
+$action = isset($_GET['action']) ? $_GET['action'] : '';
 $projectId = isset($_GET['id']) ? $_GET['id'] : null;
 
+// Handle all operations
 switch ($method) {
     case 'GET':
         if ($projectId) {
@@ -48,37 +50,79 @@ switch ($method) {
         break;
 
     case 'POST':
-        // Create new project
         $input = json_decode(file_get_contents('php://input'), true);
 
-        if (!$input || !isset($input['id'])) {
-            errorResponse('Invalid project data');
-        }
-
-        $id = $input['id'];
-        $clientData = $input['clientData'] ?? [];
-        $projectName = $clientData['projectName'] ?? 'Untitled Project';
-        $projectCode = $clientData['projectCode'] ?? '';
-
-        // Insert project
-        $stmt = $pdo->prepare("INSERT INTO projects (id, project_name, project_code) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE project_name = ?, project_code = ?");
-        $stmt->execute([$id, $projectName, $projectCode, $projectName, $projectCode]);
-
-        // Insert/update data sections
-        $dataTypes = ['kycData', 'fyiData', 'activeRespondent'];
-        foreach ($dataTypes as $type) {
-            if (isset($input[$type])) {
-                $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");
-                $jsonData = json_encode($input[$type]);
-                $stmt->execute([$id, $type, $jsonData, $jsonData]);
+        // Route based on action parameter
+        if ($action === 'update' && $projectId) {
+            // UPDATE existing project
+            if (!$input) {
+                errorResponse('Invalid project data');
             }
-        }
 
-        jsonResponse(['success' => true, 'id' => $id], 201);
+            // Update project metadata if provided
+            if (isset($input['clientData'])) {
+                $clientData = $input['clientData'];
+                $stmt = $pdo->prepare("UPDATE projects SET project_name = ?, project_code = ?, updated_at = NOW() WHERE id = ?");
+                $stmt->execute([
+                    $clientData['projectName'] ?? 'Untitled Project',
+                    $clientData['projectCode'] ?? '',
+                    $projectId
+                ]);
+            }
+
+            // Update data sections
+            $dataTypes = ['kycData', 'fyiData', 'activeRespondent'];
+            foreach ($dataTypes as $type) {
+                if (isset($input[$type])) {
+                    $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");
+                    $jsonData = json_encode($input[$type]);
+                    $stmt->execute([$projectId, $type, $jsonData, $jsonData]);
+                }
+            }
+
+            jsonResponse(['success' => true, 'id' => $projectId]);
+
+        } elseif ($action === 'delete' && $projectId) {
+            // DELETE project
+            $stmt = $pdo->prepare("DELETE FROM project_data WHERE project_id = ?");
+            $stmt->execute([$projectId]);
+
+            $stmt = $pdo->prepare("DELETE FROM projects WHERE id = ?");
+            $stmt->execute([$projectId]);
+
+            jsonResponse(['success' => true, 'deleted' => $projectId]);
+
+        } else {
+            // CREATE new project (default POST behavior)
+            if (!$input || !isset($input['id'])) {
+                errorResponse('Invalid project data');
+            }
+
+            $id = $input['id'];
+            $clientData = $input['clientData'] ?? [];
+            $projectName = $clientData['projectName'] ?? 'Untitled Project';
+            $projectCode = $clientData['projectCode'] ?? '';
+
+            // Insert project
+            $stmt = $pdo->prepare("INSERT INTO projects (id, project_name, project_code) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE project_name = ?, project_code = ?, updated_at = NOW()");
+            $stmt->execute([$id, $projectName, $projectCode, $projectName, $projectCode]);
+
+            // Insert/update data sections
+            $dataTypes = ['kycData', 'fyiData', 'activeRespondent'];
+            foreach ($dataTypes as $type) {
+                if (isset($input[$type])) {
+                    $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");
+                    $jsonData = json_encode($input[$type]);
+                    $stmt->execute([$id, $type, $jsonData, $jsonData]);
+                }
+            }
+
+            jsonResponse(['success' => true, 'id' => $id], 201);
+        }
         break;
 
     case 'PUT':
-        // Update existing project
+        // Fallback for PUT if hosting allows it
         if (!$projectId) {
             errorResponse('Project ID required');
         }
@@ -89,10 +133,9 @@ switch ($method) {
             errorResponse('Invalid project data');
         }
 
-        // Update project metadata if provided
         if (isset($input['clientData'])) {
             $clientData = $input['clientData'];
-            $stmt = $pdo->prepare("UPDATE projects SET project_name = ?, project_code = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE projects SET project_name = ?, project_code = ?, updated_at = NOW() WHERE id = ?");
             $stmt->execute([
                 $clientData['projectName'] ?? 'Untitled Project',
                 $clientData['projectCode'] ?? '',
@@ -100,7 +143,6 @@ switch ($method) {
             ]);
         }
 
-        // Update data sections
         $dataTypes = ['kycData', 'fyiData', 'activeRespondent'];
         foreach ($dataTypes as $type) {
             if (isset($input[$type])) {
@@ -114,9 +156,13 @@ switch ($method) {
         break;
 
     case 'DELETE':
+        // Fallback for DELETE if hosting allows it
         if (!$projectId) {
             errorResponse('Project ID required');
         }
+
+        $stmt = $pdo->prepare("DELETE FROM project_data WHERE project_id = ?");
+        $stmt->execute([$projectId]);
 
         $stmt = $pdo->prepare("DELETE FROM projects WHERE id = ?");
         $stmt->execute([$projectId]);
