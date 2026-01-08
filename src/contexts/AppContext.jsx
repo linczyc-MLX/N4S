@@ -209,8 +209,9 @@ export const AppProvider = ({ children }) => {
         }
 
         // 3. Load active project if exists
+        // Guard against "null" string stored in state
         const activeId = state.activeProjectId;
-        if (activeId) {
+        if (activeId && activeId !== 'null' && activeId !== 'undefined') {
           try {
             const data = await api.getProject(activeId);
             if (!isMounted) return;
@@ -353,6 +354,8 @@ export const AppProvider = ({ children }) => {
         } else {
           setActiveProjectIdState(null);
           setProjectData(getEmptyProjectData());
+          // Clear from server state (don't store "null" string)
+          await api.deleteState('activeProjectId');
         }
       }
     } catch (error) {
