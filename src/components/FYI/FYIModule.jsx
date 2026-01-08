@@ -12,14 +12,14 @@
  * Position in N4S workflow: KYC → FYI → MVP → KYM → VMX
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState from './hooks/useFYIState';
 import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
-import { 
-  buildAvailableLevels, 
+import {
+  buildAvailableLevels,
   getZonesForStructure,
-  getSpacesForStructure 
+  getSpacesForStructure
 } from '../../shared/space-registry';
 
 // Components
@@ -39,6 +39,10 @@ const FYIModule = () => {
   const [initialized, setInitialized] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
   const [selectedLevel, setSelectedLevel] = useState(null); // For level filtering
+
+  // Track if we should sync to AppContext (skip initial renders to avoid overwriting API data)
+  const isFirstRender = useRef(true);
+  const hasUserInteracted = useRef(false);
 
   // Get consolidated KYC data (merge Principal + Secondary)
   const consolidatedKYC = useMemo(() => {
@@ -130,8 +134,15 @@ const FYIModule = () => {
 
   // Sync FYI selections and settings to AppContext whenever they change
   // This ensures data is saved to the database via AppContext's auto-save
+  // IMPORTANT: Skip first render to avoid overwriting API data with defaults
   useEffect(() => {
-    if (isLoaded && updateFYIData && Object.keys(selections).length > 0) {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return; // Skip first render
+    }
+
+    // Only sync if user has interacted (made changes)
+    if (isLoaded && updateFYIData && hasUserInteracted.current && Object.keys(selections).length > 0) {
       updateFYIData({
         selections,
         settings
@@ -434,10 +445,10 @@ const FYIModule = () => {
                   calculatedArea={area}
                   settings={settings}
                   availableLevels={availableLevels}
-                  onSizeChange={(size) => setSpaceSize(space.code, size)}
-                  onToggleIncluded={() => toggleSpaceIncluded(space.code)}
-                  onLevelChange={(level) => setSpaceLevel(space.code, level)}
-                  onNotesChange={(notes) => updateSpaceSelection(space.code, { notes })}
+                  onSizeChange={(size) => { hasUserInteracted.current = true; setSpaceSize(space.code, size); }}
+                  onToggleIncluded={() => { hasUserInteracted.current = true; toggleSpaceIncluded(space.code); }}
+                  onLevelChange={(level) => { hasUserInteracted.current = true; setSpaceLevel(space.code, level); }}
+                  onNotesChange={(notes) => { hasUserInteracted.current = true; updateSpaceSelection(space.code, { notes }); }}
                 />
               );
             })}
@@ -462,7 +473,7 @@ const FYIModule = () => {
             selections={selections}
             structureTotals={displayStructureTotals}
             availableLevels={availableLevels}
-            onSettingsChange={updateSettings}
+            onSettingsChange={(updates) => { hasUserInteracted.current = true; updateSettings(updates); }}
             onExportPDF={handleExportPDF}
             onProceedToMVP={handleProceedToMVP}
             isExporting={isExporting}

@@ -6,9 +6,14 @@
  *
  * NOTE: This hook does NOT persist to localStorage. All persistence is handled
  * by AppContext which saves to the database. Pass initialData from AppContext.fyiData.
+ *
+ * IMPORTANT: Data flows ONE DIRECTION only:
+ *   - On mount: initialData (from API via AppContext) → useFYIState
+ *   - After mount: useFYIState → AppContext (via updateFYIData callback)
+ *   - We do NOT continuously sync FROM initialData to avoid infinite loops
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   zones,
   spaceRegistry,
@@ -54,9 +59,13 @@ const initializeSelections = (tier, hasBasement) => {
 };
 
 export function useFYIState(initialData = null) {
+  // Track if we've loaded initial data from API (only do this ONCE)
+  const hasLoadedFromAPI = useRef(false);
+
   // Initialize from passed data (from AppContext.fyiData) or defaults
   const [settings, setSettings] = useState(() => {
     if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
+      hasLoadedFromAPI.current = true;
       return { ...defaultSettings, ...initialData.settings };
     }
     return defaultSettings;
@@ -65,6 +74,7 @@ export function useFYIState(initialData = null) {
   // Space selections: { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
   const [selections, setSelections] = useState(() => {
     if (initialData?.selections && Object.keys(initialData.selections).length > 0) {
+      hasLoadedFromAPI.current = true;
       return initialData.selections;
     }
     return initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement);
@@ -76,13 +86,25 @@ export function useFYIState(initialData = null) {
   // Active zone for navigation
   const [activeZone, setActiveZone] = useState('Z1_APB');
 
-  // Update state when initialData changes (e.g., when AppContext loads from API)
+  // Load from API data ONCE when it becomes available (if not already loaded on mount)
+  // This handles the case where AppContext loads from API after component mounts
   useEffect(() => {
-    if (initialData?.selections && Object.keys(initialData.selections).length > 0) {
-      setSelections(initialData.selections);
+    // Only load from initialData ONCE, and only if we haven't loaded yet
+    if (hasLoadedFromAPI.current) {
+      return; // Already loaded, don't sync again (prevents infinite loop)
     }
-    if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
-      setSettings(prev => ({ ...prev, ...initialData.settings }));
+
+    // Check if initialData has meaningful data (not just defaults)
+    const hasSelectionsData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+    const hasCustomSelections = hasSelectionsData &&
+      Object.values(initialData.selections).some(s => s.size !== 'M' || s.notes || s.customSF);
+
+    if (hasCustomSelections) {
+      setSelections(initialData.selections);
+      if (initialData.settings && Object.keys(initialData.settings).length > 0) {
+        setSettings(prev => ({ ...prev, ...initialData.settings }));
+      }
+      hasLoadedFromAPI.current = true;
     }
   }, [initialData]);
 
