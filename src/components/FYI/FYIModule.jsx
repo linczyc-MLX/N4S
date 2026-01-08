@@ -111,6 +111,7 @@ const FYIModule = () => {
 
   // Apply KYC defaults on first load (only if no existing data from database)
   useEffect(() => {
+    console.log('[FYI-DEBUG] KYC effect: isLoaded=', isLoaded, 'initialized=', initialized, 'FOY size=', selections?.FOY?.size);
     if (isLoaded && consolidatedKYC && !initialized) {
       const { settings: kycSettings } = generateFYIFromKYC(
         consolidatedKYC,
@@ -121,6 +122,7 @@ const FYIModule = () => {
       const hasExistingSelections = selections && Object.keys(selections).length > 0;
       const hasCustomSelections = hasExistingSelections && Object.values(selections).some(s => s.size !== 'M');
 
+      console.log('[FYI-DEBUG] KYC effect: hasCustomSelections=', hasCustomSelections, 'calling updateSettings=', !hasCustomSelections);
       if (!hasCustomSelections) {
         updateSettings({
           ...kycSettings,
@@ -136,17 +138,22 @@ const FYIModule = () => {
   // This ensures data is saved to the database via AppContext's auto-save
   // IMPORTANT: Skip first render to avoid overwriting API data with defaults
   useEffect(() => {
+    console.log('[FYI-DEBUG] Sync effect: isFirstRender=', isFirstRender.current, 'hasUserInteracted=', hasUserInteracted.current, 'FOY=', selections?.FOY?.size);
     if (isFirstRender.current) {
       isFirstRender.current = false;
+      console.log('[FYI-DEBUG] Sync effect: SKIPPING first render');
       return; // Skip first render
     }
 
     // Only sync if user has interacted (made changes)
     if (isLoaded && updateFYIData && hasUserInteracted.current && Object.keys(selections).length > 0) {
+      console.log('[FYI-DEBUG] Sync effect: SAVING to AppContext, FOY=', selections?.FOY?.size);
       updateFYIData({
         selections,
         settings
       });
+    } else {
+      console.log('[FYI-DEBUG] Sync effect: NOT saving - hasUserInteracted=', hasUserInteracted.current);
     }
   }, [selections, settings, isLoaded, updateFYIData]);
   
