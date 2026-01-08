@@ -37,15 +37,14 @@ const FYIModule = () => {
   const { kycData, activeRespondent, updateFYIData, clientData, fyiData } = useAppContext();
   const [isExporting, setIsExporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [syncedFromContext, setSyncedFromContext] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
   const [selectedLevel, setSelectedLevel] = useState(null); // For level filtering
-  
+
   // Get consolidated KYC data (merge Principal + Secondary)
   const consolidatedKYC = useMemo(() => {
     const principal = kycData?.principal || {};
     const secondary = kycData?.secondary || {};
-    
+
     // Merge Secondary's additive selections into Principal
     return {
       ...principal,
@@ -62,7 +61,7 @@ const FYIModule = () => {
       }
     };
   }, [kycData]);
-  
+
   // Build available levels from KYC configuration
   const availableLevels = useMemo(() => {
     const projectParams = consolidatedKYC?.projectParameters || {};
@@ -70,7 +69,7 @@ const FYIModule = () => {
     const levelsBelow = projectParams.levelsBelowArrival ?? 0;
     return buildAvailableLevels(levelsAbove, levelsBelow);
   }, [consolidatedKYC]);
-  
+
   // Check for additional structures from KYC
   const structureConfig = useMemo(() => {
     const projectParams = consolidatedKYC?.projectParameters || {};
@@ -81,13 +80,8 @@ const FYIModule = () => {
     };
   }, [consolidatedKYC]);
 
-  // Memoize the config object to prevent new reference on every render
-  const fyiStateConfig = useMemo(() => ({
-    availableLevels,
-    structureConfig
-  }), [availableLevels, structureConfig]);
-
-  // Initialize FYI state
+  // Initialize FYI state with data from AppContext (database)
+  // This is the SINGLE SOURCE OF TRUTH - no separate localStorage
   const {
     settings,
     selections,
@@ -109,31 +103,21 @@ const FYIModule = () => {
     applyKYCDefaults,
     generateMVPBrief,
     loadFromContext
-  } = useFYIState(fyiStateConfig);
-  
-  // Load FYI data from AppContext (database) on first load
-  // This ensures data synced to the database takes precedence
-  useEffect(() => {
-    if (isLoaded && !syncedFromContext && fyiData) {
-      const loaded = loadFromContext(fyiData);
-      if (loaded) {
-        console.log('FYI: Loaded data from AppContext (database)');
-      }
-      setSyncedFromContext(true);
-    }
-  }, [isLoaded, syncedFromContext, fyiData, loadFromContext]);
+  } = useFYIState(fyiData);
 
-  // Apply KYC defaults on first load (only if no existing data)
+  // Apply KYC defaults on first load (only if no existing data from database)
   useEffect(() => {
     if (isLoaded && consolidatedKYC && !initialized) {
-      const { settings: kycSettings, selections: kycSelections } = generateFYIFromKYC(
+      const { settings: kycSettings } = generateFYIFromKYC(
         consolidatedKYC,
         availableLevels
       );
 
-      // Only apply if we don't have existing selections (from localStorage or database)
-      const hasExistingSelections = Object.keys(selections).length > 0;
-      if (!hasExistingSelections) {
+      // Only apply if we don't have existing selections (from database)
+      const hasExistingSelections = selections && Object.keys(selections).length > 0;
+      const hasCustomSelections = hasExistingSelections && Object.values(selections).some(s => s.size !== 'M');
+
+      if (!hasCustomSelections) {
         updateSettings({
           ...kycSettings,
           levelsAboveArrival: consolidatedKYC?.projectParameters?.levelsAboveArrival ?? 1,
@@ -142,7 +126,7 @@ const FYIModule = () => {
       }
       setInitialized(true);
     }
-  }, [isLoaded, consolidatedKYC, initialized, availableLevels]);
+  }, [isLoaded, consolidatedKYC, initialized, availableLevels, selections, updateSettings]);
 
   // Sync FYI selections and settings to AppContext whenever they change
   // This ensures data is saved to the database via AppContext's auto-save
