@@ -66,17 +66,22 @@ export function useFYIState(initialData = null) {
   const [settings, setSettings] = useState(() => {
     if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
       hasLoadedFromAPI.current = true;
+      console.log('[FYI-DEBUG] useState settings: loaded from initialData', initialData.settings);
       return { ...defaultSettings, ...initialData.settings };
     }
+    console.log('[FYI-DEBUG] useState settings: using defaults');
     return defaultSettings;
   });
 
   // Space selections: { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
   const [selections, setSelections] = useState(() => {
-    if (initialData?.selections && Object.keys(initialData.selections).length > 0) {
+    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+    console.log('[FYI-DEBUG] useState selections: hasData=', hasData, 'FOY size=', initialData?.selections?.FOY?.size);
+    if (hasData) {
       hasLoadedFromAPI.current = true;
       return initialData.selections;
     }
+    console.log('[FYI-DEBUG] useState selections: initializing with defaults (all M)');
     return initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement);
   });
 
@@ -89,8 +94,11 @@ export function useFYIState(initialData = null) {
   // Load from API data ONCE when it becomes available (if not already loaded on mount)
   // This handles the case where AppContext loads from API after component mounts
   useEffect(() => {
+    console.log('[FYI-DEBUG] useEffect: hasLoadedFromAPI=', hasLoadedFromAPI.current, 'FOY in initialData=', initialData?.selections?.FOY?.size);
+
     // Only load from initialData ONCE, and only if we haven't loaded yet
     if (hasLoadedFromAPI.current) {
+      console.log('[FYI-DEBUG] useEffect: SKIPPING - already loaded');
       return; // Already loaded, don't sync again (prevents infinite loop)
     }
 
@@ -98,12 +106,15 @@ export function useFYIState(initialData = null) {
     const hasSelectionsData = initialData?.selections && Object.keys(initialData.selections).length > 0;
 
     if (hasSelectionsData) {
+      console.log('[FYI-DEBUG] useEffect: LOADING selections from initialData, FOY=', initialData.selections.FOY?.size);
       // Load all selections from initialData (from database/localStorage)
       setSelections(initialData.selections);
       if (initialData.settings && Object.keys(initialData.settings).length > 0) {
         setSettings(prev => ({ ...prev, ...initialData.settings }));
       }
       hasLoadedFromAPI.current = true;
+    } else {
+      console.log('[FYI-DEBUG] useEffect: NO selections data in initialData');
     }
   }, [initialData]);
 

@@ -321,9 +321,11 @@ export const AppProvider = ({ children }) => {
   // Load data from API on mount
   useEffect(() => {
     const loadFromAPI = async () => {
+      console.log('[APP-DEBUG] loadFromAPI starting...');
       try {
         // Try to load projects from API
         const apiProjects = await api.getProjects();
+        console.log('[APP-DEBUG] API projects loaded:', apiProjects?.length);
         if (apiProjects && Array.isArray(apiProjects)) {
           const formattedProjects = apiProjects.map(p => ({
             id: p.id,
@@ -337,6 +339,7 @@ export const AppProvider = ({ children }) => {
 
         // Load app state (active project, disclosure tier)
         const appState = await api.getState();
+        console.log('[APP-DEBUG] API state loaded:', appState);
         if (appState.activeProjectId) {
           setActiveProjectId(appState.activeProjectId);
           saveToStorage(STORAGE_KEYS.activeProjectId, appState.activeProjectId);
@@ -348,8 +351,10 @@ export const AppProvider = ({ children }) => {
 
         // Load active project data
         const activeId = appState.activeProjectId || loadFromStorage(STORAGE_KEYS.activeProjectId, null);
+        console.log('[APP-DEBUG] Loading project:', activeId);
         if (activeId) {
           const projectDataFromAPI = await api.getProject(activeId);
+          console.log('[APP-DEBUG] API project loaded, FOY=', projectDataFromAPI?.fyiData?.selections?.FOY?.size);
           if (projectDataFromAPI) {
             setProjectData(projectDataFromAPI);
             saveToStorage(getProjectKey(activeId), projectDataFromAPI);
@@ -357,18 +362,21 @@ export const AppProvider = ({ children }) => {
         }
 
         setApiAvailable(true);
+        console.log('[APP-DEBUG] API load complete, apiAvailable=true');
       } catch (error) {
-        console.warn('API not available, using localStorage:', error);
+        console.warn('[APP-DEBUG] API failed, falling back to localStorage:', error);
         setApiAvailable(false);
 
         // Fall back to localStorage
         const localProjects = loadFromStorage(STORAGE_KEYS.projects, []);
         const localActiveId = loadFromStorage(STORAGE_KEYS.activeProjectId, null);
+        console.log('[APP-DEBUG] localStorage activeId:', localActiveId);
 
         setProjects(localProjects);
         if (localActiveId) {
           setActiveProjectId(localActiveId);
           const localProjectData = loadFromStorage(getProjectKey(localActiveId), getEmptyProjectData());
+          console.log('[APP-DEBUG] localStorage project loaded, FOY=', localProjectData?.fyiData?.selections?.FOY?.size);
           setProjectData(localProjectData);
         }
       } finally {
@@ -404,6 +412,7 @@ export const AppProvider = ({ children }) => {
         activeRespondent,
       };
 
+      console.log('[APP-DEBUG] Save effect: saving to localStorage, FOY=', dataToSave?.fyiData?.selections?.FOY?.size);
       // Always save to localStorage (immediate)
       saveToStorage(getProjectKey(activeProjectId), dataToSave);
 
@@ -594,6 +603,7 @@ export const AppProvider = ({ children }) => {
 
   // Update FYI data
   const updateFYIData = useCallback((updates) => {
+    console.log('[APP-DEBUG] updateFYIData called, FOY in updates=', updates?.selections?.FOY?.size);
     setProjectData(prev => ({
       ...prev,
       fyiData: {
