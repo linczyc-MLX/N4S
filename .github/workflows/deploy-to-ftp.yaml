@@ -26,6 +26,17 @@ jobs:
       - name: Build
         run: CI=false npm run build
 
+      - name: Prepare API files
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          # Copy API files to build directory
+          mkdir -p build/api
+          cp api/*.php build/api/
+
+          # Inject database password into config
+          sed -i "s|\$DB_PASS = getenv('DB_PASS') ?: '';|\$DB_PASS = getenv('DB_PASS') ?: '$DB_PASSWORD';|" build/api/config.php
+
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
@@ -47,12 +58,14 @@ jobs:
 
           # Delete old files (IONOS can't overwrite)
           rm -rf static || true
+          rm -rf api || true
           glob -a rm -f *.html *.json _redirects *.txt *.xml *.ico *.png || true
 
           # Create directories
           mkdir -p static/js
           mkdir -p static/css
           mkdir -p static/media
+          mkdir -p api
 
           # Upload root files
           put index.html
@@ -69,6 +82,11 @@ jobs:
           lcd ../css
           cd ../css
           mput *
+
+          # Upload API files
+          lcd ../../api
+          cd /api
+          mput *.php
 
           quit
           LFTP_COMMANDS
