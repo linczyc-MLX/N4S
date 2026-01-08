@@ -83,9 +83,10 @@ jobs:
           cd ../css
           mput *
 
-          # Upload API files
+          # Upload API files (go back to root first)
+          cd /
           lcd ../../api
-          cd /api
+          cd api
           mput *.php
 
           quit
