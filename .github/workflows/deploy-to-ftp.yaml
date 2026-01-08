@@ -30,66 +30,20 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          # Copy API files to build directory
           mkdir -p build/api
           cp api/*.php build/api/
-
-          # Inject database password into config
           sed -i "s|\$DB_PASS = getenv('DB_PASS') ?: '';|\$DB_PASS = getenv('DB_PASS') ?: '$DB_PASSWORD';|" build/api/config.php
-
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
+          echo "Files to deploy:"
+          ls -la build/
+          ls -la build/api/
 
       - name: Deploy via FTP
-        env:
-          FTP_HOST: home148422849.1and1-data.host
-          FTP_USER: acc780882701
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: |
-          cd build
-
-          # Single lftp session: delete old files, then upload new ones
-          lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST" << 'LFTP_COMMANDS'
-          set ftp:ssl-allow true
-          set ssl:verify-certificate no
-          set net:timeout 120
-          set net:max-retries 5
-          set net:reconnect-interval-base 5
-
-          # Delete old files (IONOS can't overwrite)
-          rm -rf static || true
-          rm -rf api || true
-          glob -a rm -f *.html *.json _redirects *.txt *.xml *.ico *.png || true
-
-          # Create directories
-          mkdir -p static/js
-          mkdir -p static/css
-          mkdir -p static/media
-          mkdir -p api
-
-          # Upload root files
-          put index.html
-          put asset-manifest.json
-          put manifest.json
-          put _redirects
-
-          # Upload JS files
-          lcd static/js
-          cd static/js
-          mput *
-
-          # Upload CSS files
-          lcd ../css
-          cd ../css
-          mput *
-
-          # Upload API files (go back to root first)
-          cd /
-          lcd ../../api
-          cd api
-          mput *.php
-
-          quit
-          LFTP_COMMANDS
-
-          echo "✅ Deployment complete to website.not-4.sale"
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: home148422849.1and1-data.host
+          username: acc780882701
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          local-dir: ./build/
+          dangerous-clean-slate: true
