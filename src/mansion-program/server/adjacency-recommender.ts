@@ -15,10 +15,9 @@ import type {
   PersonalizationChoice,
   PersonalizationResult 
 } from '../shared/adjacency-decisions';
-import { 
+import {
   ADJACENCY_DECISIONS,
   getDecisionsForPreset,
-  getDefaultOption,
   getOptionById
 } from '../shared/adjacency-decisions';
 

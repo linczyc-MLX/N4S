@@ -40,9 +40,6 @@ const LevelDiagram = ({
     return Math.round((getLevelSF(levelValue) / totalSF) * 100);
   };
   
-  // Find arrival level index for arrow positioning
-  const arrivalIndex = levels.findIndex(l => l.value === 1);
-  
   return (
     <div className="level-diagram">
       <div className="level-diagram__header">

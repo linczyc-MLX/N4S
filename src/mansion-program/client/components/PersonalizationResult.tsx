@@ -27,9 +27,8 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import type { PersonalizationChoice, PersonalizationResult as PersonalizationResultType } from '../../shared/adjacency-decisions';
+import type { PersonalizationResult as PersonalizationResultType } from '../../shared/adjacency-decisions';
 import type { AdjacencyDecision } from '../../shared/adjacency-decisions';
-import { generateBubbleDiagram } from '../utils/mermaid-generator';
 
 export interface PersonalizationResultProps {
   result: PersonalizationResultType;

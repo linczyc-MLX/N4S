@@ -24,11 +24,8 @@ import type {
 import type {
   KYCResponse,
   EntertainingFrequency,
-  EntertainingScale,
   StaffingPreference,
   PrivacyPreference,
-  CookingStyle,
-  WellnessInterest,
   ResidenceType
 } from "../shared/kyc-schema";
 

@@ -5,22 +5,19 @@
  * Manages state and navigation between the three screens.
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { KYCResponse } from '../../shared/kyc-schema';
 import type { AdjacencyRequirement, BridgeConfig } from '../../shared/schema';
 import type { PersonalizationChoice } from '../../shared/adjacency-decisions';
-import { 
-  ADJACENCY_DECISIONS,
-  getDecisionsForPreset,
-  getDefaultOption
+import {
+  ADJACENCY_DECISIONS
 } from '../../shared/adjacency-decisions';
 import {
   recommendAdjacencies,
   evaluatePersonalization,
   applyDecisionsToMatrix,
-  deriveBridgeConfigFromChoices,
-  type RecommendedDecision
+  deriveBridgeConfigFromChoices
 } from '../../server/adjacency-recommender';
 import RecommendationsSummary from './RecommendationsSummary';
 import DecisionDetail from './DecisionDetail';

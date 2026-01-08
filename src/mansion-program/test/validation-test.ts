@@ -12,11 +12,8 @@ import {
   detectMissingShowKitchen
 } from '../server/validation-engine-v2';
 
-import type { 
-  PlanGraph, 
-  Room, 
-  NamedPath, 
-  SharedWall,
+import type {
+  PlanGraph,
   OperatingModel,
   LifestylePriorities
 } from '../shared/schema';

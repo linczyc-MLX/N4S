@@ -13,7 +13,6 @@ import {
   Sparkles,
   Settings
 } from 'lucide-react';
-import type { AdjacencyDecision } from '../../shared/adjacency-decisions';
 import type { RecommendedDecision } from '../../server/adjacency-recommender';
 import DecisionCard from './DecisionCard';
 

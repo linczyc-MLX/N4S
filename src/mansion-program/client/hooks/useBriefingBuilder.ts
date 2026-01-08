@@ -9,7 +9,6 @@ import type { BridgeConfig, BriefSpace, AdjacencyRequirement } from '../../share
 import type { ValidationContext } from '../../server/kyc-integration';
 import {
   type BriefingBuilderState,
-  type AppliedChange,
   loadPreset,
   applyBridgeConfig,
   updateSpace,
@@ -19,7 +18,7 @@ import {
   exportToPlanBrief,
   initializeFromKYC
 } from '../utils/briefing-builder-utils';
-import { programPresets, getPreset } from '../data/program-presets';
+import { getPreset } from '../data/program-presets';
 
 export interface ValidationPreview {
   gateStatus: 'pass' | 'warning' | 'fail';

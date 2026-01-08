@@ -5,7 +5,7 @@
 // ============================================
 
 import jsPDF from 'jspdf';
-import { quads, categories as quadCategories } from '../data/tasteQuads';
+import { quads } from '../data/tasteQuads';
 
 // ============================================
 // CONSTANTS

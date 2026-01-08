@@ -5,17 +5,15 @@
  */
 
 import type { KYCResponse } from '../shared/kyc-schema';
-import { 
+import {
   recommendAdjacencies,
   evaluateDecision,
   evaluatePersonalization,
-  applyDecisionsToMatrix,
   deriveBridgeConfigFromChoices
 } from '../server/adjacency-recommender';
-import { 
+import {
   ADJACENCY_DECISIONS,
-  getDecisionsForPreset,
-  getDefaultOption
+  getDecisionsForPreset
 } from '../shared/adjacency-decisions';
 
 // ============================================================================

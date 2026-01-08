@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 // Import the hook
-import { useKYCData, useKYCCompleteness } from '../../hooks/useKYCData';
+import { useKYCData } from '../../hooks/useKYCData';
 
 // Import from mansion-program TypeScript module
 import { 
@@ -29,13 +29,13 @@ import {
  * KYC Completeness Banner
  * Shows when KYC data is incomplete
  */
-function KYCCompletenessCheck({ completeness, onGoToKYC }) {
-  const { sections, percentage, hasMinimumData, missingRequired } = completeness;
-  
+function KYCCompletenessCheck({ completeness, onGoToKYC }) { // eslint-disable-line no-unused-vars
+  const { percentage, hasMinimumData, missingRequired } = completeness;
+
   if (hasMinimumData) {
     return null; // Don't show if we have minimum data
   }
-  
+
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
       <div className="flex items-start gap-3">
@@ -143,14 +143,11 @@ export default function AdjacencyPersonalizationView({
   showProgress = true
 }) {
   // Use the hook to get all KYC data
-  const { 
-    kycResponse, 
-    preset, 
-    baseSF, 
-    projectId, 
-    projectName,
-    completeness,
-    rawData
+  const {
+    kycResponse,
+    preset,
+    baseSF,
+    completeness
   } = useKYCData();
   
   // Get base preset data

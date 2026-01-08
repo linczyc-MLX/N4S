@@ -270,6 +270,7 @@ export const kycResponseSchema = z.object({
 // TYPE EXPORTS
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-redeclare */
 export type ResidenceType = z.infer<typeof ResidenceType>;
 export type HouseholdComposition = z.infer<typeof HouseholdComposition>;
 export type EntertainingFrequency = z.infer<typeof EntertainingFrequency>;
@@ -280,6 +281,7 @@ export type CookingStyle = z.infer<typeof CookingStyle>;
 export type WellnessInterest = z.infer<typeof WellnessInterest>;
 export type WorkFromHomeLevel = z.infer<typeof WorkFromHomeLevel>;
 export type MediaUsage = z.infer<typeof MediaUsage>;
+/* eslint-enable @typescript-eslint/no-redeclare */
 
 export type PropertyContext = z.infer<typeof propertyContextSchema>;
 export type HouseholdProfile = z.infer<typeof householdProfileSchema>;

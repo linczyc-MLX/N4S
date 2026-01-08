@@ -214,6 +214,7 @@ export const moduleDefinitionSchema = z.object({
 });
 
 // Type exports
+/* eslint-disable @typescript-eslint/no-redeclare */
 export type ProjectTypology = z.infer<typeof ProjectTypology>;
 export type EntertainingLoad = z.infer<typeof EntertainingLoad>;
 export type StaffingLevel = z.infer<typeof StaffingLevel>;
@@ -224,6 +225,7 @@ export type ProjectPhase = z.infer<typeof ProjectPhase>;
 export type AcousticZone = z.infer<typeof AcousticZone>;
 export type RedFlagSeverity = z.infer<typeof RedFlagSeverity>;
 export type ActivePreset = z.infer<typeof ActivePreset>;
+/* eslint-enable @typescript-eslint/no-redeclare */
 
 export type Room = z.infer<typeof roomSchema>;
 export type Edge = z.infer<typeof edgeSchema>;
@@ -327,6 +329,7 @@ export const insertPlanBriefSchema = planBriefSchema.omit({
 });
 
 // Type exports for plan brief
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type AdjacencyType = z.infer<typeof AdjacencyType>;
 export type BriefSpace = z.infer<typeof briefSpaceSchema>;
 export type AdjacencyRequirement = z.infer<typeof adjacencyRequirementSchema>;

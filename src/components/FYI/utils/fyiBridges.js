@@ -6,7 +6,6 @@
  */
 
 import {
-  spaceRegistry,
   getSpaceByCode,
   getSpacesForTier,
   legacyToCode,
@@ -31,10 +30,11 @@ export function generateFYIFromKYC(kycData) {
   // Extract key KYC values
   const targetSF = kycData.projectParameters?.targetGSF || 15000;
   const hasBasement = kycData.projectParameters?.hasBasement || false;
-  const bedroomCount = kycData.projectParameters?.bedroomCount || 4;
-  const staffingLevel = kycData.familyHousehold?.staffingLevel || 'none';
-  const entertainingFrequency = kycData.lifestyleLiving?.entertainingFrequency || 'monthly';
-  
+  // Future use: bedroomCount, staffingLevel, entertainingFrequency for space recommendations
+  // const bedroomCount = kycData.projectParameters?.bedroomCount || 4;
+  // const staffingLevel = kycData.familyHousehold?.staffingLevel || 'none';
+  // const entertainingFrequency = kycData.lifestyleLiving?.entertainingFrequency || 'monthly';
+
   // Determine program tier
   const programTier = determineTier(targetSF);
   
@@ -538,8 +538,10 @@ export function validateFYISelections(selections, settings) {
   };
 }
 
-export default {
+const fyiBridges = {
   generateFYIFromKYC,
   generateMVPFromFYI,
   validateFYISelections
 };
+
+export default fyiBridges;

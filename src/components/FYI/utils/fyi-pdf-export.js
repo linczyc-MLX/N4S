@@ -14,9 +14,7 @@ import { zones } from '../../../shared/space-registry';
 // N4S Brand Colors (RGB values for jsPDF)
 const NAVY = { r: 30, g: 58, b: 95 };
 const GOLD = { r: 201, g: 162, b: 39 };
-const CREAM = { r: 254, g: 249, b: 231 };
 const BACKGROUND = { r: 250, g: 250, b: 248 };
-const CARD_BG = { r: 248, g: 250, b: 252 };
 const LIGHT_GRAY = { r: 100, g: 116, b: 139 };
 const DARK_TEXT = { r: 45, g: 55, b: 72 };
 const WHITE = { r: 255, g: 255, b: 255 };
@@ -234,7 +232,6 @@ export class FYIReportGenerator {
   }
 
   addSummaryRow(x, y, label, value) {
-    const valueWidth = this.doc.getTextWidth(value);
     this.doc.text(label, x, y);
     this.doc.text(value, x + 180, y, { align: 'right' });
   }
@@ -869,8 +866,10 @@ function generatePrintableHTML(data, mode = 'zone') {
   }
 }
 
-export default {
+const fyiPdfExport = {
   FYIReportGenerator,
   generateFYIPDF,
   buildFYIPDFData
 };
+
+export default fyiPdfExport;

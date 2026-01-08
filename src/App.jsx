@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  Home, Users, Search, GitCompare, Settings, Menu, X,
-  ChevronRight, Building2, Palette, CheckCircle2, ClipboardCheck
+import React, { useState } from 'react';
+import {
+  Home, Users, Search, Settings, Menu, X,
+  ChevronRight, Building2, ClipboardCheck
 } from 'lucide-react';
 
 // Import modules

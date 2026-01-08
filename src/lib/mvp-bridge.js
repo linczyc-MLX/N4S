@@ -85,10 +85,9 @@ function mapEntertainingLoad(frequency) {
 function deriveWellnessProgram(priorities) {
   if (!priorities || priorities.length === 0) return 'none';
   
-  // Count wet vs dry wellness elements
+  // Count wet wellness elements
   const wetElements = ['pool', 'spa', 'cold-plunge'].filter(e => priorities.includes(e));
-  const dryElements = ['gym', 'yoga', 'meditation', 'massage'].filter(e => priorities.includes(e));
-  
+
   const totalElements = priorities.length;
   
   if (wetElements.length >= 2 && totalElements >= 4) return 'resort_level';
@@ -325,8 +324,10 @@ export function countSelectedAmenities(briefInputs) {
   return amenityFlags.filter(Boolean).length;
 }
 
-export default {
+const mvpBridge = {
   transformKYCToMVPBrief,
   getMVPBriefSummary,
   countSelectedAmenities,
 };
+
+export default mvpBridge;

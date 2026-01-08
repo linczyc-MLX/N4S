@@ -8,8 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import {
   viewTasteReport,
-  downloadTasteReport,
-  getTasteReportBlob
+  downloadTasteReport
 } from '../../../utils/TasteReportGenerator';
 import TasteExploration from '../../TasteExploration/TasteExploration';
 import { quads, categoryOrder } from '../../../data/tasteQuads';
