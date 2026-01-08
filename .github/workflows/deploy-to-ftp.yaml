@@ -36,22 +36,3 @@ jobs:
           protocol: ftps
           local-dir: ./build/
           server-dir: /
-```
-
-4. **Click "Commit changes..."** (green button top right)
-
-5. **In the popup, click "Commit changes"**
-
----
-
-### Step 4: After Creating on GitHub
-
-**In Claude Code, say:**
-```
-# Reset local commit since we created it on GitHub instead
-cd ~/N4S-clone && git reset --hard HEAD~1
-
-# Pull the workflow from GitHub
-git pull origin main
-
-echo "✅ Synced with GitHub"
