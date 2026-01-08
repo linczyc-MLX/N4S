@@ -11,7 +11,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState, { initializeSelectionsForTier } from './hooks/useFYIState';
-import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
+import { generateMVPFromFYI } from './utils/fyiBridges';
 import {
   buildAvailableLevels,
   getZonesForStructure,
@@ -43,7 +43,6 @@ const FYIModule = () => {
     saveNow,
     isSaving,
     hasUnsavedChanges,
-    saveError,
     lastSaved,
     isLoading,
   } = useAppContext();

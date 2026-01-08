@@ -6,15 +6,14 @@ import type {
   OperatingModel,
   LifestylePriorities,
   GateStatus,
-  PlanBrief,
-  AdjacencyRequirement
+  PlanBrief
 } from "../shared/schema";
 
 // Browser-compatible UUID generator
 function randomUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    const v = c === 'x' ? r : ((r & 0x3) | 0x8);
     return v.toString(16);
   });
 }
@@ -24,13 +23,6 @@ interface ValidationInput {
   operatingModel: OperatingModel;
   lifestylePriorities: LifestylePriorities;
   planBrief?: PlanBrief;
-}
-
-interface AdjacencyViolation {
-  fromSpace: string;
-  toSpace: string;
-  required: string;
-  reason: string;
 }
 
 const moduleNames: Record<string, string> = {
@@ -84,9 +76,6 @@ export function runValidation(input: ValidationInput): ValidationResult {
     overallScore
   };
 }
-
-// Relationship priority: A (Adjacent) is strongest, S (Separate) is most restrictive
-const relationshipStrength: Record<string, number> = { "A": 4, "N": 3, "B": 2, "S": 1 };
 
 // Descriptions for adjacency relationships
 const relationshipDescriptions: Record<string, string> = {
