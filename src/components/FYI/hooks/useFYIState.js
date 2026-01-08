@@ -1,8 +1,11 @@
 /**
  * useFYIState Hook
- * 
+ *
  * Manages FYI module state including space selections, settings, and calculations.
  * Integrates with the shared space-registry for consistent zone/space definitions.
+ *
+ * NOTE: This hook does NOT persist to localStorage. All persistence is handled
+ * by AppContext which saves to the database. Pass initialData from AppContext.fyiData.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -18,8 +21,6 @@ import {
   getZonesInOrder
 } from '../../../shared/space-registry';
 
-const STORAGE_KEY = 'n4s_fyi_state';
-
 // Default FYI settings
 const defaultSettings = {
   targetSF: 15000,
@@ -34,7 +35,7 @@ const defaultSettings = {
 const initializeSelections = (tier, hasBasement) => {
   const availableSpaces = getSpacesForTier(tier);
   const selections = {};
-  
+
   availableSpaces.forEach(space => {
     // Only include spaces that have SF defined for this tier
     if (space.baseSF[tier] !== null) {
@@ -48,68 +49,42 @@ const initializeSelections = (tier, hasBasement) => {
       };
     }
   });
-  
+
   return selections;
 };
 
-export function useFYIState(initialKYCData = null) {
-  // Settings state
-  const [settings, setSettings] = useState(defaultSettings);
-  
+export function useFYIState(initialData = null) {
+  // Initialize from passed data (from AppContext.fyiData) or defaults
+  const [settings, setSettings] = useState(() => {
+    if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
+      return { ...defaultSettings, ...initialData.settings };
+    }
+    return defaultSettings;
+  });
+
   // Space selections: { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
-  const [selections, setSelections] = useState(() => 
-    initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement)
-  );
-  
-  // Loading state
-  const [isLoaded, setIsLoaded] = useState(false);
-  
+  const [selections, setSelections] = useState(() => {
+    if (initialData?.selections && Object.keys(initialData.selections).length > 0) {
+      return initialData.selections;
+    }
+    return initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement);
+  });
+
+  // Loading state - immediate since we initialize from props
+  const [isLoaded, setIsLoaded] = useState(true);
+
   // Active zone for navigation
   const [activeZone, setActiveZone] = useState('Z1_APB');
 
-  // Load saved state from localStorage
+  // Update state when initialData changes (e.g., when AppContext loads from API)
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.settings) {
-          setSettings(prev => ({ ...prev, ...parsed.settings }));
-        }
-        if (parsed.selections) {
-          setSelections(parsed.selections);
-        }
-        if (parsed.activeZone) {
-          setActiveZone(parsed.activeZone);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load FYI state:', e);
+    if (initialData?.selections && Object.keys(initialData.selections).length > 0) {
+      setSelections(initialData.selections);
     }
-    setIsLoaded(true);
-  }, []);
-
-  // Save state to localStorage when it changes
-  useEffect(() => {
-    if (!isLoaded) return;
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        settings,
-        selections,
-        activeZone
-      }));
-    } catch (e) {
-      console.error('Failed to save FYI state:', e);
+    if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
+      setSettings(prev => ({ ...prev, ...initialData.settings }));
     }
-  }, [settings, selections, activeZone, isLoaded]);
-
-  // Apply KYC data to pre-populate selections
-  useEffect(() => {
-    if (initialKYCData && isLoaded) {
-      applyKYCDefaults(initialKYCData);
-    }
-  }, [initialKYCData, isLoaded]);
+  }, [initialData]);
 
   // Apply KYC defaults to FYI selections
   const applyKYCDefaults = useCallback((kycData) => {
