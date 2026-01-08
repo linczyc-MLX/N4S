@@ -91,6 +91,7 @@ const FYIModule = () => {
     selections,
     activeZone,
     isLoaded,
+    isHydrated,
     totals,
     zonesWithCounts,
     structureTotals,
@@ -109,21 +110,31 @@ const FYIModule = () => {
     loadFromContext
   } = useFYIState(fyiData);
 
-  // Apply KYC defaults on first load (only if no existing data from database)
+  // Apply KYC defaults on first load - GATED by isHydrated to prevent overwriting loaded data
+  // This effect only runs AFTER initial data hydration is complete
   useEffect(() => {
-    console.log('[FYI-DEBUG] KYC effect: isLoaded=', isLoaded, 'initialized=', initialized, 'FOY size=', selections?.FOY?.size);
+    console.log('[FYI-DEBUG] KYC effect: isLoaded=', isLoaded, 'isHydrated=', isHydrated, 'initialized=', initialized, 'FOY size=', selections?.FOY?.size);
+
+    // CRITICAL: Wait for hydration to complete before applying KYC defaults
+    if (!isHydrated) {
+      console.log('[FYI-DEBUG] KYC effect: WAITING for hydration');
+      return;
+    }
+
     if (isLoaded && consolidatedKYC && !initialized) {
-      const { settings: kycSettings } = generateFYIFromKYC(
-        consolidatedKYC,
-        availableLevels
-      );
-
-      // Only apply if we don't have existing selections (from database)
+      // Check if we already have selections with any user data
+      // If selections exist, we NEVER overwrite them with KYC defaults
       const hasExistingSelections = selections && Object.keys(selections).length > 0;
-      const hasCustomSelections = hasExistingSelections && Object.values(selections).some(s => s.size !== 'M');
 
-      console.log('[FYI-DEBUG] KYC effect: hasCustomSelections=', hasCustomSelections, 'calling updateSettings=', !hasCustomSelections);
-      if (!hasCustomSelections) {
+      console.log('[FYI-DEBUG] KYC effect: hasExistingSelections=', hasExistingSelections, 'skipping updateSettings=', hasExistingSelections);
+
+      // Only apply KYC settings if there are NO existing selections at all
+      // This preserves ALL user data, even if all sizes are 'M'
+      if (!hasExistingSelections) {
+        const { settings: kycSettings } = generateFYIFromKYC(
+          consolidatedKYC,
+          availableLevels
+        );
         updateSettings({
           ...kycSettings,
           levelsAboveArrival: consolidatedKYC?.projectParameters?.levelsAboveArrival ?? 1,
@@ -132,20 +143,27 @@ const FYIModule = () => {
       }
       setInitialized(true);
     }
-  }, [isLoaded, consolidatedKYC, initialized, availableLevels, selections, updateSettings]);
+  }, [isLoaded, isHydrated, consolidatedKYC, initialized, availableLevels, selections, updateSettings]);
 
   // Sync FYI selections and settings to AppContext whenever they change
   // This ensures data is saved to the database via AppContext's auto-save
-  // IMPORTANT: Skip first render to avoid overwriting API data with defaults
+  // IMPORTANT: Only sync after hydration and user interaction
   useEffect(() => {
-    console.log('[FYI-DEBUG] Sync effect: isFirstRender=', isFirstRender.current, 'hasUserInteracted=', hasUserInteracted.current, 'FOY=', selections?.FOY?.size);
+    console.log('[FYI-DEBUG] Sync effect: isHydrated=', isHydrated, 'isFirstRender=', isFirstRender.current, 'hasUserInteracted=', hasUserInteracted.current, 'FOY=', selections?.FOY?.size);
+
+    // Don't sync until hydrated (prevents writing defaults before data loads)
+    if (!isHydrated) {
+      console.log('[FYI-DEBUG] Sync effect: WAITING for hydration');
+      return;
+    }
+
     if (isFirstRender.current) {
       isFirstRender.current = false;
       console.log('[FYI-DEBUG] Sync effect: SKIPPING first render');
       return; // Skip first render
     }
 
-    // Only sync if user has interacted (made changes)
+    // Only sync if user has explicitly interacted (made changes)
     if (isLoaded && updateFYIData && hasUserInteracted.current && Object.keys(selections).length > 0) {
       console.log('[FYI-DEBUG] Sync effect: SAVING to AppContext, FOY=', selections?.FOY?.size);
       updateFYIData({
@@ -155,7 +173,7 @@ const FYIModule = () => {
     } else {
       console.log('[FYI-DEBUG] Sync effect: NOT saving - hasUserInteracted=', hasUserInteracted.current);
     }
-  }, [selections, settings, isLoaded, updateFYIData]);
+  }, [selections, settings, isLoaded, isHydrated, updateFYIData]);
   
   // Get zones for active structure
   const activeZones = useMemo(() => {

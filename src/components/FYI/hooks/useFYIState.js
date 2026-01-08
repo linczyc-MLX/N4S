@@ -62,6 +62,13 @@ export function useFYIState(initialData = null) {
   // Track if we've loaded initial data from API (only do this ONCE)
   const hasLoadedFromAPI = useRef(false);
 
+  // Track if initial hydration is complete (prevents effects from writing defaults)
+  const [isHydrated, setIsHydrated] = useState(() => {
+    // If initialData has selections on first render, we're already hydrated
+    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+    return hasData;
+  });
+
   // Initialize from passed data (from AppContext.fyiData) or defaults
   const [settings, setSettings] = useState(() => {
     if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
@@ -99,6 +106,8 @@ export function useFYIState(initialData = null) {
     // Only load from initialData ONCE, and only if we haven't loaded yet
     if (hasLoadedFromAPI.current) {
       console.log('[FYI-DEBUG] useEffect: SKIPPING - already loaded');
+      // Mark as hydrated even if we skip (we already have data)
+      if (!isHydrated) setIsHydrated(true);
       return; // Already loaded, don't sync again (prevents infinite loop)
     }
 
@@ -113,10 +122,13 @@ export function useFYIState(initialData = null) {
         setSettings(prev => ({ ...prev, ...initialData.settings }));
       }
       hasLoadedFromAPI.current = true;
+      setIsHydrated(true);
     } else {
-      console.log('[FYI-DEBUG] useEffect: NO selections data in initialData');
+      console.log('[FYI-DEBUG] useEffect: NO selections data in initialData - marking hydrated with defaults');
+      // No data from API/localStorage, mark as hydrated with defaults
+      setIsHydrated(true);
     }
-  }, [initialData]);
+  }, [initialData, isHydrated]);
 
   // Apply KYC defaults to FYI selections
   const applyKYCDefaults = useCallback((kycData) => {
@@ -240,20 +252,18 @@ export function useFYIState(initialData = null) {
     }));
   }, []);
 
-  // Update settings
+  // Update settings - NEVER resets selections implicitly
+  // Tier changes preserve existing selections (user data is sacred)
   const updateSettings = useCallback((updates) => {
     setSettings(prev => {
       const newSettings = { ...prev, ...updates };
-      
-      // If tier changed, re-initialize selections
-      if (updates.programTier && updates.programTier !== prev.programTier) {
-        const newSelections = initializeSelections(
-          updates.programTier, 
-          updates.hasBasement ?? prev.hasBasement
-        );
-        setSelections(newSelections);
-      }
-      
+
+      // NOTE: We intentionally do NOT reset selections on tier change.
+      // User selections are preserved across tier changes.
+      // If a space doesn't exist in the new tier, it simply won't display
+      // but its data is retained in case they switch back.
+      console.log('[FYI-DEBUG] updateSettings: tier change', prev.programTier, '->', updates.programTier, '(selections preserved)');
+
       return newSettings;
     });
   }, []);
@@ -482,10 +492,11 @@ export function useFYIState(initialData = null) {
     selections,
     activeZone,
     isLoaded,
+    isHydrated,  // True once initial data load is complete (gates mount effects)
     totals,
     zonesWithCounts,
     structureTotals,
-    
+
     // Setters
     setActiveZone,
     updateSettings,
