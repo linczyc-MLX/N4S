@@ -501,6 +501,12 @@ export const AppProvider = ({ children }) => {
     const sectionData = kycData[respondent]?.[sectionId];
     if (!sectionData) return 'empty';
 
+    // Special handling for designIdentity - requires taste profile
+    if (sectionId === 'designIdentity') {
+      const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
+      return sectionData[tasteKey]?.completedAt ? 'complete' : 'empty';
+    }
+
     const requiredFields = REQUIRED_FIELDS[sectionId] || [];
 
     if (requiredFields.length === 0) {

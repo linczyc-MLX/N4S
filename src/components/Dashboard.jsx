@@ -31,14 +31,22 @@ const Dashboard = ({ onNavigate }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProjectInput, setShowNewProjectInput] = useState(false);
 
-  const kycProgress = calculateCompleteness('principal');
+  // KYC progress - must account for both respondents if Secondary exists
+  const principalProgress = calculateCompleteness('principal');
   const principalData = kycData.principal.portfolioContext;
   const principalName = principalData.principalFirstName
     ? `${principalData.principalFirstName} ${principalData.principalLastName || ''}`.trim()
     : '';
-  const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
-  // Secondary progress tracked for future use
-  const _secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0; // eslint-disable-line no-unused-vars
+
+  // Check if this is a couple (Secondary needs to complete too)
+  const clientType = kycData.principal.designIdentity?.clientType || 'individual';
+  const hasSecondary = clientType === 'couple';
+  const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 100;
+
+  // Combined KYC progress: average of both if couple, otherwise just principal
+  const kycProgress = hasSecondary
+    ? Math.round((principalProgress + secondaryProgress) / 2)
+    : principalProgress;
 
   // FYI progress calculation - based on actual configuration
   const fyiSelections = fyiData.selections || {};
@@ -48,9 +56,8 @@ const Dashboard = ({ onNavigate }) => {
     fyiSelectionCount >= 10 ? 75 :   // 10+ spaces = mostly done
     fyiSelectionCount > 0 ? 50 : 0;  // Some selections = in progress
 
-  // MVP progress - requires FYI completion
-  const mvpProgress = fyiProgress >= 50 && kycData.principal.projectParameters.targetGSF ?
-    Math.min(100, kycProgress + 20) : 0;
+  // MVP progress - not yet implemented, always 0
+  const mvpProgress = 0;
 
   // Module status calculation - UPDATED for new flow
   const getModuleStatus = (moduleCode) => {
