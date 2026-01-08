@@ -94,12 +94,11 @@ export function useFYIState(initialData = null) {
       return; // Already loaded, don't sync again (prevents infinite loop)
     }
 
-    // Check if initialData has meaningful data (not just defaults)
+    // Check if initialData has any selections data at all
     const hasSelectionsData = initialData?.selections && Object.keys(initialData.selections).length > 0;
-    const hasCustomSelections = hasSelectionsData &&
-      Object.values(initialData.selections).some(s => s.size !== 'M' || s.notes || s.customSF);
 
-    if (hasCustomSelections) {
+    if (hasSelectionsData) {
+      // Load all selections from initialData (from database/localStorage)
       setSelections(initialData.selections);
       if (initialData.settings && Object.keys(initialData.settings).length > 0) {
         setSettings(prev => ({ ...prev, ...initialData.settings }));
