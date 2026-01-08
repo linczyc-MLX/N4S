@@ -1,10 +1,12 @@
 <?php
 // App State API endpoint (for things like active project ID, disclosure tier)
+// Uses POST for all write operations to avoid hosting restrictions on PUT/DELETE
 require_once 'config.php';
 
 $pdo = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 $key = isset($_GET['key']) ? $_GET['key'] : null;
+$action = isset($_GET['action']) ? $_GET['action'] : '';
 
 switch ($method) {
     case 'GET':
@@ -37,6 +39,15 @@ switch ($method) {
 
     case 'POST':
     case 'PUT':
+        // Handle delete via POST if action=delete
+        if ($action === 'delete' && $key) {
+            $stmt = $pdo->prepare("DELETE FROM app_state WHERE state_key = ?");
+            $stmt->execute([$key]);
+            jsonResponse(['success' => true, 'deleted' => $key]);
+            break;
+        }
+
+        // Set state value
         $input = json_decode(file_get_contents('php://input'), true);
 
         if (!$input || !isset($input['key'])) {
@@ -53,6 +64,7 @@ switch ($method) {
         break;
 
     case 'DELETE':
+        // Fallback for DELETE if hosting allows it
         if (!$key) {
             errorResponse('Key required');
         }
