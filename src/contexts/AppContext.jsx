@@ -252,6 +252,56 @@ const saveToStorage = (key, value) => {
   }
 };
 
+// Prompt 2: Direct localStorage read/write for projects
+const readLocalProject = (projectId) => {
+  try {
+    const raw = localStorage.getItem(`n4s_project_${projectId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeLocalProject = (projectId, data) => {
+  try {
+    localStorage.setItem(`n4s_project_${projectId}`, JSON.stringify(data));
+  } catch {}
+};
+
+// Prompt 3: Merge project data with FYI selection protection
+const mergeProjectData = (localData, remoteData) => {
+  if (!remoteData) return localData;
+  if (!localData) return remoteData;
+
+  const merged = { ...remoteData, ...localData };
+  // Now fix nested objects carefully:
+  merged.clientData = { ...(remoteData.clientData || {}), ...(localData.clientData || {}) };
+  merged.kycData = { ...(remoteData.kycData || {}), ...(localData.kycData || {}) };
+
+  merged.fyiData = { ...(remoteData.fyiData || {}), ...(localData.fyiData || {}) };
+
+  // CRITICAL: if remote does not contain selections (or contains empty), keep local selections
+  const remoteSel = remoteData?.fyiData?.selections;
+  const localSel = localData?.fyiData?.selections;
+
+  const remoteHasSelections = remoteSel && Object.keys(remoteSel).length > 0;
+  const localHasSelections = localSel && Object.keys(localSel).length > 0;
+
+  if (!remoteHasSelections && localHasSelections) {
+    merged.fyiData.selections = localSel;
+  } else if (remoteHasSelections && localHasSelections) {
+    // both have selections: remote is allowed to overwrite only keys it actually has; otherwise keep local
+    merged.fyiData.selections = { ...localSel, ...remoteSel };
+  }
+
+  // Same idea for FYI settings
+  const remoteSettings = remoteData?.fyiData?.settings;
+  const localSettings = localData?.fyiData?.settings;
+  merged.fyiData.settings = { ...(remoteSettings || {}), ...(localSettings || {}) };
+
+  return merged;
+};
+
 // Default empty project data
 const getEmptyProjectData = () => ({
   clientData: {
@@ -320,6 +370,9 @@ export const AppProvider = ({ children }) => {
   const [lastSaved, setLastSaved] = useState(null);
   const [apiAvailable, setApiAvailable] = useState(true);
 
+  // Prompt 1: Hydration guard - prevents save effects during initial load
+  const isHydratingRef = useRef(false);
+
   // Projects list
   const [projects, setProjects] = useState(() =>
     loadFromStorage(STORAGE_KEYS.projects, [])
@@ -347,88 +400,54 @@ export const AppProvider = ({ children }) => {
     loadFromStorage(STORAGE_KEYS.disclosureTier, 'mvp')
   );
 
-  // Load data from API on mount
+  // Prompt 4: LocalStorage-first hydration with merge protection
   useEffect(() => {
-    const loadFromAPI = async () => {
-      console.log('[APP-DEBUG] loadFromAPI starting...');
+    if (!activeProjectId) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrate = async () => {
+      isHydratingRef.current = true;
+      setIsLoading(true);
+      console.log('[APP-DEBUG] Hydration starting for project:', activeProjectId);
+
+      // 1) Load local immediately (source of truth for FYI selections)
+      const local = readLocalProject(activeProjectId);
+      console.log('[APP-DEBUG] Local data loaded, FOY=', local?.fyiData?.selections?.FOY?.size);
+      if (local && !cancelled) {
+        setProjectData(local);
+      }
+
+      // 2) Load remote
       try {
-        // Try to load projects from API
-        const apiProjects = await api.getProjects();
-        console.log('[APP-DEBUG] API projects loaded:', apiProjects?.length);
-        if (apiProjects && Array.isArray(apiProjects)) {
-          const formattedProjects = apiProjects.map(p => ({
-            id: p.id,
-            name: p.project_name,
-            createdAt: p.created_at,
-            lastUpdated: p.updated_at,
-          }));
-          setProjects(formattedProjects);
-          saveToStorage(STORAGE_KEYS.projects, formattedProjects);
-        }
+        const remote = await api.getProject(activeProjectId);
+        console.log('[APP-DEBUG] Remote data loaded, FOY=', remote?.fyiData?.selections?.FOY?.size);
+        if (cancelled) return;
 
-        // Load app state (active project, disclosure tier)
-        const appState = await api.getState();
-        console.log('[APP-DEBUG] API state loaded:', appState);
-        if (appState.activeProjectId) {
-          setActiveProjectId(appState.activeProjectId);
-          saveToStorage(STORAGE_KEYS.activeProjectId, appState.activeProjectId);
-        }
-        if (appState.disclosureTier) {
-          setDisclosureTier(appState.disclosureTier);
-          saveToStorage(STORAGE_KEYS.disclosureTier, appState.disclosureTier);
-        }
+        // 3) Merge with protection: remote missing FYI selections must not overwrite local
+        const merged = mergeProjectData(local, remote);
+        console.log('[APP-DEBUG] Merged data, FOY=', merged?.fyiData?.selections?.FOY?.size);
 
-        // Load active project data
-        // IMPORTANT: Prefer localStorage for FYI data since it's saved immediately
-        // while API uses debounced saves (2 second delay)
-        const activeId = appState.activeProjectId || loadFromStorage(STORAGE_KEYS.activeProjectId, null);
-        console.log('[APP-DEBUG] Loading project:', activeId);
-        if (activeId) {
-          // Check localStorage FIRST - it has the most recent data
-          const localData = loadFromStorage(getProjectKey(activeId), null);
-          const localHasFYISelections = localData?.fyiData?.selections && Object.keys(localData.fyiData.selections).length > 0;
-          console.log('[APP-DEBUG] localStorage FOY=', localData?.fyiData?.selections?.FOY?.size, 'hasSelections=', localHasFYISelections);
-
-          if (localHasFYISelections) {
-            // Use localStorage data - it's always up-to-date
-            console.log('[APP-DEBUG] Using localStorage data (has FYI selections)');
-            setProjectData(localData);
-          } else {
-            // No local FYI data, try API
-            const projectDataFromAPI = await api.getProject(activeId);
-            console.log('[APP-DEBUG] API project loaded, FOY=', projectDataFromAPI?.fyiData?.selections?.FOY?.size);
-            if (projectDataFromAPI) {
-              setProjectData(projectDataFromAPI);
-              saveToStorage(getProjectKey(activeId), projectDataFromAPI);
-            }
-          }
-        }
-
+        setProjectData(merged);
+        writeLocalProject(activeProjectId, merged);
         setApiAvailable(true);
-        console.log('[APP-DEBUG] API load complete, apiAvailable=true');
-      } catch (error) {
-        console.warn('[APP-DEBUG] API failed, falling back to localStorage:', error);
+      } catch (e) {
+        // If remote fails, local is still enough to persist across refresh
+        console.warn('[APP-DEBUG] Remote load failed, using local project cache', e);
         setApiAvailable(false);
-
-        // Fall back to localStorage
-        const localProjects = loadFromStorage(STORAGE_KEYS.projects, []);
-        const localActiveId = loadFromStorage(STORAGE_KEYS.activeProjectId, null);
-        console.log('[APP-DEBUG] localStorage activeId:', localActiveId);
-
-        setProjects(localProjects);
-        if (localActiveId) {
-          setActiveProjectId(localActiveId);
-          const localProjectData = loadFromStorage(getProjectKey(localActiveId), getEmptyProjectData());
-          console.log('[APP-DEBUG] localStorage project loaded, FOY=', localProjectData?.fyiData?.selections?.FOY?.size);
-          setProjectData(localProjectData);
-        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
+        isHydratingRef.current = false;
+        console.log('[APP-DEBUG] Hydration complete');
       }
     };
 
-    loadFromAPI();
-  }, []);
+    hydrate();
+    return () => { cancelled = true; };
+  }, [activeProjectId]);
 
   // Track if there's a pending save (for UI indicator)
   const [savePending, setSavePending] = useState(false);
@@ -519,6 +538,12 @@ export const AppProvider = ({ children }) => {
 
   // Save to localStorage immediately, API debounced
   useEffect(() => {
+    // Prompt 5: Don't save during hydration (prevents overwriting with stale data)
+    if (isHydratingRef.current) {
+      console.log('[APP-DEBUG] Save effect: SKIPPED during hydration');
+      return;
+    }
+
     if (activeProjectId && !isLoading) {
       const dataToSave = {
         ...projectData,
