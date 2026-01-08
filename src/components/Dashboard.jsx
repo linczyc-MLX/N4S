@@ -39,9 +39,13 @@ const Dashboard = ({ onNavigate }) => {
   const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
   const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0;
 
-  // FYI progress calculation
-  const fyiProgress = fyiData.completedAt ? 100 : 
-    Object.keys(fyiData.selections || {}).length > 0 ? 50 : 0;
+  // FYI progress calculation - based on actual configuration
+  const fyiSelections = fyiData.selections || {};
+  const fyiSelectionCount = Object.values(fyiSelections).filter(s => s?.included).length;
+  const fyiProgress = fyiData.completedAt ? 100 :
+    fyiSelectionCount >= 20 ? 100 :  // 20+ spaces = complete
+    fyiSelectionCount >= 10 ? 75 :   // 10+ spaces = mostly done
+    fyiSelectionCount > 0 ? 50 : 0;  // Some selections = in progress
 
   // MVP progress - requires FYI completion
   const mvpProgress = fyiProgress >= 50 && kycData.principal.projectParameters.targetGSF ?
@@ -54,8 +58,8 @@ const Dashboard = ({ onNavigate }) => {
         return kycProgress === 0 ? 'not-started' : kycProgress < 100 ? 'in-progress' : 'complete';
       case 'C': // FYI - unlocked after KYC starts
         if (kycProgress < 30) return 'locked';
-        return fyiData.completedAt ? 'complete' :
-          (fyiData.brief || Object.keys(fyiData.selections || {}).length > 0) ? 'in-progress' : 'not-started';
+        return fyiProgress >= 100 ? 'complete' :
+          fyiProgress > 0 ? 'in-progress' : 'not-started';
       case 'M': // MVP - requires FYI progress
         if (fyiProgress < 50) return 'locked';
         return mvpProgress === 0 ? 'not-started' : mvpProgress < 100 ? 'in-progress' : 'complete';
