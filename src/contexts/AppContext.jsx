@@ -270,18 +270,47 @@ const getEmptyProjectData = () => ({
   activeRespondent: 'principal',
 });
 
-// Debounce helper
-const useDebouncedCallback = (callback, delay) => {
+// Debounce helper with flush capability for beforeunload
+const useDebouncedCallbackWithFlush = (callback, delay) => {
   const timeoutRef = useRef(null);
+  const pendingArgsRef = useRef(null);
+  const callbackRef = useRef(callback);
 
-  return useCallback((...args) => {
+  // Keep callback ref updated
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  const debouncedFn = useCallback((...args) => {
+    pendingArgsRef.current = args;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
-      callback(...args);
+      callbackRef.current(...args);
+      pendingArgsRef.current = null;
     }, delay);
-  }, [callback, delay]);
+  }, [delay]);
+
+  // Flush function to immediately execute pending save
+  const flush = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (pendingArgsRef.current) {
+      const args = pendingArgsRef.current;
+      pendingArgsRef.current = null;
+      callbackRef.current(...args);
+    }
+  }, []);
+
+  // Check if there's a pending save
+  const hasPending = useCallback(() => {
+    return pendingArgsRef.current !== null;
+  }, []);
+
+  return { debouncedFn, flush, hasPending, pendingArgsRef };
 };
 
 export const AppProvider = ({ children }) => {
@@ -401,22 +430,92 @@ export const AppProvider = ({ children }) => {
     loadFromAPI();
   }, []);
 
-  // Save project to API (debounced)
+  // Track if there's a pending save (for UI indicator)
+  const [savePending, setSavePending] = useState(false);
+
+  // Save project to API (async version for normal saves)
   const saveProjectToAPI = useCallback(async (projectId, data) => {
-    if (!apiAvailable || !projectId) return;
+    if (!projectId) return;
 
     setIsSaving(true);
+    setSavePending(false);
     try {
       await api.updateProject(projectId, data);
       setLastSaved(new Date());
+      console.log('[APP-DEBUG] API save complete for', projectId);
     } catch (error) {
       console.error('Failed to save to API:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [apiAvailable]);
+  }, []);
 
-  const debouncedSaveToAPI = useDebouncedCallback(saveProjectToAPI, 2000);
+  // Sync save using sendBeacon for beforeunload (doesn't block page unload)
+  const saveProjectSync = useCallback((projectId, data) => {
+    if (!projectId) return;
+
+    const url = `https://website.not-4.sale/api/projects.php?id=${encodeURIComponent(projectId)}&action=update`;
+    const payload = JSON.stringify(data);
+
+    // Try sendBeacon first (most reliable for unload)
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' });
+      const sent = navigator.sendBeacon(url, blob);
+      console.log('[APP-DEBUG] sendBeacon flush:', sent ? 'success' : 'failed');
+      return sent;
+    }
+
+    // Fallback to fetch with keepalive
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true
+    }).catch(e => console.error('[APP-DEBUG] keepalive fetch failed:', e));
+
+    return true;
+  }, []);
+
+  // Debounced save with flush capability
+  const { debouncedFn: debouncedSaveToAPI, flush: flushPendingSave, hasPending, pendingArgsRef } =
+    useDebouncedCallbackWithFlush(saveProjectToAPI, 2000);
+
+  // Update savePending state when debounce queues a save
+  const queueSaveToAPI = useCallback((projectId, data) => {
+    setSavePending(true);
+    debouncedSaveToAPI(projectId, data);
+  }, [debouncedSaveToAPI]);
+
+  // Flush pending saves on beforeunload/visibilitychange
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // Check if there's a pending save
+      if (pendingArgsRef.current) {
+        const [projectId, data] = pendingArgsRef.current;
+        console.log('[APP-DEBUG] beforeunload: flushing pending save for', projectId);
+        saveProjectSync(projectId, data);
+        pendingArgsRef.current = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && pendingArgsRef.current) {
+        const [projectId, data] = pendingArgsRef.current;
+        console.log('[APP-DEBUG] visibilitychange: flushing pending save for', projectId);
+        saveProjectSync(projectId, data);
+        pendingArgsRef.current = null;
+        setSavePending(false);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [saveProjectSync, pendingArgsRef]);
 
   // Save to localStorage immediately, API debounced
   useEffect(() => {
@@ -437,10 +536,10 @@ export const AppProvider = ({ children }) => {
           : p
       ));
 
-      // Save to API (debounced)
-      debouncedSaveToAPI(activeProjectId, dataToSave);
+      // Save to API (debounced with flush-on-unload)
+      queueSaveToAPI(activeProjectId, dataToSave);
     }
-  }, [projectData, activeRespondent, activeProjectId, isLoading, debouncedSaveToAPI]);
+  }, [projectData, activeRespondent, activeProjectId, isLoading, queueSaveToAPI]);
 
   // Save projects list
   useEffect(() => {
@@ -754,6 +853,7 @@ export const AppProvider = ({ children }) => {
     // Loading/saving state
     isLoading,
     isSaving,
+    savePending,
     lastSaved,
     apiAvailable,
     saveNow,
