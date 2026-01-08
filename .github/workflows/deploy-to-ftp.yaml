@@ -31,7 +31,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           mkdir -p build/api
-          cp api/*.php build/api/
+          cp api/* build/api/
           sed -i "s|\$DB_PASS = getenv('DB_PASS') ?: '';|\$DB_PASS = getenv('DB_PASS') ?: '$DB_PASSWORD';|" build/api/config.php
           echo "Files to deploy:"
           ls -la build/
