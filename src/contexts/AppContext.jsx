@@ -191,8 +191,16 @@ export const AppProvider = ({ children }) => {
         // 1. Load project list
         const projectsList = await api.getProjects();
         if (!isMounted) return;
-        setProjects(Array.isArray(projectsList) ? projectsList : []);
-        console.log('[APP] Loaded projects:', projectsList?.length || 0);
+        // Map API response (snake_case) to expected format (camelCase)
+        const mappedProjects = (Array.isArray(projectsList) ? projectsList : []).map(p => ({
+          id: p.id,
+          name: p.project_name || p.name || 'Untitled',
+          code: p.project_code || p.code,
+          createdAt: p.created_at || p.createdAt,
+          lastUpdated: p.updated_at || p.lastUpdated
+        }));
+        setProjects(mappedProjects);
+        console.log('[APP] Loaded projects:', mappedProjects?.length || 0);
 
         // 2. Load app state (activeProjectId, disclosureTier)
         let state = {};
