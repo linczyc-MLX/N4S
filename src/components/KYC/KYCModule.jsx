@@ -18,9 +18,8 @@ import CulturalContextSection from './sections/CulturalContextSection';
 import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
 const KYCModule = () => {
-  const { 
-    kycData, 
-    activeRespondent, 
+  const {
+    activeRespondent,
     setActiveRespondent,
     currentKYCSection,
     setCurrentKYCSection,

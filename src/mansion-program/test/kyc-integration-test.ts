@@ -9,11 +9,9 @@ import {
   mapKYCToValidation,
   deriveOperatingModel,
   deriveLifestylePriorities,
-  deriveBridgeConfig,
   extractUniqueRequirements,
   recommendPreset,
-  detectConflicts,
-  type UniqueRequirement
+  detectConflicts
 } from '../server/kyc-integration';
 
 import type { KYCResponse } from '../shared/kyc-schema';

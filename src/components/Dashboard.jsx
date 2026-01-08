@@ -37,7 +37,8 @@ const Dashboard = ({ onNavigate }) => {
     ? `${principalData.principalFirstName} ${principalData.principalLastName || ''}`.trim()
     : '';
   const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
-  const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0;
+  // Secondary progress tracked for future use
+  const _secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0; // eslint-disable-line no-unused-vars
 
   // FYI progress calculation
   const fyiProgress = fyiData.completedAt ? 100 : 

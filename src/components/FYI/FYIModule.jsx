@@ -16,10 +16,9 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState from './hooks/useFYIState';
 import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
-import { 
-  buildAvailableLevels, 
-  getZonesForStructure,
-  getSpacesForStructure 
+import {
+  buildAvailableLevels,
+  getZonesForStructure
 } from '../../shared/space-registry';
 
 // Components
@@ -34,7 +33,7 @@ import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
 import './FYIModule.css';
 
 const FYIModule = () => {
-  const { kycData, activeRespondent, updateFYIData, clientData } = useAppContext();
+  const { kycData, updateFYIData, clientData } = useAppContext();
   const [isExporting, setIsExporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
@@ -105,18 +104,17 @@ const FYIModule = () => {
     getSpacesForZone,
     calculateArea,
     resetToDefaults,
-    applyKYCDefaults,
     generateMVPBrief
   } = useFYIState(fyiStateConfig);
   
   // Apply KYC defaults on first load
   useEffect(() => {
     if (isLoaded && consolidatedKYC && !initialized) {
-      const { settings: kycSettings, selections: kycSelections } = generateFYIFromKYC(
+      const { settings: kycSettings } = generateFYIFromKYC(
         consolidatedKYC,
         availableLevels
       );
-      
+
       // Only apply if we don't have existing selections
       const hasExistingSelections = Object.keys(selections).length > 0;
       if (!hasExistingSelections) {
@@ -128,6 +126,7 @@ const FYIModule = () => {
       }
       setInitialized(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, consolidatedKYC, initialized, availableLevels]);
   
   // Get zones for active structure
@@ -200,13 +199,14 @@ const FYIModule = () => {
     } finally {
       setIsExporting(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings, selections, totals, structureTotals, availableLevels, getSpacesForZone, calculateArea, clientData, consolidatedKYC]);
   
   // Client-side summary fallback
   const generateClientSideSummary = () => {
     const summary = [];
     summary.push('FYI - Lifestyle Requirements Summary');
-    summary.push('=' .repeat(40));
+    summary.push('='.repeat(40));
     summary.push(`Target SF: ${settings.targetSF.toLocaleString()}`);
     summary.push(`Program Tier: ${settings.programTier}`);
     summary.push('');

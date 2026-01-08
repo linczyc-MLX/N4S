@@ -7,12 +7,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  zones,
   spaceRegistry,
   getSpacesForTier,
   getConditionedSpaces,
   calculateSpaceArea,
-  circulationDefaults,
   calculateCirculation,
   getSpaceByCode,
   getZonesInOrder
@@ -109,6 +107,7 @@ export function useFYIState(initialKYCData = null) {
     if (initialKYCData && isLoaded) {
       applyKYCDefaults(initialKYCData);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialKYCData, isLoaded]);
 
   // Apply KYC defaults to FYI selections
@@ -133,13 +132,10 @@ export function useFYIState(initialKYCData = null) {
     
     // Re-initialize selections for new tier
     const newSelections = initializeSelections(tier, hasBasement);
-    
-    // Apply KYC must-have spaces
-    const mustHaveSpaces = kycData?.spaceRequirements?.mustHaveSpaces || [];
-    const niceToHaveSpaces = kycData?.spaceRequirements?.niceToHaveSpaces || [];
-    
-    // Mark nice-to-have spaces as included but smaller
-    // (They start included anyway, but this could be used for recommendations)
+
+    // KYC must-have/nice-to-have spaces are available for future logic
+    // const mustHaveSpaces = kycData?.spaceRequirements?.mustHaveSpaces || [];
+    // const niceToHaveSpaces = kycData?.spaceRequirements?.niceToHaveSpaces || [];
     
     // Apply specific KYC flags
     if (kycData?.familyHousehold?.petGroomingRoom) {

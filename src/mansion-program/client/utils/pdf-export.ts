@@ -24,8 +24,6 @@ export interface PDFExportData {
  * Attempts to use jsPDF if available, falls back to printable HTML
  */
 export async function generatePersonalizationPDF(data: PDFExportData): Promise<void> {
-  const { result, decisions, presetName, baseSF, totalSF, mermaidCode } = data;
-  
   // Try to use jsPDF if available
   try {
     const jsPDF = (window as any).jspdf?.jsPDF;
@@ -45,7 +43,7 @@ export async function generatePersonalizationPDF(data: PDFExportData): Promise<v
  * Generate PDF using jsPDF library
  */
 async function generateWithJsPDF(data: PDFExportData, jsPDF: any): Promise<void> {
-  const { result, decisions, presetName, baseSF, totalSF } = data;
+  const { result, decisions, presetName, totalSF } = data;
   
   const doc = new jsPDF();
   let y = 20;
@@ -166,7 +164,7 @@ async function generateWithJsPDF(data: PDFExportData, jsPDF: any): Promise<void>
  * Generate printable HTML and open print dialog
  */
 function generatePrintableHTML(data: PDFExportData): void {
-  const { result, decisions, presetName, baseSF, totalSF, mermaidCode } = data;
+  const { result, decisions, presetName, totalSF } = data;
   
   const status = result.redFlagCount > 0 ? 'warning' : result.warningCount > 0 ? 'advisory' : 'pass';
   const statusText = {

@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { ArrowLeft, FileText, Download } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 // Import from mansion-program TypeScript module
 import {
@@ -226,17 +226,17 @@ export default function BriefingBuilderView({
     // Could also trigger download here
   };
 
-  // Handle export/download
-  const handleExport = (planBrief) => {
-    const json = JSON.stringify(planBrief, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${projectName || 'project'}-brief.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // Handle export/download - available for future use
+  // const handleExport = (planBrief) => {
+  //   const json = JSON.stringify(planBrief, null, 2);
+  //   const blob = new Blob([json], { type: 'application/json' });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = `${projectName || 'project'}-brief.json`;
+  //   a.click();
+  //   URL.revokeObjectURL(url);
+  // };
 
   // If validation context failed, show error
   if (!validationContext) {

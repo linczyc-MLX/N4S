@@ -1,9 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
-  Home, Users, ChefHat, Dumbbell, Wine, Tv, BookOpen,
-  Sofa, Gamepad2, Beer, BedDouble, Coffee, TreePine,
-  Building, Layers, ArrowRight, RefreshCw, Palette, Thermometer, FileText, Sparkles
+  Home, Users, Dumbbell,
+  Building, Layers, ArrowRight, Palette, FileText, Sparkles
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
@@ -173,14 +172,16 @@ const MVPModule = () => {
   
   // Extract scores from profiles
   const scoresP = tasteProfileP?.profile?.scores || {};
-  const scoresS = tasteProfileS?.profile?.scores || {};
+  // Secondary scores/materials available for future divergence analysis
+  // const scoresS = tasteProfileS?.profile?.scores || {};
   const materialsP = tasteProfileP?.profile?.topMaterials || [];
-  const materialsS = tasteProfileS?.profile?.topMaterials || [];
-  
+  // const materialsS = tasteProfileS?.profile?.topMaterials || [];
+
   // Always use principal's scores only - partner data is for divergence analysis only
   const combinedScores = useMemo(() => {
     return scoresP || null;
-  }, [scoresP]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(scoresP)]);
 
   // Calculate styleEra from selections (matches Report algorithm)
   const styleEraP = useMemo(() => {
