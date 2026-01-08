@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 
 // Generate unique project ID
@@ -6,9 +6,8 @@ const generateProjectId = () => {
   return 'proj_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 };
 
-// Initial KYC data structure based on v2 specification
+// Initial KYC data structure
 const initialKYCData = {
-  // Section 1: Client & Portfolio Context
   portfolioContext: {
     principalFirstName: '',
     principalLastName: '',
@@ -18,74 +17,63 @@ const initialKYCData = {
     secondaryLastName: '',
     secondaryEmail: '',
     familyOfficeContact: '',
-    familyOfficeAuthorityLevel: null, // 1-4: 1=Advisory, 2=Limited, 3=Full, 4=Fiduciary
-    authorityLevelConfirmed: false,   // Gate confirmation for Level 3+
+    familyOfficeAuthorityLevel: null,
+    authorityLevelConfirmed: false,
     domainDelegationNotes: '',
     currentPropertyCount: null,
-    primaryResidences: [],            // Array of {country, city} for multiple properties
-    thisPropertyRole: '', // Primary/Secondary/Vacation/Investment/Legacy
-    investmentHorizon: '', // Forever/5yr/10yr/Generational
-    exitStrategy: '', // Personal/Rental/Sale/Inheritance
-    lifeStage: '', // Building family/Empty nest/Retirement/Multi-gen
-    decisionTimeline: '', // Urgent/Standard/Flexible
+    primaryResidences: [],
+    thisPropertyRole: '',
+    investmentHorizon: '',
+    exitStrategy: '',
+    lifeStage: '',
+    decisionTimeline: '',
   },
-
-  // Section 2: Family & Household
   familyHousehold: {
-    familyMembers: [], // Array of {name, age, role, specialNeeds}
+    familyMembers: [],
     pets: '',
-    petGroomingRoom: false,           // MVP: Triggers pet washing/grooming room
-    petDogRun: false,                 // MVP: Triggers outdoor dog run
-    staffingLevel: '',            // MVP: none/part_time/full_time/live_in
+    petGroomingRoom: false,
+    petDogRun: false,
+    staffingLevel: '',
     liveInStaff: null,
     staffAccommodationRequired: false,
     multigenerationalNeeds: false,
     anticipatedFamilyChanges: '',
   },
-
-  // Section 3: Project Parameters
   projectParameters: {
     projectCity: '',
     projectCountry: '',
     specificAddress: '',
-    propertyType: '', // New build/Renovation/Addition
+    propertyType: '',
     targetGSF: null,
     bedroomCount: null,
     bathroomCount: null,
     floors: null,
-    hasBasement: false,           // MVP: Basement level included
-    sfCapConstraint: null,        // MVP: Optional SF budget cap (Discovery mode if null)
-    timeline: '', // Urgent/12-18mo/18-24mo/24+mo
-    complexityFactors: [], // Historic/Regulatory/Phased/Remote
-    architecturalIntegration: '', // ID only/Shell coord/Full Arch
-    localKnowledgeCritical: '', // Critical/Standard/Not needed
+    hasBasement: false,
+    sfCapConstraint: null,
+    timeline: '',
+    complexityFactors: [],
+    architecturalIntegration: '',
+    localKnowledgeCritical: '',
   },
-
-  // Section 4: Budget Framework
   budgetFramework: {
     totalProjectBudget: null,
     interiorBudget: null,
     perSFExpectation: null,
-    budgetFlexibility: '', // Fixed ceiling/Flexible/Investment-appropriate
-    architectFeeStructure: '',        // Fixed/Percentage/Hourly/Hybrid
-    interiorDesignerFeeStructure: '', // Fixed/Percentage/Hourly/Hybrid/Cost-Plus
-    interiorQualityTier: '',          // Select/Reserve/Signature/Legacy
+    budgetFlexibility: '',
+    architectFeeStructure: '',
+    interiorDesignerFeeStructure: '',
+    interiorQualityTier: '',
     artBudgetSeparate: false,
     artBudgetAmount: null,
   },
-
-  // Section 5: Design Identity
   designIdentity: {
-    // Style axes (1-10 scale)
     axisContemporaryTraditional: 5,
     axisMinimalLayered: 5,
     axisWarmCool: 5,
     axisOrganicGeometric: 5,
     axisRefinedEclectic: 5,
-    // Architecture-specific axes
     axisArchMinimalOrnate: 5,
     axisArchRegionalInternational: 5,
-    // Tags and preferences
     inspirationImages: [],
     aspirationKeywords: [],
     antiInspiration: '',
@@ -95,50 +83,42 @@ const initialKYCData = {
     materialAffinities: [],
     materialAversions: [],
     colorPreferences: '',
-    // Architecture-specific
     exteriorMaterialPreferences: [],
     massingPreference: '',
     roofFormPreference: '',
     structuralAmbition: '',
   },
-
-  // Section 6: Lifestyle & Living
   lifestyleLiving: {
     dailyRoutinesSummary: '',
-    workFromHome: '', // Never/Sometimes/Always
+    workFromHome: '',
     wfhPeopleCount: null,
     hobbies: [],
     hobbyDetails: '',
-    entertainingFrequency: '', // Rarely/Monthly/Weekly/Daily
+    entertainingFrequency: '',
     typicalGuestCount: '',
-    entertainingStyle: '', // Formal/Casual/Both
+    entertainingStyle: '',
     wellnessPriorities: [],
-    lateNightMediaUse: false,     // MVP: Late-night movie watching (triggers Sound Lock)
-    privacyLevelRequired: 3, // 1-5
-    noiseSensitivity: 3, // 1-5
-    indoorOutdoorLiving: 3, // 1-5
+    lateNightMediaUse: false,
+    privacyLevelRequired: 3,
+    noiseSensitivity: 3,
+    indoorOutdoorLiving: 3,
   },
-
-  // Section 7: Space Requirements
   spaceRequirements: {
     mustHaveSpaces: [],
     niceToHaveSpaces: [],
     currentSpacePainPoints: '',
     viewPriorityRooms: [],
     adjacencyRequirements: '',
-    storageNeeds: '', // Standard/Above average/Extensive
+    storageNeeds: '',
     accessibilityRequirements: '',
     technologyRequirements: [],
     sustainabilityPriorities: [],
-    // MVP-specific amenity flags
-    wantsSeparateFamilyRoom: false,   // MVP: Separate from Great Room
-    wantsSecondFormalLiving: false,   // MVP: Salon (15K+ tier only)
-    wantsBar: false,                  // MVP: Built-in bar (15K+ tier only)
-    wantsBunkRoom: false,             // MVP: Kids bunk room (additive)
-    wantsBreakfastNook: false,        // MVP: Breakfast nook in kitchen
+    wantsSeparateFamilyRoom: false,
+    wantsSecondFormalLiving: false,
+    wantsBar: false,
+    wantsBunkRoom: false,
+    wantsBreakfastNook: false,
   },
-
-  // Section 8: Cultural Context
   culturalContext: {
     culturalBackground: '',
     regionalSensibilities: [],
@@ -147,42 +127,34 @@ const initialKYCData = {
     crossCulturalRequirements: '',
     languagesPreferred: [],
   },
-
-  // Section 9: Working Preferences
   workingPreferences: {
-    communicationStyle: '', // Direct/Relational/Visual
-    decisionCadence: '', // Weekly/Milestone/Hands-off
-    collaborationStyle: '', // Directive/Consultative/Delegative
-    principalInvolvementRequired: '', // Must have/Nice to have/Not important
-    presentationFormat: '', // In-person/Virtual/Hybrid
+    communicationStyle: '',
+    decisionCadence: '',
+    collaborationStyle: '',
+    principalInvolvementRequired: '',
+    presentationFormat: '',
     previousDesignerExperience: '',
     redFlagsToAvoid: '',
     existingIndustryConnections: '',
-    architectCelebrityPreference: 3,      // 1-5: 1=Starchitect, 5=Quiet Professional
-    interiorDesignerCelebrityPreference: 3, // 1-5: 1=Celebrity, 5=Quiet Professional
-    // Architecture-specific
-    caRequirement: '', // Full CA/Limited CA/None
-    contractorRelationshipPreference: '', // Design-Bid-Build/Design-Build/CM at Risk
-    earlyContractorInvolvement: false,    // ECI - contractor input from concept stage
+    architectCelebrityPreference: 3,
+    interiorDesignerCelebrityPreference: 3,
+    caRequirement: '',
+    contractorRelationshipPreference: '',
+    earlyContractorInvolvement: false,
   },
-
-  // Advisor-Assessed Fields
   advisorAssessed: {
-    visionFlexibilityIndex: null, // 1-5
-    profileCompleteness: 0, // Auto-calculated
-    dataConfidenceScore: null, // 1-5
-    divergenceLog: [], // Array of divergence records
+    visionFlexibilityIndex: null,
+    profileCompleteness: 0,
+    dataConfidenceScore: null,
+    divergenceLog: [],
     sessionNotes: '',
   },
 };
 
 // Initial FYI data
 const initialFYIData = {
-  // Brief data from FYI module
   brief: null,
   completedAt: null,
-
-  // Settings used to generate the brief
   settings: {
     targetSF: 15000,
     deltaPct: 10,
@@ -191,11 +163,7 @@ const initialFYIData = {
     programTier: '15k',
     hasBasement: false
   },
-
-  // Space selections
   selections: {},
-
-  // Legacy fields (preserved for backward compatibility)
   architectShortlist: [],
   idShortlist: [],
   compatibilityMatrix: {},
@@ -206,20 +174,10 @@ const initialFYIData = {
 // Create context
 const AppContext = createContext(null);
 
-// localStorage keys (used as fallback/cache)
-const STORAGE_KEYS = {
-  projects: 'n4s_projects',
-  activeProjectId: 'n4s_active_project',
-  disclosureTier: 'n4s_disclosure_tier',
-};
-
-// Get project-specific storage key
-const getProjectKey = (projectId) => `n4s_project_${projectId}`;
-
 // Sections available to Secondary respondent
 const SECONDARY_SECTIONS = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
 
-// Required fields for completion status (section-based)
+// Required fields for completion status
 const REQUIRED_FIELDS = {
   portfolioContext: ['principalFirstName', 'principalLastName', 'thisPropertyRole'],
   familyHousehold: [],
@@ -230,95 +188,6 @@ const REQUIRED_FIELDS = {
   spaceRequirements: [],
   culturalContext: [],
   workingPreferences: [],
-};
-
-// Load from localStorage helper (fallback)
-const loadFromStorage = (key, defaultValue) => {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch (e) {
-    console.warn(`Failed to load ${key} from localStorage:`, e);
-    return defaultValue;
-  }
-};
-
-// Save to localStorage helper (cache)
-const saveToStorage = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.warn(`Failed to save ${key} to localStorage:`, e);
-  }
-};
-
-// Ensure FYI selections/settings exist BOTH at top-level and under fyiData
-const normalizeProject = (p) => {
-  if (!p) return p;
-
-  const selections = p?.fyiData?.selections ?? p?.selections ?? {};
-  const settings   = p?.fyiData?.settings   ?? p?.settings   ?? {};
-
-  return {
-    ...p,
-    selections,
-    settings,
-    fyiData: {
-      ...(p.fyiData || {}),
-      selections,
-      settings,
-    },
-  };
-};
-
-// Prompt 2: Direct localStorage read/write for projects
-const readLocalProject = (projectId) => {
-  try {
-    const raw = localStorage.getItem(`n4s_project_${projectId}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeLocalProject = (projectId, data) => {
-  try {
-    localStorage.setItem(`n4s_project_${projectId}`, JSON.stringify(data));
-  } catch {}
-};
-
-// Prompt 3: Merge project data with FYI selection protection
-const mergeProjectData = (localData, remoteData) => {
-  if (!remoteData) return localData;
-  if (!localData) return remoteData;
-
-  const merged = { ...remoteData, ...localData };
-  // Now fix nested objects carefully:
-  merged.clientData = { ...(remoteData.clientData || {}), ...(localData.clientData || {}) };
-  merged.kycData = { ...(remoteData.kycData || {}), ...(localData.kycData || {}) };
-
-  merged.fyiData = { ...(remoteData.fyiData || {}), ...(localData.fyiData || {}) };
-
-  // CRITICAL: if remote does not contain selections (or contains empty), keep local selections
-  const remoteSel = remoteData?.fyiData?.selections;
-  const localSel = localData?.fyiData?.selections;
-
-  const remoteHasSelections = remoteSel && Object.keys(remoteSel).length > 0;
-  const localHasSelections = localSel && Object.keys(localSel).length > 0;
-
-  if (!remoteHasSelections && localHasSelections) {
-    merged.fyiData.selections = localSel;
-  } else if (remoteHasSelections && localHasSelections) {
-    // both have selections: local takes priority (local is source of truth)
-    merged.fyiData.selections = { ...remoteSel, ...localSel };
-  }
-
-  // Same idea for FYI settings
-  const remoteSettings = remoteData?.fyiData?.settings;
-  const localSettings = localData?.fyiData?.settings;
-  merged.fyiData.settings = { ...(remoteSettings || {}), ...(localSettings || {}) };
-
-  return merged;
 };
 
 // Default empty project data
@@ -339,81 +208,25 @@ const getEmptyProjectData = () => ({
   activeRespondent: 'principal',
 });
 
-// Debounce helper with flush capability for beforeunload
-const useDebouncedCallbackWithFlush = (callback, delay) => {
-  const timeoutRef = useRef(null);
-  const pendingArgsRef = useRef(null);
-  const callbackRef = useRef(callback);
-
-  // Keep callback ref updated
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
-
-  const debouncedFn = useCallback((...args) => {
-    pendingArgsRef.current = args;
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      callbackRef.current(...args);
-      pendingArgsRef.current = null;
-    }, delay);
-  }, [delay]);
-
-  // Flush function to immediately execute pending save
-  const flush = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (pendingArgsRef.current) {
-      const args = pendingArgsRef.current;
-      pendingArgsRef.current = null;
-      callbackRef.current(...args);
-    }
-  }, []);
-
-  // Check if there's a pending save
-  const hasPending = useCallback(() => {
-    return pendingArgsRef.current !== null;
-  }, []);
-
-  return { debouncedFn, flush, hasPending, pendingArgsRef };
-};
-
 export const AppProvider = ({ children }) => {
-  // Loading state
+  // Loading/saving state
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
-  const [apiAvailable, setApiAvailable] = useState(true);
-
-  // Prompt 1: Hydration guard - prevents save effects during initial load
-  const isHydratingRef = useRef(false);
+  const [saveError, setSaveError] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Projects list
-  const [projects, setProjects] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.projects, [])
-  );
+  const [projects, setProjects] = useState([]);
 
   // Active project ID
-  const [activeProjectId, setActiveProjectId] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.activeProjectId, null)
-  );
+  const [activeProjectId, setActiveProjectId] = useState(null);
 
-  // Project data
+  // Project data - ALL DATA COMES FROM SERVER
   const [projectData, setProjectData] = useState(() => getEmptyProjectData());
 
-  // Destructure project data for easier access
-  const { clientData, kycData, fyiData: rawFyiData, activeRespondent: storedRespondent } = projectData;
-
-  // Bridge selections/settings from both top-level and fyiData (ensures FYI always gets selections)
-  const fyiData = {
-    ...(rawFyiData || {}),
-    selections: rawFyiData?.selections || projectData?.selections || {},
-    settings:   rawFyiData?.settings   || projectData?.settings   || {},
-  };
+  // Destructure project data
+  const { clientData, kycData, fyiData, activeRespondent: storedRespondent } = projectData;
 
   // Active respondent
   const [activeRespondent, setActiveRespondent] = useState(storedRespondent || 'principal');
@@ -421,205 +234,87 @@ export const AppProvider = ({ children }) => {
   // Current KYC section
   const [currentKYCSection, setCurrentKYCSection] = useState(0);
 
-  // Progressive disclosure tier (global, not per-project)
-  const [disclosureTier, setDisclosureTier] = useState(() =>
-    loadFromStorage(STORAGE_KEYS.disclosureTier, 'mvp')
-  );
+  // Progressive disclosure tier
+  const [disclosureTier, setDisclosureTier] = useState('mvp');
 
-  // Prompt 4: LocalStorage-first hydration with merge protection
+  // Load initial data from API on mount
   useEffect(() => {
-    if (!activeProjectId) {
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const hydrate = async () => {
-      isHydratingRef.current = true;
+    const loadInitialData = async () => {
       setIsLoading(true);
-      console.log('[APP-DEBUG] Hydration starting for project:', activeProjectId);
-
-      // 1) Load local immediately (source of truth for FYI selections)
-      const localRaw = readLocalProject(activeProjectId);
-      const local = normalizeProject(localRaw);
-      console.log('[APP-DEBUG] Local data loaded, FOY=', local?.fyiData?.selections?.FOY?.size);
-      if (local && !cancelled) {
-        setProjectData(local);
-      }
-
-      // 2) Load remote
       try {
-        const remoteRaw = await api.getProject(activeProjectId);
-        const remote = normalizeProject(remoteRaw);
-        console.log('[APP-DEBUG] Remote data loaded, FOY=', remote?.fyiData?.selections?.FOY?.size);
-        if (cancelled) return;
+        // Load projects list from API
+        const projectsList = await api.getProjects();
+        setProjects(Array.isArray(projectsList) ? projectsList : []);
 
-        // 3) Merge with protection: remote missing FYI selections must not overwrite local
-        const merged = normalizeProject(mergeProjectData(local, remote));
-        console.log('[APP-DEBUG] Merged data, FOY=', merged?.fyiData?.selections?.FOY?.size);
+        // Load app state from API
+        const state = await api.getState();
+        const activeId = state?.activeProjectId || null;
+        const tier = state?.disclosureTier || 'mvp';
 
-        setProjectData(merged);
-        writeLocalProject(activeProjectId, merged);
-        setApiAvailable(true);
-      } catch (e) {
-        // If remote fails, local is still enough to persist across refresh
-        console.warn('[APP-DEBUG] Remote load failed, using local project cache', e);
-        setApiAvailable(false);
+        setDisclosureTier(tier);
+
+        // If we have an active project, load it
+        if (activeId) {
+          try {
+            const data = await api.getProject(activeId);
+            if (data) {
+              console.log('[APP] Loaded project from API:', activeId);
+              console.log('[APP] FYI selections FOY:', data?.fyiData?.selections?.FOY);
+              setActiveProjectId(activeId);
+              setProjectData(data);
+              setActiveRespondent(data.activeRespondent || 'principal');
+            }
+          } catch (err) {
+            console.error('Failed to load active project:', err);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load initial data from API:', error);
       } finally {
-        if (!cancelled) setIsLoading(false);
-        isHydratingRef.current = false;
-        console.log('[APP-DEBUG] Hydration complete');
+        setIsLoading(false);
       }
     };
 
-    hydrate();
-    return () => { cancelled = true; };
-  }, [activeProjectId]);
+    loadInitialData();
+  }, []);
 
-  // Track if there's a pending save (for UI indicator)
-  const [savePending, setSavePending] = useState(false);
-
-  // Save project to API (async version for normal saves)
-  const saveProjectToAPI = useCallback(async (projectId, data) => {
-    if (!projectId) return;
+  // MANUAL SAVE - saves current project to API
+  const saveNow = useCallback(async () => {
+    if (!activeProjectId) {
+      console.warn('[APP] No active project to save');
+      return false;
+    }
 
     setIsSaving(true);
-    setSavePending(false);
+    setSaveError(null);
+
+    const dataToSave = {
+      ...projectData,
+      activeRespondent,
+    };
+
+    console.log('[APP] Saving to API:', activeProjectId);
+    console.log('[APP] FYI selections being saved:', dataToSave?.fyiData?.selections);
+
     try {
-      await api.updateProject(projectId, data);
+      await api.updateProject(activeProjectId, dataToSave);
       setLastSaved(new Date());
-      console.log('[APP-DEBUG] API save complete for', projectId);
+      setHasUnsavedChanges(false);
+      console.log('[APP] Save successful!');
+      return true;
     } catch (error) {
-      console.error('Failed to save to API:', error);
+      console.error('[APP] Save failed:', error);
+      setSaveError(error.message || 'Failed to save');
+      return false;
     } finally {
       setIsSaving(false);
     }
+  }, [activeProjectId, projectData, activeRespondent]);
+
+  // Mark data as changed (for UI indicator)
+  const markAsChanged = useCallback(() => {
+    setHasUnsavedChanges(true);
   }, []);
-
-  // Sync save using sendBeacon for beforeunload (doesn't block page unload)
-  const saveProjectSync = useCallback((projectId, data) => {
-    if (!projectId) return;
-
-    const url = `https://website.not-4.sale/api/projects.php?id=${encodeURIComponent(projectId)}&action=update`;
-    const payload = JSON.stringify(data);
-
-    // Try sendBeacon first (most reliable for unload)
-    if (navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'application/json' });
-      const sent = navigator.sendBeacon(url, blob);
-      console.log('[APP-DEBUG] sendBeacon flush:', sent ? 'success' : 'failed');
-      return sent;
-    }
-
-    // Fallback to fetch with keepalive
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-      keepalive: true
-    }).catch(e => console.error('[APP-DEBUG] keepalive fetch failed:', e));
-
-    return true;
-  }, []);
-
-  // Debounced save with flush capability
-  const { debouncedFn: debouncedSaveToAPI, flush: flushPendingSave, hasPending, pendingArgsRef } =
-    useDebouncedCallbackWithFlush(saveProjectToAPI, 2000);
-
-  // Update savePending state when debounce queues a save
-  const queueSaveToAPI = useCallback((projectId, data) => {
-    setSavePending(true);
-    debouncedSaveToAPI(projectId, data);
-  }, [debouncedSaveToAPI]);
-
-  // Flush pending saves on beforeunload/visibilitychange
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      // Check if there's a pending save
-      if (pendingArgsRef.current) {
-        const [projectId, data] = pendingArgsRef.current;
-        console.log('[APP-DEBUG] beforeunload: flushing pending save for', projectId);
-        saveProjectSync(projectId, data);
-        pendingArgsRef.current = null;
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && pendingArgsRef.current) {
-        const [projectId, data] = pendingArgsRef.current;
-        console.log('[APP-DEBUG] visibilitychange: flushing pending save for', projectId);
-        saveProjectSync(projectId, data);
-        pendingArgsRef.current = null;
-        setSavePending(false);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [saveProjectSync, pendingArgsRef]);
-
-  // Save to localStorage immediately, API debounced
-  useEffect(() => {
-    // Prompt 5: Don't save during hydration (prevents overwriting with stale data)
-    if (isHydratingRef.current) {
-      console.log('[APP-DEBUG] Save effect: SKIPPED during hydration');
-      return;
-    }
-
-    if (activeProjectId && !isLoading) {
-      const dataToSave = {
-        ...projectData,
-        activeRespondent,
-      };
-
-      console.log('[APP-DEBUG] Save effect: saving to localStorage, FOY=', dataToSave?.fyiData?.selections?.FOY?.size);
-      // Always save to localStorage (immediate)
-      saveToStorage(getProjectKey(activeProjectId), dataToSave);
-
-      // Update project metadata in projects list
-      setProjects(prev => prev.map(p =>
-        p.id === activeProjectId
-          ? { ...p, name: projectData.clientData.projectName, lastUpdated: new Date().toISOString() }
-          : p
-      ));
-
-      // Save to API (debounced with flush-on-unload)
-      queueSaveToAPI(activeProjectId, dataToSave);
-    }
-  }, [projectData, activeRespondent, activeProjectId, isLoading, queueSaveToAPI]);
-
-  // Save projects list
-  useEffect(() => {
-    if (!isLoading) {
-      saveToStorage(STORAGE_KEYS.projects, projects);
-    }
-  }, [projects, isLoading]);
-
-  // Save active project ID
-  useEffect(() => {
-    if (!isLoading) {
-      saveToStorage(STORAGE_KEYS.activeProjectId, activeProjectId);
-      if (apiAvailable) {
-        api.setState('activeProjectId', activeProjectId).catch(console.error);
-      }
-    }
-  }, [activeProjectId, isLoading, apiAvailable]);
-
-  // Save disclosure tier
-  useEffect(() => {
-    if (!isLoading) {
-      saveToStorage(STORAGE_KEYS.disclosureTier, disclosureTier);
-      if (apiAvailable) {
-        api.setState('disclosureTier', disclosureTier).catch(console.error);
-      }
-    }
-  }, [disclosureTier, isLoading, apiAvailable]);
 
   // Create new project
   const createProject = useCallback(async (name = '') => {
@@ -651,93 +346,95 @@ export const AppProvider = ({ children }) => {
       activeRespondent: 'principal',
     };
 
-    // Add to projects list
-    setProjects(prev => [...prev, newProject]);
+    try {
+      // Save to API first
+      await api.createProject(newProjectData);
+      await api.setState('activeProjectId', newId);
 
-    // Save to localStorage
-    saveToStorage(getProjectKey(newId), newProjectData);
+      // Update local state
+      setProjects(prev => [...prev, newProject]);
+      setActiveProjectId(newId);
+      setProjectData(newProjectData);
+      setActiveRespondent('principal');
+      setCurrentKYCSection(0);
+      setHasUnsavedChanges(false);
 
-    // Save to API
-    if (apiAvailable) {
-      try {
-        await api.createProject(newProjectData);
-      } catch (error) {
-        console.error('Failed to create project in API:', error);
-      }
+      return newId;
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      throw error;
     }
+  }, []);
 
-    // Switch to new project
-    setActiveProjectId(newId);
-    setProjectData(newProjectData);
-    setActiveRespondent('principal');
-    setCurrentKYCSection(0);
-
-    return newId;
-  }, [apiAvailable]);
-
-  // Switch to existing project
+  // Switch to existing project - loads from API
   const switchProject = useCallback(async (projectId) => {
     if (!projectId || projectId === activeProjectId) return;
 
     setIsLoading(true);
+    setHasUnsavedChanges(false);
 
     try {
-      // Try API first
-      if (apiAvailable) {
-        const data = await api.getProject(projectId);
-        if (data) {
-          setActiveProjectId(projectId);
-          setProjectData(data);
-          setActiveRespondent(data.activeRespondent || 'principal');
-          setCurrentKYCSection(0);
-          saveToStorage(getProjectKey(projectId), data);
-          return;
-        }
+      const data = await api.getProject(projectId);
+      if (data) {
+        console.log('[APP] Switched to project:', projectId);
+        console.log('[APP] FYI selections loaded:', data?.fyiData?.selections);
+
+        await api.setState('activeProjectId', projectId);
+
+        setActiveProjectId(projectId);
+        setProjectData(data);
+        setActiveRespondent(data.activeRespondent || 'principal');
+        setCurrentKYCSection(0);
       }
     } catch (error) {
-      console.warn('Failed to load from API, using localStorage:', error);
+      console.error('Failed to switch project:', error);
+    } finally {
+      setIsLoading(false);
     }
+  }, [activeProjectId]);
 
-    // Fall back to localStorage
-    const data = loadFromStorage(getProjectKey(projectId), getEmptyProjectData());
-    setActiveProjectId(projectId);
-    setProjectData(data);
-    setActiveRespondent(data.activeRespondent || 'principal');
-    setCurrentKYCSection(0);
+  // Reload current project from API (discard unsaved changes)
+  const reloadProject = useCallback(async () => {
+    if (!activeProjectId) return;
 
-    setIsLoading(false);
-  }, [activeProjectId, apiAvailable]);
+    setIsLoading(true);
+    try {
+      const data = await api.getProject(activeProjectId);
+      if (data) {
+        setProjectData(data);
+        setActiveRespondent(data.activeRespondent || 'principal');
+        setHasUnsavedChanges(false);
+        console.log('[APP] Reloaded project from API');
+      }
+    } catch (error) {
+      console.error('Failed to reload project:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeProjectId]);
 
   // Delete project
   const deleteProject = useCallback(async (projectId) => {
-    // Remove from projects list
-    setProjects(prev => prev.filter(p => p.id !== projectId));
+    try {
+      await api.deleteProject(projectId);
+      setProjects(prev => prev.filter(p => p.id !== projectId));
 
-    // Remove from localStorage
-    localStorage.removeItem(getProjectKey(projectId));
-
-    // Remove from API
-    if (apiAvailable) {
-      try {
-        await api.deleteProject(projectId);
-      } catch (error) {
-        console.error('Failed to delete from API:', error);
+      if (projectId === activeProjectId) {
+        const remaining = projects.filter(p => p.id !== projectId);
+        if (remaining.length > 0) {
+          await switchProject(remaining[0].id);
+        } else {
+          setActiveProjectId(null);
+          setProjectData(getEmptyProjectData());
+          await api.setState('activeProjectId', null);
+        }
       }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
     }
+  }, [activeProjectId, projects, switchProject]);
 
-    // If deleting active project, switch to another or create new
-    if (projectId === activeProjectId) {
-      const remaining = projects.filter(p => p.id !== projectId);
-      if (remaining.length > 0) {
-        switchProject(remaining[0].id);
-      } else {
-        setActiveProjectId(null);
-        setProjectData(getEmptyProjectData());
-      }
-    }
-  }, [activeProjectId, projects, switchProject, apiAvailable]);
-
-  // Update client data
+  // Update client data - local only, marks as changed
   const updateClientData = useCallback((updates) => {
     setProjectData(prev => ({
       ...prev,
@@ -748,9 +445,10 @@ export const AppProvider = ({ children }) => {
         createdAt: prev.clientData.createdAt || new Date().toISOString(),
       },
     }));
-  }, []);
+    markAsChanged();
+  }, [markAsChanged]);
 
-  // Update KYC data for specific respondent and section
+  // Update KYC data - local only, marks as changed
   const updateKYCData = useCallback((respondent, section, data) => {
     setProjectData(prev => ({
       ...prev,
@@ -765,32 +463,47 @@ export const AppProvider = ({ children }) => {
         },
       },
     }));
-  }, []);
+    markAsChanged();
+  }, [markAsChanged]);
 
-  // Update FYI data - writes to BOTH top-level and fyiData for consistency
+  // Update FYI data - local only, marks as changed
   const updateFYIData = useCallback((updates) => {
-    console.log('[APP-DEBUG] updateFYIData called, FOY in updates=', updates?.selections?.FOY?.size);
+    console.log('[APP] updateFYIData called with:', updates);
+    console.log('[APP] FOY in updates:', updates?.selections?.FOY);
+
     setProjectData(prev => {
-      const next = normalizeProject({
+      const newFyiData = {
+        ...prev.fyiData,
+        ...updates,
+      };
+
+      // If updates include selections, merge them properly
+      if (updates.selections) {
+        newFyiData.selections = {
+          ...prev.fyiData?.selections,
+          ...updates.selections,
+        };
+      }
+
+      // If updates include settings, merge them properly
+      if (updates.settings) {
+        newFyiData.settings = {
+          ...prev.fyiData?.settings,
+          ...updates.settings,
+        };
+      }
+
+      console.log('[APP] New fyiData:', newFyiData);
+
+      return {
         ...prev,
-        // keep both representations consistent
-        selections: updates?.selections ?? prev?.selections,
-        settings:   updates?.settings   ?? prev?.settings,
-        fyiData: {
-          ...(prev?.fyiData || {}),
-          ...updates,
-          selections: updates?.selections ?? prev?.fyiData?.selections ?? prev?.selections,
-          settings:   updates?.settings   ?? prev?.fyiData?.settings   ?? prev?.settings,
-        }
-      });
-
-      // write local immediately so refresh works even if API is bad
-      try { localStorage.setItem(`n4s_project_${next.id || prev.id}`, JSON.stringify(next)); } catch {}
-      return next;
+        fyiData: newFyiData,
+      };
     });
-  }, []);
+    markAsChanged();
+  }, [markAsChanged]);
 
-  // Check if a section has required fields completed
+  // Check section completion status
   const getSectionCompletionStatus = useCallback((respondent, sectionId) => {
     const sectionData = kycData[respondent]?.[sectionId];
     if (!sectionData) return 'empty';
@@ -818,7 +531,7 @@ export const AppProvider = ({ children }) => {
     return 'partial';
   }, [kycData]);
 
-  // Calculate overall profile completeness
+  // Calculate profile completeness
   const calculateCompleteness = useCallback((respondent = 'principal') => {
     const data = kycData[respondent];
     if (!data) return 0;
@@ -856,71 +569,45 @@ export const AppProvider = ({ children }) => {
     return totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
   }, [kycData]);
 
-  // Reset current project data
+  // Reset current project
   const resetCurrentProject = useCallback(() => {
     if (!activeProjectId) return;
-
-    const emptyData = getEmptyProjectData();
-    setProjectData(emptyData);
+    setProjectData(getEmptyProjectData());
     setActiveRespondent('principal');
     setCurrentKYCSection(0);
-  }, [activeProjectId]);
+    markAsChanged();
+  }, [activeProjectId, markAsChanged]);
 
   // Reset all data
   const resetAllData = useCallback(async () => {
-    // Clear all project data from localStorage
-    projects.forEach(p => {
-      localStorage.removeItem(getProjectKey(p.id));
-    });
-
-    // Clear from API
-    if (apiAvailable) {
-      for (const p of projects) {
-        try {
-          await api.deleteProject(p.id);
-        } catch (error) {
-          console.error('Failed to delete project from API:', error);
-        }
+    for (const p of projects) {
+      try {
+        await api.deleteProject(p.id);
+      } catch (error) {
+        console.error('Failed to delete project:', error);
       }
     }
 
-    // Clear project list and active project
     setProjects([]);
     setActiveProjectId(null);
     setProjectData(getEmptyProjectData());
     setCurrentKYCSection(0);
     setActiveRespondent('principal');
     setDisclosureTier('mvp');
+    setHasUnsavedChanges(false);
 
-    // Clear storage keys
-    localStorage.removeItem(STORAGE_KEYS.projects);
-    localStorage.removeItem(STORAGE_KEYS.activeProjectId);
-  }, [projects, apiAvailable]);
-
-  // Manual save function (for explicit save buttons)
-  const saveNow = useCallback(async () => {
-    if (!activeProjectId) return;
-
-    const dataToSave = {
-      ...projectData,
-      activeRespondent,
-    };
-
-    saveToStorage(getProjectKey(activeProjectId), dataToSave);
-
-    if (apiAvailable) {
-      await saveProjectToAPI(activeProjectId, dataToSave);
-    }
-  }, [activeProjectId, projectData, activeRespondent, apiAvailable, saveProjectToAPI]);
+    await api.setState('activeProjectId', null);
+  }, [projects]);
 
   const value = {
     // Loading/saving state
     isLoading,
     isSaving,
-    savePending,
     lastSaved,
-    apiAvailable,
+    saveError,
+    hasUnsavedChanges,
     saveNow,
+    reloadProject,
 
     // Project management
     projects,
