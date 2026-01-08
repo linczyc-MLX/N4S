@@ -290,8 +290,8 @@ const mergeProjectData = (localData, remoteData) => {
   if (!remoteHasSelections && localHasSelections) {
     merged.fyiData.selections = localSel;
   } else if (remoteHasSelections && localHasSelections) {
-    // both have selections: remote is allowed to overwrite only keys it actually has; otherwise keep local
-    merged.fyiData.selections = { ...localSel, ...remoteSel };
+    // both have selections: local takes priority (local is source of truth)
+    merged.fyiData.selections = { ...remoteSel, ...localSel };
   }
 
   // Same idea for FYI settings
