@@ -56,9 +56,8 @@ const Dashboard = ({ onNavigate }) => {
     fyiSelectionCount >= 10 ? 75 :   // 10+ spaces = mostly done
     fyiSelectionCount > 0 ? 50 : 0;  // Some selections = in progress
 
-  // MVP progress - requires FYI completion
-  const mvpProgress = fyiProgress >= 50 && kycData.principal.projectParameters.targetGSF ?
-    Math.min(100, kycProgress + 20) : 0;
+  // MVP progress - not yet implemented, always 0
+  const mvpProgress = 0;
 
   // Module status calculation - UPDATED for new flow
   const getModuleStatus = (moduleCode) => {
