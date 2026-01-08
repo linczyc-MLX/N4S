@@ -497,7 +497,7 @@ export function validateFYISelections(selections, settings) {
   }
   
   // Check for required spaces
-  const requiredCodes = ['FOY', 'KIT', 'FR', 'PRI', 'PRIBATH', 'PRICL'];
+  const requiredCodes = ['FOY', 'KIT', 'FR', 'PRI', 'PRIBATH'];
   requiredCodes.forEach(code => {
     if (!selections[code]?.included) {
       errors.push({
@@ -507,6 +507,15 @@ export function validateFYISelections(selections, settings) {
       });
     }
   });
+
+  // Check for primary closets (his/her are separate codes)
+  if (!selections['PRICL_HIS']?.included && !selections['PRICL_HER']?.included) {
+    errors.push({
+      type: 'missing_required',
+      code: 'PRICL',
+      message: `Primary Closet is required for any residential program`
+    });
+  }
   
   // Check basement space placement
   if (!settings.hasBasement) {
