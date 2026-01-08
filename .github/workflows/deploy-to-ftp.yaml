@@ -35,40 +35,42 @@ jobs:
           FTP_USER: acc780882701
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          # Step 1: Delete old files (IONOS can't overwrite existing files)
-          lftp -e "
-            set ftp:ssl-allow true;
-            set ssl:verify-certificate no;
-            set net:timeout 60;
-            set net:max-retries 5;
-            rm -rf static || true;
-            glob -a rm -f *.html *.json _redirects *.txt *.xml *.ico *.png || true;
-            quit
-          " -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST"
-
-          echo "Old files deleted"
-
-          # Step 2: Upload fresh build
           cd build
-          lftp -e "
-            set ftp:ssl-allow true;
-            set ssl:verify-certificate no;
-            set net:timeout 60;
-            set net:max-retries 5;
-            mkdir -p static/js;
-            mkdir -p static/css;
-            mkdir -p static/media;
-            put index.html;
-            put asset-manifest.json;
-            put manifest.json;
-            put _redirects;
-            cd static/js;
-            lcd static/js;
-            mput *;
-            cd ../css;
-            lcd ../css;
-            mput *;
-            quit
-          " -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST"
+
+          # Single lftp session: delete old files, then upload new ones
+          lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST" << 'LFTP_COMMANDS'
+          set ftp:ssl-allow true
+          set ssl:verify-certificate no
+          set net:timeout 120
+          set net:max-retries 5
+          set net:reconnect-interval-base 5
+
+          # Delete old files (IONOS can't overwrite)
+          rm -rf static || true
+          glob -a rm -f *.html *.json _redirects *.txt *.xml *.ico *.png || true
+
+          # Create directories
+          mkdir -p static/js
+          mkdir -p static/css
+          mkdir -p static/media
+
+          # Upload root files
+          put index.html
+          put asset-manifest.json
+          put manifest.json
+          put _redirects
+
+          # Upload JS files
+          lcd static/js
+          cd static/js
+          mput *
+
+          # Upload CSS files
+          lcd ../css
+          cd ../css
+          mput *
+
+          quit
+          LFTP_COMMANDS
 
           echo "✅ Deployment complete to website.not-4.sale"
