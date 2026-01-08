@@ -37,6 +37,10 @@ jobs:
           # Inject database password into config
           sed -i "s|\$DB_PASS = getenv('DB_PASS') ?: '';|\$DB_PASS = getenv('DB_PASS') ?: '$DB_PASSWORD';|" build/api/config.php
 
+          # Show what we're deploying
+          echo "=== Build directory contents ==="
+          find build -type f | head -50
+
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
@@ -46,50 +50,18 @@ jobs:
           FTP_USER: acc780882701
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          cd build
-
-          # Single lftp session: delete old files, then upload new ones
-          lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST" << 'LFTP_COMMANDS'
+          # Use mirror command to sync entire build directory
+          # --reverse: upload local to remote
+          # --delete: remove files on remote that don't exist locally
+          # --verbose: show what's happening
+          lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST" << EOF
           set ftp:ssl-allow true
           set ssl:verify-certificate no
           set net:timeout 120
           set net:max-retries 5
-          set net:reconnect-interval-base 5
-
-          # Delete old files (IONOS can't overwrite)
-          rm -rf static || true
-          rm -rf api || true
-          glob -a rm -f *.html *.json _redirects *.txt *.xml *.ico *.png || true
-
-          # Create directories
-          mkdir -p static/js
-          mkdir -p static/css
-          mkdir -p static/media
-          mkdir -p api
-
-          # Upload root files
-          put index.html
-          put asset-manifest.json
-          put manifest.json
-          put _redirects
-
-          # Upload JS files
-          lcd static/js
-          cd static/js
-          mput *
-
-          # Upload CSS files
-          lcd ../css
-          cd ../css
-          mput *
-
-          # Upload API files (go back to root first)
-          cd /
-          lcd ../../api
-          cd api
-          mput *.php
-
+          set mirror:parallel-transfer-count 5
+          mirror --reverse --delete --verbose --exclude .git/ --exclude node_modules/ ./build/ /
           quit
-          LFTP_COMMANDS
+          EOF
 
           echo "✅ Deployment complete to website.not-4.sale"
