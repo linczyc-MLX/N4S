@@ -171,16 +171,16 @@ const FYIModule = () => {
     setSelectedLevel(level);
   }, []);
   
-  // Handle PDF export
-  const handleExportPDF = useCallback(async () => {
+  // Handle PDF export (mode: 'zone' or 'level')
+  const handleExportPDF = useCallback(async (mode = 'zone') => {
     setIsExporting(true);
     try {
-      const projectName = clientData?.projectName || 
+      const projectName = clientData?.projectName ||
         consolidatedKYC?.projectParameters?.projectName || '';
-      const clientName = consolidatedKYC?.portfolioContext 
+      const clientName = consolidatedKYC?.portfolioContext
         ? `${consolidatedKYC.portfolioContext.principalFirstName || ''} ${consolidatedKYC.portfolioContext.principalLastName || ''}`.trim()
         : '';
-      
+
       const pdfData = buildFYIPDFData(
         settings,
         selections,
@@ -192,8 +192,8 @@ const FYIModule = () => {
         projectName,
         clientName
       );
-      
-      await generateFYIPDF(pdfData);
+
+      await generateFYIPDF(pdfData, mode);
     } catch (error) {
       console.error('Export failed:', error);
       generateClientSideSummary();

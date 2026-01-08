@@ -1049,6 +1049,33 @@
   background: var(--color-background, #fafaf8);
 }
 
+.fyi-totals-panel__btn--small {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.fyi-totals-panel__export-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.fyi-totals-panel__export-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+  font-weight: 500;
+}
+
+.fyi-totals-panel__export-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fyi-totals-panel__export-buttons .fyi-totals-panel__btn {
+  flex: 1;
+}
+
 .fyi-totals-panel__hint {
   text-align: center;
   font-size: 0.75rem;

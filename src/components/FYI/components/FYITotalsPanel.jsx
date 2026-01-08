@@ -333,14 +333,28 @@ const FYITotalsPanel = ({
       
       {/* Action Buttons */}
       <div className="fyi-totals-panel__actions">
-        <button
-          className="fyi-totals-panel__btn fyi-totals-panel__btn--secondary"
-          onClick={onExportPDF}
-          disabled={isExporting}
-        >
-          {isExporting ? 'Generating...' : 'Export PDF'}
-        </button>
-        
+        <div className="fyi-totals-panel__export-group">
+          <span className="fyi-totals-panel__export-label">Export PDF:</span>
+          <div className="fyi-totals-panel__export-buttons">
+            <button
+              className="fyi-totals-panel__btn fyi-totals-panel__btn--secondary fyi-totals-panel__btn--small"
+              onClick={() => onExportPDF('zone')}
+              disabled={isExporting}
+              title="Group spaces by zone (APB, FAM, ENT, etc.)"
+            >
+              {isExporting ? '...' : 'By Zone'}
+            </button>
+            <button
+              className="fyi-totals-panel__btn fyi-totals-panel__btn--secondary fyi-totals-panel__btn--small"
+              onClick={() => onExportPDF('level')}
+              disabled={isExporting}
+              title="Group spaces by level (L2, L1, Basement)"
+            >
+              {isExporting ? '...' : 'By Level'}
+            </button>
+          </div>
+        </div>
+
         <button
           className="fyi-totals-panel__btn fyi-totals-panel__btn--primary"
           onClick={onProceedToMVP}
