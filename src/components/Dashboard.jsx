@@ -31,13 +31,22 @@ const Dashboard = ({ onNavigate }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProjectInput, setShowNewProjectInput] = useState(false);
 
-  const kycProgress = calculateCompleteness('principal');
+  // KYC progress - must account for both respondents if Secondary exists
+  const principalProgress = calculateCompleteness('principal');
   const principalData = kycData.principal.portfolioContext;
   const principalName = principalData.principalFirstName
     ? `${principalData.principalFirstName} ${principalData.principalLastName || ''}`.trim()
     : '';
-  const hasSecondary = kycData.secondary.portfolioContext.secondaryFirstName !== '';
-  const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 0;
+
+  // Check if this is a couple (Secondary needs to complete too)
+  const clientType = kycData.principal.designIdentity?.clientType || 'individual';
+  const hasSecondary = clientType === 'couple';
+  const secondaryProgress = hasSecondary ? calculateCompleteness('secondary') : 100;
+
+  // Combined KYC progress: average of both if couple, otherwise just principal
+  const kycProgress = hasSecondary
+    ? Math.round((principalProgress + secondaryProgress) / 2)
+    : principalProgress;
 
   // FYI progress calculation - based on actual configuration
   const fyiSelections = fyiData.selections || {};
