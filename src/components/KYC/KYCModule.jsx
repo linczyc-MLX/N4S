@@ -19,7 +19,6 @@ import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
 const KYCModule = () => {
   const {
-    kycData,
     activeRespondent,
     setActiveRespondent,
     currentKYCSection,
