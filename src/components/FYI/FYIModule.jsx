@@ -12,13 +12,14 @@
  * Position in N4S workflow: KYC → FYI → MVP → KYM → VMX
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState from './hooks/useFYIState';
 import { generateFYIFromKYC, generateMVPFromFYI } from './utils/fyiBridges';
 import {
   buildAvailableLevels,
-  getZonesForStructure
+  getZonesForStructure,
+  getSpacesForStructure
 } from '../../shared/space-registry';
 
 // Components
@@ -33,17 +34,21 @@ import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
 import './FYIModule.css';
 
 const FYIModule = () => {
-  const { kycData, updateFYIData, clientData } = useAppContext();
+  const { kycData, activeRespondent, updateFYIData, clientData, fyiData } = useAppContext();
   const [isExporting, setIsExporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [activeStructure, setActiveStructure] = useState('main');
   const [selectedLevel, setSelectedLevel] = useState(null); // For level filtering
-  
+
+  // Track if we should sync to AppContext (skip initial renders to avoid overwriting API data)
+  const isFirstRender = useRef(true);
+  const hasUserInteracted = useRef(false);
+
   // Get consolidated KYC data (merge Principal + Secondary)
   const consolidatedKYC = useMemo(() => {
     const principal = kycData?.principal || {};
     const secondary = kycData?.secondary || {};
-    
+
     // Merge Secondary's additive selections into Principal
     return {
       ...principal,
@@ -60,7 +65,7 @@ const FYIModule = () => {
       }
     };
   }, [kycData]);
-  
+
   // Build available levels from KYC configuration
   const availableLevels = useMemo(() => {
     const projectParams = consolidatedKYC?.projectParameters || {};
@@ -68,7 +73,7 @@ const FYIModule = () => {
     const levelsBelow = projectParams.levelsBelowArrival ?? 0;
     return buildAvailableLevels(levelsAbove, levelsBelow);
   }, [consolidatedKYC]);
-  
+
   // Check for additional structures from KYC
   const structureConfig = useMemo(() => {
     const projectParams = consolidatedKYC?.projectParameters || {};
@@ -79,18 +84,14 @@ const FYIModule = () => {
     };
   }, [consolidatedKYC]);
 
-  // Memoize the config object to prevent new reference on every render
-  const fyiStateConfig = useMemo(() => ({
-    availableLevels,
-    structureConfig
-  }), [availableLevels, structureConfig]);
-
-  // Initialize FYI state
+  // Initialize FYI state with data from AppContext (database)
+  // This is the SINGLE SOURCE OF TRUTH - no separate localStorage
   const {
     settings,
     selections,
     activeZone,
     isLoaded,
+    isHydrated,
     totals,
     zonesWithCounts,
     structureTotals,
@@ -104,20 +105,36 @@ const FYIModule = () => {
     getSpacesForZone,
     calculateArea,
     resetToDefaults,
-    generateMVPBrief
-  } = useFYIState(fyiStateConfig);
-  
-  // Apply KYC defaults on first load
-  useEffect(() => {
-    if (isLoaded && consolidatedKYC && !initialized) {
-      const { settings: kycSettings } = generateFYIFromKYC(
-        consolidatedKYC,
-        availableLevels
-      );
+    applyKYCDefaults,
+    generateMVPBrief,
+    loadFromContext
+  } = useFYIState(fyiData);
 
-      // Only apply if we don't have existing selections
-      const hasExistingSelections = Object.keys(selections).length > 0;
+  // Apply KYC defaults on first load - GATED by isHydrated to prevent overwriting loaded data
+  // This effect only runs AFTER initial data hydration is complete
+  useEffect(() => {
+    console.log('[FYI-DEBUG] KYC effect: isLoaded=', isLoaded, 'isHydrated=', isHydrated, 'initialized=', initialized, 'FOY size=', selections?.FOY?.size);
+
+    // CRITICAL: Wait for hydration to complete before applying KYC defaults
+    if (!isHydrated) {
+      console.log('[FYI-DEBUG] KYC effect: WAITING for hydration');
+      return;
+    }
+
+    if (isLoaded && consolidatedKYC && !initialized) {
+      // Check if we already have selections with any user data
+      // If selections exist, we NEVER overwrite them with KYC defaults
+      const hasExistingSelections = selections && Object.keys(selections).length > 0;
+
+      console.log('[FYI-DEBUG] KYC effect: hasExistingSelections=', hasExistingSelections, 'skipping updateSettings=', hasExistingSelections);
+
+      // Only apply KYC settings if there are NO existing selections at all
+      // This preserves ALL user data, even if all sizes are 'M'
       if (!hasExistingSelections) {
+        const { settings: kycSettings } = generateFYIFromKYC(
+          consolidatedKYC,
+          availableLevels
+        );
         updateSettings({
           ...kycSettings,
           levelsAboveArrival: consolidatedKYC?.projectParameters?.levelsAboveArrival ?? 1,
@@ -126,8 +143,37 @@ const FYIModule = () => {
       }
       setInitialized(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, consolidatedKYC, initialized, availableLevels]);
+  }, [isLoaded, isHydrated, consolidatedKYC, initialized, availableLevels, selections, updateSettings]);
+
+  // Sync FYI selections and settings to AppContext whenever they change
+  // This ensures data is saved to the database via AppContext's auto-save
+  // IMPORTANT: Only sync after hydration and user interaction
+  useEffect(() => {
+    console.log('[FYI-DEBUG] Sync effect: isHydrated=', isHydrated, 'isFirstRender=', isFirstRender.current, 'hasUserInteracted=', hasUserInteracted.current, 'FOY=', selections?.FOY?.size);
+
+    // Don't sync until hydrated (prevents writing defaults before data loads)
+    if (!isHydrated) {
+      console.log('[FYI-DEBUG] Sync effect: WAITING for hydration');
+      return;
+    }
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      console.log('[FYI-DEBUG] Sync effect: SKIPPING first render');
+      return; // Skip first render
+    }
+
+    // Only sync if user has explicitly interacted (made changes)
+    if (isLoaded && updateFYIData && hasUserInteracted.current && Object.keys(selections).length > 0) {
+      console.log('[FYI-DEBUG] Sync effect: SAVING to AppContext, FOY=', selections?.FOY?.size);
+      updateFYIData({
+        selections,
+        settings
+      });
+    } else {
+      console.log('[FYI-DEBUG] Sync effect: NOT saving - hasUserInteracted=', hasUserInteracted.current);
+    }
+  }, [selections, settings, isLoaded, isHydrated, updateFYIData]);
   
   // Get zones for active structure
   const activeZones = useMemo(() => {
@@ -199,14 +245,13 @@ const FYIModule = () => {
     } finally {
       setIsExporting(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings, selections, totals, structureTotals, availableLevels, getSpacesForZone, calculateArea, clientData, consolidatedKYC]);
   
   // Client-side summary fallback
   const generateClientSideSummary = () => {
     const summary = [];
     summary.push('FYI - Lifestyle Requirements Summary');
-    summary.push('='.repeat(40));
+    summary.push('=' .repeat(40));
     summary.push(`Target SF: ${settings.targetSF.toLocaleString()}`);
     summary.push(`Program Tier: ${settings.programTier}`);
     summary.push('');
@@ -425,10 +470,10 @@ const FYIModule = () => {
                   calculatedArea={area}
                   settings={settings}
                   availableLevels={availableLevels}
-                  onSizeChange={(size) => setSpaceSize(space.code, size)}
-                  onToggleIncluded={() => toggleSpaceIncluded(space.code)}
-                  onLevelChange={(level) => setSpaceLevel(space.code, level)}
-                  onNotesChange={(notes) => updateSpaceSelection(space.code, { notes })}
+                  onSizeChange={(size) => { hasUserInteracted.current = true; setSpaceSize(space.code, size); }}
+                  onToggleIncluded={() => { hasUserInteracted.current = true; toggleSpaceIncluded(space.code); }}
+                  onLevelChange={(level) => { hasUserInteracted.current = true; setSpaceLevel(space.code, level); }}
+                  onNotesChange={(notes) => { hasUserInteracted.current = true; updateSpaceSelection(space.code, { notes }); }}
                 />
               );
             })}
@@ -453,7 +498,7 @@ const FYIModule = () => {
             selections={selections}
             structureTotals={displayStructureTotals}
             availableLevels={availableLevels}
-            onSettingsChange={updateSettings}
+            onSettingsChange={(updates) => { hasUserInteracted.current = true; updateSettings(updates); }}
             onExportPDF={handleExportPDF}
             onProceedToMVP={handleProceedToMVP}
             isExporting={isExporting}

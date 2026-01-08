@@ -1,22 +1,30 @@
 /**
  * useFYIState Hook
- * 
+ *
  * Manages FYI module state including space selections, settings, and calculations.
  * Integrates with the shared space-registry for consistent zone/space definitions.
+ *
+ * NOTE: This hook does NOT persist to localStorage. All persistence is handled
+ * by AppContext which saves to the database. Pass initialData from AppContext.fyiData.
+ *
+ * IMPORTANT: Data flows ONE DIRECTION only:
+ *   - On mount: initialData (from API via AppContext) → useFYIState
+ *   - After mount: useFYIState → AppContext (via updateFYIData callback)
+ *   - We do NOT continuously sync FROM initialData to avoid infinite loops
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
+  zones,
   spaceRegistry,
   getSpacesForTier,
   getConditionedSpaces,
   calculateSpaceArea,
+  circulationDefaults,
   calculateCirculation,
   getSpaceByCode,
   getZonesInOrder
 } from '../../../shared/space-registry';
-
-const STORAGE_KEY = 'n4s_fyi_state';
 
 // Default FYI settings
 const defaultSettings = {
@@ -32,7 +40,7 @@ const defaultSettings = {
 const initializeSelections = (tier, hasBasement) => {
   const availableSpaces = getSpacesForTier(tier);
   const selections = {};
-  
+
   availableSpaces.forEach(space => {
     // Only include spaces that have SF defined for this tier
     if (space.baseSF[tier] !== null) {
@@ -46,69 +54,81 @@ const initializeSelections = (tier, hasBasement) => {
       };
     }
   });
-  
+
   return selections;
 };
 
-export function useFYIState(initialKYCData = null) {
-  // Settings state
-  const [settings, setSettings] = useState(defaultSettings);
-  
+export function useFYIState(initialData = null) {
+  // Track if we've loaded initial data from API (only do this ONCE)
+  const hasLoadedFromAPI = useRef(false);
+
+  // Track if initial hydration is complete (prevents effects from writing defaults)
+  const [isHydrated, setIsHydrated] = useState(() => {
+    // If initialData has selections on first render, we're already hydrated
+    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+    return hasData;
+  });
+
+  // Initialize from passed data (from AppContext.fyiData) or defaults
+  const [settings, setSettings] = useState(() => {
+    if (initialData?.settings && Object.keys(initialData.settings).length > 0) {
+      hasLoadedFromAPI.current = true;
+      console.log('[FYI-DEBUG] useState settings: loaded from initialData', initialData.settings);
+      return { ...defaultSettings, ...initialData.settings };
+    }
+    console.log('[FYI-DEBUG] useState settings: using defaults');
+    return defaultSettings;
+  });
+
   // Space selections: { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
-  const [selections, setSelections] = useState(() => 
-    initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement)
-  );
-  
-  // Loading state
-  const [isLoaded, setIsLoaded] = useState(false);
-  
+  const [selections, setSelections] = useState(() => {
+    const hasData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+    console.log('[FYI-DEBUG] useState selections: hasData=', hasData, 'FOY size=', initialData?.selections?.FOY?.size);
+    if (hasData) {
+      hasLoadedFromAPI.current = true;
+      return initialData.selections;
+    }
+    console.log('[FYI-DEBUG] useState selections: initializing with defaults (all M)');
+    return initializeSelections(defaultSettings.programTier, defaultSettings.hasBasement);
+  });
+
+  // Loading state - immediate since we initialize from props
+  const [isLoaded, setIsLoaded] = useState(true);
+
   // Active zone for navigation
   const [activeZone, setActiveZone] = useState('Z1_APB');
 
-  // Load saved state from localStorage
+  // Load from API data ONCE when it becomes available (if not already loaded on mount)
+  // This handles the case where AppContext loads from API after component mounts
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.settings) {
-          setSettings(prev => ({ ...prev, ...parsed.settings }));
-        }
-        if (parsed.selections) {
-          setSelections(parsed.selections);
-        }
-        if (parsed.activeZone) {
-          setActiveZone(parsed.activeZone);
-        }
+    console.log('[FYI-DEBUG] useEffect: hasLoadedFromAPI=', hasLoadedFromAPI.current, 'FOY in initialData=', initialData?.selections?.FOY?.size);
+
+    // Only load from initialData ONCE, and only if we haven't loaded yet
+    if (hasLoadedFromAPI.current) {
+      console.log('[FYI-DEBUG] useEffect: SKIPPING - already loaded');
+      // Mark as hydrated even if we skip (we already have data)
+      if (!isHydrated) setIsHydrated(true);
+      return; // Already loaded, don't sync again (prevents infinite loop)
+    }
+
+    // Check if initialData has any selections data at all
+    const hasSelectionsData = initialData?.selections && Object.keys(initialData.selections).length > 0;
+
+    if (hasSelectionsData) {
+      console.log('[FYI-DEBUG] useEffect: LOADING selections from initialData, FOY=', initialData.selections.FOY?.size);
+      // Load all selections from initialData (from database/localStorage)
+      setSelections(initialData.selections);
+      if (initialData.settings && Object.keys(initialData.settings).length > 0) {
+        setSettings(prev => ({ ...prev, ...initialData.settings }));
       }
-    } catch (e) {
-      console.error('Failed to load FYI state:', e);
+      hasLoadedFromAPI.current = true;
+      setIsHydrated(true);
+    } else {
+      console.log('[FYI-DEBUG] useEffect: NO selections data in initialData - marking hydrated with defaults');
+      // No data from API/localStorage, mark as hydrated with defaults
+      setIsHydrated(true);
     }
-    setIsLoaded(true);
-  }, []);
-
-  // Save state to localStorage when it changes
-  useEffect(() => {
-    if (!isLoaded) return;
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        settings,
-        selections,
-        activeZone
-      }));
-    } catch (e) {
-      console.error('Failed to save FYI state:', e);
-    }
-  }, [settings, selections, activeZone, isLoaded]);
-
-  // Apply KYC data to pre-populate selections
-  useEffect(() => {
-    if (initialKYCData && isLoaded) {
-      applyKYCDefaults(initialKYCData);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialKYCData, isLoaded]);
+  }, [initialData, isHydrated]);
 
   // Apply KYC defaults to FYI selections
   const applyKYCDefaults = useCallback((kycData) => {
@@ -132,10 +152,13 @@ export function useFYIState(initialKYCData = null) {
     
     // Re-initialize selections for new tier
     const newSelections = initializeSelections(tier, hasBasement);
-
-    // KYC must-have/nice-to-have spaces are available for future logic
-    // const mustHaveSpaces = kycData?.spaceRequirements?.mustHaveSpaces || [];
-    // const niceToHaveSpaces = kycData?.spaceRequirements?.niceToHaveSpaces || [];
+    
+    // Apply KYC must-have spaces
+    const mustHaveSpaces = kycData?.spaceRequirements?.mustHaveSpaces || [];
+    const niceToHaveSpaces = kycData?.spaceRequirements?.niceToHaveSpaces || [];
+    
+    // Mark nice-to-have spaces as included but smaller
+    // (They start included anyway, but this could be used for recommendations)
     
     // Apply specific KYC flags
     if (kycData?.familyHousehold?.petGroomingRoom) {
@@ -229,20 +252,18 @@ export function useFYIState(initialKYCData = null) {
     }));
   }, []);
 
-  // Update settings
+  // Update settings - NEVER resets selections implicitly
+  // Tier changes preserve existing selections (user data is sacred)
   const updateSettings = useCallback((updates) => {
     setSettings(prev => {
       const newSettings = { ...prev, ...updates };
-      
-      // If tier changed, re-initialize selections
-      if (updates.programTier && updates.programTier !== prev.programTier) {
-        const newSelections = initializeSelections(
-          updates.programTier, 
-          updates.hasBasement ?? prev.hasBasement
-        );
-        setSelections(newSelections);
-      }
-      
+
+      // NOTE: We intentionally do NOT reset selections on tier change.
+      // User selections are preserved across tier changes.
+      // If a space doesn't exist in the new tier, it simply won't display
+      // but its data is retained in case they switch back.
+      console.log('[FYI-DEBUG] updateSettings: tier change', prev.programTier, '->', updates.programTier, '(selections preserved)');
+
       return newSettings;
     });
   }, []);
@@ -411,6 +432,23 @@ export function useFYIState(initialKYCData = null) {
     setActiveZone('Z1_APB');
   }, []);
 
+  // Load state from AppContext (database sync)
+  // This allows FYI to initialize from shared database data
+  const loadFromContext = useCallback((contextData) => {
+    if (!contextData) return false;
+
+    let loaded = false;
+    if (contextData.selections && Object.keys(contextData.selections).length > 0) {
+      setSelections(contextData.selections);
+      loaded = true;
+    }
+    if (contextData.settings) {
+      setSettings(prev => ({ ...prev, ...contextData.settings }));
+      loaded = true;
+    }
+    return loaded;
+  }, []);
+
   // Generate brief for MVP
   const generateMVPBrief = useCallback(() => {
     const spaces = [];
@@ -454,10 +492,11 @@ export function useFYIState(initialKYCData = null) {
     selections,
     activeZone,
     isLoaded,
+    isHydrated,  // True once initial data load is complete (gates mount effects)
     totals,
     zonesWithCounts,
     structureTotals,
-    
+
     // Setters
     setActiveZone,
     updateSettings,
@@ -472,7 +511,8 @@ export function useFYIState(initialKYCData = null) {
     calculateArea,
     resetToDefaults,
     applyKYCDefaults,
-    generateMVPBrief
+    generateMVPBrief,
+    loadFromContext
   };
 }
 

@@ -1,0 +1,112 @@
+// API Service for N4S Database
+// Connects to the PHP backend on IONOS
+// Both sites (website.not-4.sale and home-5019238456.app-ionos.space) use this same API
+
+const API_BASE_URL = 'https://website.not-4.sale/api';
+
+class ApiService {
+  constructor() {
+    this.baseUrl = API_BASE_URL;
+  }
+
+  async request(endpoint, options = {}) {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const config = { ...defaultOptions, ...options };
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`API Error [${endpoint}]:`, error);
+      throw error;
+    }
+  }
+
+  // Projects API
+  async getProjects() {
+    return this.request('/projects.php');
+  }
+
+  async getProject(id) {
+    return this.request(`/projects.php?id=${encodeURIComponent(id)}`);
+  }
+
+  async createProject(projectData) {
+    return this.request('/projects.php', {
+      method: 'POST',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async updateProject(id, projectData) {
+    // Use POST with action=update to avoid hosting blocking PUT method
+    return this.request(`/projects.php?id=${encodeURIComponent(id)}&action=update`, {
+      method: 'POST',
+      body: JSON.stringify(projectData),
+    });
+  }
+
+  async deleteProject(id) {
+    // Use POST with action=delete to avoid hosting blocking DELETE method
+    return this.request(`/projects.php?id=${encodeURIComponent(id)}&action=delete`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  // App State API
+  async getState(key = null) {
+    const endpoint = key ? `/state.php?key=${encodeURIComponent(key)}` : '/state.php';
+    return this.request(endpoint);
+  }
+
+  async setState(key, value) {
+    return this.request('/state.php', {
+      method: 'POST',
+      body: JSON.stringify({ key, value }),
+    });
+  }
+
+  async deleteState(key) {
+    // Use POST with action=delete to avoid hosting blocking DELETE method
+    return this.request(`/state.php?key=${encodeURIComponent(key)}&action=delete`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  // Setup database (run once)
+  async setupDatabase() {
+    return this.request('/setup.php');
+  }
+
+  // Health check
+  async healthCheck() {
+    try {
+      await this.getState('_health');
+      return { status: 'ok', database: 'connected' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+}
+
+// Export singleton instance
+const api = new ApiService();
+export default api;
+
+// Also export class for testing
+export { ApiService };
