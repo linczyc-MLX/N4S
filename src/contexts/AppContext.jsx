@@ -350,14 +350,28 @@ export const AppProvider = ({ children }) => {
         }
 
         // Load active project data
+        // IMPORTANT: Prefer localStorage for FYI data since it's saved immediately
+        // while API uses debounced saves (2 second delay)
         const activeId = appState.activeProjectId || loadFromStorage(STORAGE_KEYS.activeProjectId, null);
         console.log('[APP-DEBUG] Loading project:', activeId);
         if (activeId) {
-          const projectDataFromAPI = await api.getProject(activeId);
-          console.log('[APP-DEBUG] API project loaded, FOY=', projectDataFromAPI?.fyiData?.selections?.FOY?.size);
-          if (projectDataFromAPI) {
-            setProjectData(projectDataFromAPI);
-            saveToStorage(getProjectKey(activeId), projectDataFromAPI);
+          // Check localStorage FIRST - it has the most recent data
+          const localData = loadFromStorage(getProjectKey(activeId), null);
+          const localHasFYISelections = localData?.fyiData?.selections && Object.keys(localData.fyiData.selections).length > 0;
+          console.log('[APP-DEBUG] localStorage FOY=', localData?.fyiData?.selections?.FOY?.size, 'hasSelections=', localHasFYISelections);
+
+          if (localHasFYISelections) {
+            // Use localStorage data - it's always up-to-date
+            console.log('[APP-DEBUG] Using localStorage data (has FYI selections)');
+            setProjectData(localData);
+          } else {
+            // No local FYI data, try API
+            const projectDataFromAPI = await api.getProject(activeId);
+            console.log('[APP-DEBUG] API project loaded, FOY=', projectDataFromAPI?.fyiData?.selections?.FOY?.size);
+            if (projectDataFromAPI) {
+              setProjectData(projectDataFromAPI);
+              saveToStorage(getProjectKey(activeId), projectDataFromAPI);
+            }
           }
         }
 
