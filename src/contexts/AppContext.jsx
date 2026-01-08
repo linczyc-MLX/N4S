@@ -252,6 +252,25 @@ const saveToStorage = (key, value) => {
   }
 };
 
+// Ensure FYI selections/settings exist BOTH at top-level and under fyiData
+const normalizeProject = (p) => {
+  if (!p) return p;
+
+  const selections = p?.fyiData?.selections ?? p?.selections ?? {};
+  const settings   = p?.fyiData?.settings   ?? p?.settings   ?? {};
+
+  return {
+    ...p,
+    selections,
+    settings,
+    fyiData: {
+      ...(p.fyiData || {}),
+      selections,
+      settings,
+    },
+  };
+};
+
 // Prompt 2: Direct localStorage read/write for projects
 const readLocalProject = (projectId) => {
   try {
@@ -387,7 +406,14 @@ export const AppProvider = ({ children }) => {
   const [projectData, setProjectData] = useState(() => getEmptyProjectData());
 
   // Destructure project data for easier access
-  const { clientData, kycData, fyiData, activeRespondent: storedRespondent } = projectData;
+  const { clientData, kycData, fyiData: rawFyiData, activeRespondent: storedRespondent } = projectData;
+
+  // Bridge selections/settings from both top-level and fyiData (ensures FYI always gets selections)
+  const fyiData = {
+    ...(rawFyiData || {}),
+    selections: rawFyiData?.selections || projectData?.selections || {},
+    settings:   rawFyiData?.settings   || projectData?.settings   || {},
+  };
 
   // Active respondent
   const [activeRespondent, setActiveRespondent] = useState(storedRespondent || 'principal');
@@ -415,7 +441,8 @@ export const AppProvider = ({ children }) => {
       console.log('[APP-DEBUG] Hydration starting for project:', activeProjectId);
 
       // 1) Load local immediately (source of truth for FYI selections)
-      const local = readLocalProject(activeProjectId);
+      const localRaw = readLocalProject(activeProjectId);
+      const local = normalizeProject(localRaw);
       console.log('[APP-DEBUG] Local data loaded, FOY=', local?.fyiData?.selections?.FOY?.size);
       if (local && !cancelled) {
         setProjectData(local);
@@ -423,12 +450,13 @@ export const AppProvider = ({ children }) => {
 
       // 2) Load remote
       try {
-        const remote = await api.getProject(activeProjectId);
+        const remoteRaw = await api.getProject(activeProjectId);
+        const remote = normalizeProject(remoteRaw);
         console.log('[APP-DEBUG] Remote data loaded, FOY=', remote?.fyiData?.selections?.FOY?.size);
         if (cancelled) return;
 
         // 3) Merge with protection: remote missing FYI selections must not overwrite local
-        const merged = mergeProjectData(local, remote);
+        const merged = normalizeProject(mergeProjectData(local, remote));
         console.log('[APP-DEBUG] Merged data, FOY=', merged?.fyiData?.selections?.FOY?.size);
 
         setProjectData(merged);
@@ -739,16 +767,27 @@ export const AppProvider = ({ children }) => {
     }));
   }, []);
 
-  // Update FYI data
+  // Update FYI data - writes to BOTH top-level and fyiData for consistency
   const updateFYIData = useCallback((updates) => {
     console.log('[APP-DEBUG] updateFYIData called, FOY in updates=', updates?.selections?.FOY?.size);
-    setProjectData(prev => ({
-      ...prev,
-      fyiData: {
-        ...prev.fyiData,
-        ...updates,
-      },
-    }));
+    setProjectData(prev => {
+      const next = normalizeProject({
+        ...prev,
+        // keep both representations consistent
+        selections: updates?.selections ?? prev?.selections,
+        settings:   updates?.settings   ?? prev?.settings,
+        fyiData: {
+          ...(prev?.fyiData || {}),
+          ...updates,
+          selections: updates?.selections ?? prev?.fyiData?.selections ?? prev?.selections,
+          settings:   updates?.settings   ?? prev?.fyiData?.settings   ?? prev?.settings,
+        }
+      });
+
+      // write local immediately so refresh works even if API is bad
+      try { localStorage.setItem(`n4s_project_${next.id || prev.id}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, []);
 
   // Check if a section has required fields completed
