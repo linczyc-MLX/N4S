@@ -55,9 +55,26 @@ const SettingsPanel = () => (
 );
 
 const AppContent = () => {
-  const [activeModule, setActiveModule] = useState('dashboard');
+  // Persist activeModule to localStorage so it survives page refresh
+  const [activeModule, setActiveModule] = useState(() => {
+    try {
+      const saved = localStorage.getItem('n4s_active_module');
+      return saved || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { clientData, kycData } = useAppContext();
+
+  // Save activeModule to localStorage when it changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('n4s_active_module', activeModule);
+    } catch (e) {
+      console.warn('Failed to save active module:', e);
+    }
+  }, [activeModule]);
 
   // Module order: Dashboard, KYC, FYI, MVP, Settings
   const modules = [

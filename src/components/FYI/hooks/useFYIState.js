@@ -415,6 +415,23 @@ export function useFYIState(initialKYCData = null) {
     setActiveZone('Z1_APB');
   }, []);
 
+  // Load state from AppContext (database sync)
+  // This allows FYI to initialize from shared database data
+  const loadFromContext = useCallback((contextData) => {
+    if (!contextData) return false;
+
+    let loaded = false;
+    if (contextData.selections && Object.keys(contextData.selections).length > 0) {
+      setSelections(contextData.selections);
+      loaded = true;
+    }
+    if (contextData.settings) {
+      setSettings(prev => ({ ...prev, ...contextData.settings }));
+      loaded = true;
+    }
+    return loaded;
+  }, []);
+
   // Generate brief for MVP
   const generateMVPBrief = useCallback(() => {
     const spaces = [];
@@ -476,7 +493,8 @@ export function useFYIState(initialKYCData = null) {
     calculateArea,
     resetToDefaults,
     applyKYCDefaults,
-    generateMVPBrief
+    generateMVPBrief,
+    loadFromContext
   };
 }
 
