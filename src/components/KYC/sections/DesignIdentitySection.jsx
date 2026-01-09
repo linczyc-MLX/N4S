@@ -259,8 +259,21 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
 // ============================================
 
 const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, principalName, secondaryName }) => {
-  const positionP = ((valueP || 2.5) / 5) * 100;
-  const positionS = ((valueS || 2.5) / 5) * 100;
+  // Convert 1-5 scale to 0-100% position
+  const positionP = (((valueP || 3) - 1) / 4) * 100;
+  const positionS = (((valueS || 3) - 1) / 4) * 100;
+
+  // Check if markers overlap (within 5% of each other)
+  const markersOverlap = Math.abs(positionP - positionS) < 5;
+
+  // When overlapping, offset markers vertically to show both
+  const offsetStyle = markersOverlap ? {
+    principal: { top: 'calc(50% - 8px)' },
+    secondary: { top: 'calc(50% + 8px)' }
+  } : {
+    principal: { top: '50%' },
+    secondary: { top: '50%' }
+  };
 
   return (
     <div className="comparison-slider">
@@ -268,17 +281,19 @@ const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, princi
         <span className="comparison-slider__label">{label}</span>
       </div>
       <div className="comparison-slider__track-container">
-        <div className="comparison-slider__track">
+        <div className="comparison-slider__track" style={{ height: markersOverlap ? '24px' : '8px' }}>
           <div
             className="comparison-slider__marker comparison-slider__marker--principal"
-            style={{ left: `${positionP}%` }}
+            style={{ left: `${positionP}%`, ...offsetStyle.principal }}
             title={`${principalName || 'Principal'}: ${valueP?.toFixed(1)}`}
           />
-          <div
-            className="comparison-slider__marker comparison-slider__marker--secondary"
-            style={{ left: `${positionS}%` }}
-            title={`${secondaryName || 'Secondary'}: ${valueS?.toFixed(1)}`}
-          />
+          {valueS !== undefined && valueS !== null && (
+            <div
+              className="comparison-slider__marker comparison-slider__marker--secondary"
+              style={{ left: `${positionS}%`, ...offsetStyle.secondary }}
+              title={`${secondaryName || 'Secondary'}: ${valueS?.toFixed(1)}`}
+            />
+          )}
         </div>
         <div className="comparison-slider__labels">
           <span className="comparison-slider__left-label">{leftLabel}</span>
