@@ -63,7 +63,8 @@ export const initializeSelectionsForTier = (tier, hasBasement = false) => {
 export function useFYIState(fyiData, updateFYISelection, updateFYISettings, initializeFYISelections) {
   // Read settings and selections from AppContext's fyiData
   const settings = fyiData?.settings || defaultSettings;
-  const selections = fyiData?.selections || {};
+  // Wrap in useMemo to ensure stable reference when selections is empty
+  const selections = useMemo(() => fyiData?.selections || {}, [fyiData?.selections]);
 
   // Local UI state (not persisted)
   const [activeZone, setActiveZone] = useState('Z1_APB');
