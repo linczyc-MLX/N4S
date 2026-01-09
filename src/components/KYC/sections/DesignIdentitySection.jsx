@@ -260,20 +260,16 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel, max = 5 }) => {
 
 const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, principalName, secondaryName }) => {
   // Convert 1-5 scale to 0-100% position
-  const positionP = (((valueP || 3) - 1) / 4) * 100;
-  const positionS = (((valueS || 3) - 1) / 4) * 100;
+  // Clamp to valid range and handle edge cases
+  const safeValueP = typeof valueP === 'number' && !isNaN(valueP) ? Math.max(1, Math.min(5, valueP)) : 3;
+  const safeValueS = typeof valueS === 'number' && !isNaN(valueS) ? Math.max(1, Math.min(5, valueS)) : null;
 
-  // Check if markers overlap (within 5% of each other)
-  const markersOverlap = Math.abs(positionP - positionS) < 5;
+  const positionP = ((safeValueP - 1) / 4) * 100;
+  const positionS = safeValueS !== null ? ((safeValueS - 1) / 4) * 100 : null;
 
-  // When overlapping, offset markers vertically to show both
-  const offsetStyle = markersOverlap ? {
-    principal: { top: 'calc(50% - 8px)' },
-    secondary: { top: 'calc(50% + 8px)' }
-  } : {
-    principal: { top: '50%' },
-    secondary: { top: '50%' }
-  };
+  // Always use expanded track with offset markers to ensure both are visible
+  // This prevents one marker from hiding the other when values are close
+  const hasSecondary = positionS !== null;
 
   return (
     <div className="comparison-slider">
@@ -281,17 +277,32 @@ const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, princi
         <span className="comparison-slider__label">{label}</span>
       </div>
       <div className="comparison-slider__track-container">
-        <div className="comparison-slider__track" style={{ height: markersOverlap ? '24px' : '8px' }}>
+        <div
+          className="comparison-slider__track"
+          style={{ height: hasSecondary ? '20px' : '8px', position: 'relative' }}
+        >
+          {/* Principal marker - positioned in upper half */}
           <div
             className="comparison-slider__marker comparison-slider__marker--principal"
-            style={{ left: `${positionP}%`, ...offsetStyle.principal }}
-            title={`${principalName || 'Principal'}: ${valueP?.toFixed(1)}`}
+            style={{
+              left: `${positionP}%`,
+              top: hasSecondary ? '25%' : '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 2
+            }}
+            title={`${principalName || 'Principal'}: ${safeValueP.toFixed(1)}`}
           />
-          {valueS !== undefined && valueS !== null && (
+          {/* Secondary marker - positioned in lower half */}
+          {hasSecondary && (
             <div
               className="comparison-slider__marker comparison-slider__marker--secondary"
-              style={{ left: `${positionS}%`, ...offsetStyle.secondary }}
-              title={`${secondaryName || 'Secondary'}: ${valueS?.toFixed(1)}`}
+              style={{
+                left: `${positionS}%`,
+                top: '75%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 1
+              }}
+              title={`${secondaryName || 'Secondary'}: ${safeValueS.toFixed(1)}`}
             />
           )}
         </div>
