@@ -901,51 +901,48 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     }
   }, []);
 
-  // Load profiles - check localStorage first, then fall back to kycData
+  // Load profiles - check kycData FIRST (backend), then fall back to localStorage
   const refreshProfiles = useCallback(() => {
-    // Try localStorage first for principal
-    let pProfile = null;
-    if (clientIdP) {
-      pProfile = loadProfileFromStorage(clientIdP);
-    }
+    const designIdentity = kycData?.principal?.designIdentity || {};
 
-    // If no localStorage, check kycData for principalTasteResults
-    if (!pProfile && kycData?.principal?.designIdentity?.principalTasteResults) {
-      const serverData = kycData.principal.designIdentity.principalTasteResults;
-      if (serverData.completedAt) {
-        // Convert server format to localStorage format
-        pProfile = {
-          clientId: clientIdP,
-          session: serverData,
-          completedAt: serverData.completedAt
-        };
-        // Sync to localStorage for next time
-        if (clientIdP) {
-          saveProfileToStorage(clientIdP, pProfile);
-        }
+    // PRINCIPAL: Check kycData FIRST (backend source of truth), then localStorage
+    let pProfile = null;
+    const pServerData = designIdentity.principalTasteResults;
+    if (pServerData?.completedAt) {
+      // Use backend data
+      pProfile = {
+        clientId: clientIdP,
+        session: pServerData,
+        completedAt: pServerData.completedAt
+      };
+      // Sync to localStorage for cache
+      if (clientIdP) {
+        saveProfileToStorage(clientIdP, pProfile);
       }
+    } else if (clientIdP) {
+      // Fall back to localStorage
+      pProfile = loadProfileFromStorage(clientIdP);
     }
     setProfileP(pProfile);
 
-    // Try localStorage first for secondary
+    // SECONDARY: Check kycData FIRST (backend source of truth), then localStorage
+    // NOTE: secondaryTasteResults is stored in kycData.principal.designIdentity (NOT kycData.secondary)
     let sProfile = null;
-    if (clientIdS) {
-      sProfile = loadProfileFromStorage(clientIdS);
-    }
-
-    // If no localStorage, check kycData for secondaryTasteResults
-    if (!sProfile && kycData?.secondary?.designIdentity?.secondaryTasteResults) {
-      const serverData = kycData.secondary.designIdentity.secondaryTasteResults;
-      if (serverData.completedAt) {
-        sProfile = {
-          clientId: clientIdS,
-          session: serverData,
-          completedAt: serverData.completedAt
-        };
-        if (clientIdS) {
-          saveProfileToStorage(clientIdS, sProfile);
-        }
+    const sServerData = designIdentity.secondaryTasteResults;
+    if (sServerData?.completedAt) {
+      // Use backend data
+      sProfile = {
+        clientId: clientIdS,
+        session: sServerData,
+        completedAt: sServerData.completedAt
+      };
+      // Sync to localStorage for cache
+      if (clientIdS) {
+        saveProfileToStorage(clientIdS, sProfile);
       }
+    } else if (clientIdS) {
+      // Fall back to localStorage
+      sProfile = loadProfileFromStorage(clientIdS);
     }
     setProfileS(sProfile);
   }, [clientIdP, clientIdS, kycData]);
