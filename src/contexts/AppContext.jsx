@@ -52,6 +52,10 @@ const initialKYCData = {
     antiInspiration: '', benchmarkProperties: [], architectureStyleTags: [],
     interiorStyleTags: [], materialAffinities: [], materialAversions: [], colorPreferences: '',
     exteriorMaterialPreferences: [], massingPreference: '', roofFormPreference: '', structuralAmbition: '',
+    // Client configuration for Taste Exploration
+    clientType: '', clientBaseName: '', principalName: '', secondaryName: '',
+    // Taste Exploration Results (synced to backend)
+    principalTasteResults: null, secondaryTasteResults: null,
   },
   lifestyleLiving: {
     dailyRoutinesSummary: '', workFromHome: '', wfhPeopleCount: null, hobbies: [],

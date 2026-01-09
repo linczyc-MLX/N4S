@@ -15,8 +15,11 @@ import AppContext from '../contexts/AppContext';
  */
 export function useKYCCompleteness() {
   const context = useContext(AppContext);
-  const { kycData, mvpConfig, tasteProfile } = context || {};
-  
+  const { kycData, mvpConfig } = context || {};
+
+  // Get designIdentity from kycData.principal (where taste results are stored)
+  const designIdentity = kycData?.principal?.designIdentity;
+
   const sections = useMemo(() => {
     return {
       familyHousehold: checkFamilyHousehold(kycData),
@@ -24,12 +27,12 @@ export function useKYCCompleteness() {
       workingPreferences: checkWorkingPreferences(kycData),
       projectParameters: checkProjectParameters(mvpConfig),
       spaceRequirements: checkSpaceRequirements(mvpConfig),
-      designIdentity: checkDesignIdentity(tasteProfile),
+      designIdentity: checkDesignIdentity(designIdentity),
       budgetFramework: checkBudgetFramework(kycData),
       culturalContext: checkCulturalContext(kycData),
       portfolioContext: checkPortfolioContext(kycData)
     };
-  }, [kycData, mvpConfig, tasteProfile]);
+  }, [kycData, mvpConfig, designIdentity]);
   
   const completedCount = Object.values(sections).filter(Boolean).length;
   const totalCount = Object.keys(sections).length;
@@ -54,14 +57,21 @@ export function useKYCCompleteness() {
  */
 export function useKYCData() {
   const context = useContext(AppContext);
-  const { kycData, mvpConfig, tasteProfile, projectId, projectName } = context || {};
+  const { kycData, mvpConfig, projectId, projectName } = context || {};
   const completeness = useKYCCompleteness();
-  
+
+  // Get taste profile from kycData.principal.designIdentity (new location)
+  const tasteProfile = useMemo(() => {
+    const results = kycData?.principal?.designIdentity?.principalTasteResults;
+    if (!results || !results.selections) return null;
+    return results;
+  }, [kycData?.principal?.designIdentity?.principalTasteResults]);
+
   // Convert to KYC Response format expected by recommender
   const kycResponse = useMemo(() => {
     return convertToKYCResponse(kycData, mvpConfig, tasteProfile);
   }, [kycData, mvpConfig, tasteProfile]);
-  
+
   // Determine preset from SF
   const preset = useMemo(() => {
     const sf = mvpConfig?.sfCap || 15000;
@@ -69,7 +79,7 @@ export function useKYCData() {
     if (sf <= 17000) return '15k';
     return '20k';
   }, [mvpConfig?.sfCap]);
-  
+
   return {
     kycResponse,
     preset,
@@ -215,9 +225,13 @@ function checkSpaceRequirements(mvp) {
   return !!(mvp.bedrooms || mvp.garageBays);
 }
 
-function checkDesignIdentity(taste) {
-  if (!taste) return false;
-  return !!(taste.styleEra || taste.formality || taste.warmth);
+function checkDesignIdentity(designIdentity) {
+  if (!designIdentity) return false;
+  // Check for taste exploration results in the new kycData structure
+  const principal = designIdentity.principalTasteResults;
+  if (principal && principal.completedAt) return true;
+  // Fallback: check for old taste profile format
+  return !!(designIdentity.styleEra || designIdentity.formality || designIdentity.warmth);
 }
 
 function checkBudgetFramework(kyc) {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
   Home, Users, Dumbbell,
@@ -13,22 +13,8 @@ import { quads, categoryOrder } from '../../data/tasteQuads';
 // ============================================
 // TASTE PROFILE INTEGRATION
 // ============================================
-
-const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
-
-function loadTasteProfile(clientId) {
-  if (!clientId) return null;
-  const key = `${PROFILE_STORAGE_PREFIX}${clientId}`;
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
+// Taste profiles are now stored in kycData.principal.designIdentity
+// as principalTasteResults and secondaryTasteResults, synced to backend
 
 // ============================================
 // STYLE ERA CALCULATION (matches Report algorithm)
@@ -153,22 +139,37 @@ const MVPModule = () => {
   const principalName = designIdentity.principalName || '';
   const secondaryName = designIdentity.secondaryName || '';
   
-  // Generate client IDs
+  // Generate client IDs (still needed for display purposes)
   const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
   const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
-  
-  // Load taste profiles from localStorage
-  const [tasteProfileP, setTasteProfileP] = useState(null);
-  const [tasteProfileS, setTasteProfileS] = useState(null);
-  
-  useEffect(() => {
-    if (clientIdP) {
-      setTasteProfileP(loadTasteProfile(clientIdP));
-    }
-    if (clientIdS) {
-      setTasteProfileS(loadTasteProfile(clientIdS));
-    }
-  }, [clientIdP, clientIdS]);
+
+  // Load taste profiles from kycData (synced to backend)
+  const principalDesignIdentity = kycData?.principal?.designIdentity || {};
+
+  // Normalize taste profile data to expected format
+  const tasteProfileP = useMemo(() => {
+    const data = principalDesignIdentity.principalTasteResults;
+    if (!data || !data.selections) return null;
+    return {
+      clientId: data.clientId || clientIdP,
+      session: data,
+      selections: data.selections,
+      profile: data.profile,
+      completedAt: data.completedAt
+    };
+  }, [principalDesignIdentity.principalTasteResults, clientIdP]);
+
+  const tasteProfileS = useMemo(() => {
+    const data = principalDesignIdentity.secondaryTasteResults;
+    if (!data || !data.selections) return null;
+    return {
+      clientId: data.clientId || clientIdS,
+      session: data,
+      selections: data.selections,
+      profile: data.profile,
+      completedAt: data.completedAt
+    };
+  }, [principalDesignIdentity.secondaryTasteResults, clientIdS]);
   
   // Extract scores from profiles
   const scoresP = tasteProfileP?.profile?.scores || {};

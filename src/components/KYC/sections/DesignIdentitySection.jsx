@@ -994,10 +994,29 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   const handleExplorationComplete = (result) => {
     const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
     if (result && clientId) {
+      const completedAt = new Date().toISOString();
+
+      // Build taste data object
+      const tasteData = {
+        clientId,
+        selections: result.selections,
+        skipped: result.skipped || [],
+        profile: result.profile,
+        completedAt
+      };
+
+      // Save to kycData (syncs to backend via AppContext)
+      const tasteField = activeExploration === 'principal'
+        ? 'principalTasteResults'
+        : 'secondaryTasteResults';
+      console.log(`[TASTE-SAVE] Saving ${tasteField} to kycData for backend sync`);
+      updateKYCData('principal', 'designIdentity', { [tasteField]: tasteData });
+
+      // Also save to localStorage (backup/cache)
       saveProfileToStorage(clientId, {
         clientId,
         session: result,
-        completedAt: new Date().toISOString()
+        completedAt
       });
     }
     refreshProfiles();
@@ -1011,12 +1030,19 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Handle retake
   const handleRetake = () => {
     if (window.confirm('This will reset your Taste Exploration results. Are you sure?')) {
+      // Clear localStorage
       if (clientIdP) {
         localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdP}`);
       }
       if (clientIdS) {
         localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdS}`);
       }
+      // Clear kycData taste results (syncs to backend)
+      console.log('[TASTE-RESET] Clearing taste results from kycData');
+      updateKYCData('principal', 'designIdentity', {
+        principalTasteResults: null,
+        secondaryTasteResults: null
+      });
       setProfileP(null);
       setProfileS(null);
     }
