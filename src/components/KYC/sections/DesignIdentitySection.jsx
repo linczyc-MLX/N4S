@@ -853,7 +853,7 @@ const WelcomeView = ({
 // ============================================
 
 const DesignIdentitySection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, calculateCompleteness } = useAppContext();
+  const { kycData, updateKYCData, calculateCompleteness, saveNow } = useAppContext();
   const data = kycData[respondent]?.designIdentity || {};
 
   // Calculate KYC completion for report button styling
@@ -991,7 +991,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     setActiveExploration(who);
   };
 
-  const handleExplorationComplete = (result) => {
+  const handleExplorationComplete = async (result) => {
     const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
     if (result && clientId) {
       const completedAt = new Date().toISOString();
@@ -1018,6 +1018,13 @@ const DesignIdentitySection = ({ respondent, tier }) => {
         session: result,
         completedAt
       });
+
+      // Auto-save to backend immediately (user shouldn't have to click SAVE after 36 quads)
+      setTimeout(async () => {
+        console.log('[TASTE-SAVE] Auto-saving to backend...');
+        await saveNow();
+        console.log('[TASTE-SAVE] Backend sync complete');
+      }, 100);
     }
     refreshProfiles();
     setActiveExploration(null);
