@@ -506,9 +506,11 @@ export const AppProvider = ({ children }) => {
     if (!sectionData) return 'empty';
 
     // Special handling for designIdentity - requires taste profile
+    // NOTE: BOTH taste results are stored in kycData.principal.designIdentity
     if (sectionId === 'designIdentity') {
       const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
-      return sectionData[tasteKey]?.completedAt ? 'complete' : 'empty';
+      const tasteSourceData = kycData.principal?.designIdentity;
+      return tasteSourceData?.[tasteKey]?.completedAt ? 'complete' : 'empty';
     }
 
     const requiredFields = REQUIRED_FIELDS[sectionId] || [];
@@ -552,8 +554,11 @@ export const AppProvider = ({ children }) => {
       if (sectionKey === 'designIdentity') {
         totalRequired += 1;
         // Check for completed taste profile based on respondent type
+        // NOTE: BOTH principalTasteResults AND secondaryTasteResults are stored in
+        // kycData.principal.designIdentity (not kycData.secondary.designIdentity)
         const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
-        if (sectionData[tasteKey]?.completedAt) {
+        const tasteSourceData = kycData.principal?.designIdentity;
+        if (tasteSourceData?.[tasteKey]?.completedAt) {
           filledRequired += 1;
         }
         return;
