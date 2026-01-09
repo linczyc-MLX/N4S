@@ -1,5 +1,99 @@
 # N4S Session Log
 
+## Session: January 9, 2026 - FYI → MVP LIVE Data Integration
+
+### Objective
+Implement LIVE reactive data flow from FYI to MVP module. Data integrity is NUMBER ONE focus. Edits in FYI must appear INSTANTLY in MVP with no manual refresh.
+
+### Architecture Decision
+**Core Principle**: AppContext is SINGLE SOURCE OF TRUTH. Both FYI and MVP read from same context. Live reactivity achieved through React's native re-render mechanism.
+
+**Data Flow**:
+```
+FYI edits → updateFYISelection() → AppContext.setProjectData() →
+React re-renders all consumers → MVP useMemo recomputes → UI updates
+```
+
+**Update Latency**: One React render cycle (~16ms) - NO polling, NO manual refresh
+
+### BUG FIX: Circulation Calculation Mismatch
+
+**Problem**: Initial implementation calculated circulation on ALL structures combined, but FYI only calculates circulation on Main Residence. Guest House and Pool House are net SF only.
+
+**Root Cause Analysis**:
+```
+WRONG (initial):
+- totalNetSF = Main + GH + PH net
+- circulation = totalNetSF * 14%
+- Result: 17,411 SF (overcounted)
+
+CORRECT (FYI's actual logic):
+- Main: net + calculateCirculation(mainNet, target, lockToTarget, pct, tier)
+- GH: net only (no circulation)
+- PH: net only (no circulation)
+- Result: 17,099 SF (matches FYI)
+```
+
+**Fix Applied**:
+1. Use `calculateCirculation()` from space-registry (respects lockToTarget clamping)
+2. Only apply circulation to Main Residence
+3. Report Guest House and Pool House as net-only totals
+4. Updated FYISpaceProgramCard to show structure breakdown like FYI sidebar
+
+### Files Modified
+
+| File | Change | Purpose |
+|------|--------|---------|
+| `src/lib/mvp-bridge.js` | REWRITTEN | Fixed circulation calculation, structure-aware totals |
+| `src/components/MVP/MVPModule.jsx` | UPDATED | Structure breakdown display matching FYI sidebar |
+| `src/styles/index.css` | APPENDED | Structure breakdown CSS, grand total box styles |
+
+### Key Changes in mvp-bridge.js
+
+```javascript
+// CRITICAL: Calculate circulation ONLY for Main Residence
+const mainCirculationSF = calculateCirculation(
+  byStructure.main.netSF,
+  targetSF,
+  lockToTarget,
+  circulationPct,
+  programTier
+);
+
+// Guest House and Pool House: net only, NO circulation
+byStructure.guestHouse.totalSF = byStructure.guestHouse.netSF;
+byStructure.poolHouse.totalSF = byStructure.poolHouse.netSF;
+
+// Grand totals match FYI exactly
+const totalConditionedSF = byStructure.main.totalSF +
+                           byStructure.guestHouse.totalSF +
+                           byStructure.poolHouse.totalSF;
+```
+
+### Data Integrity Guarantees
+
+| Guarantee | Implementation |
+|-----------|----------------|
+| Numbers match FYI | Uses same `calculateCirculation()` with lockToTarget |
+| Structure breakdown | Main Residence with circulation, GH/PH net-only |
+| LIVE updates | `fyiData` dependency in useMemo |
+| No stale data | No copies, no snapshots |
+
+### Build Status
+✅ `CI=false npm run build` - Compiled successfully
+
+### Suggested Commit Message
+```
+fix(mvp): correct FYI circulation calculation to match FYI exactly
+
+- Only apply circulation to Main Residence (not GH/PH)
+- Use calculateCirculation() with lockToTarget clamping
+- Add structure breakdown display matching FYI sidebar
+- Grand total now matches FYI: Main+circ + GH(net) + PH(net)
+```
+
+---
+
 ## Session: January 6, 2026 - FYI Module Comprehensive Revision
 
 ### Strategic Changes

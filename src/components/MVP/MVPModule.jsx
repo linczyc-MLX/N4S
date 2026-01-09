@@ -1,14 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
-  Home, Users, Dumbbell, LayoutGrid,
+  Home, Users, Dumbbell, LayoutGrid, RefreshCw,
   Building, Layers, ArrowRight, Palette, FileText, Sparkles
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
-import { transformKYCToMVPBrief, getMVPBriefSummary, countSelectedAmenities } from '../../lib/mvp-bridge';
-import { transformFYIToMVPProgram } from '../FYI/utils/fyiBridges';
+import {
+  transformKYCToMVPBrief,
+  getMVPBriefSummary,
+  countSelectedAmenities,
+  transformFYIToMVPProgram,
+  getFYIProgramSummary
+} from '../../lib/mvp-bridge';
 import { quads, categoryOrder } from '../../data/tasteQuads';
 
 // ============================================
@@ -105,7 +110,7 @@ function getWarmthLabel(warmthScore) {
 
 const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
   const percentage = value ? ((value - 1) / 9) * 100 : 50;
-  
+
   return (
     <div className="mvp-dna-slider">
       <div className="mvp-dna-slider__header">
@@ -125,30 +130,145 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
 };
 
 // ============================================
+// FYI SPACE PROGRAM DISPLAY COMPONENT
+// ============================================
+
+const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showStructures, setShowStructures] = useState(true);
+
+  if (!fyiProgram || !fyiSummary) return null;
+
+  const deltaColor = fyiSummary.totals.delta > 0 ? 'text-amber-600' :
+                     fyiSummary.totals.delta < -500 ? 'text-red-600' : 'text-green-600';
+
+  // Check if we have multiple structures
+  const hasMultipleStructures = fyiSummary.structures.length > 1;
+
+  return (
+    <div className="mvp-card mvp-card--full mvp-card--fyi">
+      <div className="mvp-card__header">
+        <LayoutGrid size={20} className="mvp-card__icon" />
+        <h3 className="mvp-card__title">FYI Space Program</h3>
+        <span className="mvp-card__status mvp-card__status--live">
+          <RefreshCw size={12} className="animate-spin-slow" />
+          LIVE
+        </span>
+      </div>
+      <div className="mvp-card__content">
+        {/* Structure Breakdown - matches FYI sidebar exactly */}
+        <div className="fyi-structures">
+          {fyiSummary.structures.map((structure, idx) => (
+            <div key={structure.key} className={`fyi-structure ${idx === 0 ? 'fyi-structure--main' : ''}`}>
+              <div className="fyi-structure__header">
+                <span className="fyi-structure__name">{structure.name}</span>
+                <span className="fyi-structure__total">{structure.totalSF.toLocaleString()} SF</span>
+              </div>
+              <div className="fyi-structure__details">
+                <div className="fyi-structure__row">
+                  <span>Net Program</span>
+                  <span>{structure.netSF.toLocaleString()} SF</span>
+                </div>
+                {structure.hasCirculation && (
+                  <div className="fyi-structure__row fyi-structure__row--indent">
+                    <span>Circulation ({fyiSummary.totals.circulationPct}%)</span>
+                    <span>{structure.circulationSF.toLocaleString()} SF</span>
+                  </div>
+                )}
+                {structure.byLevel && showStructures && Object.keys(structure.byLevel).length > 0 && (
+                  <div className="fyi-structure__levels">
+                    <div className="fyi-structure__levels-label">BY LEVEL</div>
+                    {Object.entries(structure.byLevel)
+                      .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                      .map(([level, sf]) => (
+                        <div key={level} className="fyi-structure__row fyi-structure__row--level">
+                          <span>{level === '1' ? 'L1 (Arrival)' : `L${level}`}</span>
+                          <span>{sf.toLocaleString()} SF</span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Grand Total Box - matches FYI navy/gold box */}
+        <div className="fyi-grand-total">
+          <div className="fyi-grand-total__row fyi-grand-total__row--main">
+            <span>Grand Total</span>
+            <span>{fyiSummary.totals.totalSF.toLocaleString()} SF</span>
+          </div>
+          <div className={`fyi-grand-total__row fyi-grand-total__row--delta ${deltaColor}`}>
+            <span>Delta from Target</span>
+            <span>{fyiSummary.totals.delta > 0 ? '+' : ''}{fyiSummary.totals.delta.toLocaleString()} SF</span>
+          </div>
+          <div className="fyi-grand-total__row fyi-grand-total__row--outdoor">
+            <span>Outdoor (not conditioned)</span>
+            <span>{fyiSummary.totals.outdoorSF.toLocaleString()} SF</span>
+          </div>
+        </div>
+
+        {/* Counts Row */}
+        <div className="fyi-program-counts">
+          <span className="fyi-count-chip">
+            <strong>{fyiSummary.counts.bedrooms}</strong> Bedrooms
+          </span>
+          <span className="fyi-count-chip">
+            <strong>{fyiSummary.counts.wellness}</strong> Wellness
+          </span>
+          <span className="fyi-count-chip">
+            <strong>{fyiSummary.counts.entertainment}</strong> Entertainment
+          </span>
+        </div>
+
+        {/* Zone Breakdown (expandable) */}
+        <button
+          className="fyi-expand-btn"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? 'Hide' : 'Show'} Zone Details ({fyiSummary.zones.length} zones)
+        </button>
+
+        {expanded && (
+          <div className="fyi-program-zones">
+            {fyiSummary.zones.map(zone => (
+              <div key={zone.name} className="fyi-zone-row">
+                <span className="fyi-zone-name">{zone.name}</span>
+                <span className="fyi-zone-count">{zone.spaceCount} spaces</span>
+                <span className="fyi-zone-sf">{zone.totalSF.toLocaleString()} SF</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // MAIN MVP MODULE COMPONENT
 // ============================================
 
 const MVPModule = () => {
+  // ============================================
+  // CONTEXT ACCESS - LIVE DATA
+  // ============================================
+  // CRITICAL: Both kycData and fyiData come directly from context.
+  // Any changes to these in other modules trigger re-render here.
   const { kycData, fyiData, activeRespondent } = useAppContext();
+
   const [showRawData, setShowRawData] = useState(false);
   const [viewMode, setViewMode] = useState('overview'); // 'overview' or 'builder'
 
-  // ============================================
-  // LIVE FYI DATA INTEGRATION
-  // ============================================
-  // Transform FYI selections into MVP program format
-  // Updates instantly when fyiData changes in AppContext
-  const fyiProgram = useMemo(() => {
-    return transformFYIToMVPProgram(fyiData);
-  }, [fyiData]);
-  
   // Get design identity config from KYC
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
   const clientBaseName = designIdentity.clientBaseName || '';
   const clientType = designIdentity.clientType || 'individual';
   const principalName = designIdentity.principalName || '';
   const secondaryName = designIdentity.secondaryName || '';
-  
+
   // Generate client IDs (still needed for display purposes)
   const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
   const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
@@ -180,13 +300,10 @@ const MVPModule = () => {
       completedAt: data.completedAt
     };
   }, [principalDesignIdentity.secondaryTasteResults, clientIdS]);
-  
+
   // Extract scores from profiles
   const scoresP = tasteProfileP?.profile?.scores || {};
-  // Secondary scores/materials available for future divergence analysis
-  // const scoresS = tasteProfileS?.profile?.scores || {};
   const materialsP = tasteProfileP?.profile?.topMaterials || [];
-  // const materialsS = tasteProfileS?.profile?.topMaterials || [];
 
   // Always use principal's scores only - partner data is for divergence analysis only
   const combinedScores = useMemo(() => {
@@ -203,28 +320,59 @@ const MVPModule = () => {
     return calculateStyleEraFromProfile(tasteProfileS);
   }, [tasteProfileS]);
 
+  // ============================================
+  // FYI DATA - LIVE TRANSFORMATION
+  // ============================================
+  // CRITICAL: This useMemo has fyiData as dependency.
+  // When fyiData changes (any FYI edit), this recomputes IMMEDIATELY.
+  // NO COPIES, NO SNAPSHOTS - direct context reference.
+  const fyiProgram = useMemo(() => {
+    return transformFYIToMVPProgram(fyiData);
+  }, [fyiData]);
+
+  // FYI summary for display
+  const fyiSummary = useMemo(() => {
+    return getFYIProgramSummary(fyiProgram);
+  }, [fyiProgram]);
+
+  // Flag: Do we have FYI data?
+  const hasFYIData = !!fyiProgram;
+
+  // ============================================
+  // KYC DATA - FALLBACK WHEN NO FYI
+  // ============================================
   // Transform KYC data to MVP brief inputs
   const briefInputs = useMemo(() => {
     return transformKYCToMVPBrief(kycData, activeRespondent);
   }, [kycData, activeRespondent]);
-  
+
   // Get summary for display
   const summary = useMemo(() => {
     return getMVPBriefSummary(briefInputs);
   }, [briefInputs]);
-  
+
   // Count amenities for tier estimation
   const amenityCount = useMemo(() => {
     return countSelectedAmenities(briefInputs);
   }, [briefInputs]);
-  
-  // Estimate tier based on amenity count
+
+  // ============================================
+  // TIER ESTIMATION
+  // ============================================
+  // Use FYI data if available, otherwise estimate from KYC amenities
   const estimatedTier = useMemo(() => {
+    if (hasFYIData && fyiProgram?.settings?.programTier) {
+      const tier = fyiProgram.settings.programTier;
+      if (tier === '20k') return { tier: '20K', label: 'Estate (20,000 SF)', color: 'gold' };
+      if (tier === '15k') return { tier: '15K', label: 'Grand (15,000 SF)', color: 'teal' };
+      if (tier === '10k') return { tier: '10K', label: 'Signature (10,000 SF)', color: 'blue' };
+    }
+    // Fallback to amenity-based estimation
     if (amenityCount >= 12) return { tier: '20K+', label: 'Estate (20,000+ SF)', color: 'gold' };
     if (amenityCount >= 8) return { tier: '15K', label: 'Grand (15,000 SF)', color: 'teal' };
     if (amenityCount >= 4) return { tier: '10K', label: 'Signature (10,000 SF)', color: 'blue' };
     return { tier: 'Custom', label: 'Custom Compact', color: 'gray' };
-  }, [amenityCount]);
+  }, [hasFYIData, fyiProgram, amenityCount]);
 
   // Check if taste exploration is complete
   const hasTasteProfile = !!tasteProfileP;
@@ -240,6 +388,7 @@ const MVPModule = () => {
       <AdjacencyPersonalizationView
         kycData={kycData}
         mvpData={briefInputs}
+        fyiProgram={fyiProgram}
         tasteProfile={tasteProfileP}
         projectId={projectId}
         projectName={projectName}
@@ -261,6 +410,7 @@ const MVPModule = () => {
       <BriefingBuilderView
         kycData={kycData}
         mvpData={briefInputs}
+        fyiProgram={fyiProgram}
         tasteProfile={tasteProfileP}
         projectId={projectId}
         projectName={projectName}
@@ -315,10 +465,14 @@ const MVPModule = () => {
             Mansion Validation Program
           </h1>
           <p className="mvp-module__subtitle">
-            Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent
+            {hasFYIData ? (
+              <>Space program from FYI • <span className="text-green-600 font-medium">LIVE</span></>
+            ) : (
+              <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
+            )}
           </p>
         </div>
-        
+
         {/* Tier Estimate Badge */}
         <div className={`mvp-tier-badge mvp-tier-badge--${estimatedTier.color}`}>
           <span className="mvp-tier-badge__tier">{estimatedTier.tier}</span>
@@ -326,19 +480,49 @@ const MVPModule = () => {
         </div>
       </div>
 
-      {/* Summary Stats */}
+      {/* ============================================ */}
+      {/* FYI SPACE PROGRAM - LIVE DATA */}
+      {/* ============================================ */}
+      {hasFYIData ? (
+        <FYISpaceProgramCard fyiProgram={fyiProgram} fyiSummary={fyiSummary} />
+      ) : (
+        /* No FYI Data - Show prompt */
+        <div className="mvp-card mvp-card--full mvp-card--fyi-empty">
+          <div className="mvp-card__header">
+            <LayoutGrid size={20} className="mvp-card__icon" />
+            <h3 className="mvp-card__title">Space Program</h3>
+            <span className="mvp-card__status mvp-card__status--pending">Not Started</span>
+          </div>
+          <div className="mvp-card__content">
+            <div className="fyi-empty-prompt">
+              <p>Complete the FYI module to confirm your space program.</p>
+              <p className="fyi-empty-hint">
+                The space program will appear here with LIVE updates as you make selections in FYI.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Stats - Show FYI or KYC-derived */}
       <div className="mvp-stats-row">
         <div className="mvp-stat">
-          <span className="mvp-stat__value">{summary?.household.totalBedrooms || 0}</span>
-          <span className="mvp-stat__label">Total Bedrooms</span>
+          <span className="mvp-stat__value">
+            {hasFYIData ? fyiSummary.counts.bedrooms : (summary?.household.totalBedrooms || 0)}
+          </span>
+          <span className="mvp-stat__label">Bedrooms</span>
         </div>
         <div className="mvp-stat">
-          <span className="mvp-stat__value">{summary?.household.guestBedrooms || 0}</span>
-          <span className="mvp-stat__label">Guest Suites</span>
+          <span className="mvp-stat__value">
+            {hasFYIData ? fyiSummary.totals.spaces : (summary?.household.guestBedrooms || 0)}
+          </span>
+          <span className="mvp-stat__label">{hasFYIData ? 'Total Spaces' : 'Guest Suites'}</span>
         </div>
         <div className="mvp-stat">
-          <span className="mvp-stat__value">{amenityCount}</span>
-          <span className="mvp-stat__label">Amenities</span>
+          <span className="mvp-stat__value">
+            {hasFYIData ? fyiSummary.counts.wellness : amenityCount}
+          </span>
+          <span className="mvp-stat__label">{hasFYIData ? 'Wellness' : 'Amenities'}</span>
         </div>
         <div className="mvp-stat">
           <span className="mvp-stat__value">{summary?.propertyConfig.levels || 2}</span>
@@ -398,35 +582,35 @@ const MVPModule = () => {
                     leftLabel="Contemporary"
                     rightLabel="Traditional"
                   />
-                  <DesignDNASlider 
-                    label="Formality" 
-                    value={combinedScores?.formality} 
-                    leftLabel="Casual" 
-                    rightLabel="Formal" 
+                  <DesignDNASlider
+                    label="Formality"
+                    value={combinedScores?.formality}
+                    leftLabel="Casual"
+                    rightLabel="Formal"
                   />
-                  <DesignDNASlider 
-                    label="Warmth" 
-                    value={combinedScores?.warmth} 
-                    leftLabel="Cool" 
-                    rightLabel="Warm" 
+                  <DesignDNASlider
+                    label="Warmth"
+                    value={combinedScores?.warmth}
+                    leftLabel="Cool"
+                    rightLabel="Warm"
                   />
-                  <DesignDNASlider 
-                    label="Drama" 
-                    value={combinedScores?.drama} 
-                    leftLabel="Subtle" 
-                    rightLabel="Bold" 
+                  <DesignDNASlider
+                    label="Drama"
+                    value={combinedScores?.drama}
+                    leftLabel="Subtle"
+                    rightLabel="Bold"
                   />
-                  <DesignDNASlider 
-                    label="Openness" 
-                    value={combinedScores?.openness} 
-                    leftLabel="Enclosed" 
-                    rightLabel="Open" 
+                  <DesignDNASlider
+                    label="Openness"
+                    value={combinedScores?.openness}
+                    leftLabel="Enclosed"
+                    rightLabel="Open"
                   />
-                  <DesignDNASlider 
-                    label="Art Focus" 
-                    value={combinedScores?.art_focus} 
-                    leftLabel="Understated" 
-                    rightLabel="Gallery-like" 
+                  <DesignDNASlider
+                    label="Art Focus"
+                    value={combinedScores?.art_focus}
+                    leftLabel="Understated"
+                    rightLabel="Gallery-like"
                   />
                 </div>
               </div>
@@ -480,7 +664,7 @@ const MVPModule = () => {
         </div>
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Content Grid - KYC Summary (shown regardless of FYI status) */}
       <div className="mvp-grid">
         {/* Property Configuration */}
         <SectionCard title="Property Configuration" icon={Building}>
@@ -593,128 +777,27 @@ const MVPModule = () => {
             </div>
           </div>
         </div>
-
-        {/* ============================================ */}
-        {/* FYI SPACE PROGRAM - LIVE DATA */}
-        {/* ============================================ */}
-        {fyiProgram && (
-          <div className="mvp-card mvp-card--full mvp-card--fyi-program">
-            <div className="mvp-card__header">
-              <LayoutGrid size={20} className="mvp-card__icon" />
-              <h3 className="mvp-card__title">FYI Space Program</h3>
-              <span className="mvp-fyi-program__badge">
-                {fyiProgram.totals.spaceCount} spaces • {fyiProgram.totals.totalConditionedSF.toLocaleString()} SF
-              </span>
-            </div>
-            <div className="mvp-card__content">
-              {/* Program Totals Summary */}
-              <div className="mvp-fyi-program__totals">
-                <div className="mvp-fyi-program__total-item">
-                  <span className="mvp-fyi-program__total-label">Net Assignable</span>
-                  <span className="mvp-fyi-program__total-value">{fyiProgram.totals.netSF.toLocaleString()} SF</span>
-                </div>
-                <div className="mvp-fyi-program__total-item">
-                  <span className="mvp-fyi-program__total-label">Circulation ({Math.round(fyiProgram.settings.circulationPct * 100)}%)</span>
-                  <span className="mvp-fyi-program__total-value">{fyiProgram.totals.circulationSF.toLocaleString()} SF</span>
-                </div>
-                <div className="mvp-fyi-program__total-item mvp-fyi-program__total-item--primary">
-                  <span className="mvp-fyi-program__total-label">Total Conditioned</span>
-                  <span className="mvp-fyi-program__total-value">{fyiProgram.totals.totalConditionedSF.toLocaleString()} SF</span>
-                </div>
-                {fyiProgram.totals.outdoorSF > 0 && (
-                  <div className="mvp-fyi-program__total-item mvp-fyi-program__total-item--outdoor">
-                    <span className="mvp-fyi-program__total-label">Outdoor</span>
-                    <span className="mvp-fyi-program__total-value">{fyiProgram.totals.outdoorSF.toLocaleString()} SF</span>
-                  </div>
-                )}
-                <div className={`mvp-fyi-program__total-item mvp-fyi-program__total-item--variance ${fyiProgram.totals.variance > 0 ? 'over' : 'under'}`}>
-                  <span className="mvp-fyi-program__total-label">vs Target ({fyiProgram.settings.targetSF.toLocaleString()})</span>
-                  <span className="mvp-fyi-program__total-value">
-                    {fyiProgram.totals.variance > 0 ? '+' : ''}{fyiProgram.totals.variance.toLocaleString()} SF
-                    ({fyiProgram.totals.variancePercent > 0 ? '+' : ''}{fyiProgram.totals.variancePercent.toFixed(1)}%)
-                  </span>
-                </div>
-              </div>
-
-              {/* Zone Breakdown */}
-              <div className="mvp-fyi-program__zones">
-                <h4 className="mvp-fyi-program__section-title">By Zone</h4>
-                <div className="mvp-fyi-program__zone-grid">
-                  {fyiProgram.zones.map(zone => (
-                    <div key={zone.code} className="mvp-fyi-program__zone-card">
-                      <div className="mvp-fyi-program__zone-header">
-                        <span className="mvp-fyi-program__zone-name">{zone.name}</span>
-                        <span className="mvp-fyi-program__zone-sf">{zone.conditionedSF.toLocaleString()} SF</span>
-                      </div>
-                      <div className="mvp-fyi-program__zone-spaces">
-                        {zone.spaces.map(space => (
-                          <span key={space.code} className={`mvp-fyi-program__space-chip ${space.isOutdoor ? 'outdoor' : ''}`}>
-                            {space.abbrev} ({space.targetSF})
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Level Breakdown */}
-              <div className="mvp-fyi-program__levels">
-                <h4 className="mvp-fyi-program__section-title">By Level</h4>
-                <div className="mvp-fyi-program__level-grid">
-                  {fyiProgram.levels.map(level => (
-                    <div key={level.level} className="mvp-fyi-program__level-card">
-                      <div className="mvp-fyi-program__level-header">
-                        <span className="mvp-fyi-program__level-name">{level.label}</span>
-                        <span className="mvp-fyi-program__level-sf">{level.conditionedSF.toLocaleString()} SF</span>
-                        <span className="mvp-fyi-program__level-count">{level.spaces.length} spaces</span>
-                      </div>
-                      <div className="mvp-fyi-program__level-spaces">
-                        {level.spaces.map(space => (
-                          <span key={space.code} className={`mvp-fyi-program__space-tag ${space.isOutdoor ? 'outdoor' : ''}`}>
-                            {space.abbrev}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* No FYI Data Notice */}
-        {!fyiProgram && (
-          <div className="mvp-card mvp-card--full mvp-card--fyi-empty">
-            <div className="mvp-card__header">
-              <LayoutGrid size={20} className="mvp-card__icon" />
-              <h3 className="mvp-card__title">FYI Space Program</h3>
-              <span className="mvp-card__status mvp-card__status--pending">Not Started</span>
-            </div>
-            <div className="mvp-card__content">
-              <div className="mvp-fyi-program__empty">
-                <LayoutGrid size={32} className="mvp-fyi-program__empty-icon" />
-                <p>Space program will appear here after configuring spaces in the FYI module.</p>
-                <p className="mvp-fyi-program__empty-hint">Navigate to FYI → Find Your Inspiration to begin.</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Raw Data Toggle (for debugging) */}
       <div className="mvp-debug">
-        <button 
+        <button
           className="btn btn--ghost btn--sm"
           onClick={() => setShowRawData(!showRawData)}
         >
           {showRawData ? 'Hide' : 'Show'} Raw Data
         </button>
-        
+
         {showRawData && (
           <pre className="mvp-debug__code">
             {JSON.stringify({
+              dataSource: hasFYIData ? 'FYI (LIVE)' : 'KYC (derived)',
+              fyiProgram: fyiProgram ? {
+                source: fyiProgram.source,
+                timestamp: fyiProgram.timestamp,
+                spaceCount: fyiProgram.totals?.spaceCount,
+                totalSF: fyiProgram.totals?.totalConditionedSF
+              } : null,
               briefInputs,
               tasteProfileP: tasteProfileP ? {
                 clientId: tasteProfileP.clientId,
@@ -761,4 +844,3 @@ const MVPModule = () => {
 };
 
 export default MVPModule;
-
