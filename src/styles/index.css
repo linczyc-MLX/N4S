@@ -2026,6 +2026,234 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   line-height: 1.6;
 }
 
+/* ============================================ */
+/* FYI SPACE PROGRAM STYLES (MVP Integration) */
+/* ============================================ */
+
+.mvp-card--fyi-program {
+  border: 1px solid var(--teal);
+  background: linear-gradient(to bottom, #f7fffe 0%, #ffffff 100%);
+}
+
+.mvp-fyi-program__badge {
+  margin-left: auto;
+  padding: 0.25rem 0.75rem;
+  background: var(--teal);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.mvp-fyi-program__totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.mvp-fyi-program__total-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mvp-fyi-program__total-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mvp-fyi-program__total-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.mvp-fyi-program__total-item--primary .mvp-fyi-program__total-value {
+  color: var(--teal);
+  font-size: 1.125rem;
+}
+
+.mvp-fyi-program__total-item--outdoor .mvp-fyi-program__total-value {
+  color: var(--sky);
+}
+
+.mvp-fyi-program__total-item--variance.over .mvp-fyi-program__total-value {
+  color: #c53030;
+}
+
+.mvp-fyi-program__total-item--variance.under .mvp-fyi-program__total-value {
+  color: #38a169;
+}
+
+.mvp-fyi-program__section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+/* Zone Grid */
+.mvp-fyi-program__zones {
+  margin-bottom: 1.5rem;
+}
+
+.mvp-fyi-program__zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.mvp-fyi-program__zone-card {
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+}
+
+.mvp-fyi-program__zone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.mvp-fyi-program__zone-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.mvp-fyi-program__zone-sf {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.mvp-fyi-program__zone-spaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.mvp-fyi-program__space-chip {
+  padding: 0.125rem 0.5rem;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-size: 0.6875rem;
+  border-radius: 999px;
+}
+
+.mvp-fyi-program__space-chip.outdoor {
+  background: #e6fffa;
+  color: var(--teal);
+}
+
+/* Level Grid */
+.mvp-fyi-program__levels {
+  margin-bottom: 1rem;
+}
+
+.mvp-fyi-program__level-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mvp-fyi-program__level-card {
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+}
+
+.mvp-fyi-program__level-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.mvp-fyi-program__level-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--navy);
+  min-width: 80px;
+}
+
+.mvp-fyi-program__level-sf {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.mvp-fyi-program__level-count {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-left: auto;
+}
+
+.mvp-fyi-program__level-spaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.mvp-fyi-program__space-tag {
+  padding: 0.125rem 0.375rem;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 0.625rem;
+  font-weight: 500;
+  border-radius: 3px;
+}
+
+.mvp-fyi-program__space-tag.outdoor {
+  background: #e6fffa;
+  color: var(--teal);
+}
+
+/* Empty State */
+.mvp-card--fyi-empty {
+  border-style: dashed;
+  border-color: var(--gray-300);
+  background: var(--gray-50);
+}
+
+.mvp-fyi-program__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--gray-500);
+}
+
+.mvp-fyi-program__empty-icon {
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.mvp-fyi-program__empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.mvp-fyi-program__empty-hint {
+  margin-top: 0.5rem !important;
+  font-size: 0.8rem !important;
+  color: var(--gray-400);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .mvp-module__header {

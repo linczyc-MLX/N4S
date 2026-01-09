@@ -538,9 +538,143 @@ export function validateFYISelections(selections, settings) {
   };
 }
 
+/**
+ * Transform LIVE FYI data into MVP program format
+ *
+ * This function reads directly from fyiData (AppContext) and transforms
+ * selections into a structured program view with zone/level breakdown.
+ * Used by MVPModule for instant reactive updates.
+ *
+ * @param {Object} fyiData - Live fyiData from AppContext
+ * @returns {Object} - Structured program with zones, levels, and totals
+ */
+export function transformFYIToMVPProgram(fyiData) {
+  if (!fyiData || !fyiData.selections) {
+    return null;
+  }
+
+  const { settings, selections } = fyiData;
+  const tier = settings?.programTier || '15k';
+  const deltaPct = settings?.deltaPct || 10;
+
+  // Build spaces array with zone info from space-registry
+  const spaces = [];
+  const zoneBreakdown = {};
+  const levelBreakdown = {};
+
+  Object.entries(selections).forEach(([code, selection]) => {
+    if (!selection.included) return;
+
+    const spaceDef = getSpaceByCode(code);
+    if (!spaceDef) {
+      console.warn(`[FYI→MVP] Unknown space code: ${code} - skipping`);
+      return;
+    }
+
+    // Calculate SF
+    const baseSF = spaceDef.baseSF[tier];
+    if (baseSF === null) return; // Not available for this tier
+
+    let targetSF = baseSF;
+    if (selection.customSF) {
+      targetSF = selection.customSF;
+    } else {
+      const delta = deltaPct / 100;
+      if (selection.size === 'S') targetSF = Math.round(baseSF * (1 - delta));
+      if (selection.size === 'L') targetSF = Math.round(baseSF * (1 + delta));
+    }
+
+    const space = {
+      code,
+      name: spaceDef.name,
+      abbrev: spaceDef.abbrev,
+      zone: spaceDef.zone,
+      level: selection.level ?? spaceDef.defaultLevel,
+      size: selection.size || 'M',
+      targetSF,
+      isOutdoor: spaceDef.outdoorSpace || false,
+      notes: selection.notes || ''
+    };
+
+    spaces.push(space);
+
+    // Aggregate by zone
+    if (!zoneBreakdown[spaceDef.zone]) {
+      const zoneDef = zones.find(z => z.code === spaceDef.zone);
+      zoneBreakdown[spaceDef.zone] = {
+        code: spaceDef.zone,
+        name: zoneDef?.name || spaceDef.zone,
+        order: zoneDef?.order || 99,
+        spaces: [],
+        totalSF: 0,
+        conditionedSF: 0
+      };
+    }
+    zoneBreakdown[spaceDef.zone].spaces.push(space);
+    zoneBreakdown[spaceDef.zone].totalSF += targetSF;
+    if (!spaceDef.outdoorSpace) {
+      zoneBreakdown[spaceDef.zone].conditionedSF += targetSF;
+    }
+
+    // Aggregate by level
+    const levelKey = space.level;
+    if (!levelBreakdown[levelKey]) {
+      levelBreakdown[levelKey] = {
+        level: levelKey,
+        label: levelKey === 1 ? 'L1 (Arrival)' : levelKey > 0 ? `L${levelKey}` : `L${levelKey}`,
+        spaces: [],
+        totalSF: 0,
+        conditionedSF: 0
+      };
+    }
+    levelBreakdown[levelKey].spaces.push(space);
+    levelBreakdown[levelKey].totalSF += targetSF;
+    if (!spaceDef.outdoorSpace) {
+      levelBreakdown[levelKey].conditionedSF += targetSF;
+    }
+  });
+
+  // Sort zones by order
+  const sortedZones = Object.values(zoneBreakdown).sort((a, b) => a.order - b.order);
+
+  // Sort levels (descending: L3, L2, L1, L-1, L-2)
+  const sortedLevels = Object.values(levelBreakdown).sort((a, b) => b.level - a.level);
+
+  // Calculate totals
+  const conditionedSpaces = spaces.filter(s => !s.isOutdoor);
+  const netSF = conditionedSpaces.reduce((sum, s) => sum + s.targetSF, 0);
+  const circulationSF = Math.round(netSF * (settings?.circulationPct || 0.14));
+  const totalConditionedSF = netSF + circulationSF;
+  const outdoorSF = spaces.filter(s => s.isOutdoor).reduce((sum, s) => sum + s.targetSF, 0);
+
+  return {
+    settings: {
+      programTier: tier,
+      targetSF: settings?.targetSF || 15000,
+      deltaPct,
+      circulationPct: settings?.circulationPct || 0.14,
+      hasBasement: settings?.hasBasement || false
+    },
+    spaces,
+    zones: sortedZones,
+    levels: sortedLevels,
+    totals: {
+      spaceCount: spaces.length,
+      conditionedSpaceCount: conditionedSpaces.length,
+      netSF,
+      circulationSF,
+      totalConditionedSF,
+      outdoorSF,
+      variance: totalConditionedSF - (settings?.targetSF || 15000),
+      variancePercent: ((totalConditionedSF - (settings?.targetSF || 15000)) / (settings?.targetSF || 15000)) * 100
+    }
+  };
+}
+
 const fyiBridges = {
   generateFYIFromKYC,
   generateMVPFromFYI,
+  transformFYIToMVPProgram,
   validateFYISelections
 };
 
