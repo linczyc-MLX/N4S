@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
+  ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
-  Building, Layers, ArrowRight, Palette, FileText, Sparkles, BookOpen
+  Building, Layers, ArrowRight, FileText, Sparkles, BookOpen
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
@@ -15,136 +15,18 @@ import {
   transformFYIToMVPProgram,
   getFYIProgramSummary
 } from '../../lib/mvp-bridge';
-import { quads, categoryOrder } from '../../data/tasteQuads';
-
-// ============================================
-// TASTE PROFILE INTEGRATION
-// ============================================
-// Taste profiles are now stored in kycData.principal.designIdentity
-// as principalTasteResults and secondaryTasteResults, synced to backend
-
-// ============================================
-// STYLE ERA CALCULATION (matches Report algorithm)
-// ============================================
-
-// Extract AS/VD/MP codes from image filename
-function extractCodesFromFilename(imageUrl) {
-  if (!imageUrl) return null;
-  const filename = imageUrl.split('/').pop();
-  const asMatch = filename.match(/AS(\d)/);
-  if (!asMatch) return null;
-  return { as: parseInt(asMatch[1]) };
-}
-
-// Normalize 1-9 scale to 1-5 scale
-function normalize9to5(value) {
-  return ((value - 1) / 8) * 4 + 1;
-}
-
-// Get selection for a category from profile
-function getSelectionForCategory(profile, categoryId) {
-  const flatSelections = profile.selections || profile.session?.selections || {};
-  const categoryQuads = quads.filter(q => q.category === categoryId);
-
-  for (const quad of categoryQuads) {
-    const sel = flatSelections[quad.quadId];
-    if (sel && sel.favorites && sel.favorites.length > 0) {
-      const quadData = quads.find(q => q.quadId === quad.quadId);
-      if (quadData && quadData.images && quadData.images[sel.favorites[0]]) {
-        return quadData.images[sel.favorites[0]];
-      }
-    }
-  }
-  return null;
-}
-
-// Calculate styleEra from profile selections (same algorithm as Report)
-function calculateStyleEraFromProfile(profile) {
-  if (!profile) return null;
-
-  let totalStyleEra = 0;
-  let count = 0;
-
-  categoryOrder.forEach(categoryId => {
-    const imageUrl = getSelectionForCategory(profile, categoryId);
-    if (imageUrl) {
-      const codes = extractCodesFromFilename(imageUrl);
-      if (codes) {
-        totalStyleEra += normalize9to5(codes.as);
-        count++;
-      }
-    }
-  });
-
-  return count > 0 ? totalStyleEra / count : null;
-}
-
-// Get style direction label from styleEra (1-5 scale, matches Report)
-function getStyleDirection(styleEra) {
-  if (!styleEra) return 'Not assessed';
-  if (styleEra < 2.5) return 'Contemporary';
-  if (styleEra <= 3.5) return 'Transitional';
-  return 'Traditional';
-}
-
-// Get formality label
-function getFormalityLabel(formalityScore) {
-  if (!formalityScore) return 'Not assessed';
-  if (formalityScore <= 3) return 'Casual / Relaxed';
-  if (formalityScore <= 5) return 'Relaxed Elegance';
-  if (formalityScore <= 7) return 'Refined';
-  return 'Formal';
-}
-
-// Get warmth label
-function getWarmthLabel(warmthScore) {
-  if (!warmthScore) return 'Not assessed';
-  if (warmthScore <= 3) return 'Cool / Crisp';
-  if (warmthScore <= 5) return 'Balanced';
-  if (warmthScore <= 7) return 'Warm';
-  return 'Very Warm';
-}
-
-// ============================================
-// DESIGN DNA SLIDER COMPONENT
-// ============================================
-
-const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
-  const percentage = value ? ((value - 1) / 9) * 100 : 50;
-  
-  return (
-    <div className="mvp-dna-slider">
-      <div className="mvp-dna-slider__header">
-        <span className="mvp-dna-slider__label">{label}</span>
-        <span className="mvp-dna-slider__value">{value ? value.toFixed(1) : '—'}</span>
-      </div>
-      <div className="mvp-dna-slider__track-row">
-        <span className="mvp-dna-slider__endpoint">{leftLabel}</span>
-        <div className="mvp-dna-slider__track">
-          <div className="mvp-dna-slider__fill" style={{ width: `${percentage}%` }} />
-          <div className="mvp-dna-slider__thumb" style={{ left: `${percentage}%` }} />
-        </div>
-        <span className="mvp-dna-slider__endpoint">{rightLabel}</span>
-      </div>
-    </div>
-  );
-};
-
 // ============================================
 // FYI SPACE PROGRAM DISPLAY COMPONENT
 // ============================================
 
 const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
   const [expanded, setExpanded] = useState(false);
-  const [showStructures, setShowStructures] = useState(true);
-  
+  const showStructures = true;
+
   if (!fyiProgram || !fyiSummary) return null;
 
-  const deltaColor = fyiSummary.totals.delta > 0 ? 'text-amber-600' : 
+  const deltaColor = fyiSummary.totals.delta > 0 ? 'text-amber-600' :
                      fyiSummary.totals.delta < -500 ? 'text-red-600' : 'text-green-600';
-
-  // Check if we have multiple structures
-  const hasMultipleStructures = fyiSummary.structures.length > 1;
 
   return (
     <div className="mvp-card mvp-card--full mvp-card--fyi">
@@ -296,9 +178,7 @@ const MVPModule = () => {
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
   const clientBaseName = designIdentity.clientBaseName || '';
   const clientType = designIdentity.clientType || 'individual';
-  const principalName = designIdentity.principalName || '';
-  const secondaryName = designIdentity.secondaryName || '';
-  
+
   // Generate client IDs (still needed for display purposes)
   const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
   const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
@@ -330,25 +210,6 @@ const MVPModule = () => {
       completedAt: data.completedAt
     };
   }, [principalDesignIdentity.secondaryTasteResults, clientIdS]);
-  
-  // Extract scores from profiles
-  const scoresP = tasteProfileP?.profile?.scores || {};
-  const materialsP = tasteProfileP?.profile?.topMaterials || [];
-
-  // Always use principal's scores only - partner data is for divergence analysis only
-  const combinedScores = useMemo(() => {
-    return scoresP || null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(scoresP)]);
-
-  // Calculate styleEra from selections (matches Report algorithm)
-  const styleEraP = useMemo(() => {
-    return calculateStyleEraFromProfile(tasteProfileP);
-  }, [tasteProfileP]);
-
-  const styleEraS = useMemo(() => {
-    return calculateStyleEraFromProfile(tasteProfileS);
-  }, [tasteProfileS]);
 
   // ============================================
   // FYI DATA - LIVE TRANSFORMATION
@@ -403,10 +264,6 @@ const MVPModule = () => {
     if (amenityCount >= 4) return { tier: '10K', label: 'Signature (10,000 SF)', color: 'blue' };
     return { tier: 'Custom', label: 'Custom Compact', color: 'gray' };
   }, [hasFYIData, fyiProgram, amenityCount]);
-
-  // Check if taste exploration is complete
-  const hasTasteProfile = !!tasteProfileP;
-  const hasBothProfiles = clientType === 'couple' ? (!!tasteProfileP && !!tasteProfileS) : !!tasteProfileP;
 
   // Derive project info for BriefingBuilderView
   const projectId = clientBaseName || 'project-001';
