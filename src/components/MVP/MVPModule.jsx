@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, AlertTriangle, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
-  Building, Layers, ArrowRight, Palette, FileText, Sparkles
+  Building, Layers, ArrowRight, Palette, FileText, Sparkles, BookOpen
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
+import ModuleLibraryView from './ModuleLibraryView';
 import {
   transformKYCToMVPBrief,
   getMVPBriefSummary,
@@ -260,7 +261,32 @@ const MVPModule = () => {
   const { kycData, fyiData, activeRespondent } = useAppContext();
 
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' or 'builder'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'builder'
+  const [moduleChecklistState, setModuleChecklistState] = useState({}); // { itemId: boolean }
+
+  // Handle module checklist changes
+  const handleModuleChecklistChange = (itemId, checked) => {
+    setModuleChecklistState(prev => ({
+      ...prev,
+      [itemId]: checked
+    }));
+  };
+
+  // Calculate gate status based on completion
+  const gateStatus = useMemo(() => {
+    const kycComplete = kycData?.principal?.projectParameters?.targetGSF > 0;
+    const fyiComplete = fyiData?.selections && Object.keys(fyiData.selections).length > 0;
+    const checklistCount = Object.values(moduleChecklistState).filter(Boolean).length;
+    const modulesReviewed = checklistCount > 0;
+
+    return {
+      A: kycComplete ? 'complete' : 'current',
+      B: fyiComplete ? 'complete' : (kycComplete ? 'current' : 'locked'),
+      C: modulesReviewed ? 'current' : (fyiComplete ? 'current' : 'locked'),
+      D: 'locked',
+      E: 'locked'
+    };
+  }, [kycData, fyiData, moduleChecklistState]);
 
   // Get design identity config from KYC
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
@@ -381,6 +407,19 @@ const MVPModule = () => {
   // Derive project info for BriefingBuilderView
   const projectId = clientBaseName || 'project-001';
   const projectName = kycData[activeRespondent]?.projectParameters?.projectName || 'New Project';
+
+  // If in modules mode, show Module Library
+  if (viewMode === 'modules') {
+    return (
+      <ModuleLibraryView
+        onBack={() => setViewMode('overview')}
+        onProceedToValidation={() => setViewMode('personalization')}
+        gateStatus={gateStatus}
+        checklistState={moduleChecklistState}
+        onChecklistChange={handleModuleChecklistChange}
+      />
+    );
+  }
 
   // If in personalization mode, show Adjacency Personalization
   if (viewMode === 'personalization') {
@@ -814,30 +853,39 @@ const MVPModule = () => {
         )}
       </div>
 
-      {/* Next Steps */}
+      {/* Next Steps - MVP Workflow */}
       <div className="mvp-next-steps">
         <h3>
           <ArrowRight size={20} />
-          Next: Briefing Builder
+          MVP Deployment Workflow
         </h3>
         <p>
-          Open the Briefing Builder to configure spaces, adjacencies, and operational bridges.
-          Run validation preview and export your completed PlanBrief.
+          Review the 8 validation modules, run validation checks, then configure adjacencies and generate your brief.
         </p>
-        <button
-          onClick={() => setViewMode('personalization')}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          <Sparkles className="w-4 h-4" />
-          Personalize Your Layout
-        </button>
-        <button
-          onClick={() => setViewMode('builder')}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <FileText className="w-4 h-4" />
-          Open Briefing Builder
-        </button>
+        <div className="mvp-next-steps__buttons">
+          <button
+            onClick={() => setViewMode('modules')}
+            className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: 'var(--navy)' }}
+          >
+            <BookOpen className="w-4 h-4" />
+            Review Module Library
+          </button>
+          <button
+            onClick={() => setViewMode('personalization')}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            Personalize Adjacencies
+          </button>
+          <button
+            onClick={() => setViewMode('builder')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            Open Briefing Builder
+          </button>
+        </div>
       </div>
     </div>
   );
