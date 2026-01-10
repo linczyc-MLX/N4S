@@ -8,9 +8,9 @@ import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import ModuleLibraryView from './ModuleLibraryView';
-import {
-  transformKYCToMVPBrief,
-  getMVPBriefSummary,
+import { 
+  transformKYCToMVPBrief, 
+  getMVPBriefSummary, 
   countSelectedAmenities,
   transformFYIToMVPProgram,
   getFYIProgramSummary
@@ -111,7 +111,7 @@ function getWarmthLabel(warmthScore) {
 
 const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
   const percentage = value ? ((value - 1) / 9) * 100 : 50;
-
+  
   return (
     <div className="mvp-dna-slider">
       <div className="mvp-dna-slider__header">
@@ -137,10 +137,10 @@ const DesignDNASlider = ({ label, value, leftLabel, rightLabel }) => {
 const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
   const [expanded, setExpanded] = useState(false);
   const [showStructures, setShowStructures] = useState(true);
-
+  
   if (!fyiProgram || !fyiSummary) return null;
 
-  const deltaColor = fyiSummary.totals.delta > 0 ? 'text-amber-600' :
+  const deltaColor = fyiSummary.totals.delta > 0 ? 'text-amber-600' : 
                      fyiSummary.totals.delta < -500 ? 'text-red-600' : 'text-green-600';
 
   // Check if we have multiple structures
@@ -225,13 +225,14 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
         </div>
 
         {/* Zone Breakdown (expandable) */}
-        <button
-          className="fyi-expand-btn"
+        <button 
+          className="n4s-btn n4s-btn--secondary"
           onClick={() => setExpanded(!expanded)}
+          style={{ marginTop: '12px' }}
         >
           {expanded ? 'Hide' : 'Show'} Zone Details ({fyiSummary.zones.length} zones)
         </button>
-
+        
         {expanded && (
           <div className="fyi-program-zones">
             {fyiSummary.zones.map(zone => (
@@ -259,11 +260,11 @@ const MVPModule = () => {
   // CRITICAL: Both kycData and fyiData come directly from context.
   // Any changes to these in other modules trigger re-render here.
   const { kycData, fyiData, activeRespondent } = useAppContext();
-
+  
   const [showRawData, setShowRawData] = useState(false);
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'builder'
   const [moduleChecklistState, setModuleChecklistState] = useState({}); // { itemId: boolean }
-
+  
   // Handle module checklist changes
   const handleModuleChecklistChange = (itemId, checked) => {
     setModuleChecklistState(prev => ({
@@ -271,14 +272,14 @@ const MVPModule = () => {
       [itemId]: checked
     }));
   };
-
+  
   // Calculate gate status based on completion
   const gateStatus = useMemo(() => {
     const kycComplete = kycData?.principal?.projectParameters?.targetGSF > 0;
     const fyiComplete = fyiData?.selections && Object.keys(fyiData.selections).length > 0;
     const checklistCount = Object.values(moduleChecklistState).filter(Boolean).length;
     const modulesReviewed = checklistCount > 0;
-
+    
     return {
       A: kycComplete ? 'complete' : 'current',
       B: fyiComplete ? 'complete' : (kycComplete ? 'current' : 'locked'),
@@ -287,14 +288,14 @@ const MVPModule = () => {
       E: 'locked'
     };
   }, [kycData, fyiData, moduleChecklistState]);
-
+  
   // Get design identity config from KYC
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
   const clientBaseName = designIdentity.clientBaseName || '';
   const clientType = designIdentity.clientType || 'individual';
   const principalName = designIdentity.principalName || '';
   const secondaryName = designIdentity.secondaryName || '';
-
+  
   // Generate client IDs (still needed for display purposes)
   const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
   const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
@@ -326,7 +327,7 @@ const MVPModule = () => {
       completedAt: data.completedAt
     };
   }, [principalDesignIdentity.secondaryTasteResults, clientIdS]);
-
+  
   // Extract scores from profiles
   const scoresP = tasteProfileP?.profile?.scores || {};
   const materialsP = tasteProfileP?.profile?.topMaterials || [];
@@ -371,17 +372,17 @@ const MVPModule = () => {
   const briefInputs = useMemo(() => {
     return transformKYCToMVPBrief(kycData, activeRespondent);
   }, [kycData, activeRespondent]);
-
+  
   // Get summary for display
   const summary = useMemo(() => {
     return getMVPBriefSummary(briefInputs);
   }, [briefInputs]);
-
+  
   // Count amenities for tier estimation
   const amenityCount = useMemo(() => {
     return countSelectedAmenities(briefInputs);
   }, [briefInputs]);
-
+  
   // ============================================
   // TIER ESTIMATION
   // ============================================
@@ -511,7 +512,7 @@ const MVPModule = () => {
             )}
           </p>
         </div>
-
+        
         {/* Tier Estimate Badge */}
         <div className={`mvp-tier-badge mvp-tier-badge--${estimatedTier.color}`}>
           <span className="mvp-tier-badge__tier">{estimatedTier.tier}</span>
@@ -621,35 +622,35 @@ const MVPModule = () => {
                     leftLabel="Contemporary"
                     rightLabel="Traditional"
                   />
-                  <DesignDNASlider
-                    label="Formality"
-                    value={combinedScores?.formality}
-                    leftLabel="Casual"
-                    rightLabel="Formal"
+                  <DesignDNASlider 
+                    label="Formality" 
+                    value={combinedScores?.formality} 
+                    leftLabel="Casual" 
+                    rightLabel="Formal" 
                   />
-                  <DesignDNASlider
-                    label="Warmth"
-                    value={combinedScores?.warmth}
-                    leftLabel="Cool"
-                    rightLabel="Warm"
+                  <DesignDNASlider 
+                    label="Warmth" 
+                    value={combinedScores?.warmth} 
+                    leftLabel="Cool" 
+                    rightLabel="Warm" 
                   />
-                  <DesignDNASlider
-                    label="Drama"
-                    value={combinedScores?.drama}
-                    leftLabel="Subtle"
-                    rightLabel="Bold"
+                  <DesignDNASlider 
+                    label="Drama" 
+                    value={combinedScores?.drama} 
+                    leftLabel="Subtle" 
+                    rightLabel="Bold" 
                   />
-                  <DesignDNASlider
-                    label="Openness"
-                    value={combinedScores?.openness}
-                    leftLabel="Enclosed"
-                    rightLabel="Open"
+                  <DesignDNASlider 
+                    label="Openness" 
+                    value={combinedScores?.openness} 
+                    leftLabel="Enclosed" 
+                    rightLabel="Open" 
                   />
-                  <DesignDNASlider
-                    label="Art Focus"
-                    value={combinedScores?.art_focus}
-                    leftLabel="Understated"
-                    rightLabel="Gallery-like"
+                  <DesignDNASlider 
+                    label="Art Focus" 
+                    value={combinedScores?.art_focus} 
+                    leftLabel="Understated" 
+                    rightLabel="Gallery-like" 
                   />
                 </div>
               </div>
@@ -820,13 +821,13 @@ const MVPModule = () => {
 
       {/* Raw Data Toggle (for debugging) */}
       <div className="mvp-debug">
-        <button
-          className="btn btn--ghost btn--sm"
+        <button 
+          className="n4s-btn n4s-btn--ghost"
           onClick={() => setShowRawData(!showRawData)}
         >
           {showRawData ? 'Hide' : 'Show'} Raw Data
         </button>
-
+        
         {showRawData && (
           <pre className="mvp-debug__code">
             {JSON.stringify({

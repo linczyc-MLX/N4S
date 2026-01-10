@@ -146,14 +146,13 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
               Gate Deliverables
             </h5>
             <p className="module-section__subtitle">Minimum required deliverables for gate approval:</p>
-            <div className="module-deliverables">
+            <ol className="module-deliverables">
               {module.gateDeliverables.map((deliverable, index) => (
-                <div key={index} className="module-deliverable">
-                  <span className="module-deliverable__number">{index + 1}</span>
-                  <span className="module-deliverable__text">{deliverable}</span>
-                </div>
+                <li key={index} className="module-deliverable">
+                  {deliverable}
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
 
           {/* Checklist Items Section */}

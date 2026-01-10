@@ -65,7 +65,7 @@ function KYCCompletenessCheck({ completeness, onGoToKYC }) { // eslint-disable-l
 
           <button
             onClick={onGoToKYC}
-            className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+            className="n4s-btn n4s-btn--primary mt-3"
           >
             Complete KYC Profile
           </button>
