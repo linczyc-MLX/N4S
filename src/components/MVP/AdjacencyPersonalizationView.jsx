@@ -122,7 +122,7 @@ function formatSectionName(key) {
     familyHousehold: 'Family & Household',
     lifestyleLiving: 'Lifestyle',
     workingPreferences: 'Work Preferences',
-    projectParameters: 'Property Config',
+    projectParameters: 'Project Parameters',
     spaceRequirements: 'Space Requirements',
     designIdentity: 'Design Identity',
     budgetFramework: 'Budget',

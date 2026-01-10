@@ -203,19 +203,22 @@ function convertToKYCResponse(kycData, mvpConfig, tasteProfile) {
 function checkFamilyHousehold(kycData) {
   if (!kycData?.principal?.familyHousehold) return false;
   const section = kycData.principal.familyHousehold;
-  return !!(section.primaryResidents || section.childrenCount !== undefined);
+  // Check for familyMembers array (how KYC actually stores family data)
+  return !!(section.familyMembers?.length > 0 || section.pets);
 }
 
 function checkLifestyleLiving(kycData) {
   if (!kycData?.principal?.lifestyleLiving) return false;
   const section = kycData.principal.lifestyleLiving;
-  return !!(section.entertainingFrequency || section.privacy);
+  // Check for actual field names used by LifestyleLivingSection
+  return !!(section.entertainingFrequency || section.privacyLevelRequired || section.workFromHome);
 }
 
 function checkWorkingPreferences(kycData) {
   if (!kycData?.principal?.workingPreferences) return false;
   const section = kycData.principal.workingPreferences;
-  return !!(section.workFromHome);
+  // Check for actual field names used by WorkingPreferencesSection
+  return !!(section.communicationStyle || section.decisionCadence || section.collaborationStyle);
 }
 
 function checkProjectParameters(mvp) {
@@ -240,7 +243,8 @@ function checkDesignIdentity(designIdentity) {
 function checkBudgetFramework(kycData) {
   if (!kycData?.principal?.budgetFramework) return false;
   const section = kycData.principal.budgetFramework;
-  return !!(section.budget);
+  // Check for actual field names used by BudgetFrameworkSection
+  return !!(section.totalProjectBudget || section.perSFExpectation || section.budgetFlexibility);
 }
 
 function checkCulturalContext(kycData) {
