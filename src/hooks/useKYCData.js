@@ -25,8 +25,8 @@ export function useKYCCompleteness() {
       familyHousehold: checkFamilyHousehold(kycData),
       lifestyleLiving: checkLifestyleLiving(kycData),
       workingPreferences: checkWorkingPreferences(kycData),
-      projectParameters: checkProjectParameters(mvpConfig),
-      spaceRequirements: checkSpaceRequirements(mvpConfig),
+      projectParameters: checkProjectParameters(kycData),
+      spaceRequirements: checkSpaceRequirements(kycData),
       designIdentity: checkDesignIdentity(designIdentity),
       budgetFramework: checkBudgetFramework(kycData),
       culturalContext: checkCulturalContext(kycData),
@@ -221,14 +221,18 @@ function checkWorkingPreferences(kycData) {
   return !!(section.communicationStyle || section.decisionCadence || section.collaborationStyle);
 }
 
-function checkProjectParameters(mvp) {
-  if (!mvp) return false;
-  return !!(mvp.sfCap && mvp.levels);
+function checkProjectParameters(kycData) {
+  if (!kycData?.principal?.projectParameters) return false;
+  const section = kycData.principal.projectParameters;
+  // Check for actual field names used by ProjectParametersSection
+  return !!(section.targetGSF || section.bedroomCount || section.propertyType);
 }
 
-function checkSpaceRequirements(mvp) {
-  if (!mvp) return false;
-  return !!(mvp.bedrooms || mvp.garageBays);
+function checkSpaceRequirements(kycData) {
+  if (!kycData?.principal?.spaceRequirements) return false;
+  const section = kycData.principal.spaceRequirements;
+  // Check for actual field names used by SpaceRequirementsSection
+  return !!(section.mustHaveSpaces?.length > 0 || section.garageSize || section.niceToHaveSpaces?.length > 0);
 }
 
 function checkDesignIdentity(designIdentity) {
