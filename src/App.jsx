@@ -90,7 +90,7 @@ const AppContent = () => {
       case 'kyc':
         return <KYCModule />;
       case 'mvp':
-        return <MVPModule />;
+        return <MVPModule onNavigate={setActiveModule} />;
       case 'fyi':
         return <FYIModule />;
       case 'settings':

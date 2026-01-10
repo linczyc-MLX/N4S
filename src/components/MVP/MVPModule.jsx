@@ -135,7 +135,7 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
 // MAIN MVP MODULE COMPONENT
 // ============================================
 
-const MVPModule = () => {
+const MVPModule = ({ onNavigate }) => {
   // ============================================
   // CONTEXT ACCESS - LIVE DATA
   // ============================================
@@ -296,6 +296,7 @@ const MVPModule = () => {
         projectId={projectId}
         projectName={projectName}
         onBack={() => setViewMode('overview')}
+        onGoToKYC={() => onNavigate && onNavigate('kyc')}
         onComplete={(result) => {
           console.log('Personalization result:', result);
           setViewMode('overview');

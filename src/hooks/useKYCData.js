@@ -200,19 +200,22 @@ function convertToKYCResponse(kycData, mvpConfig, tasteProfile) {
 // SECTION COMPLETENESS CHECKERS
 // ============================================================================
 
-function checkFamilyHousehold(kyc) {
-  if (!kyc) return false;
-  return !!(kyc.primaryResidents || kyc.childrenCount !== undefined);
+function checkFamilyHousehold(kycData) {
+  if (!kycData?.principal?.familyHousehold) return false;
+  const section = kycData.principal.familyHousehold;
+  return !!(section.primaryResidents || section.childrenCount !== undefined);
 }
 
-function checkLifestyleLiving(kyc) {
-  if (!kyc) return false;
-  return !!(kyc.entertainingFrequency || kyc.privacy);
+function checkLifestyleLiving(kycData) {
+  if (!kycData?.principal?.lifestyleLiving) return false;
+  const section = kycData.principal.lifestyleLiving;
+  return !!(section.entertainingFrequency || section.privacy);
 }
 
-function checkWorkingPreferences(kyc) {
-  if (!kyc) return false;
-  return !!(kyc.workFromHome);
+function checkWorkingPreferences(kycData) {
+  if (!kycData?.principal?.workingPreferences) return false;
+  const section = kycData.principal.workingPreferences;
+  return !!(section.workFromHome);
 }
 
 function checkProjectParameters(mvp) {
@@ -234,17 +237,18 @@ function checkDesignIdentity(designIdentity) {
   return !!(designIdentity.styleEra || designIdentity.formality || designIdentity.warmth);
 }
 
-function checkBudgetFramework(kyc) {
-  if (!kyc) return false;
-  return !!(kyc.budget);
+function checkBudgetFramework(kycData) {
+  if (!kycData?.principal?.budgetFramework) return false;
+  const section = kycData.principal.budgetFramework;
+  return !!(section.budget);
 }
 
-function checkCulturalContext(kyc) {
+function checkCulturalContext(kycData) {
   // Optional section
   return true;
 }
 
-function checkPortfolioContext(kyc) {
+function checkPortfolioContext(kycData) {
   // Optional section
   return true;
 }
