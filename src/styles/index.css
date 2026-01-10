@@ -3543,6 +3543,9 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 .module-library__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
 }
 

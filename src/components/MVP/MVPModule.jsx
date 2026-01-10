@@ -421,6 +421,9 @@ const MVPModule = () => {
         gateStatus={gateStatus}
         checklistState={moduleChecklistState}
         onChecklistChange={handleModuleChecklistChange}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        onSave={saveNow}
       />
     );
   }

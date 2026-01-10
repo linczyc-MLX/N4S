@@ -201,7 +201,10 @@ const ModuleLibraryView = ({
   onProceedToValidation,
   gateStatus = {},
   checklistState = {},
-  onChecklistChange
+  onChecklistChange,
+  hasUnsavedChanges = false,
+  isSaving = false,
+  onSave
 }) => {
   const [expandedModuleId, setExpandedModuleId] = useState(null);
 
@@ -236,6 +239,17 @@ const ModuleLibraryView = ({
           <ArrowLeft size={16} />
           Back to Overview
         </button>
+        
+        {/* Save Button */}
+        {onSave && (
+          <button 
+            className={`n4s-btn ${hasUnsavedChanges ? 'n4s-btn--primary' : 'n4s-btn--secondary'}`}
+            onClick={onSave}
+            disabled={isSaving || !hasUnsavedChanges}
+          >
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+          </button>
+        )}
       </div>
 
       {/* Title Section */}

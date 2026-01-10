@@ -242,8 +242,17 @@ export const AppProvider = ({ children }) => {
             if (data) {
               console.log('[APP] Loaded project:', activeId);
               console.log('[APP] FYI selections:', data.fyiData?.selections);
+              console.log('[APP] MVP data:', data.mvpData);
               setActiveProjectIdState(activeId);
-              setProjectData(data);
+              // Merge with defaults to handle old projects missing new fields
+              setProjectData({
+                ...getEmptyProjectData(),
+                ...data,
+                mvpData: {
+                  ...initialMVPData,
+                  ...data.mvpData,
+                },
+              });
               setActiveRespondent(data.activeRespondent || 'principal');
             }
           } catch (e) {
@@ -284,6 +293,7 @@ export const AppProvider = ({ children }) => {
 
     console.log('[APP] Saving to server...');
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
+    console.log('[APP] MVP data being saved:', dataToSave.mvpData);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -320,8 +330,17 @@ export const AppProvider = ({ children }) => {
       const data = await api.getProject(projectId);
       if (data) {
         console.log('[APP] Switched to project:', projectId);
+        console.log('[APP] MVP data:', data.mvpData);
         setActiveProjectIdState(projectId);
-        setProjectData(data);
+        // Merge with defaults to handle old projects missing new fields
+        setProjectData({
+          ...getEmptyProjectData(),
+          ...data,
+          mvpData: {
+            ...initialMVPData,
+            ...data.mvpData,
+          },
+        });
         setActiveRespondent(data.activeRespondent || 'principal');
         await api.setState('activeProjectId', projectId);
       }
