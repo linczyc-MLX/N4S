@@ -102,6 +102,15 @@ const initialFYIData = {
   selections: {},  // { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
 };
 
+// Initial MVP data
+const initialMVPData = {
+  moduleChecklistState: {},  // { [checklistItemId]: boolean }
+  adjacencyDecisions: {},    // { [decisionKey]: value }
+  briefGenerated: null,      // timestamp when brief was generated
+  validationResults: null,   // cached validation results
+  completedAt: null,
+};
+
 // Empty project template
 const getEmptyProjectData = () => ({
   id: null,
@@ -117,6 +126,7 @@ const getEmptyProjectData = () => ({
     advisor: JSON.parse(JSON.stringify(initialKYCData)),
   },
   fyiData: JSON.parse(JSON.stringify(initialFYIData)),
+  mvpData: JSON.parse(JSON.stringify(initialMVPData)),
   activeRespondent: 'principal',
 });
 
@@ -180,6 +190,7 @@ export const AppProvider = ({ children }) => {
   const clientData = projectData.clientData;
   const kycData = projectData.kycData;
   const fyiData = projectData.fyiData;
+  const mvpData = projectData.mvpData || initialMVPData;
 
   // ---------------------------------------------------------------------------
   // LOAD INITIAL DATA FROM SERVER
@@ -499,6 +510,60 @@ export const AppProvider = ({ children }) => {
   }, [markChanged]);
 
   // ---------------------------------------------------------------------------
+  // MVP DATA UPDATES
+  // ---------------------------------------------------------------------------
+
+  // Update MVP data (moduleChecklistState, adjacencyDecisions, etc.)
+  const updateMVPData = useCallback((updates) => {
+    console.log('[APP] updateMVPData:', updates);
+    setProjectData(prev => {
+      const newMvpData = { ...prev.mvpData };
+
+      // Handle moduleChecklistState update with proper merge
+      if (updates.moduleChecklistState !== undefined) {
+        newMvpData.moduleChecklistState = {
+          ...prev.mvpData?.moduleChecklistState,
+          ...updates.moduleChecklistState,
+        };
+      }
+
+      // Handle adjacencyDecisions update with proper merge
+      if (updates.adjacencyDecisions !== undefined) {
+        newMvpData.adjacencyDecisions = {
+          ...prev.mvpData?.adjacencyDecisions,
+          ...updates.adjacencyDecisions,
+        };
+      }
+
+      // Handle other fields
+      Object.keys(updates).forEach(key => {
+        if (key !== 'moduleChecklistState' && key !== 'adjacencyDecisions') {
+          newMvpData[key] = updates[key];
+        }
+      });
+
+      return { ...prev, mvpData: newMvpData };
+    });
+    markChanged();
+  }, [markChanged]);
+
+  // Update a single module checklist item
+  const updateMVPChecklistItem = useCallback((itemId, checked) => {
+    console.log('[APP] updateMVPChecklistItem:', itemId, checked);
+    setProjectData(prev => ({
+      ...prev,
+      mvpData: {
+        ...prev.mvpData,
+        moduleChecklistState: {
+          ...prev.mvpData?.moduleChecklistState,
+          [itemId]: checked,
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
+  // ---------------------------------------------------------------------------
   // COMPLETION CALCULATIONS
   // ---------------------------------------------------------------------------
   const getSectionCompletionStatus = useCallback((respondent, sectionId) => {
@@ -638,6 +703,7 @@ export const AppProvider = ({ children }) => {
     clientData,
     kycData,
     fyiData,
+    mvpData,
 
     // Data updates
     updateClientData,
@@ -646,6 +712,8 @@ export const AppProvider = ({ children }) => {
     updateFYISelection,
     updateFYISettings,
     initializeFYISelections,
+    updateMVPData,
+    updateMVPChecklistItem,
 
     // UI state
     activeRespondent,

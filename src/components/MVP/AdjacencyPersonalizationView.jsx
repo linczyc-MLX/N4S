@@ -1,16 +1,16 @@
 /**
  * AdjacencyPersonalizationView (Updated for Phase 5C)
- *
+ * 
  * Now uses useKYCData hook for proper context integration.
  * Includes KYC completeness checking before allowing personalization.
- *
+ * 
  * REPLACE: src/components/MVP/AdjacencyPersonalizationView.jsx
  */
 
 import React, { useMemo } from 'react';
-import {
-  ArrowLeft,
-  AlertTriangle,
+import { 
+  ArrowLeft, 
+  AlertTriangle, 
   CheckCircle,
   XCircle,
   Info
@@ -20,7 +20,7 @@ import {
 import { useKYCData } from '../../hooks/useKYCData';
 
 // Import from mansion-program TypeScript module
-import {
+import { 
   AdjacencyPersonalization,
   getPreset
 } from '../../mansion-program';
@@ -48,7 +48,7 @@ function KYCCompletenessCheck({ completeness, onGoToKYC }) { // eslint-disable-l
             The personalization engine works best with more information about your lifestyle.
             Currently {percentage}% complete.
           </p>
-
+          
           {missingRequired.length > 0 && (
             <div className="mt-3">
               <p className="text-sm font-medium text-amber-800">Missing required sections:</p>
@@ -62,7 +62,7 @@ function KYCCompletenessCheck({ completeness, onGoToKYC }) { // eslint-disable-l
               </ul>
             </div>
           )}
-
+          
           <button
             onClick={onGoToKYC}
             className="n4s-btn n4s-btn--primary mt-3"
@@ -80,24 +80,24 @@ function KYCCompletenessCheck({ completeness, onGoToKYC }) { // eslint-disable-l
  */
 function KYCProgressIndicator({ completeness }) {
   const { sections, percentage } = completeness;
-
+  
   return (
     <div className="bg-gray-50 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
         <span className="text-sm text-gray-500">{percentage}%</span>
       </div>
-
+      
       <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-        <div
+        <div 
           className="h-2 rounded-full transition-all duration-300"
           style={{ width: `${percentage}%`, background: '#1e3a5f' }}
         />
       </div>
-
+      
       <div className="grid grid-cols-3 gap-2 text-xs">
         {Object.entries(sections).map(([key, complete]) => (
-          <div
+          <div 
             key={key}
             className={`flex items-center gap-1 ${complete ? 'text-green-600' : 'text-gray-400'}`}
           >
@@ -135,7 +135,7 @@ function formatSectionName(key) {
 /**
  * Main Component
  */
-export default function AdjacencyPersonalizationView({
+export default function AdjacencyPersonalizationView({ 
   onBack,
   onComplete,
   onViewDiagram,
@@ -149,7 +149,7 @@ export default function AdjacencyPersonalizationView({
     baseSF,
     completeness
   } = useKYCData();
-
+  
   // Get base preset data
   const presetData = useMemo(() => {
     try {
@@ -159,9 +159,9 @@ export default function AdjacencyPersonalizationView({
       return null;
     }
   }, [preset]);
-
+  
   const baseMatrix = presetData?.adjacencyMatrix || [];
-
+  
   // Handle completion
   const handleComplete = (result) => {
     console.log('Personalization complete:', result);
@@ -169,12 +169,12 @@ export default function AdjacencyPersonalizationView({
       onComplete(result);
     }
   };
-
+  
   // If preset data failed, show error
   if (!presetData) {
     return (
       <div className="p-6">
-        <button
+        <button 
           onClick={onBack}
           className="n4s-btn n4s-btn--ghost mb-4"
         >
@@ -190,19 +190,19 @@ export default function AdjacencyPersonalizationView({
       </div>
     );
   }
-
+  
   // If minimum data not present, show completeness check prominently
   if (!completeness.hasMinimumData) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
-        <button
+        <button 
           onClick={onBack}
           className="n4s-btn n4s-btn--ghost mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Overview
         </button>
-
+        
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -212,13 +212,13 @@ export default function AdjacencyPersonalizationView({
               Complete Your Profile First
             </h2>
             <p className="text-gray-600 mt-2">
-              We need some basic information about your household and lifestyle
+              We need some basic information about your household and lifestyle 
               to provide personalized layout recommendations.
             </p>
           </div>
-
+          
           <KYCProgressIndicator completeness={completeness} />
-
+          
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <h4 className="font-medium text-amber-800 mb-2">Required sections:</h4>
             <ul className="space-y-2">
@@ -230,7 +230,7 @@ export default function AdjacencyPersonalizationView({
               ))}
             </ul>
           </div>
-
+          
           <div className="flex gap-4">
             <button
               onClick={onGoToKYC}
@@ -249,7 +249,7 @@ export default function AdjacencyPersonalizationView({
       </div>
     );
   }
-
+  
   // Render the personalization UI
   return (
     <div className="min-h-screen bg-gray-50">
@@ -270,7 +270,7 @@ export default function AdjacencyPersonalizationView({
               </button>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
-              <div
+              <div 
                 className="h-1 rounded-full"
                 style={{ width: `${completeness.percentage}%`, background: '#1e3a5f' }}
               />
@@ -278,7 +278,7 @@ export default function AdjacencyPersonalizationView({
           </div>
         </div>
       )}
-
+      
       <AdjacencyPersonalization
         kyc={kycResponse}
         preset={preset}

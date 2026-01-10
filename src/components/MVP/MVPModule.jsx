@@ -259,18 +259,21 @@ const MVPModule = () => {
   // ============================================
   // CRITICAL: Both kycData and fyiData come directly from context.
   // Any changes to these in other modules trigger re-render here.
-  const { kycData, fyiData, activeRespondent } = useAppContext();
+  // MVP checklist state is now persisted in mvpData via context.
+  const { kycData, fyiData, mvpData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'builder'
-  const [moduleChecklistState, setModuleChecklistState] = useState({}); // { itemId: boolean }
   
-  // Handle module checklist changes
+  // Module checklist state now comes from context (persisted)
+  // Memoize to avoid re-renders
+  const moduleChecklistState = useMemo(() => {
+    return mvpData?.moduleChecklistState || {};
+  }, [mvpData?.moduleChecklistState]);
+  
+  // Handle module checklist changes - now saves to context/backend
   const handleModuleChecklistChange = (itemId, checked) => {
-    setModuleChecklistState(prev => ({
-      ...prev,
-      [itemId]: checked
-    }));
+    updateMVPChecklistItem(itemId, checked);
   };
   
   // Calculate gate status based on completion
@@ -511,6 +514,22 @@ const MVPModule = () => {
               <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
             )}
           </p>
+        </div>
+        
+        {/* Save Status */}
+        <div className="mvp-module__save-area">
+          <button 
+            className={`n4s-btn ${hasUnsavedChanges ? 'n4s-btn--primary' : 'n4s-btn--secondary'}`}
+            onClick={saveNow}
+            disabled={isSaving || !hasUnsavedChanges}
+          >
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+          </button>
+          {lastSaved && !hasUnsavedChanges && (
+            <span className="mvp-module__save-time">
+              Last saved: {new Date(lastSaved).toLocaleTimeString()}
+            </span>
+          )}
         </div>
         
         {/* Tier Estimate Badge */}

@@ -1,9 +1,9 @@
 /**
  * ModuleLibraryView - 8 Deployable Modules for Mansion Program Validation
- *
+ * 
  * Shows all modules with click-to-expand functionality.
  * Each module displays: Overview, Gate Deliverables, Checklist Items
- *
+ * 
  * Part of MVP Deployment Workflow:
  * A (Profile) → B (Space Program) → C (Module Validation) → D (Adjacency) → E (Brief)
  */
@@ -29,33 +29,33 @@ import { modulesData } from '../../mansion-program/server/modules-data';
 
 const DeploymentWorkflow = ({ currentGate, gateStatus }) => {
   const gates = [
-    {
-      id: 'A',
-      name: 'Profile Complete',
+    { 
+      id: 'A', 
+      name: 'Profile Complete', 
       description: 'KYC sections filled',
       shortDesc: 'Capture operating model, lifestyle priorities, and target thresholds'
     },
-    {
-      id: 'B',
-      name: 'Space Program',
+    { 
+      id: 'B', 
+      name: 'Space Program', 
       description: 'FYI selections done',
       shortDesc: 'Draft 8-zone concept zoning and run Master Adjacency Gate'
     },
-    {
-      id: 'C',
-      name: 'Module Validation',
+    { 
+      id: 'C', 
+      name: 'Module Validation', 
       description: 'Rules reviewed',
       shortDesc: 'Run module-level checklists and confirm circulation overlays'
     },
-    {
-      id: 'D',
-      name: 'Adjacency Lock',
+    { 
+      id: 'D', 
+      name: 'Adjacency Lock', 
       description: 'Decisions made',
       shortDesc: 'Translate intent into dimensioned plans, freeze adjacency logic'
     },
-    {
-      id: 'E',
-      name: 'Brief Ready',
+    { 
+      id: 'E', 
+      name: 'Brief Ready', 
       description: 'Export available',
       shortDesc: 'Final validation complete, ready for architect handoff'
     }
@@ -74,7 +74,7 @@ const DeploymentWorkflow = ({ currentGate, gateStatus }) => {
       <p className="module-workflow__subtitle">
         Deploy the modules as a staged validation process. Lock zoning, adjacencies, and operating loops early, then refine dimensions, detailing, and materiality.
       </p>
-
+      
       <div className="module-workflow__gates">
         {gates.map((gate, index) => {
           const status = getGateStatus(gate.id);
@@ -103,8 +103,8 @@ const DeploymentWorkflow = ({ currentGate, gateStatus }) => {
 // ============================================
 
 const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistChange }) => {
-  const completedCount = checklistState
-    ? module.checklistItems.filter(item => checklistState[item.id]).length
+  const completedCount = checklistState 
+    ? module.checklistItems.filter(item => checklistState[item.id]).length 
     : 0;
   const totalCount = module.checklistItems.length;
   const isComplete = completedCount === totalCount;
@@ -196,8 +196,8 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
 // MAIN MODULE LIBRARY VIEW
 // ============================================
 
-const ModuleLibraryView = ({
-  onBack,
+const ModuleLibraryView = ({ 
+  onBack, 
   onProceedToValidation,
   gateStatus = {},
   checklistState = {},
@@ -244,11 +244,11 @@ const ModuleLibraryView = ({
         <p className="module-library__subtitle">
           8 deployable modules for mansion program validation
         </p>
-
+        
         {/* Progress Bar */}
         <div className="module-library__progress">
           <div className="module-library__progress-bar">
-            <div
+            <div 
               className="module-library__progress-fill"
               style={{ width: `${overallProgress.percentage}%` }}
             />
@@ -274,14 +274,14 @@ const ModuleLibraryView = ({
       </div>
 
       {/* Deployment Workflow */}
-      <DeploymentWorkflow
-        currentGate="C"
+      <DeploymentWorkflow 
+        currentGate="C" 
         gateStatus={gateStatus}
       />
 
       {/* Action Button */}
       <div className="module-library__actions">
-        <button
+        <button 
           className="n4s-btn n4s-btn--primary"
           onClick={onProceedToValidation}
         >

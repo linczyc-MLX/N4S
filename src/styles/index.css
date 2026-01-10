@@ -4079,3 +4079,16 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   width: 16px;
   height: 16px;
 }
+
+/* MVP Module Save Area */
+.mvp-module__save-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 16px;
+}
+
+.mvp-module__save-time {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
