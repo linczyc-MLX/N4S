@@ -3615,7 +3615,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 /* Module Grid */
 .module-library__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
   margin-bottom: 40px;
 }
@@ -3674,6 +3674,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .module-card__info {
   flex: 1;
   min-width: 0;
+  padding-right: 8px;
 }
 
 .module-card__name {
@@ -3681,29 +3682,34 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   font-weight: 600;
   color: var(--gray-900);
   margin-bottom: 4px;
+  line-height: 1.3;
 }
 
 .module-card__focus {
   font-size: 0.85rem;
   color: var(--gray-500);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 .module-card__meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   color: var(--gray-400);
+  flex-shrink: 0;
 }
 
 .module-card__progress {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--gray-500);
   background: var(--gray-100);
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: var(--radius-full);
+  white-space: nowrap;
 }
 
 .module-card__progress--complete {
@@ -4094,4 +4100,127 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .mvp-module__save-time {
   font-size: 0.75rem;
   color: var(--gray-500);
+}
+
+/* ============================================
+   COMBINED DESIGN DNA SECTION (KYC)
+   ============================================ */
+.completed-view__combined {
+  background: linear-gradient(135deg, var(--gray-50), var(--white));
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.completed-view__combined h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0 0 8px 0;
+}
+
+.combined-intro {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin: 0 0 20px 0;
+}
+
+.combined-dna-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .combined-dna-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.combined-dna-item {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.combined-dna-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.combined-dna-item__label {
+  font-weight: 600;
+  color: var(--gray-800);
+  font-size: 0.9rem;
+}
+
+.combined-dna-item__value {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.combined-dna-item__slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.combined-dna-item__endpoint {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  min-width: 70px;
+}
+
+.combined-dna-item__endpoint:last-child {
+  text-align: right;
+}
+
+.combined-dna-item__track {
+  flex: 1;
+  height: 6px;
+  background: var(--gray-100);
+  border-radius: 3px;
+  position: relative;
+}
+
+.combined-dna-item__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--gray-300);
+  border-radius: 3px;
+}
+
+.combined-dna-item__fill--navy {
+  background: var(--navy);
+}
+
+.combined-dna-item__fill--gold {
+  background: var(--gold);
+}
+
+.combined-dna-item__thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: var(--gray-500);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.combined-dna-item__thumb--navy {
+  background: var(--navy);
+}
+
+.combined-dna-item__thumb--gold {
+  background: var(--gold);
 }

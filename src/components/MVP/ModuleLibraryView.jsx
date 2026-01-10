@@ -231,13 +231,22 @@ const ModuleLibraryView = ({
     }
   };
 
+  // Handle back button - collapse module first, then go to overview
+  const handleBack = () => {
+    if (expandedModuleId) {
+      setExpandedModuleId(null);
+    } else {
+      onBack();
+    }
+  };
+
   return (
     <div className="module-library">
       {/* Header */}
       <div className="module-library__header">
-        <button className="n4s-btn n4s-btn--ghost" onClick={onBack}>
+        <button className="n4s-btn n4s-btn--ghost" onClick={handleBack}>
           <ArrowLeft size={16} />
-          Back to Overview
+          {expandedModuleId ? 'Back to Module Library' : 'Back to Overview'}
         </button>
         
         {/* Save Button */}

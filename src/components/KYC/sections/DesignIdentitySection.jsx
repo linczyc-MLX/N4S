@@ -705,6 +705,130 @@ const CompletedView = ({
         </div>
       )}
 
+      {/* Combined Design DNA Section - Only shown when both partners complete */}
+      {clientType === 'couple' && profileP && profileS && (
+        <div className="completed-view__combined">
+          <h4>🎯 Combined Design DNA</h4>
+          <p className="combined-intro">Averaged design preferences from both partners</p>
+          
+          {(() => {
+            // Get scores from both profiles
+            const scoresP = profileP?.session?.profile?.scores || profileP?.profile?.scores || {};
+            const scoresS = profileS?.session?.profile?.scores || profileS?.profile?.scores || {};
+            
+            // Calculate combined (averaged) scores
+            const getCombined = (attr) => {
+              const p = scoresP[attr] || 5;
+              const s = scoresS[attr] || 5;
+              return Math.round(((p + s) / 2) * 10) / 10;
+            };
+            
+            const combinedScores = {
+              tradition: getCombined('tradition'),
+              formality: getCombined('formality'),
+              warmth: getCombined('warmth'),
+              drama: getCombined('drama'),
+              openness: getCombined('openness'),
+              art_focus: getCombined('art_focus')
+            };
+            
+            return (
+              <div className="combined-dna-grid">
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Tradition</span>
+                    <span className="combined-dna-item__value">{combinedScores.tradition}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Contemporary</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.tradition - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.tradition - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Traditional</span>
+                  </div>
+                </div>
+                
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Formality</span>
+                    <span className="combined-dna-item__value">{combinedScores.formality}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Casual</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill combined-dna-item__fill--navy" style={{ width: `${((combinedScores.formality - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb combined-dna-item__thumb--navy" style={{ left: `${((combinedScores.formality - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Formal</span>
+                  </div>
+                </div>
+                
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Warmth</span>
+                    <span className="combined-dna-item__value">{combinedScores.warmth}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Cool</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill combined-dna-item__fill--gold" style={{ width: `${((combinedScores.warmth - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb combined-dna-item__thumb--gold" style={{ left: `${((combinedScores.warmth - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Warm</span>
+                  </div>
+                </div>
+                
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Drama</span>
+                    <span className="combined-dna-item__value">{combinedScores.drama}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Subtle</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill combined-dna-item__fill--gold" style={{ width: `${((combinedScores.drama - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb combined-dna-item__thumb--gold" style={{ left: `${((combinedScores.drama - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Bold</span>
+                  </div>
+                </div>
+                
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Openness</span>
+                    <span className="combined-dna-item__value">{combinedScores.openness}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Enclosed</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.openness - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.openness - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Open</span>
+                  </div>
+                </div>
+                
+                <div className="combined-dna-item">
+                  <div className="combined-dna-item__header">
+                    <span className="combined-dna-item__label">Art Focus</span>
+                    <span className="combined-dna-item__value">{combinedScores.art_focus}</span>
+                  </div>
+                  <div className="combined-dna-item__slider">
+                    <span className="combined-dna-item__endpoint">Understated</span>
+                    <div className="combined-dna-item__track">
+                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.art_focus - 1) / 9) * 100}%` }} />
+                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.art_focus - 1) / 9) * 100}%` }} />
+                    </div>
+                    <span className="combined-dna-item__endpoint">Gallery-like</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="completed-view__actions">
         <button
