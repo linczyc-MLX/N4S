@@ -3766,3 +3766,66 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
     width: 100%;
   }
 }
+
+/* ============================================ */
+/* N4S BRAND BUTTONS (from Brand Guide)        */
+/* ============================================ */
+
+.n4s-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.n4s-btn--primary {
+  background: #1e3a5f;
+  color: white;
+  border: none;
+}
+
+.n4s-btn--primary:hover {
+  background: #2a4a73;
+}
+
+.n4s-btn--secondary {
+  background: transparent;
+  color: #1e3a5f;
+  border: 1px solid #e5e5e0;
+}
+
+.n4s-btn--secondary:hover {
+  background: #fafaf8;
+  border-color: #1e3a5f;
+}
+
+.n4s-btn--ghost {
+  background: transparent;
+  color: #6b6b6b;
+  border: none;
+  padding: 0.5rem 1rem;
+}
+
+.n4s-btn--ghost:hover {
+  color: #1e3a5f;
+  background: #fafaf8;
+}
+
+.n4s-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon sizing inside buttons */
+.n4s-btn svg {
+  width: 16px;
+  height: 16px;
+}

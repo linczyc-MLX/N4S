@@ -146,14 +146,14 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
               Gate Deliverables
             </h5>
             <p className="module-section__subtitle">Minimum required deliverables for gate approval:</p>
-            <ol className="module-deliverables">
+            <div className="module-deliverables">
               {module.gateDeliverables.map((deliverable, index) => (
-                <li key={index} className="module-deliverable">
+                <div key={index} className="module-deliverable">
                   <span className="module-deliverable__number">{index + 1}</span>
                   <span className="module-deliverable__text">{deliverable}</span>
-                </li>
+                </div>
               ))}
-            </ol>
+            </div>
           </div>
 
           {/* Checklist Items Section */}
@@ -233,8 +233,8 @@ const ModuleLibraryView = ({
     <div className="module-library">
       {/* Header */}
       <div className="module-library__header">
-        <button className="module-library__back" onClick={onBack}>
-          <ArrowLeft size={20} />
+        <button className="n4s-btn n4s-btn--ghost" onClick={onBack}>
+          <ArrowLeft size={16} />
           Back to Overview
         </button>
       </div>
@@ -283,10 +283,10 @@ const ModuleLibraryView = ({
       {/* Action Button */}
       <div className="module-library__actions">
         <button
-          className="module-library__proceed-btn"
+          className="n4s-btn n4s-btn--primary"
           onClick={onProceedToValidation}
         >
-          <Play size={18} />
+          <Play size={16} />
           Run Validation
         </button>
       </div>

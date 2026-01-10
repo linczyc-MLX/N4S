@@ -244,7 +244,7 @@ export default function BriefingBuilderView({
       <div className="p-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          className="n4s-btn n4s-btn--ghost mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Overview

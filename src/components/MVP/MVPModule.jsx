@@ -865,24 +865,23 @@ const MVPModule = () => {
         <div className="mvp-next-steps__buttons">
           <button
             onClick={() => setViewMode('modules')}
-            className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--navy)' }}
+            className="n4s-btn n4s-btn--primary"
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen />
             Review Module Library
           </button>
           <button
             onClick={() => setViewMode('personalization')}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="n4s-btn n4s-btn--secondary"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles />
             Personalize Adjacencies
           </button>
           <button
             onClick={() => setViewMode('builder')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="n4s-btn n4s-btn--secondary"
           >
-            <FileText className="w-4 h-4" />
+            <FileText />
             Open Briefing Builder
           </button>
         </div>
