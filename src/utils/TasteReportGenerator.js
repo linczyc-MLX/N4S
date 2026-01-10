@@ -185,9 +185,26 @@ export class TasteReportGenerator {
     this.categoryData = categoryDataP;
     this.overallMetrics = metricsP;
 
+    // Extract profile scores (attribute-based: formality, warmth, etc.)
+    // These come from calculateProfileFromSelections() in TasteExploration
+    // Scale: 1-10 (native)
+    const extractScores = (profile) => {
+      const scores = profile?.session?.profile?.scores || profile?.profile?.scores || {};
+      return {
+        formality: scores.formality || 5,
+        warmth: scores.warmth || 5,
+        drama: scores.drama || 5,
+        tradition: scores.tradition || 5,
+        openness: scores.openness || 5,
+        art_focus: scores.art_focus || 5
+      };
+    };
+    this.profileScoresP = extractScores(this.profileP);
+
     // Calculate for secondary if exists
     this.categoryDataS = null;
     this.overallMetricsS = null;
+    this.profileScoresS = null;
     this.hasPartnerData = false;
 
     if (this.profileS) {
@@ -197,6 +214,7 @@ export class TasteReportGenerator {
       if (hasSelections) {
         this.categoryDataS = categoryDataS;
         this.overallMetricsS = metricsS;
+        this.profileScoresS = extractScores(this.profileS);
         this.hasPartnerData = true;
       }
     }
@@ -813,12 +831,13 @@ export class TasteReportGenerator {
     const metricBoxHeight = 50;
 
     const dnaMetrics = [
-      { label: 'Tradition', value: this.overallMetrics.styleEra },
-      { label: 'Formality', value: 2.8 },
-      { label: 'Warmth', value: 3.5 },
-      { label: 'Drama', value: 2.2 },
-      { label: 'Openness', value: 3.8 },
-      { label: 'Art Focus', value: 3.0 }
+      // Tradition: prefer profile scores (1-10), fallback to styleEra converted to 1-10
+      { label: 'Tradition', value: this.profileScoresP.tradition || ((this.overallMetrics.styleEra - 1) / 4 * 9 + 1) },
+      { label: 'Formality', value: this.profileScoresP.formality },
+      { label: 'Warmth', value: this.profileScoresP.warmth },
+      { label: 'Drama', value: this.profileScoresP.drama },
+      { label: 'Openness', value: this.profileScoresP.openness },
+      { label: 'Art Focus', value: this.profileScoresP.art_focus }
     ];
 
     dnaMetrics.forEach((metric, i) => {
@@ -838,10 +857,10 @@ export class TasteReportGenerator {
       this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
       this.doc.text(metric.value.toFixed(1), bx + metricBoxWidth - 25, by + 14);
 
-      // Mini slider
+      // Mini slider - values are 1-10 scale
       const sliderY = by + 28;
       const sliderW = metricBoxWidth - 16;
-      const fillW = ((metric.value - 1) / 4) * sliderW;
+      const fillW = ((metric.value - 1) / 9) * sliderW;
 
       this.doc.setFillColor(226, 232, 240);
       this.doc.roundedRect(bx + 8, sliderY, sliderW, 6, 3, 3, 'F');
