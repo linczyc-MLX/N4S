@@ -259,19 +259,19 @@ const MVPModule = () => {
   // ============================================
   // CRITICAL: Both kycData and fyiData come directly from context.
   // Any changes to these in other modules trigger re-render here.
-  // MVP checklist state is now persisted in mvpData via context.
-  const { kycData, fyiData, mvpData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
+  // MVP checklist state is stored in fyiData (PHP backend only saves clientData, kycData, fyiData)
+  const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'builder'
   
-  // Module checklist state now comes from context (persisted)
+  // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
   const moduleChecklistState = useMemo(() => {
-    return mvpData?.moduleChecklistState || {};
-  }, [mvpData?.moduleChecklistState]);
+    return fyiData?.mvpChecklistState || {};
+  }, [fyiData?.mvpChecklistState]);
   
-  // Handle module checklist changes - now saves to context/backend
+  // Handle module checklist changes - saves to fyiData via context
   const handleModuleChecklistChange = (itemId, checked) => {
     updateMVPChecklistItem(itemId, checked);
   };

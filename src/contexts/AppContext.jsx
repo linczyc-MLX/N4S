@@ -100,6 +100,9 @@ const initialFYIData = {
     hasBasement: false,
   },
   selections: {},  // { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
+  // MVP data stored here because PHP backend only saves known fields (clientData, kycData, fyiData)
+  mvpChecklistState: {},  // { [checklistItemId]: boolean }
+  mvpAdjacencyDecisions: {},  // { [decisionKey]: value }
 };
 
 // Initial MVP data
@@ -242,12 +245,16 @@ export const AppProvider = ({ children }) => {
             if (data) {
               console.log('[APP] Loaded project:', activeId);
               console.log('[APP] FYI selections:', data.fyiData?.selections);
-              console.log('[APP] MVP data:', data.mvpData);
+              console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
               setActiveProjectIdState(activeId);
               // Merge with defaults to handle old projects missing new fields
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
+                fyiData: {
+                  ...initialFYIData,
+                  ...data.fyiData,
+                },
                 mvpData: {
                   ...initialMVPData,
                   ...data.mvpData,
@@ -293,7 +300,7 @@ export const AppProvider = ({ children }) => {
 
     console.log('[APP] Saving to server...');
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
-    console.log('[APP] MVP data being saved:', dataToSave.mvpData);
+    console.log('[APP] MVP checklist being saved:', dataToSave.fyiData?.mvpChecklistState);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -331,11 +338,16 @@ export const AppProvider = ({ children }) => {
       if (data) {
         console.log('[APP] Switched to project:', projectId);
         console.log('[APP] MVP data:', data.mvpData);
+        console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
         setActiveProjectIdState(projectId);
         // Merge with defaults to handle old projects missing new fields
         setProjectData({
           ...getEmptyProjectData(),
           ...data,
+          fyiData: {
+            ...initialFYIData,
+            ...data.fyiData,
+          },
           mvpData: {
             ...initialMVPData,
             ...data.mvpData,
@@ -532,49 +544,43 @@ export const AppProvider = ({ children }) => {
   // MVP DATA UPDATES
   // ---------------------------------------------------------------------------
 
-  // Update MVP data (moduleChecklistState, adjacencyDecisions, etc.)
+  // Update MVP data (stored in fyiData because PHP backend only saves known fields)
   const updateMVPData = useCallback((updates) => {
     console.log('[APP] updateMVPData:', updates);
     setProjectData(prev => {
-      const newMvpData = { ...prev.mvpData };
+      const newFyiData = { ...prev.fyiData };
 
-      // Handle moduleChecklistState update with proper merge
-      if (updates.moduleChecklistState !== undefined) {
-        newMvpData.moduleChecklistState = {
-          ...prev.mvpData?.moduleChecklistState,
-          ...updates.moduleChecklistState,
+      // Handle mvpChecklistState update with proper merge
+      if (updates.mvpChecklistState !== undefined) {
+        newFyiData.mvpChecklistState = {
+          ...prev.fyiData?.mvpChecklistState,
+          ...updates.mvpChecklistState,
         };
       }
 
-      // Handle adjacencyDecisions update with proper merge
-      if (updates.adjacencyDecisions !== undefined) {
-        newMvpData.adjacencyDecisions = {
-          ...prev.mvpData?.adjacencyDecisions,
-          ...updates.adjacencyDecisions,
+      // Handle mvpAdjacencyDecisions update with proper merge
+      if (updates.mvpAdjacencyDecisions !== undefined) {
+        newFyiData.mvpAdjacencyDecisions = {
+          ...prev.fyiData?.mvpAdjacencyDecisions,
+          ...updates.mvpAdjacencyDecisions,
         };
       }
 
-      // Handle other fields
-      Object.keys(updates).forEach(key => {
-        if (key !== 'moduleChecklistState' && key !== 'adjacencyDecisions') {
-          newMvpData[key] = updates[key];
-        }
-      });
-
-      return { ...prev, mvpData: newMvpData };
+      return { ...prev, fyiData: newFyiData };
     });
     markChanged();
   }, [markChanged]);
 
   // Update a single module checklist item
+  // NOTE: Stored in fyiData because PHP backend only saves clientData, kycData, fyiData
   const updateMVPChecklistItem = useCallback((itemId, checked) => {
     console.log('[APP] updateMVPChecklistItem:', itemId, checked);
     setProjectData(prev => ({
       ...prev,
-      mvpData: {
-        ...prev.mvpData,
-        moduleChecklistState: {
-          ...prev.mvpData?.moduleChecklistState,
+      fyiData: {
+        ...prev.fyiData,
+        mvpChecklistState: {
+          ...prev.fyiData?.mvpChecklistState,
           [itemId]: checked,
         },
       },
