@@ -454,7 +454,7 @@ const CompletedView = ({
       if (hasPartner) {
         // Small delay between downloads
         await new Promise(resolve => setTimeout(resolve, 500));
-        await downloadTasteReport(profileS, null, buildReportOptions());
+        await downloadTasteReport(profileS, null, { ...buildReportOptions(), clientName: partnerName }, partnerName);
       }
 
       // Compose email
@@ -638,6 +638,12 @@ const CompletedView = ({
           {profileS ? (
             <div className="partner-summary">
               <p>✅ {secondaryName || 'Secondary'} has completed their Taste Exploration</p>
+              
+              {/* Style Badge for Partner */}
+              <div className="dna-label" style={{ marginBottom: '16px' }}>
+                <span className="dna-label__style">{getStyleLabel(metricsS.ct)}</span>
+              </div>
+              
               <DesignDNASlider
                 label="Style Era"
                 value={metricsS.ct}
@@ -665,7 +671,7 @@ const CompletedView = ({
                   onClick={async () => {
                     setIsGenerating(true);
                     try {
-                      await viewTasteReport(profileS, null, buildReportOptions());
+                      await viewTasteReport(profileS, null, { ...buildReportOptions(), clientName: secondaryName || 'Partner' });
                     } catch (e) {
                       console.error('Error generating report:', e);
                     }
@@ -681,7 +687,7 @@ const CompletedView = ({
                   onClick={async () => {
                     setIsGenerating(true);
                     try {
-                      await downloadTasteReport(profileS, null, buildReportOptions(), secondaryName || 'Partner');
+                      await downloadTasteReport(profileS, null, { ...buildReportOptions(), clientName: secondaryName || 'Partner' }, secondaryName || 'Partner');
                     } catch (e) {
                       console.error('Error downloading report:', e);
                     }

@@ -387,6 +387,11 @@ export class TasteReportGenerator {
 
   // Get client info from various sources
   getClientName() {
+    // Use explicitly provided clientName first (for secondary/partner reports)
+    if (this.options.clientName) {
+      return this.options.clientName;
+    }
+    // Fall back to KYC data
     const kyc = this.kycData?.principal?.portfolioContext;
     if (kyc?.principalFirstName || kyc?.principalLastName) {
       return `${kyc.principalFirstName || ''} ${kyc.principalLastName || ''}`.trim();
