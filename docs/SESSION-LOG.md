@@ -6,7 +6,7 @@
 
 **Objective**: Add Module Library view with 8 expandable module cards and deployment workflow.
 
-**Why This Matters**:
+**Why This Matters**: 
 - Previously, Adjacency Personalization screen was disconnected from KYC
 - Users didn't understand WHY certain fields were required
 - Module rules explain the "why" behind adjacency decisions
@@ -70,7 +70,7 @@ Implement LIVE reactive data flow from FYI to MVP module. Data integrity is NUMB
 
 **Data Flow**:
 ```
-FYI edits → updateFYISelection() → AppContext.setProjectData() →
+FYI edits → updateFYISelection() → AppContext.setProjectData() → 
 React re-renders all consumers → MVP useMemo recomputes → UI updates
 ```
 
@@ -90,7 +90,7 @@ WRONG (initial):
 CORRECT (FYI's actual logic):
 - Main: net + calculateCirculation(mainNet, target, lockToTarget, pct, tier)
 - GH: net only (no circulation)
-- PH: net only (no circulation)
+- PH: net only (no circulation)  
 - Result: 17,099 SF (matches FYI)
 ```
 
@@ -125,8 +125,8 @@ byStructure.guestHouse.totalSF = byStructure.guestHouse.netSF;
 byStructure.poolHouse.totalSF = byStructure.poolHouse.netSF;
 
 // Grand totals match FYI exactly
-const totalConditionedSF = byStructure.main.totalSF +
-                           byStructure.guestHouse.totalSF +
+const totalConditionedSF = byStructure.main.totalSF + 
+                           byStructure.guestHouse.totalSF + 
                            byStructure.poolHouse.totalSF;
 ```
 
@@ -286,3 +286,97 @@ feat(fyi): MVP code alignment + PDF export + dashboard updates
 2. Upload 10 priority space images to Cloudinary
 3. Test PDF export functionality
 4. Verify FYI → MVP data flow
+
+---
+
+## Session: January 10, 2026 - Data Integrity Audit & Fixes
+
+### Critical Bugs Found & Fixed
+
+#### Bug 1: PDF Report Had HARDCODED Values
+**Location**: `src/utils/TasteReportGenerator.js` lines 835-842
+
+**Before (WRONG)**:
+```javascript
+const dnaMetrics = [
+  { label: 'Tradition', value: this.overallMetrics.styleEra },
+  { label: 'Formality', value: 2.8 },   // HARDCODED!
+  { label: 'Warmth', value: 3.5 },      // HARDCODED!
+  { label: 'Drama', value: 2.2 },       // HARDCODED!
+  { label: 'Openness', value: 3.8 },    // HARDCODED!
+  { label: 'Art Focus', value: 3.0 }    // HARDCODED!
+];
+```
+
+**After (FIXED)**:
+- Now reads actual scores from `profile.session.profile.scores`
+- Scale conversion handled correctly (1-10 scale)
+
+#### Bug 2: MVP Checklist Not Persisting
+**Location**: `src/components/MVP/MVPModule.jsx`
+
+**Before (WRONG)**:
+```javascript
+const [moduleChecklistState, setModuleChecklistState] = useState({});
+// Data lost on navigation - never saved!
+```
+
+**After (FIXED)**:
+- Added `mvpData` to project structure in AppContext
+- Added `updateMVPChecklistItem()` function
+- MVPModule now uses context instead of local state
+- Added Save button to MVP header
+
+### Data Audit Protocol Created
+
+**New Files**:
+| File | Purpose |
+|------|---------|
+| `docs/DATA-AUDIT-PROTOCOL.md` | Complete data flow documentation |
+| `scripts/audit-data-integrity.sh` | Automated audit script |
+
+**Usage**:
+```bash
+npm run audit:data
+# or
+bash scripts/audit-data-integrity.sh
+```
+
+### Audit Script Checks
+
+1. useState persistence (local state that should sync)
+2. Hardcoded values in display code
+3. Update function coverage per module
+4. Scale conversions (1-5 vs 1-10)
+5. localStorage usage (should sync to backend)
+6. markChanged() coverage
+7. Taste data paths (correct location)
+8. Project data structure completeness
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/contexts/AppContext.jsx` | Added mvpData, updateMVPData, updateMVPChecklistItem |
+| `src/components/MVP/MVPModule.jsx` | Uses context, added Save button |
+| `src/utils/TasteReportGenerator.js` | Fixed hardcoded values, reads actual scores |
+| `package.json` | Added audit:data script |
+
+### Commit Message
+```
+feat: data audit protocol + critical data fixes
+
+BUGS FIXED:
+- PDF report hardcoded Formality/Warmth/Drama values
+- MVP checklist not persisting to backend
+
+NEW:
+- docs/DATA-AUDIT-PROTOCOL.md - complete data flow documentation
+- scripts/audit-data-integrity.sh - automated pre-deployment audit
+- npm run audit:data command
+
+CHANGES:
+- mvpData added to project structure
+- updateMVPChecklistItem() for checklist persistence
+- TasteReportGenerator reads actual profile.scores
+```
