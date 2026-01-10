@@ -1,5 +1,167 @@
 # N4S Session Log
 
+## Session: January 10, 2026 - 5K Tier Implementation & FYI Display Simplification
+
+### Objective
+Implement 5K tier support and simplify FYI display by removing tier selector (tiers become internal algorithm only).
+
+### Changes Implemented
+
+#### 1. Space Registry (`src/shared/space-registry.js`)
+
+**5K Tier Support Added:**
+- All 75 spaces now have 5K baseSF values (or null for tier-restricted spaces)
+- 34 spaces available at 5K tier
+- Tier-restricted spaces (WINE, LIB, CHEF, THR, SPA, STF, etc.) set to null at 5K
+
+**New Functions:**
+```javascript
+export function determineTierFromSF(targetSF) {
+  if (targetSF < 7500) return '5k';
+  if (targetSF < 12500) return '10k';
+  if (targetSF < 17500) return '15k';
+  return '20k';
+}
+```
+
+**Circulation Defaults:**
+```javascript
+'5k': { min: 0.11, max: 0.14, default: 0.12 }
+```
+
+**Space Availability by Tier:**
+| Space Type | 5K | 10K | 15K | 20K |
+|------------|:--:|:---:|:---:|:---:|
+| Core (FOY, GR, KIT, etc.) | ✓ | ✓ | ✓ | ✓ |
+| GST1, GST2 | ✓ | ✓ | ✓ | ✓ |
+| GST3 | ✓ | - | ✓ | ✓ |
+| GST4 | - | - | - | ✓ |
+| JRPRI | - | - | ✓ | ✓ |
+| WINE, LIB, CHEF, SPA | - | ✓ | ✓ | ✓ |
+| THR, STF, MAS | - | - | ✓ | ✓ |
+
+#### 2. FYI Bridges (`src/components/FYI/utils/fyiBridges.js`)
+
+**Updated `determineTier()`** to support 5K threshold.
+
+**Would-Likes Pre-Selection:**
+```javascript
+// Would-likes now PRE-SELECTED (included by default)
+niceToHaveSpaces.forEach(legacyValue => {
+  const code = legacyToCode(legacyValue);
+  if (code && selections[code]) {
+    selections[code].included = true;  // PRE-SELECTED
+    selections[code].kycSource = 'niceToHave';
+  }
+});
+```
+
+**Enhanced Bedroom Logic:**
+- Primary always included
+- GST1/2/3 based on bedroom count
+- GST3 available at 5K for high bedroom counts
+- Jr. Primary at 15K+ with ≥3 guest bedrooms
+
+#### 3. FYI Totals Panel (`src/components/FYI/components/FYITotalsPanel.jsx`)
+
+**Removed:** Tier selector buttons (10K/15K/20K)
+
+**New Display:**
+```
+Target SF: 12,000 SF (from KYC)
+Current Program: 13,450 SF
+
+┌─────────────────────────────┐
+│   Delta from Target         │
+│      +1,450 SF (+12%)       │
+└─────────────────────────────┘
+```
+
+**Delta Box Styling:**
+- Balanced (±5%): Green
+- Over target: Orange
+- Under target: Blue
+
+#### 4. FYI Module CSS (`src/components/FYI/FYIModule.css`)
+
+**Added Styles:**
+- `.fyi-totals-panel__target-display` - Target SF display
+- `.fyi-totals-panel__current-display` - Current program display
+- `.fyi-totals-panel__delta-box` - Prominent delta display
+- `.fyi-totals-panel__delta-box--balanced/over/under` - State colors
+- Hidden tier selector: `display: none`
+
+#### 5. FYI State Hook (`src/components/FYI/hooks/useFYIState.js`)
+
+**Updated circulation defaults** to include 5K tier.
+
+#### 6. FYI Module (`src/components/FYI/FYIModule.jsx`)
+
+**Updated initialization** with 5K tier logic and circulation defaults.
+
+### Verification Tests Passed
+
+| Test Category | Result |
+|---------------|--------|
+| Tier determination (all boundaries) | ✓ PASS |
+| Space availability per tier | ✓ PASS |
+| Circulation defaults all tiers | ✓ PASS |
+| S/M/L size calculations | ✓ PASS |
+| 5K tier exclusions correct | ✓ PASS |
+| Legacy tier compatibility | ✓ PASS |
+| Data structure compatibility | ✓ PASS |
+| Build compilation | ✓ PASS |
+
+### Architecture Decisions
+
+**Tiers are INTERNAL only:**
+- Client never sees "5K", "10K", "15K", "20K" labels
+- Tier determines: available spaces, default sizes, adjacency matrix
+- Client sees: Target SF, Current SF, Delta
+
+**Template Philosophy:**
+- Start with tier-appropriate spaces included
+- Apply bedroom count logic
+- Include must-haves
+- Pre-select would-likes (client can remove)
+- Client has full flexibility
+
+### Files Modified
+
+| File | Lines Changed |
+|------|---------------|
+| `src/shared/space-registry.js` | +85 (5K baseSF values, function) |
+| `src/components/FYI/utils/fyiBridges.js` | +25 (tier logic, would-likes) |
+| `src/components/FYI/hooks/useFYIState.js` | +8 (5K defaults) |
+| `src/components/FYI/components/FYITotalsPanel.jsx` | +60 (delta display) |
+| `src/components/FYI/FYIModule.jsx` | +15 (initialization) |
+| `src/components/FYI/FYIModule.css` | +104 (delta styles) |
+
+### Build Status
+✅ `CI=false npm run build` - Compiled successfully (no warnings)
+
+### Commit Message
+```
+feat(fyi): add 5K tier support, simplify display to Target/Current/Delta
+
+FEATURES:
+- 5K tier for compact luxury (< 7,500 SF)
+- 34 spaces available at 5K tier
+- Would-likes now pre-selected by default
+- Delta box with color-coded status
+
+UI CHANGES:
+- Removed tier selector (tiers internal only)
+- New display: Target SF, Current SF, Delta
+- Color-coded delta: green/orange/blue
+
+BACKWARDS COMPATIBLE:
+- Existing 10K/15K/20K projects unaffected
+- All legacy functions still work
+```
+
+---
+
 ## Session: January 9, 2026 - Module Library & MVP Workflow Integration
 
 ### Part 2: Module Library Implementation

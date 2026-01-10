@@ -3,6 +3,9 @@
  * 
  * Right sidebar showing project settings, running totals, and export options.
  * Supports multi-structure display (Main, Guest House, Pool House).
+ * 
+ * UPDATED: Removed tier selector - tiers are internal algorithm logic.
+ * Display focuses on: Target SF, Current SF, Delta
  */
 
 import React, { useState } from 'react';
@@ -26,28 +29,18 @@ const FYITotalsPanel = ({
   // Validate current state
   const validation = validateFYISelections(selections, settings);
   
-  // Handle tier change
-  const handleTierChange = (tier) => {
-    const tierTargets = {
-      '10k': 10000,
-      '15k': 15000,
-      '20k': 20000
-    };
-    onSettingsChange({
-      programTier: tier,
-      targetSF: tierTargets[tier]
-    });
-  };
-  
   // Calculate grand total across all structures
   const grandTotal = Object.values(structureTotals || {})
     .filter(s => s?.enabled)
     .reduce((sum, s) => sum + (s.total || 0), 0);
   
-  // Progress bar percentage (using grand total)
-  const progressPct = Math.min(120, Math.max(0, (grandTotal / settings.targetSF) * 100));
-  const isOverTarget = grandTotal > settings.targetSF;
-  const isUnderTarget = grandTotal < settings.targetSF * 0.9;
+  // Delta calculation
+  const delta = grandTotal - settings.targetSF;
+  const isOverTarget = delta > 0;
+  const isUnderTarget = delta < 0;
+  const deltaPercent = settings.targetSF > 0 
+    ? ((delta / settings.targetSF) * 100).toFixed(0) 
+    : 0;
   
   // Toggle structure expansion
   const toggleStructure = (structureId) => {
@@ -79,60 +72,39 @@ const FYITotalsPanel = ({
     <div className="fyi-totals-panel">
       <h3 className="fyi-totals-panel__title">Program Summary</h3>
       
-      {/* Program Tier Selection */}
+      {/* Target SF Display (from KYC) */}
       <div className="fyi-totals-panel__section">
-        <label className="fyi-totals-panel__label">Program Size</label>
-        <div className="fyi-totals-panel__tier-selector">
-          {['10k', '15k', '20k'].map(tier => (
-            <button
-              key={tier}
-              className={`fyi-totals-panel__tier-btn ${settings.programTier === tier ? 'fyi-totals-panel__tier-btn--active' : ''}`}
-              onClick={() => handleTierChange(tier)}
-            >
-              {tier === '10k' && '10K'}
-              {tier === '15k' && '15K'}
-              {tier === '20k' && '20K'}
-            </button>
-          ))}
+        <label className="fyi-totals-panel__label">Target SF</label>
+        <div className="fyi-totals-panel__target-display">
+          <span className="fyi-totals-panel__target-value">
+            {settings.targetSF?.toLocaleString() || 0} SF
+          </span>
+          <span className="fyi-totals-panel__target-source">from KYC</span>
         </div>
       </div>
       
-      {/* Target SF Input */}
+      {/* Current SF Display */}
       <div className="fyi-totals-panel__section">
-        <label className="fyi-totals-panel__label">Target SF (All Structures)</label>
-        <div className="fyi-totals-panel__input-group">
-          <input
-            type="number"
-            value={settings.targetSF}
-            onChange={(e) => onSettingsChange({ targetSF: parseInt(e.target.value) || 0 })}
-            className="fyi-totals-panel__input"
-            min={5000}
-            max={50000}
-            step={500}
-          />
-          <span className="fyi-totals-panel__input-suffix">SF</span>
-        </div>
-      </div>
-      
-      {/* Progress Bar */}
-      <div className="fyi-totals-panel__section">
-        <div className="fyi-totals-panel__progress-header">
-          <span>Progress to Target</span>
-          <span className={`fyi-totals-panel__progress-pct ${
-            isOverTarget ? 'fyi-totals-panel__progress-pct--over' : 
-            isUnderTarget ? 'fyi-totals-panel__progress-pct--under' : ''
-          }`}>
-            {progressPct.toFixed(0)}%
+        <label className="fyi-totals-panel__label">Current Program</label>
+        <div className="fyi-totals-panel__current-display">
+          <span className="fyi-totals-panel__current-value">
+            {grandTotal.toLocaleString()} SF
           </span>
         </div>
-        <div className="fyi-totals-panel__progress-bar">
-          <div 
-            className={`fyi-totals-panel__progress-fill ${
-              isOverTarget ? 'fyi-totals-panel__progress-fill--over' : ''
-            }`}
-            style={{ width: `${Math.min(100, progressPct)}%` }}
-          />
-          <div className="fyi-totals-panel__progress-target" />
+      </div>
+      
+      {/* Delta Display - Prominent */}
+      <div className={`fyi-totals-panel__delta-box ${
+        isOverTarget ? 'fyi-totals-panel__delta-box--over' : 
+        isUnderTarget ? 'fyi-totals-panel__delta-box--under' : 
+        'fyi-totals-panel__delta-box--balanced'
+      }`}>
+        <label className="fyi-totals-panel__label">Delta from Target</label>
+        <div className="fyi-totals-panel__delta-value">
+          {delta > 0 ? '+' : ''}{delta.toLocaleString()} SF
+        </div>
+        <div className="fyi-totals-panel__delta-percent">
+          ({delta > 0 ? '+' : ''}{deltaPercent}%)
         </div>
       </div>
       
@@ -219,30 +191,15 @@ const FYITotalsPanel = ({
         )}
       </div>
       
-      {/* Grand Total */}
-      <div className="fyi-totals-panel__section fyi-totals-panel__grand-total">
-        <div className="fyi-totals-panel__row fyi-totals-panel__row--total">
-          <span>Grand Total</span>
-          <strong>{grandTotal.toLocaleString()} SF</strong>
-        </div>
-        <div className={`fyi-totals-panel__row fyi-totals-panel__row--delta ${
-          grandTotal > settings.targetSF ? 'fyi-totals-panel__row--over' :
-          grandTotal < settings.targetSF ? 'fyi-totals-panel__row--under' : ''
-        }`}>
-          <span>Delta from Target</span>
-          <span>
-            {grandTotal > settings.targetSF ? '+' : ''}
-            {(grandTotal - settings.targetSF).toLocaleString()} SF
-          </span>
-        </div>
-        
-        {totals.outdoorTotal > 0 && (
-          <div className="fyi-totals-panel__row fyi-totals-panel__row--outdoor">
+      {/* Outdoor Total (if any) */}
+      {totals.outdoorTotal > 0 && (
+        <div className="fyi-totals-panel__section fyi-totals-panel__outdoor">
+          <div className="fyi-totals-panel__row">
             <span>Outdoor (not conditioned)</span>
             <span>{totals.outdoorTotal.toLocaleString()} SF</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Advanced Settings */}
       <button 
@@ -260,6 +217,23 @@ const FYITotalsPanel = ({
       
       {showAdvanced && (
         <div className="fyi-totals-panel__advanced">
+          {/* Target SF Override */}
+          <div className="fyi-totals-panel__row">
+            <label>Target SF</label>
+            <div className="fyi-totals-panel__input-group fyi-totals-panel__input-group--small">
+              <input
+                type="number"
+                value={settings.targetSF}
+                onChange={(e) => onSettingsChange({ targetSF: parseInt(e.target.value) || 0 })}
+                className="fyi-totals-panel__input"
+                min={3000}
+                max={50000}
+                step={500}
+              />
+              <span className="fyi-totals-panel__input-suffix">SF</span>
+            </div>
+          </div>
+          
           {/* Delta Percentage */}
           <div className="fyi-totals-panel__row">
             <label>Size Delta (S/L)</label>

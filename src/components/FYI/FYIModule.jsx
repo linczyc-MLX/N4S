@@ -130,16 +130,28 @@ const FYIModule = () => {
     if (!hasSelections) {
       console.log('[FYI] No selections found, initializing defaults');
 
-      // Determine tier from KYC or use default
-      const targetSF = consolidatedKYC?.projectParameters?.targetGSF || 15000;
-      let tier = '15k';
-      if (targetSF <= 12000) tier = '10k';
-      else if (targetSF >= 18000) tier = '20k';
+      // Determine tier from KYC target SF (internal algorithm)
+      // Client does not see tier labels - this is purely for algorithm
+      const targetSF = consolidatedKYC?.projectParameters?.targetGSF || 10000;
+      let tier = '10k';
+      if (targetSF < 7500) tier = '5k';
+      else if (targetSF < 12500) tier = '10k';
+      else if (targetSF < 17500) tier = '15k';
+      else tier = '20k';
+
+      // Get default circulation for tier
+      const circulationDefaults = {
+        '5k': 0.12,
+        '10k': 0.13,
+        '15k': 0.14,
+        '20k': 0.15
+      };
 
       // Initialize settings
       updateFYISettings({
         targetSF,
         programTier: tier,
+        circulationPct: circulationDefaults[tier],
         hasBasement: consolidatedKYC?.projectParameters?.hasBasement || false,
       });
 

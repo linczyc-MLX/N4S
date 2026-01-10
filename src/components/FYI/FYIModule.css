@@ -790,11 +790,6 @@
   margin-bottom: 0.5rem;
 }
 
-.fyi-totals-panel__tier-selector {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .fyi-totals-panel__tier-btn {
   flex: 1;
   padding: 0.625rem 0.5rem;
@@ -815,6 +810,110 @@
 .fyi-totals-panel__tier-btn--active {
   background: var(--color-accent-light, #f5f0e8);
   border-color: var(--color-accent, #8b7355);
+}
+
+/* Hide tier selector - tiers are internal algorithm only */
+.fyi-totals-panel__tier-selector {
+  display: none;
+}
+
+/* Target SF Display */
+.fyi-totals-panel__target-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.fyi-totals-panel__target-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+}
+
+.fyi-totals-panel__target-source {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+  font-style: italic;
+}
+
+/* Current SF Display */
+.fyi-totals-panel__current-display {
+  display: flex;
+  align-items: baseline;
+}
+
+.fyi-totals-panel__current-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+}
+
+/* Delta Box - Prominent Display */
+.fyi-totals-panel__delta-box {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 2px solid;
+}
+
+.fyi-totals-panel__delta-box--balanced {
+  background: rgba(46, 125, 50, 0.08);
+  border-color: var(--color-success, #2f855a);
+}
+
+.fyi-totals-panel__delta-box--over {
+  background: rgba(245, 124, 0, 0.08);
+  border-color: var(--color-warning, #dd6b20);
+}
+
+.fyi-totals-panel__delta-box--under {
+  background: rgba(49, 130, 206, 0.08);
+  border-color: var(--color-info, #3182ce);
+}
+
+.fyi-totals-panel__delta-box .fyi-totals-panel__label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6b6b6b);
+  margin-bottom: 0.25rem;
+}
+
+.fyi-totals-panel__delta-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.fyi-totals-panel__delta-box--balanced .fyi-totals-panel__delta-value {
+  color: var(--color-success, #2f855a);
+}
+
+.fyi-totals-panel__delta-box--over .fyi-totals-panel__delta-value {
+  color: var(--color-warning, #dd6b20);
+}
+
+.fyi-totals-panel__delta-box--under .fyi-totals-panel__delta-value {
+  color: var(--color-info, #3182ce);
+}
+
+.fyi-totals-panel__delta-percent {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  margin-top: 0.25rem;
+}
+
+/* Outdoor section styling */
+.fyi-totals-panel__outdoor {
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border, #e5e5e0);
+  margin-top: 0.5rem;
+}
+
+.fyi-totals-panel__outdoor .fyi-totals-panel__row {
+  color: var(--color-text-muted, #6b6b6b);
+  font-size: 0.875rem;
 }
 
 .fyi-totals-panel__input-group {

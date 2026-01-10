@@ -3,6 +3,12 @@
  * 
  * Handles data transformation between KYC → FYI and FYI → MVP modules.
  * Ensures consistent data flow across the N4S platform.
+ * 
+ * UPDATED: 
+ * - Added 5K tier support
+ * - Would-likes are now pre-selected (included) in template
+ * - Improved bedroom count logic
+ * - Tier determination is internal algorithm only
  */
 
 import {
@@ -28,14 +34,11 @@ export function generateFYIFromKYC(kycData) {
   }
 
   // Extract key KYC values
-  const targetSF = kycData.projectParameters?.targetGSF || 15000;
+  const targetSF = kycData.projectParameters?.targetGSF || 10000;
   const hasBasement = kycData.projectParameters?.hasBasement || false;
-  // Future use: bedroomCount, staffingLevel, entertainingFrequency for space recommendations
-  // const bedroomCount = kycData.projectParameters?.bedroomCount || 4;
-  // const staffingLevel = kycData.familyHousehold?.staffingLevel || 'none';
-  // const entertainingFrequency = kycData.lifestyleLiving?.entertainingFrequency || 'monthly';
+  const bedroomCount = kycData.projectParameters?.bedroomCount || 4;
 
-  // Determine program tier
+  // Determine internal program tier (not exposed to client)
   const programTier = determineTier(targetSF);
   
   // Build settings
@@ -44,12 +47,12 @@ export function generateFYIFromKYC(kycData) {
     deltaPct: 10,
     circulationPct: getDefaultCirculation(programTier),
     lockToTarget: true,
-    programTier,
+    programTier,  // Internal only - not shown to client
     hasBasement
   };
   
   // Build initial selections
-  const selections = buildInitialSelections(kycData, programTier, hasBasement);
+  const selections = buildInitialSelections(kycData, programTier, hasBasement, bedroomCount);
   
   // Generate recommendations based on KYC responses
   const recommendations = generateRecommendations(kycData, selections);
@@ -62,11 +65,16 @@ export function generateFYIFromKYC(kycData) {
 }
 
 /**
- * Determine program tier from target SF
+ * Determine internal program tier from target SF
+ * This is used by the algorithm only - clients don't see tier labels
+ * 
+ * @param {number} targetSF - Target square footage
+ * @returns {string} - Internal tier identifier ('5k', '10k', '15k', '20k')
  */
 function determineTier(targetSF) {
-  if (targetSF < 12000) return '10k';
-  if (targetSF < 18000) return '15k';
+  if (targetSF < 7500) return '5k';
+  if (targetSF < 12500) return '10k';
+  if (targetSF < 17500) return '15k';
   return '20k';
 }
 
@@ -75,11 +83,12 @@ function determineTier(targetSF) {
  */
 function getDefaultCirculation(tier) {
   const defaults = {
+    '5k': 0.12,
     '10k': 0.13,
     '15k': 0.14,
     '20k': 0.15
   };
-  return defaults[tier] || 0.14;
+  return defaults[tier] || 0.13;
 }
 
 /**
@@ -87,23 +96,31 @@ function getDefaultCirculation(tier) {
  */
 function getDefaultSettings() {
   return {
-    targetSF: 15000,
+    targetSF: 10000,
     deltaPct: 10,
-    circulationPct: 0.14,
+    circulationPct: 0.13,
     lockToTarget: true,
-    programTier: '15k',
+    programTier: '10k',
     hasBasement: false
   };
 }
 
 /**
  * Build initial space selections from KYC data
+ * 
+ * Logic:
+ * 1. Start with spaces available for the tier
+ * 2. Include all tier-appropriate spaces by default
+ * 3. Apply bedroom count adjustments
+ * 4. Apply must-have spaces (ensure included)
+ * 5. Apply would-like spaces (pre-select them - INCLUDED)
+ * 6. Apply other KYC flags (staffing, wellness, etc.)
  */
-function buildInitialSelections(kycData, tier, hasBasement) {
+function buildInitialSelections(kycData, tier, hasBasement, bedroomCount) {
   const selections = {};
   const availableSpaces = getSpacesForTier(tier);
   
-  // Initialize all available spaces
+  // Initialize all available spaces for tier
   availableSpaces.forEach(space => {
     if (space.baseSF[tier] !== null) {
       selections[space.code] = {
@@ -118,7 +135,58 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     }
   });
   
-  // Apply KYC must-have spaces (ensure they're included)
+  // ---------------------------------------------------------------------------
+  // BEDROOM COUNT LOGIC
+  // ---------------------------------------------------------------------------
+  // Bedrooms available: PRI (always), GST1, GST2, GST3, GST4, JRPRI, BNK
+  // At 5K tier: PRI + GST1 + GST2 + GST3 available (GST3 has 5K baseSF)
+  // At 10K tier: PRI + GST1 + GST2 available
+  // At 15K+ tier: All including JRPRI, GST3, BNK
+  
+  // Primary bedroom always included
+  // Calculate how many guest suites based on bedroom count
+  const guestBedroomsNeeded = Math.max(0, bedroomCount - 1); // -1 for primary
+  
+  // Guest suite inclusion based on count
+  if (selections['GST1']) {
+    selections['GST1'].included = guestBedroomsNeeded >= 1;
+    if (selections['GST1'].included) selections['GST1'].kycSource = 'bedroomCount';
+  }
+  if (selections['GST2']) {
+    selections['GST2'].included = guestBedroomsNeeded >= 2;
+    if (selections['GST2'].included) selections['GST2'].kycSource = 'bedroomCount';
+  }
+  if (selections['GST3']) {
+    selections['GST3'].included = guestBedroomsNeeded >= 3;
+    if (selections['GST3'].included) selections['GST3'].kycSource = 'bedroomCount';
+  }
+  if (selections['GST4']) {
+    selections['GST4'].included = guestBedroomsNeeded >= 4;
+    if (selections['GST4'].included) selections['GST4'].kycSource = 'bedroomCount';
+  }
+  
+  // Jr. Primary for higher bedroom counts at 15K+
+  if (selections['JRPRI'] && guestBedroomsNeeded >= 3) {
+    selections['JRPRI'].included = true;
+    selections['JRPRI'].kycSource = 'bedroomCount';
+    if (selections['JRPRIBATH']) {
+      selections['JRPRIBATH'].included = true;
+      selections['JRPRIBATH'].kycSource = 'bedroomCount';
+    }
+    if (selections['JRPRICL']) {
+      selections['JRPRICL'].included = true;
+      selections['JRPRICL'].kycSource = 'bedroomCount';
+    }
+  } else {
+    // Not enough bedrooms for Jr. Primary
+    if (selections['JRPRI']) selections['JRPRI'].included = false;
+    if (selections['JRPRIBATH']) selections['JRPRIBATH'].included = false;
+    if (selections['JRPRICL']) selections['JRPRICL'].included = false;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // MUST-HAVE SPACES (ensure included)
+  // ---------------------------------------------------------------------------
   const mustHaveSpaces = kycData.spaceRequirements?.mustHaveSpaces || [];
   mustHaveSpaces.forEach(legacyValue => {
     const code = legacyToCode(legacyValue);
@@ -128,16 +196,24 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     }
   });
   
-  // Apply KYC nice-to-have (mark but don't change inclusion)
+  // ---------------------------------------------------------------------------
+  // WOULD-LIKE SPACES (pre-select them - INCLUDED)
+  // Per Michael's guidance: Include would-likes in the template
+  // ---------------------------------------------------------------------------
   const niceToHaveSpaces = kycData.spaceRequirements?.niceToHaveSpaces || [];
   niceToHaveSpaces.forEach(legacyValue => {
     const code = legacyToCode(legacyValue);
-    if (code && selections[code] && !selections[code].kycSource) {
-      selections[code].kycSource = 'niceToHave';
+    if (code && selections[code]) {
+      selections[code].included = true;
+      if (!selections[code].kycSource) {
+        selections[code].kycSource = 'niceToHave';
+      }
     }
   });
   
-  // Apply specific KYC flags
+  // ---------------------------------------------------------------------------
+  // SPECIFIC KYC FLAGS
+  // ---------------------------------------------------------------------------
   
   // Pet grooming - upsize mudroom
   if (kycData.familyHousehold?.petGroomingRoom) {
@@ -150,10 +226,10 @@ function buildInitialSelections(kycData, tier, hasBasement) {
   
   // Late night media use - ensure sound isolation
   if (kycData.lifestyleLiving?.lateNightMediaUse) {
-    if (selections['MDA']) {
-      selections['MDA'].size = 'L';
-      selections['MDA'].notes = 'Sound isolation required for late-night use';
-      selections['MDA'].kycSource = 'lateNightMediaUse';
+    if (selections['MEDIA']) {
+      selections['MEDIA'].size = 'L';
+      selections['MEDIA'].notes = 'Sound isolation required for late-night use';
+      selections['MEDIA'].kycSource = 'lateNightMediaUse';
     }
     // If theater exists, also note
     if (selections['THR']) {
@@ -187,7 +263,9 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     }
   }
 
-  // Staffing level affects staff spaces
+  // ---------------------------------------------------------------------------
+  // STAFFING LEVEL
+  // ---------------------------------------------------------------------------
   const staffing = kycData.familyHousehold?.staffingLevel;
   if (staffing === 'live_in' || staffing === 'full_time') {
     if (selections['STF']) {
@@ -206,20 +284,9 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     if (selections['SLG']) selections['SLG'].included = false;
   }
   
-  // Bedroom count affects guest suite inclusion
-  const bedroomCount = kycData.projectParameters?.bedroomCount || 4;
-  if (bedroomCount <= 3) {
-    if (selections['GST2']) selections['GST2'].included = false;
-    if (selections['GST3']) selections['GST3'].included = false;
-    if (selections['GST4']) selections['GST4'].included = false;
-  } else if (bedroomCount <= 4) {
-    if (selections['GST3']) selections['GST3'].included = false;
-    if (selections['GST4']) selections['GST4'].included = false;
-  } else if (bedroomCount <= 5) {
-    if (selections['GST4']) selections['GST4'].included = false;
-  }
-  
-  // Kids count affects kids bedrooms
+  // ---------------------------------------------------------------------------
+  // KIDS AND NANNY
+  // ---------------------------------------------------------------------------
   const familyMembers = kycData.familyHousehold?.familyMembers || [];
   const kidsCount = familyMembers.filter(m => {
     const age = parseInt(m.age);
@@ -246,7 +313,9 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     if (selections['NNY']) selections['NNY'].included = false;
   }
   
-  // Wellness spaces based on priorities
+  // ---------------------------------------------------------------------------
+  // WELLNESS
+  // ---------------------------------------------------------------------------
   const wellnessPriorities = kycData.lifestyleLiving?.wellnessPriorities || [];
   if (!wellnessPriorities.includes('gym') && !wellnessPriorities.includes('fitness')) {
     if (selections['GYM']) {
@@ -262,26 +331,29 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     }
   }
   
-  // Entertainment frequency affects entertainment zone
+  // ---------------------------------------------------------------------------
+  // ENTERTAINING FREQUENCY
+  // ---------------------------------------------------------------------------
   const entertaining = kycData.lifestyleLiving?.entertainingFrequency;
   if (entertaining === 'rarely' || entertaining === 'never') {
     // Downsize entertainment spaces
-    if (selections['GAM']) selections['GAM'].size = 'S';
-    if (selections['BAR']) selections['BAR'].included = false;
     if (selections['GAME']) selections['GAME'].included = false;
+    if (selections['BAR'] && !selections['BAR'].kycSource) selections['BAR'].included = false;
   } else if (entertaining === 'weekly' || entertaining === 'daily') {
     // Upsize entertainment
-    if (selections['GAM']) selections['GAM'].size = 'L';
+    if (selections['GR']) selections['GR'].size = 'L';
     if (selections['BAR']) {
       selections['BAR'].included = true;
       selections['BAR'].size = 'L';
     }
   }
   
-  // Basement eligible spaces - move to basement if hasBasement
+  // ---------------------------------------------------------------------------
+  // BASEMENT PLACEMENT
+  // ---------------------------------------------------------------------------
   if (hasBasement) {
     // Consider moving these to basement
-    const basementCandidates = ['THR', 'GAM', 'GAME', 'MUS', 'WIN', 'GYM', 'SPA', 'STR', 'MEP'];
+    const basementCandidates = ['THR', 'GAME', 'MUS', 'WINE', 'GYM', 'SPA', 'STR', 'MEP'];
     basementCandidates.forEach(code => {
       const space = getSpaceByCode(code);
       if (space?.basementEligible && selections[code]) {
@@ -291,7 +363,7 @@ function buildInitialSelections(kycData, tier, hasBasement) {
           selections[code].notes = (selections[code].notes || '') + ' Basement location ideal for acoustics.';
         }
         // Wine cellar traditionally in basement
-        if (code === 'WIN') {
+        if (code === 'WINE') {
           selections[code].level = -1;
         }
         // Storage and mechanical to basement
@@ -302,7 +374,9 @@ function buildInitialSelections(kycData, tier, hasBasement) {
     });
   }
 
-  // Default powder rooms by zone
+  // ---------------------------------------------------------------------------
+  // DEFAULT POWDER ROOMS BY ZONE
+  // ---------------------------------------------------------------------------
   // PWD (Z1_APB) - already handled as core space
   // PWD2 (Z2_FAM) - always included (core tier, family zone)
   if (selections['PWD2']) {
@@ -325,10 +399,26 @@ function buildInitialSelections(kycData, tier, hasBasement) {
   }
 
   // POOL_BATH (Z8_OUT) - included if outdoor pool is selected
-  const hasPool = selections['POOL']?.included || selections['POOL_OUT']?.included;
+  const hasPool = selections['POOL']?.included;
   if (hasPool && selections['POOL_BATH']) {
     selections['POOL_BATH'].included = true;
     selections['POOL_BATH'].kycSource = 'pool_selected';
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5K TIER SPECIFIC ADJUSTMENTS
+  // ---------------------------------------------------------------------------
+  if (tier === '5k') {
+    // At 5K, media room is optional (great room serves entertainment)
+    if (selections['MEDIA'] && !selections['MEDIA'].kycSource) {
+      selections['MEDIA'].included = false;
+    }
+    
+    // At 5K, family room may be combined with great room concept
+    // Keep both but downsize
+    if (selections['FR']) {
+      selections['FR'].size = 'S';
+    }
   }
 
   return selections;
@@ -374,9 +464,9 @@ function generateRecommendations(kycData, selections) {
   }
   
   // High noise sensitivity needs media room buffering
-  if (kycData.lifestyleLiving?.noiseSensitivity >= 4 && selections['MDA']?.included) {
+  if (kycData.lifestyleLiving?.noiseSensitivity >= 4 && selections['MEDIA']?.included) {
     recommendations.push({
-      code: 'MDA',
+      code: 'MEDIA',
       type: 'adjacency',
       reason: 'High noise sensitivity indicated',
       action: 'Ensure Media Room has acoustic buffering from bedrooms'
@@ -438,12 +528,13 @@ export function generateMVPFromFYI(fyiBrief) {
 
 /**
  * Get preset hint for MVP based on target SF
+ * This determines which adjacency matrix to use
  */
 function getPresetHint(targetSF) {
-  if (targetSF <= 10000) return '10k';
-  if (targetSF <= 15000) return '15k';
-  if (targetSF <= 20000) return '20k';
-  return 'custom';
+  if (targetSF < 7500) return '5k';
+  if (targetSF < 12500) return '10k';
+  if (targetSF < 17500) return '15k';
+  return '20k';
 }
 
 /**
@@ -480,18 +571,20 @@ export function validateFYISelections(selections, settings) {
   const estimatedTotal = totalSF * (1 + settings.circulationPct);
   const variance = ((estimatedTotal - targetWithCirc) / targetWithCirc) * 100;
   
-  if (variance > 20) {
+  // Note: We don't error on over/under target - client has flexibility
+  // Only warn for extreme cases
+  if (variance > 50) {
     warnings.push({
       type: 'over_target',
-      message: `Program is ${variance.toFixed(0)}% over target SF. Consider reducing sizes or removing spaces.`,
+      message: `Program is significantly over target (${variance.toFixed(0)}%). Consider reviewing selections.`,
       value: estimatedTotal
     });
   }
   
-  if (variance < -20) {
+  if (variance < -50) {
     warnings.push({
       type: 'under_target',
-      message: `Program is ${Math.abs(variance).toFixed(0)}% under target SF. Consider adding spaces or increasing sizes.`,
+      message: `Program is significantly under target (${Math.abs(variance).toFixed(0)}%). Consider adding spaces.`,
       value: estimatedTotal
     });
   }
@@ -554,7 +647,7 @@ export function transformFYIToMVPProgram(fyiData) {
   }
 
   const { settings, selections } = fyiData;
-  const tier = settings?.programTier || '15k';
+  const tier = settings?.programTier || '10k';
   const deltaPct = settings?.deltaPct || 10;
 
   // Build spaces array with zone info from space-registry
@@ -643,16 +736,16 @@ export function transformFYIToMVPProgram(fyiData) {
   // Calculate totals
   const conditionedSpaces = spaces.filter(s => !s.isOutdoor);
   const netSF = conditionedSpaces.reduce((sum, s) => sum + s.targetSF, 0);
-  const circulationSF = Math.round(netSF * (settings?.circulationPct || 0.14));
+  const circulationSF = Math.round(netSF * (settings?.circulationPct || 0.13));
   const totalConditionedSF = netSF + circulationSF;
   const outdoorSF = spaces.filter(s => s.isOutdoor).reduce((sum, s) => sum + s.targetSF, 0);
 
   return {
     settings: {
       programTier: tier,
-      targetSF: settings?.targetSF || 15000,
+      targetSF: settings?.targetSF || 10000,
       deltaPct,
-      circulationPct: settings?.circulationPct || 0.14,
+      circulationPct: settings?.circulationPct || 0.13,
       hasBasement: settings?.hasBasement || false
     },
     spaces,
@@ -665,8 +758,8 @@ export function transformFYIToMVPProgram(fyiData) {
       circulationSF,
       totalConditionedSF,
       outdoorSF,
-      variance: totalConditionedSF - (settings?.targetSF || 15000),
-      variancePercent: ((totalConditionedSF - (settings?.targetSF || 15000)) / (settings?.targetSF || 15000)) * 100
+      variance: totalConditionedSF - (settings?.targetSF || 10000),
+      variancePercent: ((totalConditionedSF - (settings?.targetSF || 10000)) / (settings?.targetSF || 10000)) * 100
     }
   };
 }

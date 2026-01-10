@@ -8,6 +8,8 @@
  * 3. Returns wrapped action functions that update AppContext directly
  *
  * THERE IS NO LOCAL STATE FOR SELECTIONS OR SETTINGS.
+ * 
+ * UPDATED: Added 5K tier support
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -23,11 +25,11 @@ import {
 
 // Default FYI settings
 const defaultSettings = {
-  targetSF: 15000,
+  targetSF: 10000,
   deltaPct: 10,
-  circulationPct: 0.14,
+  circulationPct: 0.13,
   lockToTarget: true,
-  programTier: '15k',
+  programTier: '10k',
   hasBasement: false
 };
 
@@ -51,6 +53,20 @@ export const initializeSelectionsForTier = (tier, hasBasement = false) => {
 
   return selections;
 };
+
+/**
+ * Determine program tier from target SF
+ * This is internal algorithm logic - not exposed to client
+ * 
+ * @param {number} targetSF - Target square footage
+ * @returns {string} - Internal tier identifier ('5k', '10k', '15k', '20k')
+ */
+function determineTier(targetSF) {
+  if (targetSF < 7500) return '5k';
+  if (targetSF < 12500) return '10k';
+  if (targetSF < 17500) return '15k';
+  return '20k';
+}
 
 /**
  * useFYIState - Calculation-only hook
@@ -126,18 +142,18 @@ export function useFYIState(fyiData, updateFYISelection, updateFYISettings, init
 
   // Apply KYC defaults
   const applyKYCDefaults = useCallback((kycData) => {
-    const targetSF = kycData?.projectParameters?.targetGSF || 15000;
+    const targetSF = kycData?.projectParameters?.targetGSF || 10000;
     const hasBasement = kycData?.projectParameters?.hasBasement || false;
 
-    let tier = '15k';
-    if (targetSF <= 12000) tier = '10k';
-    else if (targetSF >= 18000) tier = '20k';
+    // Determine tier from target SF (internal algorithm)
+    const tier = determineTier(targetSF);
 
     if (updateFYISettings) {
       updateFYISettings({
         targetSF,
         hasBasement,
-        programTier: tier
+        programTier: tier,
+        circulationPct: getDefaultCirculation(tier)
       });
     }
 
@@ -244,7 +260,7 @@ export function useFYIState(fyiData, updateFYISelection, updateFYISettings, init
   // Calculate structure-specific totals
   const structureTotals = useMemo(() => {
     const results = {
-      main: { enabled: true, net: 0, circulation: 0, total: 0, byLevel: {}, spaceCount: 0 },
+      main: { enabled: true, net: 0, circulation: 0, total: 0, byLevel: {}, spaceCount: 0, circulationPct: 0 },
       guestHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 },
       poolHouse: { enabled: false, net: 0, total: 0, spaceCount: 0 }
     };
@@ -284,6 +300,9 @@ export function useFYIState(fyiData, updateFYISelection, updateFYISettings, init
     );
     results.main.circulation = mainCirculation;
     results.main.total = results.main.net + mainCirculation;
+    results.main.circulationPct = results.main.net > 0 
+      ? ((mainCirculation / results.main.net) * 100).toFixed(0) 
+      : 0;
 
     return results;
   }, [selections, settings, calculateArea]);
@@ -382,6 +401,19 @@ export function useFYIState(fyiData, updateFYISelection, updateFYISettings, init
     calculateArea,
     generateMVPBrief,
   };
+}
+
+/**
+ * Get default circulation percentage for tier
+ */
+function getDefaultCirculation(tier) {
+  const defaults = {
+    '5k': 0.12,
+    '10k': 0.13,
+    '15k': 0.14,
+    '20k': 0.15
+  };
+  return defaults[tier] || 0.13;
 }
 
 export default useFYIState;

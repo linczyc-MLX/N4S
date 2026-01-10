@@ -4,8 +4,8 @@
  * Master definition of all zones, spaces, and codes used across KYC, FYI, MVP, and VMX.
  * This is the single source of truth for the entire N4S platform.
  * 
- * @version 1.0.0
- * @date 2026-01-04
+ * @version 1.1.0 - Added 5K tier support
+ * @date 2026-01-10
  */
 
 // =============================================================================
@@ -91,7 +91,7 @@ export const spaceRegistry = [
     abbrev: 'Foyer',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 350, '15k': 420, '20k': 500 },
+    baseSF: { '5k': 200, '10k': 350, '15k': 420, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -103,7 +103,7 @@ export const spaceRegistry = [
     abbrev: 'Powder',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 60, '15k': 80, '20k': 100 },
+    baseSF: { '5k': 45, '10k': 60, '15k': 80, '20k': 100 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core'
@@ -114,7 +114,7 @@ export const spaceRegistry = [
     abbrev: 'Office',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 200, '15k': 280, '20k': 350 },
+    baseSF: { '5k': 120, '10k': 200, '15k': 280, '20k': 350 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -126,7 +126,7 @@ export const spaceRegistry = [
     abbrev: 'Great Room',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 500, '15k': 600, '20k': 750 },
+    baseSF: { '5k': 350, '10k': 500, '15k': 600, '20k': 750 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -138,11 +138,11 @@ export const spaceRegistry = [
     abbrev: 'Dining',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 300, '15k': 400, '20k': 500 },
+    baseSF: { '5k': 180, '10k': 300, '15k': 400, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
-    notes: 'Seats 10-14'
+    notes: 'Seats 8-14 depending on tier'
   },
   {
     code: 'WINE',
@@ -150,11 +150,11 @@ export const spaceRegistry = [
     abbrev: 'Wine',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
+    baseSF: { '5k': null, '10k': 100, '15k': 150, '20k': 200 },
     basementEligible: true,
     outdoorSpace: false,
-    tier: 'core',
-    notes: 'Climate controlled; can move to basement'
+    tier: '10k+',
+    notes: 'Climate controlled; can move to basement. Not standard at 5K.'
   },
   {
     code: 'LIB',
@@ -162,11 +162,11 @@ export const spaceRegistry = [
     abbrev: 'Library',
     zone: 'Z1_APB',
     defaultLevel: 1,
-    baseSF: { '10k': 200, '15k': 280, '20k': 350 },
+    baseSF: { '5k': null, '10k': 200, '15k': 280, '20k': 350 },
     basementEligible: false,
     outdoorSpace: false,
-    tier: 'core',
-    notes: 'Can double as quiet office'
+    tier: '10k+',
+    notes: 'Can double as quiet office. Not standard at 5K.'
   },
 
   // ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ export const spaceRegistry = [
     abbrev: 'Family',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 500, '15k': 650, '20k': 800 },
+    baseSF: { '5k': 300, '10k': 500, '15k': 650, '20k': 800 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -190,7 +190,7 @@ export const spaceRegistry = [
     abbrev: 'Kitchen',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 350, '15k': 450, '20k': 550 },
+    baseSF: { '5k': 250, '10k': 350, '15k': 450, '20k': 550 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -202,7 +202,7 @@ export const spaceRegistry = [
     abbrev: 'Breakfast',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 120, '15k': 180, '20k': 220 },
+    baseSF: { '5k': 80, '10k': 120, '15k': 180, '20k': 220 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -214,7 +214,7 @@ export const spaceRegistry = [
     abbrev: 'Scullery',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 180, '15k': 250, '20k': 320 },
+    baseSF: { '5k': 100, '10k': 180, '15k': 250, '20k': 320 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -226,11 +226,11 @@ export const spaceRegistry = [
     abbrev: "Chef's",
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 150, '15k': 200, '20k': 280 },
+    baseSF: { '5k': null, '10k': 150, '15k': 200, '20k': 280 },
     basementEligible: false,
     outdoorSpace: false,
-    tier: 'core',
-    notes: 'Service kitchen for formal dining'
+    tier: '10k+',
+    notes: 'Service kitchen for formal dining. Not standard at 5K.'
   },
   {
     code: 'MEDIA',
@@ -238,11 +238,11 @@ export const spaceRegistry = [
     abbrev: 'Media',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 250, '15k': 350, '20k': 450 },
+    baseSF: { '5k': 180, '10k': 250, '15k': 350, '20k': 450 },
     basementEligible: true,
     outdoorSpace: false,
     tier: 'core',
-    notes: 'Casual TV / movies; can move to basement'
+    notes: 'Casual TV / movies; can move to basement. Optional at 5K.'
   },
   {
     code: 'PWD2',
@@ -250,7 +250,7 @@ export const spaceRegistry = [
     abbrev: 'Powder 2',
     zone: 'Z2_FAM',
     defaultLevel: 1,
-    baseSF: { '10k': 60, '15k': 60, '20k': 60 },
+    baseSF: { '5k': 45, '10k': 60, '15k': 60, '20k': 60 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -266,7 +266,7 @@ export const spaceRegistry = [
     abbrev: 'Bar',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 150, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 200 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -278,7 +278,7 @@ export const spaceRegistry = [
     abbrev: 'Game',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 400, '20k': 550 },
+    baseSF: { '5k': null, '10k': null, '15k': 400, '20k': 550 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -290,7 +290,7 @@ export const spaceRegistry = [
     abbrev: 'Theater',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 400, '20k': 550 },
+    baseSF: { '5k': null, '10k': null, '15k': 400, '20k': 550 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -302,7 +302,7 @@ export const spaceRegistry = [
     abbrev: 'Music',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 250, '20k': 300 },
+    baseSF: { '5k': null, '10k': null, '15k': 250, '20k': 300 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -314,7 +314,7 @@ export const spaceRegistry = [
     abbrev: 'Art',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': null, '20k': 300 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 300 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -326,7 +326,7 @@ export const spaceRegistry = [
     abbrev: 'Powder 3',
     zone: 'Z3_ENT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 60, '20k': 60 },
+    baseSF: { '5k': null, '10k': null, '15k': 60, '20k': 60 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -342,11 +342,11 @@ export const spaceRegistry = [
     abbrev: 'Gym',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': 250, '15k': 350, '20k': 450 },
+    baseSF: { '5k': 150, '10k': 250, '15k': 350, '20k': 450 },
     basementEligible: true,
     outdoorSpace: false,
     tier: 'core',
-    notes: 'Requires daylight preferred'
+    notes: 'Requires daylight preferred. Small gym at 5K.'
   },
   {
     code: 'SPA',
@@ -354,11 +354,11 @@ export const spaceRegistry = [
     abbrev: 'Spa',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': 180, '15k': 250, '20k': 350 },
+    baseSF: { '5k': null, '10k': 180, '15k': 250, '20k': 350 },
     basementEligible: true,
     outdoorSpace: false,
-    tier: 'core',
-    notes: 'Sauna, steam, shower'
+    tier: '10k+',
+    notes: 'Sauna, steam, shower. Not standard at 5K.'
   },
   {
     code: 'MAS',
@@ -366,7 +366,7 @@ export const spaceRegistry = [
     abbrev: 'Massage',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 150, '20k': 180 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 180 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -378,7 +378,7 @@ export const spaceRegistry = [
     abbrev: 'Pool House',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': null, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 400 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -390,7 +390,7 @@ export const spaceRegistry = [
     abbrev: 'Pool Sup',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
+    baseSF: { '5k': 60, '10k': 100, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -402,7 +402,7 @@ export const spaceRegistry = [
     abbrev: 'Powder 4',
     zone: 'Z4_WEL',
     defaultLevel: 1,
-    baseSF: { '10k': 60, '15k': 60, '20k': 60 },
+    baseSF: { '5k': 45, '10k': 60, '15k': 60, '20k': 60 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -418,7 +418,7 @@ export const spaceRegistry = [
     abbrev: 'Primary Bed',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': 350, '15k': 500, '20k': 650 },
+    baseSF: { '5k': 280, '10k': 350, '15k': 500, '20k': 650 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -430,7 +430,7 @@ export const spaceRegistry = [
     abbrev: 'Primary Bath',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': 250, '15k': 350, '20k': 450 },
+    baseSF: { '5k': 180, '10k': 250, '15k': 350, '20k': 450 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -442,7 +442,7 @@ export const spaceRegistry = [
     abbrev: 'His Closet',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
+    baseSF: { '5k': 80, '10k': 100, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -455,7 +455,7 @@ export const spaceRegistry = [
     abbrev: 'Her Closet',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': 100, '15k': 150, '20k': 200 },
+    baseSF: { '5k': 80, '10k': 100, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -468,7 +468,7 @@ export const spaceRegistry = [
     abbrev: 'Primary Lounge',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 200, '20k': 280 },
+    baseSF: { '5k': null, '10k': null, '15k': 200, '20k': 280 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -480,7 +480,7 @@ export const spaceRegistry = [
     abbrev: 'Primary Office',
     zone: 'Z5_PRI',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': null, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -496,7 +496,7 @@ export const spaceRegistry = [
     abbrev: 'Guest 1',
     zone: 'Z6_GST',
     defaultLevel: 1,
-    baseSF: { '10k': 400, '15k': 450, '20k': 500 },
+    baseSF: { '5k': 300, '10k': 400, '15k': 450, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -508,7 +508,7 @@ export const spaceRegistry = [
     abbrev: 'Guest 2',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': 400, '15k': 450, '20k': 500 },
+    baseSF: { '5k': 280, '10k': 400, '15k': 450, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core'
@@ -519,10 +519,11 @@ export const spaceRegistry = [
     abbrev: 'Guest 3',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 450, '20k': 500 },
+    baseSF: { '5k': 280, '10k': null, '15k': 450, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
-    tier: '15k+'
+    tier: 'core',
+    notes: 'Available at 5K for high bedroom count, or 15K+'
   },
   {
     code: 'GST4',
@@ -530,7 +531,7 @@ export const spaceRegistry = [
     abbrev: 'Guest 4',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': null, '20k': 500 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+'
@@ -541,7 +542,7 @@ export const spaceRegistry = [
     abbrev: 'Jr. Primary',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 400, '20k': 500 },
+    baseSF: { '5k': null, '10k': null, '15k': 400, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -553,7 +554,7 @@ export const spaceRegistry = [
     abbrev: 'Jr. Primary Bath',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 150, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -565,7 +566,7 @@ export const spaceRegistry = [
     abbrev: 'Jr. Primary Closet',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 80, '20k': 100 },
+    baseSF: { '5k': null, '10k': null, '15k': 80, '20k': 100 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -577,7 +578,7 @@ export const spaceRegistry = [
     abbrev: 'Bunk',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 350, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': 350, '20k': 400 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -589,7 +590,7 @@ export const spaceRegistry = [
     abbrev: 'Playroom',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 300, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': 300, '20k': 400 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -601,7 +602,7 @@ export const spaceRegistry = [
     abbrev: 'Homework',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': null, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -613,7 +614,7 @@ export const spaceRegistry = [
     abbrev: 'Nanny',
     zone: 'Z6_GST',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 350, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': 350, '20k': 400 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -625,11 +626,11 @@ export const spaceRegistry = [
     abbrev: 'Staff',
     zone: 'Z6_GST',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 350, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': 350, '20k': 400 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
-    notes: 'Live-in staff'
+    notes: 'Live-in staff. Not standard at 5K.'
   },
 
   // ---------------------------------------------------------------------------
@@ -641,7 +642,7 @@ export const spaceRegistry = [
     abbrev: 'Mudroom',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 150, '15k': 200, '20k': 280 },
+    baseSF: { '5k': 100, '10k': 150, '15k': 200, '20k': 280 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -653,7 +654,7 @@ export const spaceRegistry = [
     abbrev: 'Laundry',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 140, '15k': 180, '20k': 250 },
+    baseSF: { '5k': 100, '10k': 140, '15k': 180, '20k': 250 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -665,7 +666,7 @@ export const spaceRegistry = [
     abbrev: 'Laundry 2',
     zone: 'Z7_SVC',
     defaultLevel: 2,
-    baseSF: { '10k': null, '15k': 80, '20k': 120 },
+    baseSF: { '5k': null, '10k': null, '15k': 80, '20k': 120 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -677,7 +678,7 @@ export const spaceRegistry = [
     abbrev: 'Mechanical',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 300, '15k': 400, '20k': 550 },
+    baseSF: { '5k': 180, '10k': 300, '15k': 400, '20k': 550 },
     basementEligible: true,
     outdoorSpace: false,
     tier: 'core',
@@ -689,7 +690,7 @@ export const spaceRegistry = [
     abbrev: 'Storage',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 200, '15k': 300, '20k': 400 },
+    baseSF: { '5k': 120, '10k': 200, '15k': 300, '20k': 400 },
     basementEligible: true,
     outdoorSpace: false,
     tier: 'core',
@@ -701,11 +702,11 @@ export const spaceRegistry = [
     abbrev: 'Garage',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 600, '15k': 900, '20k': 1200 },
+    baseSF: { '5k': 450, '10k': 600, '15k': 900, '20k': 1200 },
     basementEligible: true,
     outdoorSpace: false,
     tier: 'core',
-    notes: '3/4/6 car'
+    notes: '2/3/4/6 car depending on tier'
   },
   {
     code: 'WRK',
@@ -713,7 +714,7 @@ export const spaceRegistry = [
     abbrev: 'Workshop',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 150, '20k': 250 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 250 },
     basementEligible: true,
     outdoorSpace: false,
     tier: '15k+',
@@ -725,7 +726,7 @@ export const spaceRegistry = [
     abbrev: 'Staff Kitchen',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': null, '20k': 180 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 180 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -737,7 +738,7 @@ export const spaceRegistry = [
     abbrev: 'Staff Lounge',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': null, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -749,7 +750,7 @@ export const spaceRegistry = [
     abbrev: 'Core',
     zone: 'Z7_SVC',
     defaultLevel: 1,
-    baseSF: { '10k': 300, '15k': 400, '20k': 500 },
+    baseSF: { '5k': 200, '10k': 300, '15k': 400, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: 'core',
@@ -765,7 +766,7 @@ export const spaceRegistry = [
     abbrev: 'Terrace',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 800, '15k': 1200, '20k': 1800 },
+    baseSF: { '5k': 500, '10k': 800, '15k': 1200, '20k': 1800 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -777,7 +778,7 @@ export const spaceRegistry = [
     abbrev: 'Pool',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 1500, '15k': 2000, '20k': 2800 },
+    baseSF: { '5k': 1000, '10k': 1500, '15k': 2000, '20k': 2800 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -789,7 +790,7 @@ export const spaceRegistry = [
     abbrev: 'Out Kitchen',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 150, '15k': 250, '20k': 350 },
+    baseSF: { '5k': 100, '10k': 150, '15k': 250, '20k': 350 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -801,7 +802,7 @@ export const spaceRegistry = [
     abbrev: 'Fire Pit',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 200, '15k': 300, '20k': 400 },
+    baseSF: { '5k': 150, '10k': 200, '15k': 300, '20k': 400 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -813,7 +814,7 @@ export const spaceRegistry = [
     abbrev: 'Out Dining',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 250, '15k': 350, '20k': 500 },
+    baseSF: { '5k': 150, '10k': 250, '15k': 350, '20k': 500 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -825,7 +826,7 @@ export const spaceRegistry = [
     abbrev: 'Courtyard',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 400, '20k': 600 },
+    baseSF: { '5k': null, '10k': null, '15k': 400, '20k': 600 },
     basementEligible: false,
     outdoorSpace: true,
     tier: '15k+',
@@ -837,7 +838,7 @@ export const spaceRegistry = [
     abbrev: 'Pool Bath',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 80, '15k': 80, '20k': 100 },
+    baseSF: { '5k': 60, '10k': 80, '15k': 80, '20k': 100 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -849,7 +850,7 @@ export const spaceRegistry = [
     abbrev: 'Motor Court',
     zone: 'Z8_OUT',
     defaultLevel: 1,
-    baseSF: { '10k': 1000, '15k': 1500, '20k': 2000 },
+    baseSF: { '5k': 600, '10k': 1000, '15k': 1500, '20k': 2000 },
     basementEligible: false,
     outdoorSpace: true,
     tier: 'core',
@@ -865,7 +866,7 @@ export const spaceRegistry = [
     abbrev: 'GH Suite 1',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 450, '20k': 500 },
+    baseSF: { '5k': null, '10k': null, '15k': 450, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -878,7 +879,7 @@ export const spaceRegistry = [
     abbrev: 'GH Suite 2',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 450, '20k': 500 },
+    baseSF: { '5k': null, '10k': null, '15k': 450, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
@@ -891,7 +892,7 @@ export const spaceRegistry = [
     abbrev: 'GH Suite 3',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': null, '20k': 500 },
+    baseSF: { '5k': null, '10k': null, '15k': null, '20k': 500 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '20k+',
@@ -900,16 +901,16 @@ export const spaceRegistry = [
   },
   {
     code: 'GH_PWD',
-    name: 'Guest House Powder Room',
+    name: 'Guest House Powder',
     abbrev: 'GH Powder',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 50, '20k': 60 },
+    baseSF: { '5k': null, '10k': null, '15k': 50, '20k': 60 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'guestHouse',
-    notes: 'Half bath for guest house common areas'
+    notes: 'Guest house powder room'
   },
   {
     code: 'GH_LIV',
@@ -917,12 +918,12 @@ export const spaceRegistry = [
     abbrev: 'GH Living',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 300, '20k': 400 },
+    baseSF: { '5k': null, '10k': null, '15k': 350, '20k': 450 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'guestHouse',
-    notes: 'Family/living area in guest house'
+    notes: 'Guest house living room'
   },
   {
     code: 'GH_KIT',
@@ -930,12 +931,12 @@ export const spaceRegistry = [
     abbrev: 'GH Kitchen',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 150, '20k': 200 },
+    baseSF: { '5k': null, '10k': null, '15k': 200, '20k': 280 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'guestHouse',
-    notes: 'Full kitchen in guest house'
+    notes: 'Guest house kitchenette'
   },
   {
     code: 'GH_DIN',
@@ -943,29 +944,29 @@ export const spaceRegistry = [
     abbrev: 'GH Dining',
     zone: 'Z9_GH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 120, '20k': 150 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'guestHouse',
-    notes: 'Dining area in guest house'
+    notes: 'Guest house dining area'
   },
 
   // ---------------------------------------------------------------------------
-  // Zone 10: Pool House / Wellness Pavilion (Z10_PH) - Separate Structure
+  // Zone 10: Pool House (Z10_PH) - Separate Structure
   // ---------------------------------------------------------------------------
   {
     code: 'PH_SHW',
-    name: 'Pool House Showers',
-    abbrev: 'PH Showers',
+    name: 'Pool House Shower',
+    abbrev: 'PH Shower',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 80, '20k': 120 },
+    baseSF: { '5k': null, '10k': null, '15k': 60, '20k': 80 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'Outdoor shower facilities'
+    notes: 'Outdoor shower facility'
   },
   {
     code: 'PH_CHG',
@@ -973,25 +974,25 @@ export const spaceRegistry = [
     abbrev: 'PH Changing',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 100, '20k': 150 },
+    baseSF: { '5k': null, '10k': null, '15k': 100, '20k': 150 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'His/hers changing rooms'
+    notes: 'Changing rooms'
   },
   {
     code: 'PH_BATH',
-    name: 'Pool House Bathroom',
+    name: 'Pool House Bath',
     abbrev: 'PH Bath',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 60, '20k': 80 },
+    baseSF: { '5k': null, '10k': null, '15k': 60, '20k': 80 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'Full bathroom at pool'
+    notes: 'Pool house bathroom'
   },
   {
     code: 'PH_ENT',
@@ -999,12 +1000,12 @@ export const spaceRegistry = [
     abbrev: 'PH Entertainment',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 250, '20k': 350 },
+    baseSF: { '5k': null, '10k': null, '15k': 300, '20k': 450 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'Entertainment/gaming area at pool'
+    notes: 'Covered entertaining space'
   },
   {
     code: 'PH_KIT',
@@ -1012,12 +1013,12 @@ export const spaceRegistry = [
     abbrev: 'PH Kitchen',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 120, '20k': 180 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'Kitchen/bar at pool house'
+    notes: 'Pool house kitchenette'
   },
   {
     code: 'PH_DIN',
@@ -1025,12 +1026,12 @@ export const spaceRegistry = [
     abbrev: 'PH Dining',
     zone: 'Z10_PH',
     defaultLevel: 1,
-    baseSF: { '10k': null, '15k': 100, '20k': 150 },
+    baseSF: { '5k': null, '10k': null, '15k': 150, '20k': 200 },
     basementEligible: false,
     outdoorSpace: false,
     tier: '15k+',
     structure: 'poolHouse',
-    notes: 'Covered dining at pool'
+    notes: 'Pool house dining area'
   }
 ];
 
@@ -1039,27 +1040,44 @@ export const spaceRegistry = [
 // =============================================================================
 
 /**
- * Get a space definition by code
+ * Get a space by its code
  */
 export function getSpaceByCode(code) {
   return spaceRegistry.find(s => s.code === code);
 }
 
 /**
- * Get all spaces for a specific zone
+ * Get all spaces in a zone
  */
-export function getSpacesByZone(zoneCode) {
+export function getSpacesInZone(zoneCode) {
   return spaceRegistry.filter(s => s.zone === zoneCode);
 }
 
 /**
+ * Get zones in order
+ */
+export function getZonesInOrder() {
+  return [...zones].sort((a, b) => a.order - b.order);
+}
+
+/**
  * Get all spaces available for a given tier
+ * Updated to support 5K tier
  */
 export function getSpacesForTier(tier) {
   return spaceRegistry.filter(s => {
+    // Core spaces available at all tiers
     if (s.tier === 'core') return true;
+    
+    // 10k+ spaces available at 10k, 15k, 20k
+    if (s.tier === '10k+' && (tier === '10k' || tier === '15k' || tier === '20k')) return true;
+    
+    // 15k+ spaces available at 15k and 20k
     if (s.tier === '15k+' && (tier === '15k' || tier === '20k')) return true;
+    
+    // 20k+ spaces only at 20k
     if (s.tier === '20k+' && tier === '20k') return true;
+    
     return false;
   });
 }
@@ -1086,6 +1104,7 @@ export function calculateSpaceArea(space, tier, size, deltaPct = 10) {
   if (baseArea === null) return 0;
   
   const delta = deltaPct / 100;
+  
   switch (size) {
     case 'S': return Math.round(baseArea * (1 - delta));
     case 'L': return Math.round(baseArea * (1 + delta));
@@ -1094,82 +1113,70 @@ export function calculateSpaceArea(space, tier, size, deltaPct = 10) {
 }
 
 /**
- * Get zone by code
+ * Build available levels from KYC configuration
  */
-export function getZoneByCode(code) {
-  return zones.find(z => z.code === code);
-}
-
-/**
- * Get zones in order
- */
-export function getZonesInOrder() {
-  return [...zones].sort((a, b) => a.order - b.order);
-}
-
-/**
- * Get zones for main residence only (excludes guest house, pool house)
- */
-export function getMainResidenceZones() {
-  return zones.filter(z => !z.structure).sort((a, b) => a.order - b.order);
-}
-
-/**
- * Get zones for a specific structure
- * @param {string} structure - 'main' | 'guestHouse' | 'poolHouse'
- */
-export function getZonesForStructure(structure) {
-  if (structure === 'main') {
-    return getMainResidenceZones();
-  }
-  return zones.filter(z => z.structure === structure).sort((a, b) => a.order - b.order);
-}
-
-/**
- * Get spaces for a specific structure
- * @param {string} structure - 'main' | 'guestHouse' | 'poolHouse'
- */
-export function getSpacesForStructure(structure) {
-  if (structure === 'main') {
-    return spaceRegistry.filter(s => !s.structure);
-  }
-  return spaceRegistry.filter(s => s.structure === structure);
-}
-
-/**
- * Get conditioned spaces for a specific structure
- */
-export function getConditionedSpacesForStructure(structure) {
-  return getSpacesForStructure(structure).filter(s => !s.outdoorSpace);
-}
-
-/**
- * Build available levels based on KYC configuration
- * @param {number} levelsAboveArrival - Levels above L1 (0-3)
- * @param {number} levelsBelowArrival - Levels below L1 (0-3)
- * @returns {Array} Array of level objects with value and label
- */
-export function buildAvailableLevels(levelsAboveArrival = 1, levelsBelowArrival = 0) {
+export function buildAvailableLevels(levelsAbove = 1, levelsBelow = 0) {
   const levels = [];
   
-  // Add levels above arrival (L2, L3, L4...)
-  for (let i = levelsAboveArrival + 1; i >= 2; i--) {
-    levels.push({ value: i, label: `L${i}` });
+  // Add levels above arrival (L2, L3, etc.)
+  for (let i = levelsAbove; i > 0; i--) {
+    const levelNum = i + 1;
+    levels.push({
+      value: levelNum,
+      label: `L${levelNum}`,
+      isAboveArrival: true
+    });
   }
   
   // Add arrival level (L1)
-  levels.push({ value: 1, label: 'L1 (Arrival)' });
+  levels.push({
+    value: 1,
+    label: 'L1 (Arrival)',
+    isArrival: true
+  });
   
-  // Add levels below arrival (L-1, L-2, L-3...)
-  for (let i = -1; i >= -levelsBelowArrival; i--) {
-    levels.push({ value: i, label: `L${i}` });
+  // Add levels below arrival (L-1, L-2, etc.)
+  for (let i = 1; i <= levelsBelow; i++) {
+    levels.push({
+      value: -i,
+      label: `L-${i}`,
+      isBelowArrival: true
+    });
   }
   
   return levels;
 }
 
 /**
- * Get level label from value
+ * Get zones for a specific structure
+ */
+export function getZonesForStructure(structure = 'main') {
+  if (structure === 'guestHouse') {
+    return zones.filter(z => z.code === 'Z9_GH');
+  }
+  if (structure === 'poolHouse') {
+    return zones.filter(z => z.code === 'Z10_PH');
+  }
+  // Main structure gets all zones except GH and PH
+  return zones.filter(z => !z.structure);
+}
+
+/**
+ * Get spaces for a specific structure
+ */
+export function getSpacesForStructure(structure = 'main') {
+  if (structure === 'guestHouse') {
+    return spaceRegistry.filter(s => s.structure === 'guestHouse');
+  }
+  if (structure === 'poolHouse') {
+    return spaceRegistry.filter(s => s.structure === 'poolHouse');
+  }
+  // Main structure gets spaces without a structure property
+  return spaceRegistry.filter(s => !s.structure);
+}
+
+/**
+ * Get level label
  */
 export function getLevelLabel(levelValue) {
   if (levelValue === 1) return 'L1 (Arrival)';
@@ -1375,6 +1382,7 @@ export function legacyToCode(legacyValue) {
 // =============================================================================
 
 export const circulationDefaults = {
+  '5k': { min: 0.11, max: 0.14, default: 0.12 },
   '10k': { min: 0.12, max: 0.15, default: 0.13 },
   '15k': { min: 0.13, max: 0.16, default: 0.14 },
   '20k': { min: 0.14, max: 0.18, default: 0.15 }
@@ -1384,11 +1392,14 @@ export const circulationDefaults = {
  * Calculate circulation SF
  */
 export function calculateCirculation(netSF, targetSF, lockToTarget, circulationPct, tier) {
+  // Handle missing tier gracefully
+  const tierDefaults = circulationDefaults[tier] || circulationDefaults['10k'];
+  
   if (lockToTarget) {
     // Balance to target, clamped
     const targetCirc = targetSF - netSF;
-    const minCirc = Math.round(netSF * circulationDefaults[tier].min);
-    const maxCirc = Math.round(netSF * circulationDefaults[tier].max);
+    const minCirc = Math.round(netSF * tierDefaults.min);
+    const maxCirc = Math.round(netSF * tierDefaults.max);
     return Math.max(minCirc, Math.min(maxCirc, targetCirc));
   } else {
     // Fixed percentage
@@ -1460,4 +1471,39 @@ export function getBedroomComponents(bedroomCode, closetType = 'walk-in') {
   }
   
   return components;
+}
+
+// =============================================================================
+// TIER DETERMINATION (Internal algorithm - not exposed to users)
+// =============================================================================
+
+/**
+ * Determine internal tier from target SF
+ * This is used for algorithm purposes only - users don't see tier labels
+ * 
+ * @param {number} targetSF - Target square footage
+ * @returns {string} - Internal tier identifier ('5k', '10k', '15k', '20k')
+ */
+export function determineTierFromSF(targetSF) {
+  if (targetSF < 7500) return '5k';
+  if (targetSF < 12500) return '10k';
+  if (targetSF < 17500) return '15k';
+  return '20k';
+}
+
+/**
+ * Get default bedroom count for a tier (as starting point only)
+ * Client can adjust freely from this starting point
+ * 
+ * @param {string} tier - Internal tier identifier
+ * @returns {number} - Default bedroom count
+ */
+export function getDefaultBedroomCount(tier) {
+  const defaults = {
+    '5k': 4,   // Minimum for UHNW clients
+    '10k': 5,
+    '15k': 6,
+    '20k': 7
+  };
+  return defaults[tier] || 5;
 }
