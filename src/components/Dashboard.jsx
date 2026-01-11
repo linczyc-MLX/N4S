@@ -5,6 +5,7 @@ import {
   ClipboardCheck, Plus, ChevronDown, Trash2, FolderOpen
 } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
+import DashboardDocumentation from './DashboardDocumentation';
 
 // N4S Task Matrix Configuration - UPDATED ORDER: KYC → FYI → MVP → KYM → VMX
 const N4S_MODULES = {
@@ -21,7 +22,7 @@ const N4S_PHASES = {
   P3: { name: 'Get It Done', description: 'Execution & Delivery' },
 };
 
-const Dashboard = ({ onNavigate }) => {
+const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
   const {
     clientData, updateClientData, kycData, fyiData, calculateCompleteness,
     projects, activeProjectId, createProject, switchProject, deleteProject
@@ -157,6 +158,11 @@ const Dashboard = ({ onNavigate }) => {
       default: return <span className="badge badge--neutral"><AlertCircle size={14} /> Not Started</span>;
     }
   };
+
+  // If in docs mode, show Dashboard Documentation
+  if (showDocs) {
+    return <DashboardDocumentation onClose={onCloseDocs} />;
+  }
 
   return (
     <div className="dashboard">

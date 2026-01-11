@@ -140,7 +140,7 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
 // MAIN MVP MODULE COMPONENT
 // ============================================
 
-const MVPModule = ({ onNavigate }) => {
+const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   // ============================================
   // CONTEXT ACCESS - LIVE DATA
   // ============================================
@@ -150,7 +150,7 @@ const MVPModule = ({ onNavigate }) => {
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin' | 'docs'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin'
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -353,10 +353,10 @@ const MVPModule = ({ onNavigate }) => {
   }
 
   // If in docs mode, show MVP Documentation
-  if (viewMode === 'docs') {
+  if (showDocs) {
     return (
       <MVPDocumentation
-        onClose={() => setViewMode('overview')}
+        onClose={onCloseDocs}
       />
     );
   }
@@ -409,18 +409,6 @@ const MVPModule = ({ onNavigate }) => {
               <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
             )}
           </p>
-        </div>
-        
-        {/* Header Actions */}
-        <div className="mvp-module__header-actions">
-          <button 
-            className="n4s-btn n4s-btn--ghost n4s-btn--sm"
-            onClick={() => setViewMode('docs')}
-            title="View Documentation"
-          >
-            <FileText size={16} />
-            Documentation
-          </button>
         </div>
         
         {/* Save Status */}

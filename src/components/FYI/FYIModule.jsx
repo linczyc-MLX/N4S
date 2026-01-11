@@ -29,7 +29,7 @@ import { generateFYIPDF, buildFYIPDFData } from './utils/fyi-pdf-export';
 
 import './FYIModule.css';
 
-const FYIModule = () => {
+const FYIModule = ({ showDocs, onCloseDocs }) => {
   // ---------------------------------------------------------------------------
   // GET EVERYTHING FROM APPCONTEXT
   // ---------------------------------------------------------------------------
@@ -56,7 +56,6 @@ const FYIModule = () => {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [initialized, setInitialized] = useState(false);
-  const [viewMode, setViewMode] = useState('main'); // 'main' | 'docs'
 
   // ---------------------------------------------------------------------------
   // CONSOLIDATED KYC DATA
@@ -316,8 +315,8 @@ const FYIModule = () => {
   // ---------------------------------------------------------------------------
   // DOCS MODE (must be after all hooks)
   // ---------------------------------------------------------------------------
-  if (viewMode === 'docs') {
-    return <FYIDocumentation onClose={() => setViewMode('main')} />;
+  if (showDocs) {
+    return <FYIDocumentation onClose={onCloseDocs} />;
   }
 
   // ---------------------------------------------------------------------------
@@ -332,13 +331,6 @@ const FYIModule = () => {
   }
 
   // ---------------------------------------------------------------------------
-  // DOCUMENTATION VIEW
-  // ---------------------------------------------------------------------------
-  if (viewMode === 'docs') {
-    return <FYIDocumentation onClose={() => setViewMode('main')} />;
-  }
-
-  // ---------------------------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------------------------
   return (
@@ -350,22 +342,6 @@ const FYIModule = () => {
             <h1 className="fyi-module__title">FYI – Find Your Inspiration</h1>
             <p className="fyi-module__subtitle">Lifestyle Requirements Refinement</p>
           </div>
-
-          {/* Documentation Button */}
-          <button 
-            className="fyi-module__docs-btn"
-            onClick={() => setViewMode('docs')}
-            title="View Documentation"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            Documentation
-          </button>
 
           {/* SAVE BUTTON */}
           <div className="fyi-module__save-area">

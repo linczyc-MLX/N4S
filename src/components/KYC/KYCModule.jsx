@@ -18,7 +18,7 @@ import SpaceRequirementsSection from './sections/SpaceRequirementsSection';
 import CulturalContextSection from './sections/CulturalContextSection';
 import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
-const KYCModule = () => {
+const KYCModule = ({ showDocs, onCloseDocs }) => {
   const {
     activeRespondent,
     setActiveRespondent,
@@ -35,7 +35,6 @@ const KYCModule = () => {
   } = useAppContext();
 
   const [saveMessage, setSaveMessage] = useState(null);
-  const [viewMode, setViewMode] = useState('main'); // 'main' | 'docs'
   const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
 
   // SAVE HANDLER
@@ -177,8 +176,8 @@ const KYCModule = () => {
   const completionPercentage = calculateCompleteness(activeRespondent);
 
   // If in docs mode, show documentation
-  if (viewMode === 'docs') {
-    return <KYCDocumentation onClose={() => setViewMode('main')} />;
+  if (showDocs) {
+    return <KYCDocumentation onClose={onCloseDocs} />;
   }
 
   return (
@@ -279,13 +278,6 @@ const KYCModule = () => {
               <h3 className="kyc-module__nav-title">Module A: KYC</h3>
               <p className="kyc-module__nav-subtitle">Know Your Client</p>
             </div>
-            <button 
-              className="kyc-module__docs-btn"
-              onClick={() => setViewMode('docs')}
-              title="View Documentation"
-            >
-              <FileText size={14} />
-            </button>
           </div>
 
           {/* Remaining Sections Dropdown */}

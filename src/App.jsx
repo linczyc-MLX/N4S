@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck
+  ChevronRight, Building2, ClipboardCheck, FileText
 } from 'lucide-react';
 
 // Import modules
@@ -13,15 +13,15 @@ import FYIModule from './components/FYI/FYIModule';
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
-// Module color mapping (matches Task Matrix)
+// Module color mapping (solid backgrounds for header)
 const moduleColors = {
-  dashboard: { bg: 'transparent', text: 'inherit' },
-  kyc: { bg: 'rgba(26, 54, 93, 0.1)', text: '#1a365d', accent: '#1a365d' },      // Navy - A
-  fyi: { bg: 'rgba(49, 151, 149, 0.15)', text: '#285e61', accent: '#319795' },   // Teal - C
-  mvp: { bg: 'rgba(72, 187, 120, 0.15)', text: '#276749', accent: '#48bb78' },   // Green - M
-  kym: { bg: 'rgba(128, 90, 213, 0.1)', text: '#553c9a', accent: '#805ad5' },    // Purple - B
-  vmx: { bg: 'rgba(201, 169, 98, 0.15)', text: '#8b7355', accent: '#c9a962' },   // Gold - D
-  settings: { bg: 'transparent', text: 'inherit' },
+  dashboard: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },             // Navy with gold accent
+  kyc: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },                   // Navy - A
+  fyi: { bg: '#1e3a5f', text: '#ffffff', accent: '#319795' },                   // Navy with teal accent
+  mvp: { bg: '#1e3a5f', text: '#ffffff', accent: '#48bb78' },                   // Navy with green accent
+  kym: { bg: '#1e3a5f', text: '#ffffff', accent: '#805ad5' },                   // Navy with purple accent
+  vmx: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a962' },                   // Navy with gold accent
+  settings: { bg: '#1e3a5f', text: '#ffffff', accent: '#6b7280' },              // Navy with gray accent
 };
 
 // Simple Settings Panel component
@@ -65,6 +65,7 @@ const AppContent = () => {
     }
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showDocs, setShowDocs] = useState(false);
   const { clientData, kycData } = useAppContext();
 
   // Save activeModule to localStorage when it changes
@@ -76,6 +77,11 @@ const AppContent = () => {
     }
   }, [activeModule]);
 
+  // Close docs when switching modules
+  React.useEffect(() => {
+    setShowDocs(false);
+  }, [activeModule]);
+
   // Module order: Dashboard, KYC, FYI, MVP, Settings
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
@@ -85,18 +91,21 @@ const AppContent = () => {
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
+  // Modules that have documentation
+  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp'];
+
   const renderModule = () => {
     switch (activeModule) {
       case 'kyc':
-        return <KYCModule />;
+        return <KYCModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'mvp':
-        return <MVPModule onNavigate={setActiveModule} />;
+        return <MVPModule onNavigate={setActiveModule} showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'fyi':
-        return <FYIModule />;
+        return <FYIModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'settings':
         return <SettingsPanel />;
       default:
-        return <Dashboard onNavigate={setActiveModule} />;
+        return <Dashboard onNavigate={setActiveModule} showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
     }
   };
 
@@ -171,7 +180,7 @@ const AppContent = () => {
         <header 
           className="main-header"
           style={{
-            background: moduleColors[activeModule]?.bg || 'transparent',
+            background: moduleColors[activeModule]?.bg || '#1e3a5f',
             borderBottom: moduleColors[activeModule]?.accent 
               ? `2px solid ${moduleColors[activeModule].accent}` 
               : '1px solid var(--gray-200)'
@@ -180,14 +189,24 @@ const AppContent = () => {
           <div className="main-header__breadcrumb">
             <span 
               className="main-header__module"
-              style={{ color: moduleColors[activeModule]?.text || 'inherit' }}
+              style={{ color: moduleColors[activeModule]?.text || '#ffffff' }}
             >
               {modules.find(m => m.id === activeModule)?.label || 'Dashboard'}
             </span>
           </div>
           <div className="main-header__actions">
+            {modulesWithDocs.includes(activeModule) && (
+              <button
+                className="main-header__docs-btn"
+                onClick={() => setShowDocs(true)}
+                title="View Documentation"
+              >
+                <FileText size={16} />
+                <span>Documentation</span>
+              </button>
+            )}
             <button
-              className="btn btn--ghost"
+              className="main-header__settings-btn"
               title="Settings"
               onClick={() => setActiveModule('settings')}
             >
