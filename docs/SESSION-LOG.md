@@ -1,5 +1,60 @@
 # N4S Session Log
 
+## Session: January 11, 2026 - Program Summary + MVP Cleanup
+
+### User Request
+Add read-only view of imported program (spaces, zones, areas) within MVP.
+Remove Briefing Builder since all space editing should happen in FYI.
+
+### Implementation
+
+#### 1. ProgramSummaryView - NEW COMPONENT
+
+**Features:**
+- Read-only display of mansion program from FYI
+- Zone cards with icons and colors
+- Space rows: code, name, level, SF
+- Summary stats: total spaces, SF, levels, zones
+- Target vs Actual variance display
+- Level distribution with progress bars
+- "Edit in FYI" link
+
+**Zone Configuration:**
+| Zone | Icon | Color |
+|------|------|-------|
+| Arrival/Zone 1 | Home | Navy |
+| Living/Zone 2 | Users | Green |
+| Primary/Zone 5 | Home | Purple |
+| Guest/Zone 6 | Users | Blue |
+| Wellness/Zone 4 | Dumbbell | Teal |
+| Service/Zone 7 | Briefcase | Brown |
+| Garage/Zone 8 | Car | Gray |
+| Outdoor | Home | Green |
+
+#### 2. Removed from MVP
+
+- **Briefing Builder** button removed from navigation
+- Manual space editing not available in MVP
+- All space/size changes must be made in FYI module
+
+#### 3. Updated MVP Navigation
+
+```
+1. Module Library (secondary)
+2. Answer Layout Questions (PRIMARY)
+3. View Adjacency Matrix (secondary)
+4. Run Validation (secondary)
+5. Program Summary (secondary) ← NEW
+6. Tier Data Admin (ghost)
+```
+
+### Files Changed
+- `src/components/MVP/ProgramSummaryView.jsx` - NEW
+- `src/components/MVP/MVPModule.jsx` - Updated navigation
+- `docs/MVP-NAVIGATION.md` - Updated structure
+
+---
+
 ## Session: January 11, 2026 - Data Flow & Navigation Fixes
 
 ### Issues Identified (from client review)

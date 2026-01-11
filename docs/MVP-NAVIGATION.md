@@ -6,7 +6,7 @@
 MVP Overview (Home)
 ├── Module Library
 │   └── Back → Overview
-├── Answer Layout Questions (Personalization)
+├── Answer Layout Questions (Personalization) [PRIMARY ACTION]
 │   ├── Summary Screen
 │   │   └── Back → Overview
 │   ├── Detail Screen (per decision)
@@ -15,15 +15,34 @@ MVP Overview (Home)
 │       └── Back → Summary Screen
 ├── View Adjacency Matrix
 │   └── Back → Overview
+│   └── Run Validation → Validation Results
 ├── Run Validation
 │   └── Back → Overview
 │   ├── Edit Decisions → Personalization
 │   └── View Matrix → Adjacency Matrix
-├── Briefing Builder
+├── Program Summary (Read-Only)
 │   └── Back → Overview
-└── Tier Data Admin
+└── Tier Data Admin (Ghost Button)
     └── Back → Overview
 ```
+
+## Navigation Buttons (MVP Overview)
+
+| Order | Button | Style | Purpose |
+|-------|--------|-------|---------|
+| 1 | Module Library | secondary | Learn about 8 validation modules |
+| 2 | Answer Layout Questions | **primary** | Make adjacency decisions |
+| 3 | View Adjacency Matrix | secondary | See Desired vs Achieved |
+| 4 | Run Validation | secondary | Check red flags, bridges, scores |
+| 5 | Program Summary | secondary | Read-only FYI import reference |
+| 6 | Tier Data Admin | ghost | Verify tier detection (admin) |
+
+## Removed Components
+
+- **Briefing Builder** - Removed from MVP navigation
+  - Manual space editing now done in FYI module only
+  - Bridges derived from Layout Questions, not manual toggles
+  - Component still exists but not accessible from MVP
 
 ## Navigation Rules
 
