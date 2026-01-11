@@ -198,7 +198,7 @@ export default function TierDataAdmin({ onBack }) {
       <div className="tda-header">
         <button className="tda-back-btn" onClick={onBack}>
           <ArrowLeft size={16} />
-          Back
+          Back to MVP Overview
         </button>
         <div className="tda-title-row">
           <Database size={24} color={COLORS.navy} />

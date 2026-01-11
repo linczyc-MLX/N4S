@@ -157,7 +157,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
         <div className="acg-header">
           <button className="acg-back-btn" onClick={onBack}>
             <ArrowLeft size={16} />
-            Back
+            Back to MVP Overview
           </button>
           <h1 className="acg-title">Adjacency Matrix</h1>
         </div>
@@ -177,7 +177,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
       <div className="acg-header">
         <button className="acg-back-btn" onClick={onBack}>
           <ArrowLeft size={16} />
-          Back
+          Back to MVP Overview
         </button>
         <div className="acg-title-row">
           <h1 className="acg-title">Adjacency Matrix</h1>

@@ -2,23 +2,28 @@
  * ValidationResultsPanel
  * 
  * Displays validation results for the MVP adjacency decisions.
- * Matches the approved design (Image 5) with:
- * - Circular score indicator (e.g., 87/100)
- * - Pass badge
- * - Tabs: Red Flags | Bridges | Module Scores
- * - Module cards with progress bars
+ * 
+ * DATA FLOW:
+ * 1. User answers Layout Questions → saved to fyiData.mvpAdjacencyConfig.decisionAnswers
+ * 2. Each decision answer may enable bridges (via bridgeRequired field)
+ * 3. ValidationResultsPanel derives:
+ *    - REQUIRED bridges: From 15K benchmark preset (what this tier typically needs)
+ *    - PRESENT bridges: From user's actual decision answers (what they selected)
+ * 4. Red Flags are computed by checking adjacency matrix for violations
+ * 
+ * BRIDGES ARE DERIVED FROM DECISIONS, NOT MANUALLY TOGGLED
  * 
  * Follows N4S Brand Guide styling.
  */
 
 import React, { useState, useMemo, useContext, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, AlertTriangle, Play } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, Play, XCircle, Info } from 'lucide-react';
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
 import { 
   getPreset,
   applyDecisionsToMatrix,
-  getDecisionsForPreset
+  ADJACENCY_DECISIONS
 } from '../../mansion-program';
 
 // N4S Brand Colors (from Brand Guide)
@@ -35,34 +40,106 @@ const COLORS = {
   error: '#d32f2f',
 };
 
-// Module definitions
+// Module definitions - which spaces belong to each validation module
 const MODULES = [
   { id: 'module-01', name: 'Kitchen Rules Engine', spaces: ['KIT', 'CHEF', 'SCUL', 'BKF', 'DR'] },
   { id: 'module-02', name: 'Entertaining Spine', spaces: ['GR', 'DR', 'WINE', 'FOY', 'TERR'] },
   { id: 'module-03', name: 'Primary Suite Ecosystem', spaces: ['PRI', 'PRIBATH', 'PRICL', 'PRILOUNGE'] },
   { id: 'module-04', name: 'Guest Wing Logic', spaces: ['GUEST1', 'GUEST2', 'GUEST3', 'GST1', 'GST2'] },
-  { id: 'module-05', name: 'Media & Acoustic Control', spaces: ['MEDIA', 'THR'] },
+  { id: 'module-05', name: 'Media & Acoustic Control', spaces: ['MEDIA', 'THR', 'FR'] },
   { id: 'module-06', name: 'Service Spine', spaces: ['SCUL', 'MUD', 'LND', 'MEP', 'GAR'] },
   { id: 'module-07', name: 'Wellness Program', spaces: ['GYM', 'SPA', 'POOL', 'WLINK', 'POOLSUP'] },
-  { id: 'module-08', name: 'Staff Layer', spaces: ['STF', 'STFQ'] },
+  { id: 'module-08', name: 'Staff Layer', spaces: ['STF', 'STFQ', 'OPSCORE'] },
 ];
 
-// Bridge definitions
+// Bridge definitions with decision mappings
 const BRIDGES = [
-  { id: 'butlerPantry', name: 'Butler Pantry', description: 'Service staging between kitchen and dining' },
-  { id: 'guestAutonomy', name: 'Guest Autonomy', description: 'Independent guest suite access' },
-  { id: 'soundLock', name: 'Sound Lock', description: 'Acoustic buffer for media spaces' },
-  { id: 'wetFeetIntercept', name: 'Wet-Feet Intercept', description: 'Pool to house transition zone' },
-  { id: 'opsCore', name: 'Ops Core', description: 'Service entry and operations hub' },
+  { 
+    id: 'butlerPantry', 
+    name: 'Butler Pantry', 
+    description: 'Service staging between kitchen and dining',
+    enabledBy: ['kitchen-family-connect', 'dining-entertaining']
+  },
+  { 
+    id: 'guestAutonomy', 
+    name: 'Guest Autonomy', 
+    description: 'Independent guest suite access',
+    enabledBy: ['guest-independence']
+  },
+  { 
+    id: 'soundLock', 
+    name: 'Sound Lock', 
+    description: 'Acoustic buffer for media spaces',
+    enabledBy: ['media-bedroom-separation']
+  },
+  { 
+    id: 'wetFeetIntercept', 
+    name: 'Wet-Feet Intercept', 
+    description: 'Pool to house transition zone',
+    enabledBy: ['wellness-placement']
+  },
+  { 
+    id: 'opsCore', 
+    name: 'Ops Core', 
+    description: 'Service entry and operations hub',
+    enabledBy: ['service-access']
+  },
 ];
 
-// Red Flag definitions
+// Red Flag definitions with actual matrix checks
 const RED_FLAGS = [
-  { id: 'rf-1', name: 'Guest → Primary Suite', check: 'PRI not accessible through guest zones' },
-  { id: 'rf-2', name: 'Delivery → FOH', check: 'Garage/service not through formal zones' },
-  { id: 'rf-3', name: 'Zone3 Wall → Zone0', check: 'Media acoustically separated from bedrooms' },
-  { id: 'rf-4', name: 'No Show Kitchen', check: 'Kitchen not directly at entry' },
-  { id: 'rf-5', name: 'Guest → Kitchen Aisle', check: 'Guests not routed through kitchen' },
+  { 
+    id: 'rf-1', 
+    name: 'Guest → Primary Suite', 
+    description: 'Primary suite should not be directly accessible from guest areas',
+    check: (matrix) => {
+      // PRI should be B or S from GUEST1
+      const rel = matrix['GUEST1-PRI'] || matrix['PRI-GUEST1'];
+      return rel === 'A' || rel === 'N';
+    }
+  },
+  { 
+    id: 'rf-2', 
+    name: 'Delivery → Front of House', 
+    description: 'Service/garage should not connect through formal areas',
+    check: (matrix) => {
+      // GAR should be S from FOY, GR, DR
+      const garFoy = matrix['GAR-FOY'] || matrix['FOY-GAR'];
+      const garGr = matrix['GAR-GR'] || matrix['GR-GAR'];
+      return garFoy === 'A' || garFoy === 'N' || garGr === 'A';
+    }
+  },
+  { 
+    id: 'rf-3', 
+    name: 'Media → Bedroom Bleed', 
+    description: 'Media room should be acoustically separated from bedrooms',
+    check: (matrix) => {
+      // MEDIA should be S from PRI, GUEST1
+      const mediaPri = matrix['MEDIA-PRI'] || matrix['PRI-MEDIA'];
+      const mediaGuest = matrix['MEDIA-GUEST1'] || matrix['GUEST1-MEDIA'];
+      return mediaPri === 'A' || mediaPri === 'N' || mediaGuest === 'A' || mediaGuest === 'N';
+    }
+  },
+  { 
+    id: 'rf-4', 
+    name: 'Kitchen at Entry', 
+    description: 'Kitchen should not be the first thing visible from entry',
+    check: (matrix) => {
+      // KIT should be B or S from FOY
+      const kitFoy = matrix['KIT-FOY'] || matrix['FOY-KIT'];
+      return kitFoy === 'A';
+    }
+  },
+  { 
+    id: 'rf-5', 
+    name: 'Guest Through Kitchen', 
+    description: 'Guest circulation should not route through kitchen work zones',
+    check: (matrix) => {
+      // GUEST should be S from KIT
+      const guestKit = matrix['GUEST1-KIT'] || matrix['KIT-GUEST1'];
+      return guestKit === 'A' || guestKit === 'N';
+    }
+  },
 ];
 
 /**
@@ -73,11 +150,11 @@ function ScoreCircle({ score, size = 120 }) {
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
   const dashoffset = circumference - progress;
+  const scoreColor = score >= 80 ? COLORS.success : score >= 60 ? COLORS.warning : COLORS.error;
   
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -86,13 +163,12 @@ function ScoreCircle({ score, size = 120 }) {
           stroke={COLORS.border}
           strokeWidth="8"
         />
-        {/* Progress circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={COLORS.success}
+          stroke={scoreColor}
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -143,7 +219,7 @@ function ProgressBar({ score, threshold = 80 }) {
 /**
  * Module Score Card
  */
-function ModuleCard({ module, score, checklistCompleted = 0, checklistTotal = 0 }) {
+function ModuleCard({ module, score, deviationCount = 0 }) {
   const passed = score >= 80;
   
   return (
@@ -168,23 +244,39 @@ function ModuleCard({ module, score, checklistCompleted = 0, checklistTotal = 0 
         </span>
       </div>
       <ProgressBar score={score} />
-      <div style={{ fontSize: '0.75rem', color: COLORS.textMuted, marginTop: '0.5rem' }}>
-        {checklistCompleted} / {checklistTotal} checklist items
-      </div>
+      {deviationCount > 0 && (
+        <div style={{ fontSize: '0.75rem', color: COLORS.warning, marginTop: '0.5rem' }}>
+          {deviationCount} deviation{deviationCount !== 1 ? 's' : ''} from benchmark
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Bridge Card
+ * Bridge Card with actual status
  */
 function BridgeCard({ bridge, required, present }) {
-  const status = !required ? 'not-required' : present ? 'present' : 'missing';
+  let status, statusColor, statusBg;
+  
+  if (!required) {
+    status = 'Not Required';
+    statusColor = COLORS.textMuted;
+    statusBg = '#f5f5f5';
+  } else if (present) {
+    status = 'Present';
+    statusColor = COLORS.success;
+    statusBg = '#e8f5e9';
+  } else {
+    status = 'Missing';
+    statusColor = COLORS.error;
+    statusBg = '#ffebee';
+  }
   
   return (
     <div style={{
       backgroundColor: COLORS.surface,
-      border: `1px solid ${COLORS.border}`,
+      border: `1px solid ${required && !present ? COLORS.error : COLORS.border}`,
       borderRadius: '8px',
       padding: '1rem',
       marginBottom: '0.75rem',
@@ -199,12 +291,25 @@ function BridgeCard({ bridge, required, present }) {
           borderRadius: '4px',
           fontSize: '0.75rem',
           fontWeight: 500,
-          backgroundColor: status === 'present' ? '#e8f5e9' : status === 'missing' ? '#ffebee' : '#f5f5f5',
-          color: status === 'present' ? COLORS.success : status === 'missing' ? COLORS.error : COLORS.textMuted,
+          backgroundColor: statusBg,
+          color: statusColor,
         }}>
-          {status === 'present' ? 'Present' : status === 'missing' ? 'Missing' : 'Not Required'}
+          {status}
         </span>
       </div>
+      {required && !present && (
+        <div style={{ 
+          marginTop: '0.5rem', 
+          fontSize: '0.75rem', 
+          color: COLORS.error,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}>
+          <Info size={12} />
+          Enable via Layout Questions to add this bridge
+        </div>
+      )}
     </div>
   );
 }
@@ -215,17 +320,31 @@ function BridgeCard({ bridge, required, present }) {
 function RedFlagCard({ flag, triggered }) {
   return (
     <div style={{
-      backgroundColor: triggered ? '#ffebee' : COLORS.surface,
-      border: `1px solid ${triggered ? COLORS.error : COLORS.border}`,
+      backgroundColor: triggered ? '#ffebee' : '#e8f5e9',
+      border: `1px solid ${triggered ? COLORS.error : COLORS.success}`,
       borderRadius: '8px',
       padding: '1rem',
       marginBottom: '0.75rem',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <AlertTriangle size={18} color={triggered ? COLORS.error : COLORS.success} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+        {triggered ? (
+          <XCircle size={20} color={COLORS.error} style={{ flexShrink: 0 }} />
+        ) : (
+          <CheckCircle size={20} color={COLORS.success} style={{ flexShrink: 0 }} />
+        )}
         <div>
           <div style={{ fontWeight: 500, color: COLORS.text }}>{flag.name}</div>
-          <div style={{ fontSize: '0.8125rem', color: COLORS.textMuted }}>{flag.check}</div>
+          <div style={{ fontSize: '0.8125rem', color: COLORS.textMuted }}>{flag.description}</div>
+          {triggered && (
+            <div style={{ 
+              marginTop: '0.5rem', 
+              fontSize: '0.75rem', 
+              color: COLORS.error,
+              fontWeight: 500
+            }}>
+              ⚠ Resolve via Edit Decisions
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -253,19 +372,29 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
     }
   }, [preset]);
 
-  // Get saved decisions
-  const savedDecisions = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
+  // Get saved decision answers from user's Layout Questions
+  const savedDecisions = useMemo(() => {
+    return fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
+  }, [fyiData?.mvpAdjacencyConfig?.decisionAnswers]);
+  
+  const hasDecisions = Object.keys(savedDecisions).length > 0;
 
-  // Build matrices
-  const { benchmarkMatrix, proposedMatrix } = useMemo(() => {
-    if (!presetData?.adjacencyMatrix) return { benchmarkMatrix: {}, proposedMatrix: {} };
-    
-    const benchmark = {};
+  // Build benchmark matrix lookup
+  const benchmarkMatrix = useMemo(() => {
+    if (!presetData?.adjacencyMatrix) return {};
+    const lookup = {};
     presetData.adjacencyMatrix.forEach(adj => {
       if (adj.fromSpaceCode && adj.toSpaceCode) {
-        benchmark[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
+        lookup[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
       }
     });
+    return lookup;
+  }, [presetData]);
+
+  // Build proposed matrix from user's decisions
+  const proposedMatrix = useMemo(() => {
+    if (!presetData?.adjacencyMatrix) return benchmarkMatrix;
+    if (!hasDecisions) return benchmarkMatrix; // No decisions = use benchmark
     
     const choices = Object.entries(savedDecisions).map(([decisionId, optionId]) => ({
       decisionId,
@@ -275,15 +404,14 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
     }));
     
     const applied = applyDecisionsToMatrix(presetData.adjacencyMatrix, choices);
-    const proposed = {};
+    const lookup = {};
     applied.forEach(adj => {
       if (adj.fromSpaceCode && adj.toSpaceCode) {
-        proposed[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
+        lookup[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
       }
     });
-    
-    return { benchmarkMatrix: benchmark, proposedMatrix: proposed };
-  }, [presetData, savedDecisions]);
+    return lookup;
+  }, [presetData, savedDecisions, hasDecisions, benchmarkMatrix]);
 
   // Find deviations
   const deviations = useMemo(() => {
@@ -299,15 +427,52 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
     return devs;
   }, [benchmarkMatrix, proposedMatrix]);
 
+  // Derive enabled bridges from user's actual decision selections
+  const enabledBridges = useMemo(() => {
+    if (!hasDecisions) return new Set();
+    
+    const enabled = new Set();
+    
+    // Check each saved decision for bridgeRequired
+    Object.entries(savedDecisions).forEach(([decisionId, optionId]) => {
+      // Find the decision
+      const decision = ADJACENCY_DECISIONS?.find(d => d.id === decisionId);
+      if (decision) {
+        // Find the selected option
+        const option = decision.options.find(o => o.id === optionId);
+        if (option?.bridgeRequired) {
+          enabled.add(option.bridgeRequired);
+        }
+      }
+    });
+    
+    return enabled;
+  }, [savedDecisions, hasDecisions]);
+
+  // Bridge status - compare benchmark requirement vs user's selections
+  const bridgeStatus = useMemo(() => {
+    return BRIDGES.map(bridge => ({
+      ...bridge,
+      required: presetData?.bridgeConfig?.[bridge.id] || false,
+      present: enabledBridges.has(bridge.id),
+    }));
+  }, [presetData, enabledBridges]);
+
+  // Red flag detection - check actual adjacency matrix
+  const redFlagStatus = useMemo(() => {
+    return RED_FLAGS.map(flag => ({
+      ...flag,
+      triggered: flag.check(proposedMatrix),
+    }));
+  }, [proposedMatrix]);
+
   // Calculate module scores
   const moduleScores = useMemo(() => {
     return MODULES.map(mod => {
-      // Count deviations affecting this module
       const moduleDeviations = deviations.filter(dev => 
         mod.spaces.includes(dev.fromSpace) || mod.spaces.includes(dev.toSpace)
       );
       
-      // Count benchmark relationships for this module
       let benchmarkCount = 0;
       Object.keys(benchmarkMatrix).forEach(key => {
         const [from, to] = key.split('-');
@@ -316,66 +481,50 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
         }
       });
       
-      // Calculate score (100% minus deviation penalty)
       const deviationPenalty = benchmarkCount > 0 
-        ? (moduleDeviations.length / benchmarkCount) * 100
+        ? (moduleDeviations.length / benchmarkCount) * 50
         : 0;
-      const score = Math.max(0, Math.round(100 - deviationPenalty * 2));
+      const score = Math.max(0, Math.round(100 - deviationPenalty));
       
       return {
         ...mod,
         score,
         passed: score >= 80,
         deviationCount: moduleDeviations.length,
-        checklistCompleted: 0,
-        checklistTotal: 0,
       };
     });
   }, [deviations, benchmarkMatrix]);
 
   // Calculate overall score
   const overallScore = useMemo(() => {
-    if (moduleScores.length === 0) return 0;
-    return Math.round(moduleScores.reduce((sum, m) => sum + m.score, 0) / moduleScores.length);
-  }, [moduleScores]);
-
-  // Bridge status
-  const bridgeStatus = useMemo(() => {
-    if (!presetData?.bridgeConfig) return [];
-    return BRIDGES.map(bridge => ({
-      ...bridge,
-      required: presetData.bridgeConfig[bridge.id] || false,
-      present: presetData.bridgeConfig[bridge.id] || false, // For now, assume present if required
-    }));
-  }, [presetData]);
-
-  // Red flag status (simplified - all passing for now)
-  const redFlagStatus = useMemo(() => {
-    return RED_FLAGS.map(flag => ({
-      ...flag,
-      triggered: false,
-    }));
-  }, []);
+    if (moduleScores.length === 0) return 100;
+    const base = Math.round(moduleScores.reduce((sum, m) => sum + m.score, 0) / moduleScores.length);
+    // Penalty for triggered red flags
+    const flagPenalty = redFlagStatus.filter(rf => rf.triggered).length * 5;
+    return Math.max(0, base - flagPenalty);
+  }, [moduleScores, redFlagStatus]);
 
   // Run validation
   const handleRunValidation = useCallback(() => {
     setHasRun(true);
     setValidationTime(new Date().toLocaleString());
     
-    // Save validation results to context
     if (updateMVPAdjacencyConfig) {
       updateMVPAdjacencyConfig({
         validationRunAt: new Date().toISOString(),
         validationResults: {
           overallScore,
           moduleScores: moduleScores.map(m => ({ id: m.id, score: m.score })),
+          redFlagsTriggered: redFlagStatus.filter(rf => rf.triggered).map(rf => rf.id),
+          bridgesEnabled: Array.from(enabledBridges),
         }
       });
     }
-  }, [overallScore, moduleScores, updateMVPAdjacencyConfig]);
+  }, [overallScore, moduleScores, redFlagStatus, enabledBridges, updateMVPAdjacencyConfig]);
 
-  const allPassed = moduleScores.every(m => m.passed);
-  const triggeredRedFlags = redFlagStatus.filter(rf => rf.triggered).length;
+  const triggeredRedFlags = redFlagStatus.filter(rf => rf.triggered);
+  const missingBridges = bridgeStatus.filter(b => b.required && !b.present);
+  const allPassed = triggeredRedFlags.length === 0 && overallScore >= 80;
 
   return (
     <div className="vrp-container">
@@ -383,15 +532,32 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
       <div className="vrp-header">
         <button className="vrp-back-btn" onClick={onBack}>
           <ArrowLeft size={16} />
-          Back
+          Back to MVP Overview
         </button>
         <div className="vrp-title-row">
           <h1 className="vrp-title">Validation Results</h1>
           {preset && <span className="vrp-tier-badge">{preset.toUpperCase()} TIER</span>}
         </div>
+        {baseSF && (
+          <p className="vrp-subtitle">Target: {baseSF.toLocaleString()} SF</p>
+        )}
       </div>
 
       <div className="vrp-content">
+        {/* No decisions warning */}
+        {!hasDecisions && (
+          <div className="vrp-warning-card">
+            <AlertTriangle size={20} color={COLORS.warning} />
+            <div>
+              <strong>No Layout Decisions Found</strong>
+              <p>Complete the Layout Questions to personalize your adjacency matrix. Currently showing benchmark defaults.</p>
+              <button className="vrp-link-btn" onClick={onEditDecisions}>
+                Answer Layout Questions →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Run Validation Button */}
         {!hasRun && (
           <div className="vrp-run-card">
@@ -400,7 +566,7 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
               Run Validation
             </button>
             <p className="vrp-run-hint">
-              Click to validate your adjacency selections against the N4S {preset?.toUpperCase()} benchmark.
+              Validate your adjacency selections against the N4S {preset?.toUpperCase()} benchmark.
             </p>
           </div>
         )}
@@ -413,15 +579,25 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
               <ScoreCircle score={overallScore} />
               <div className="vrp-score-info">
                 <span className={`vrp-pass-badge ${allPassed ? 'pass' : 'warning'}`}>
-                  <CheckCircle size={16} />
+                  {allPassed ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
                   {allPassed ? 'Pass' : 'Review Needed'}
                 </span>
                 <div className="vrp-score-details">
-                  <CheckCircle size={16} color={COLORS.success} />
-                  <span>All gates passed</span>
+                  {allPassed ? (
+                    <>
+                      <CheckCircle size={16} color={COLORS.success} />
+                      <span>All gates passed</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle size={16} color={COLORS.warning} />
+                      <span>Some items need attention</span>
+                    </>
+                  )}
                 </div>
                 <div className="vrp-score-meta">
-                  {triggeredRedFlags} critical issues, {deviations.length} warnings
+                  {triggeredRedFlags.length} red flag{triggeredRedFlags.length !== 1 ? 's' : ''}, 
+                  {' '}{deviations.length} deviation{deviations.length !== 1 ? 's' : ''}
                 </div>
                 {validationTime && (
                   <div className="vrp-timestamp">Validated at {validationTime}</div>
@@ -435,13 +611,13 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
                 className={`vrp-tab ${activeTab === 'redflags' ? 'active' : ''}`}
                 onClick={() => setActiveTab('redflags')}
               >
-                Red Flags ({triggeredRedFlags})
+                Red Flags ({triggeredRedFlags.length})
               </button>
               <button 
                 className={`vrp-tab ${activeTab === 'bridges' ? 'active' : ''}`}
                 onClick={() => setActiveTab('bridges')}
               >
-                Bridges ({bridgeStatus.filter(b => b.required).length})
+                Bridges ({enabledBridges.size}/{bridgeStatus.filter(b => b.required).length})
               </button>
               <button 
                 className={`vrp-tab ${activeTab === 'modules' ? 'active' : ''}`}
@@ -455,9 +631,17 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
             <div className="vrp-tab-content">
               {activeTab === 'redflags' && (
                 <div>
-                  {redFlagStatus.map(flag => (
-                    <RedFlagCard key={flag.id} flag={flag} triggered={flag.triggered} />
-                  ))}
+                  {redFlagStatus.length === 0 ? (
+                    <p className="vrp-empty">No red flag rules defined.</p>
+                  ) : (
+                    redFlagStatus.map(flag => (
+                      <RedFlagCard 
+                        key={flag.id} 
+                        flag={flag} 
+                        triggered={flag.triggered} 
+                      />
+                    ))
+                  )}
                 </div>
               )}
 
@@ -471,6 +655,14 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
                       present={bridge.present}
                     />
                   ))}
+                  {missingBridges.length > 0 && (
+                    <div className="vrp-bridge-hint">
+                      <Info size={14} />
+                      <span>
+                        Missing bridges can be enabled by selecting appropriate options in Layout Questions.
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -481,8 +673,7 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
                       key={module.id} 
                       module={module}
                       score={module.score}
-                      checklistCompleted={module.checklistCompleted}
-                      checklistTotal={module.checklistTotal}
+                      deviationCount={module.deviationCount}
                     />
                   ))}
                 </div>
@@ -497,7 +688,7 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
                 </button>
               )}
               {onEditDecisions && (
-                <button className="vrp-secondary-btn" onClick={onEditDecisions}>
+                <button className="vrp-primary-btn" onClick={onEditDecisions}>
                   Edit Decisions
                 </button>
               )}
@@ -569,10 +760,52 @@ const componentStyles = `
   font-weight: 600;
 }
 
+.vrp-subtitle {
+  font-size: 0.875rem;
+  color: ${COLORS.textMuted};
+  margin-top: 0.25rem;
+}
+
 .vrp-content {
   padding: 1.5rem;
   max-width: 800px;
   margin: 0 auto;
+}
+
+.vrp-warning-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #fff8e1;
+  border: 1px solid ${COLORS.warning};
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.vrp-warning-card strong {
+  display: block;
+  color: ${COLORS.text};
+  margin-bottom: 0.25rem;
+}
+
+.vrp-warning-card p {
+  font-size: 0.875rem;
+  color: ${COLORS.textMuted};
+  margin: 0 0 0.5rem 0;
+}
+
+.vrp-link-btn {
+  background: none;
+  border: none;
+  color: ${COLORS.navy};
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vrp-link-btn:hover {
+  text-decoration: underline;
 }
 
 .vrp-run-card {
@@ -709,6 +942,24 @@ const componentStyles = `
   min-height: 300px;
 }
 
+.vrp-empty {
+  text-align: center;
+  color: ${COLORS.textMuted};
+  padding: 2rem;
+}
+
+.vrp-bridge-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  color: #1565c0;
+  margin-top: 0.5rem;
+}
+
 .vrp-actions {
   display: flex;
   justify-content: flex-end;
@@ -735,5 +986,24 @@ const componentStyles = `
 
 .vrp-secondary-btn:hover {
   border-color: ${COLORS.navy};
+}
+
+.vrp-primary-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrp-primary-btn:hover {
+  opacity: 0.9;
 }
 `;
