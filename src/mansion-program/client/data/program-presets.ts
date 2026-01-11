@@ -540,86 +540,210 @@ Key Design Principles:
 // ============================================================================
 
 const adjacencyMatrix15k: AdjacencyRequirement[] = [
-  // FOY relationships
-  { fromSpaceCode: "FOY", toSpaceCode: "OFF", relationship: "A" },
-  { fromSpaceCode: "FOY", toSpaceCode: "GR", relationship: "A" },
-  { fromSpaceCode: "FOY", toSpaceCode: "DR", relationship: "N" },
-  { fromSpaceCode: "FOY", toSpaceCode: "WINE", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "FR", relationship: "B" },
-  { fromSpaceCode: "FOY", toSpaceCode: "KIT", relationship: "B" },
-  { fromSpaceCode: "FOY", toSpaceCode: "CHEF", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "SCUL", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "MUD", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "LIB", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "MEDIA", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "WLINK", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "GYM", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "SPA", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "TERR", relationship: "S" },
-  { fromSpaceCode: "FOY", toSpaceCode: "POOL", relationship: "S" },
-  // OFF relationships
-  { fromSpaceCode: "OFF", toSpaceCode: "FOY", relationship: "A" },
-  { fromSpaceCode: "OFF", toSpaceCode: "GR", relationship: "S" },
-  { fromSpaceCode: "OFF", toSpaceCode: "DR", relationship: "S" },
-  // GR relationships
-  { fromSpaceCode: "GR", toSpaceCode: "FOY", relationship: "A" },
-  { fromSpaceCode: "GR", toSpaceCode: "TERR", relationship: "N" },
-  // DR relationships
-  { fromSpaceCode: "DR", toSpaceCode: "FOY", relationship: "N" },
-  { fromSpaceCode: "DR", toSpaceCode: "WINE", relationship: "A" },
-  { fromSpaceCode: "DR", toSpaceCode: "CHEF", relationship: "B" },
-  // CHEF relationships (Chef's Kitchen - service kitchen for formal dining)
-  { fromSpaceCode: "CHEF", toSpaceCode: "DR", relationship: "B" },
-  { fromSpaceCode: "CHEF", toSpaceCode: "SCUL", relationship: "A" },
-  { fromSpaceCode: "CHEF", toSpaceCode: "KIT", relationship: "N" },
-  { fromSpaceCode: "CHEF", toSpaceCode: "FOY", relationship: "S" },
-  // WINE relationships
-  { fromSpaceCode: "WINE", toSpaceCode: "DR", relationship: "A" },
-  { fromSpaceCode: "WINE", toSpaceCode: "SCUL", relationship: "B" },
-  // FR relationships
-  { fromSpaceCode: "FR", toSpaceCode: "FOY", relationship: "B" },
-  { fromSpaceCode: "FR", toSpaceCode: "KIT", relationship: "A" },
-  { fromSpaceCode: "FR", toSpaceCode: "LIB", relationship: "A" },
-  { fromSpaceCode: "FR", toSpaceCode: "MEDIA", relationship: "B" },
-  { fromSpaceCode: "FR", toSpaceCode: "WLINK", relationship: "A" },
-  { fromSpaceCode: "FR", toSpaceCode: "TERR", relationship: "A" },
-  // KIT relationships
-  { fromSpaceCode: "KIT", toSpaceCode: "FOY", relationship: "B" },
-  { fromSpaceCode: "KIT", toSpaceCode: "FR", relationship: "A" },
-  { fromSpaceCode: "KIT", toSpaceCode: "BKF", relationship: "A" },
-  { fromSpaceCode: "KIT", toSpaceCode: "SCUL", relationship: "A" },
-  { fromSpaceCode: "KIT", toSpaceCode: "CHEF", relationship: "N" },
-  { fromSpaceCode: "KIT", toSpaceCode: "MUD", relationship: "N" },
-  { fromSpaceCode: "KIT", toSpaceCode: "TERR", relationship: "N" },
-  // SCUL relationships
-  { fromSpaceCode: "SCUL", toSpaceCode: "KIT", relationship: "A" },
-  { fromSpaceCode: "SCUL", toSpaceCode: "CHEF", relationship: "A" },
-  { fromSpaceCode: "SCUL", toSpaceCode: "MUD", relationship: "A" },
-  { fromSpaceCode: "SCUL", toSpaceCode: "WINE", relationship: "B" },
-  // MUD relationships
-  { fromSpaceCode: "MUD", toSpaceCode: "SCUL", relationship: "A" },
-  { fromSpaceCode: "MUD", toSpaceCode: "KIT", relationship: "N" },
-  // WLINK relationships
-  { fromSpaceCode: "WLINK", toSpaceCode: "FR", relationship: "A" },
-  { fromSpaceCode: "WLINK", toSpaceCode: "GYM", relationship: "A" },
-  { fromSpaceCode: "WLINK", toSpaceCode: "SPA", relationship: "A" },
-  // GYM relationships
-  { fromSpaceCode: "GYM", toSpaceCode: "WLINK", relationship: "A" },
-  { fromSpaceCode: "GYM", toSpaceCode: "SPA", relationship: "N" },
-  // SPA relationships
-  { fromSpaceCode: "SPA", toSpaceCode: "WLINK", relationship: "A" },
-  { fromSpaceCode: "SPA", toSpaceCode: "GYM", relationship: "N" },
-  { fromSpaceCode: "SPA", toSpaceCode: "POOL", relationship: "A" },
-  // TERR relationships
-  { fromSpaceCode: "TERR", toSpaceCode: "FR", relationship: "A" },
-  { fromSpaceCode: "TERR", toSpaceCode: "POOL", relationship: "A" },
-  { fromSpaceCode: "TERR", toSpaceCode: "GR", relationship: "N" },
-  { fromSpaceCode: "TERR", toSpaceCode: "KIT", relationship: "N" },
-  // Acoustic separations
-  { fromSpaceCode: "MEDIA", toSpaceCode: "PRI", relationship: "S" },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 1: ARRIVAL + FORMAL (FOY, OFF, GR, DR, WINE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // FOY (Foyer) - Entry control point
+  { fromSpaceCode: "FOY", toSpaceCode: "OFF", relationship: "A" },   // Office near entry for professional separation
+  { fromSpaceCode: "FOY", toSpaceCode: "GR", relationship: "A" },    // Direct formal access
+  { fromSpaceCode: "FOY", toSpaceCode: "DR", relationship: "N" },    // Near but not direct to dining
+  { fromSpaceCode: "FOY", toSpaceCode: "WINE", relationship: "S" },  // Wine hidden from entry
+  { fromSpaceCode: "FOY", toSpaceCode: "FR", relationship: "B" },    // Buffered from family zone
+  { fromSpaceCode: "FOY", toSpaceCode: "KIT", relationship: "B" },   // RED FLAG: Buffered, not adjacent
+  { fromSpaceCode: "FOY", toSpaceCode: "CHEF", relationship: "S" },  // Service kitchen separate
+  { fromSpaceCode: "FOY", toSpaceCode: "SCUL", relationship: "S" },  // Service separate
+  { fromSpaceCode: "FOY", toSpaceCode: "MUD", relationship: "S" },   // Service entry separate
+  { fromSpaceCode: "FOY", toSpaceCode: "LIB", relationship: "S" },   // Library in family zone
+  { fromSpaceCode: "FOY", toSpaceCode: "MEDIA", relationship: "S" }, // Media in family zone
+  { fromSpaceCode: "FOY", toSpaceCode: "WLINK", relationship: "S" }, // Wellness separate
+  { fromSpaceCode: "FOY", toSpaceCode: "GYM", relationship: "S" },   // Wellness separate
+  { fromSpaceCode: "FOY", toSpaceCode: "SPA", relationship: "S" },   // Wellness separate
+  { fromSpaceCode: "FOY", toSpaceCode: "TERR", relationship: "S" },  // Outdoor separate from formal entry
+  { fromSpaceCode: "FOY", toSpaceCode: "POOL", relationship: "S" },  // Pool separate
+  { fromSpaceCode: "FOY", toSpaceCode: "PRI", relationship: "S" },   // RED FLAG #1: Primary suite isolated
+  { fromSpaceCode: "FOY", toSpaceCode: "GUEST1", relationship: "B" },// Guest access buffered from entry
+  
+  // OFF (Office) - Professional separation
+  { fromSpaceCode: "OFF", toSpaceCode: "FOY", relationship: "A" },   // Adjacent to entry
+  { fromSpaceCode: "OFF", toSpaceCode: "GR", relationship: "S" },    // Separate from formal living
+  { fromSpaceCode: "OFF", toSpaceCode: "DR", relationship: "S" },    // Separate from dining
+  { fromSpaceCode: "OFF", toSpaceCode: "PRI", relationship: "S" },   // Separate from primary
+  
+  // GR (Great Room) - Formal showcase
+  { fromSpaceCode: "GR", toSpaceCode: "FOY", relationship: "A" },    // Direct from entry
+  { fromSpaceCode: "GR", toSpaceCode: "DR", relationship: "N" },     // Near dining for entertaining flow
+  { fromSpaceCode: "GR", toSpaceCode: "TERR", relationship: "N" },   // View axis to terrace
+  { fromSpaceCode: "GR", toSpaceCode: "FR", relationship: "B" },     // Buffered from casual
+  
+  // DR (Dining Room) - Formal dining
+  { fromSpaceCode: "DR", toSpaceCode: "FOY", relationship: "N" },    // Near entry
+  { fromSpaceCode: "DR", toSpaceCode: "GR", relationship: "N" },     // Near great room
+  { fromSpaceCode: "DR", toSpaceCode: "WINE", relationship: "A" },   // Wine adjacent for service
+  { fromSpaceCode: "DR", toSpaceCode: "CHEF", relationship: "B" },   // BRIDGE: Butler pantry connection
+  { fromSpaceCode: "DR", toSpaceCode: "KIT", relationship: "B" },    // Not directly to show kitchen
+  
+  // WINE (Wine Storage)
+  { fromSpaceCode: "WINE", toSpaceCode: "DR", relationship: "A" },   // Adjacent to dining
+  { fromSpaceCode: "WINE", toSpaceCode: "SCUL", relationship: "B" }, // Service access buffered
+  { fromSpaceCode: "WINE", toSpaceCode: "CHEF", relationship: "N" }, // Near service kitchen
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 2: FAMILY HUB (FR, KIT, BKF, LIB, MEDIA)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // FR (Family Room) - Daily living hub
+  { fromSpaceCode: "FR", toSpaceCode: "FOY", relationship: "B" },    // Buffered from formal entry
+  { fromSpaceCode: "FR", toSpaceCode: "GR", relationship: "B" },     // Buffered from formal
+  { fromSpaceCode: "FR", toSpaceCode: "KIT", relationship: "A" },    // Open to kitchen
+  { fromSpaceCode: "FR", toSpaceCode: "BKF", relationship: "A" },    // Adjacent to breakfast
+  { fromSpaceCode: "FR", toSpaceCode: "LIB", relationship: "A" },    // Adjacent to library
+  { fromSpaceCode: "FR", toSpaceCode: "MEDIA", relationship: "B" },  // Buffered for acoustics
+  { fromSpaceCode: "FR", toSpaceCode: "WLINK", relationship: "A" },  // BRIDGE: Wellness link access
+  { fromSpaceCode: "FR", toSpaceCode: "TERR", relationship: "A" },   // Direct outdoor access
+  { fromSpaceCode: "FR", toSpaceCode: "POOL", relationship: "N" },   // Near pool
+  
+  // KIT (Show Kitchen) - Family kitchen
+  { fromSpaceCode: "KIT", toSpaceCode: "FOY", relationship: "B" },   // RED FLAG: Buffered from entry
+  { fromSpaceCode: "KIT", toSpaceCode: "FR", relationship: "A" },    // Open to family room
+  { fromSpaceCode: "KIT", toSpaceCode: "BKF", relationship: "A" },   // Adjacent to breakfast
+  { fromSpaceCode: "KIT", toSpaceCode: "SCUL", relationship: "A" },  // Adjacent to scullery
+  { fromSpaceCode: "KIT", toSpaceCode: "CHEF", relationship: "N" },  // Near chef's kitchen
+  { fromSpaceCode: "KIT", toSpaceCode: "MUD", relationship: "N" },   // Near mudroom
+  { fromSpaceCode: "KIT", toSpaceCode: "TERR", relationship: "N" },  // Near terrace
+  { fromSpaceCode: "KIT", toSpaceCode: "GUEST1", relationship: "S" },// RED FLAG #5: Guest not through kitchen
+  { fromSpaceCode: "KIT", toSpaceCode: "DR", relationship: "B" },    // Buffered from formal dining
+  
+  // BKF (Breakfast)
+  { fromSpaceCode: "BKF", toSpaceCode: "KIT", relationship: "A" },   // Adjacent to kitchen
+  { fromSpaceCode: "BKF", toSpaceCode: "FR", relationship: "A" },    // Adjacent to family
+  { fromSpaceCode: "BKF", toSpaceCode: "TERR", relationship: "N" },  // Near outdoor
+  
+  // LIB (Library)
+  { fromSpaceCode: "LIB", toSpaceCode: "FR", relationship: "A" },    // Adjacent to family
+  { fromSpaceCode: "LIB", toSpaceCode: "OFF", relationship: "B" },   // Buffered from office
+  
+  // MEDIA (Media Room)
+  { fromSpaceCode: "MEDIA", toSpaceCode: "FR", relationship: "B" },  // BRIDGE: Sound lock
+  { fromSpaceCode: "MEDIA", toSpaceCode: "PRI", relationship: "S" }, // RED FLAG #3: Acoustic separation
   { fromSpaceCode: "MEDIA", toSpaceCode: "GUEST1", relationship: "S" },
   { fromSpaceCode: "MEDIA", toSpaceCode: "GUEST2", relationship: "S" },
-  { fromSpaceCode: "MEDIA", toSpaceCode: "GUEST3", relationship: "S" }
+  { fromSpaceCode: "MEDIA", toSpaceCode: "GUEST3", relationship: "S" },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 7: SERVICE CORE (CHEF, SCUL, MUD, GAR, LND, MEP)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // CHEF (Chef's Kitchen) - Service kitchen for formal dining
+  { fromSpaceCode: "CHEF", toSpaceCode: "DR", relationship: "B" },   // Buffered from dining
+  { fromSpaceCode: "CHEF", toSpaceCode: "SCUL", relationship: "A" }, // Adjacent to scullery
+  { fromSpaceCode: "CHEF", toSpaceCode: "KIT", relationship: "N" },  // Near show kitchen
+  { fromSpaceCode: "CHEF", toSpaceCode: "FOY", relationship: "S" },  // Separate from entry
+  { fromSpaceCode: "CHEF", toSpaceCode: "WINE", relationship: "N" }, // Near wine
+  
+  // SCUL (Scullery) - Service hub
+  { fromSpaceCode: "SCUL", toSpaceCode: "KIT", relationship: "A" },  // Adjacent to kitchen
+  { fromSpaceCode: "SCUL", toSpaceCode: "CHEF", relationship: "A" }, // Adjacent to chef's
+  { fromSpaceCode: "SCUL", toSpaceCode: "MUD", relationship: "A" },  // BRIDGE: Ops core
+  { fromSpaceCode: "SCUL", toSpaceCode: "WINE", relationship: "B" }, // Buffered wine access
+  { fromSpaceCode: "SCUL", toSpaceCode: "LND", relationship: "N" },  // Near laundry
+  
+  // MUD (Mudroom) - Daily entry
+  { fromSpaceCode: "MUD", toSpaceCode: "SCUL", relationship: "A" },  // BRIDGE: Ops core connection
+  { fromSpaceCode: "MUD", toSpaceCode: "KIT", relationship: "N" },   // Near kitchen
+  { fromSpaceCode: "MUD", toSpaceCode: "GAR", relationship: "A" },   // Adjacent to garage
+  { fromSpaceCode: "MUD", toSpaceCode: "LND", relationship: "N" },   // Near laundry
+  
+  // GAR (Garage)
+  { fromSpaceCode: "GAR", toSpaceCode: "MUD", relationship: "A" },   // Adjacent to mudroom
+  { fromSpaceCode: "GAR", toSpaceCode: "FOY", relationship: "S" },   // RED FLAG #2: Not through FOH
+  { fromSpaceCode: "GAR", toSpaceCode: "GR", relationship: "S" },    // RED FLAG #2: Not through FOH
+  { fromSpaceCode: "GAR", toSpaceCode: "DR", relationship: "S" },    // RED FLAG #2: Not through FOH
+  
+  // LND (Laundry)
+  { fromSpaceCode: "LND", toSpaceCode: "MUD", relationship: "N" },   // Near mudroom
+  { fromSpaceCode: "LND", toSpaceCode: "SCUL", relationship: "N" },  // Near scullery
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 4: WELLNESS (WLINK, GYM, SPA, POOL, POOLSUP)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // WLINK (Wellness Link) - Transition zone
+  { fromSpaceCode: "WLINK", toSpaceCode: "FR", relationship: "A" },  // Adjacent to family
+  { fromSpaceCode: "WLINK", toSpaceCode: "GYM", relationship: "A" }, // Adjacent to gym
+  { fromSpaceCode: "WLINK", toSpaceCode: "SPA", relationship: "A" }, // Adjacent to spa
+  { fromSpaceCode: "WLINK", toSpaceCode: "POOLSUP", relationship: "A" }, // BRIDGE: Wet-feet intercept
+  
+  // GYM (Gym)
+  { fromSpaceCode: "GYM", toSpaceCode: "WLINK", relationship: "A" }, // Adjacent to link
+  { fromSpaceCode: "GYM", toSpaceCode: "SPA", relationship: "N" },   // Near spa
+  { fromSpaceCode: "GYM", toSpaceCode: "TERR", relationship: "N" },  // Near outdoor
+  
+  // SPA (Spa)
+  { fromSpaceCode: "SPA", toSpaceCode: "WLINK", relationship: "A" }, // Adjacent to link
+  { fromSpaceCode: "SPA", toSpaceCode: "GYM", relationship: "N" },   // Near gym
+  { fromSpaceCode: "SPA", toSpaceCode: "POOL", relationship: "A" },  // Adjacent to pool
+  { fromSpaceCode: "SPA", toSpaceCode: "POOLSUP", relationship: "A" },// Adjacent to pool support
+  
+  // POOLSUP (Pool Support) - Wet-feet intercept
+  { fromSpaceCode: "POOLSUP", toSpaceCode: "POOL", relationship: "A" },
+  { fromSpaceCode: "POOLSUP", toSpaceCode: "SPA", relationship: "A" },
+  { fromSpaceCode: "POOLSUP", toSpaceCode: "WLINK", relationship: "A" },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 8: OUTDOOR (TERR, POOL)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // TERR (Terrace)
+  { fromSpaceCode: "TERR", toSpaceCode: "FR", relationship: "A" },   // Adjacent to family
+  { fromSpaceCode: "TERR", toSpaceCode: "POOL", relationship: "A" }, // Adjacent to pool
+  { fromSpaceCode: "TERR", toSpaceCode: "GR", relationship: "N" },   // Near great room
+  { fromSpaceCode: "TERR", toSpaceCode: "KIT", relationship: "N" },  // Near kitchen
+  { fromSpaceCode: "TERR", toSpaceCode: "BKF", relationship: "N" },  // Near breakfast
+  { fromSpaceCode: "TERR", toSpaceCode: "GYM", relationship: "N" },  // Near gym
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 5: PRIMARY SUITE (PRI, PRIBATH, PRICL, PRILOUNGE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // PRI (Primary Bedroom) - Isolated sanctuary
+  { fromSpaceCode: "PRI", toSpaceCode: "PRIBATH", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "PRICL", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "PRILOUNGE", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "FOY", relationship: "S" },   // RED FLAG #1: Isolated from entry
+  { fromSpaceCode: "PRI", toSpaceCode: "GUEST1", relationship: "B" },// RED FLAG #1: Buffered from guests
+  { fromSpaceCode: "PRI", toSpaceCode: "GUEST2", relationship: "B" },
+  { fromSpaceCode: "PRI", toSpaceCode: "MEDIA", relationship: "S" }, // Acoustic separation
+  
+  // PRIBATH (Primary Bath)
+  { fromSpaceCode: "PRIBATH", toSpaceCode: "PRI", relationship: "A" },
+  { fromSpaceCode: "PRIBATH", toSpaceCode: "PRICL", relationship: "N" },
+  
+  // PRICL (Primary Closet)
+  { fromSpaceCode: "PRICL", toSpaceCode: "PRI", relationship: "A" },
+  { fromSpaceCode: "PRICL", toSpaceCode: "PRIBATH", relationship: "N" },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZONE 6: GUEST SUITES (GUEST1, GUEST2, GUEST3)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // GUEST1 (Guest Suite 1) - Can be Jr. Primary
+  { fromSpaceCode: "GUEST1", toSpaceCode: "GUEST2", relationship: "N" },// Near other guests
+  { fromSpaceCode: "GUEST1", toSpaceCode: "PRI", relationship: "B" },  // Buffered from primary
+  { fromSpaceCode: "GUEST1", toSpaceCode: "FOY", relationship: "B" },  // Buffered from entry
+  { fromSpaceCode: "GUEST1", toSpaceCode: "KIT", relationship: "S" },  // RED FLAG #5: Not through kitchen
+  { fromSpaceCode: "GUEST1", toSpaceCode: "MEDIA", relationship: "S" },// Acoustic separation
+  
+  // GUEST2 (Guest Suite 2)
+  { fromSpaceCode: "GUEST2", toSpaceCode: "GUEST1", relationship: "N" },
+  { fromSpaceCode: "GUEST2", toSpaceCode: "GUEST3", relationship: "N" },
+  { fromSpaceCode: "GUEST2", toSpaceCode: "PRI", relationship: "B" },
+  { fromSpaceCode: "GUEST2", toSpaceCode: "MEDIA", relationship: "S" },
+  
+  // GUEST3 (Guest Suite 3)
+  { fromSpaceCode: "GUEST3", toSpaceCode: "GUEST2", relationship: "N" },
+  { fromSpaceCode: "GUEST3", toSpaceCode: "PRI", relationship: "B" },
+  { fromSpaceCode: "GUEST3", toSpaceCode: "MEDIA", relationship: "S" }
 ];
 
 const nodes15k: CirculationNode[] = [
