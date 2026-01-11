@@ -2,9 +2,10 @@ import React, { useState, useCallback } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown, Save
+  ChevronDown, Save, FileText
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
+import KYCDocumentation from './KYCDocumentation';
 
 // Import section components
 import PortfolioContextSection from './sections/PortfolioContextSection';
@@ -34,6 +35,8 @@ const KYCModule = () => {
   } = useAppContext();
 
   const [saveMessage, setSaveMessage] = useState(null);
+  const [viewMode, setViewMode] = useState('main'); // 'main' | 'docs'
+  const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
 
   // SAVE HANDLER
   const handleSave = useCallback(async () => {
@@ -165,9 +168,6 @@ const KYCModule = () => {
     }
   };
 
-  // State for remaining sections dropdown
-  const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
-
   // Get incomplete sections for the dropdown
   const incompleteSections = visibleSections.filter(section => {
     const status = getSectionCompletionStatus(activeRespondent, section.id);
@@ -175,6 +175,11 @@ const KYCModule = () => {
   });
 
   const completionPercentage = calculateCompleteness(activeRespondent);
+
+  // If in docs mode, show documentation
+  if (viewMode === 'docs') {
+    return <KYCDocumentation onClose={() => setViewMode('main')} />;
+  }
 
   return (
     <div className="kyc-module">
@@ -269,8 +274,19 @@ const KYCModule = () => {
       <div className="kyc-module__layout">
         {/* Section Navigation */}
         <nav className="kyc-module__nav">
-          <h3 className="kyc-module__nav-title">Module A: KYC</h3>
-          <p className="kyc-module__nav-subtitle">Know Your Client</p>
+          <div className="kyc-module__nav-header">
+            <div>
+              <h3 className="kyc-module__nav-title">Module A: KYC</h3>
+              <p className="kyc-module__nav-subtitle">Know Your Client</p>
+            </div>
+            <button 
+              className="kyc-module__docs-btn"
+              onClick={() => setViewMode('docs')}
+              title="View Documentation"
+            >
+              <FileText size={14} />
+            </button>
+          </div>
 
           {/* Remaining Sections Dropdown */}
           {completionPercentage < 100 && incompleteSections.length > 0 && (

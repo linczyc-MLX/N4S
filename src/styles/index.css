@@ -1035,6 +1035,74 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   margin: -8px 0 16px 0;
   padding: 0 16px;
 }
+
+/* KYC Nav Header with Docs Button */
+.kyc-module__nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.kyc-module__nav-header .kyc-module__nav-title {
+  padding: 0;
+  margin: 0;
+}
+
+.kyc-module__nav-header .kyc-module__nav-subtitle {
+  padding: 0;
+  margin: 4px 0 0 0;
+}
+
+.kyc-module__docs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.kyc-module__docs-btn:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+  background: var(--gray-50);
+}
+
+/* FYI Documentation Button */
+.fyi-module__docs-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  color: var(--gray-600);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fyi-module__docs-btn:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+  background: var(--gray-50);
+}
+
+.fyi-module__docs-btn svg {
+  flex-shrink: 0;
+}
+
 .kyc-nav-item__code {
   font-family: monospace;
   font-size: 0.7rem;
