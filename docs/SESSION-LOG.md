@@ -1034,3 +1034,144 @@ CHANGES:
 - updateMVPChecklistItem() for checklist persistence
 - TasteReportGenerator reads actual profile.scores
 ```
+
+---
+
+## Session: January 11, 2026 - Documentation System & Module Colors
+
+### User Request
+1. Add Documentation button to top header bar (not inside module)
+2. Fix transparent header bar (should be solid)
+3. Add Dashboard documentation with full journey overview
+4. Fix KYC documentation not rendering
+5. Apply distinct module colors from Soft Pillow palette
+
+### Implementation
+
+#### 1. Documentation System Architecture
+
+**Props flow:**
+```
+App.jsx (manages showDocs state)
+    ↓
+Module components receive: showDocs, onCloseDocs
+    ↓
+Each module renders [Module]Documentation.jsx when showDocs=true
+```
+
+**Documentation button moved to main header bar** (`App.jsx`):
+- Appears next to Settings gear icon
+- Only shows for modules with docs (dashboard, kyc, fyi, mvp)
+- Controlled by `modulesWithDocs` array
+
+**Files with Documentation:**
+| Module | Component | Lines |
+|--------|-----------|-------|
+| Dashboard | DashboardDocumentation.jsx | ~1,700 |
+| KYC | KYCDocumentation.jsx | ~1,720 |
+| FYI | FYIDocumentation.jsx | ~1,641 |
+| MVP | MVPDocumentation.jsx | ~1,970 |
+
+#### 2. Dashboard Documentation (NEW)
+
+Created comprehensive `DashboardDocumentation.jsx` with 4 tabs:
+
+**Overview Tab:**
+- What is N4S (luxury residential advisory platform)
+- Value proposition (4 key benefits)
+- Journey preview: KYC → FYI → MVP → KYM → VMX
+- User types (Families, Advisors, Architects)
+
+**Workflow Tab:**
+- Complete module breakdown with timing estimates
+- KYC: 2-4 hours, 7 key sections
+- FYI: 1-2 hours, zone-based organization  
+- MVP: 30-60 min, validation and scoring
+- KYM: Placeholder (Coming Soon) - market benchmarking
+- VMX: Placeholder (Coming Soon) - visual adjacency diagrams
+- Typical 3-week timeline
+
+**Gates Tab:**
+- Gate 0: KYC Complete (unlocks FYI)
+- Gate 1: Program Complete (unlocks MVP)
+- Gate 2: Adjacency Validated (ready for design team)
+- Future gates for KYM and VMX
+- Cost-to-change curve visualization
+
+**Reference Tab:**
+- Module quick reference table
+- Tier definitions (5K/10K/15K/20K)
+- Respondent types (Principal/Secondary)
+- Data flow diagram
+- Glossary of terms
+
+#### 3. Header Bar Fixes
+
+**CSS changes (`index.css`):**
+```css
+.main-header {
+  background: var(--navy);  /* Solid, not transparent */
+  z-index: 100;             /* Above content when scrolling */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+```
+
+**Button styling:**
+- Documentation button: white text/border on dark backgrounds
+- Settings button: matches Documentation button style
+- Both adapt to light/dark backgrounds automatically
+
+#### 4. Module Colors - Soft Pillow Palette
+
+**Final approved colors (App.jsx):**
+| Module | Background | Text | Color Name |
+|--------|------------|------|------------|
+| Dashboard | #1e3a5f | white | Navy (kept) |
+| KYC | #315098 | white | Deep Blue |
+| FYI | #8CA8BE | dark | Steel Blue |
+| MVP | #AFBDB0 | dark | Sage Green |
+| KYM | #E4C0BE | dark | Dusty Rose |
+| VMX | #FBD0E0 | dark | Light Pink |
+| Settings | #374151 | white | Gray (kept) |
+
+**Dynamic text/button colors:**
+- Light backgrounds (#8CA8BE, #AFBDB0, #E4C0BE, #FBD0E0) use dark text (#1a1a1a)
+- Dark backgrounds (#1e3a5f, #315098, #374151) use white text (#ffffff)
+- Header buttons adapt automatically based on background
+
+#### 5. React Hooks Fixes
+
+Fixed React Hooks violations in KYC and FYI modules:
+- Hooks must be called in same order every render
+- Moved docs return after all hook declarations
+- Consolidated duplicate useState declarations
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/App.jsx` | Module colors, header docs button, showDocs state |
+| `src/components/Dashboard.jsx` | Accept showDocs/onCloseDocs props |
+| `src/components/DashboardDocumentation.jsx` | NEW - Full 4-tab docs |
+| `src/components/KYC/KYCModule.jsx` | Hooks fixes, props handling |
+| `src/components/FYI/FYIModule.jsx` | Hooks fixes, props handling |
+| `src/components/MVP/MVPModule.jsx` | Remove internal docs button, use props |
+| `src/styles/index.css` | Header bar solid styling |
+| `docs/N4S-BRAND-GUIDE.md` | Updated Section 13 with Soft Pillow palette |
+
+### Commits Made
+
+1. `e7f6550` - Move Documentation button to main header bar + Dashboard docs
+2. `4a00e2b` - Fix React Hooks violations in KYC and FYI modules
+3. `c306d9e` - Apply standard N4S brand formatting to Dashboard Documentation
+4. `eaf395b` - Revert to approved Brand Guide module header colors (solid)
+5. `a4092a2` - Apply Soft Pillow palette to module header colors
+
+### Brand Guide Updates
+
+Updated Section 13 with Soft Pillow palette:
+- Version: 1.2
+- Date: January 11, 2026
+- Change: Updated Module Colors to Soft Pillow palette
+
+---
