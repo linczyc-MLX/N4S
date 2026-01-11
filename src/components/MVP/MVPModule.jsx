@@ -2,16 +2,16 @@ import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
-  Building, Layers, ArrowRight, FileText, Sparkles, BookOpen,
-  GitCompare, Play, Database
+  Building, Layers, ArrowRight, Sparkles, BookOpen,
+  GitCompare, Play, Database, List
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
-import BriefingBuilderView from './BriefingBuilderView';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import ModuleLibraryView from './ModuleLibraryView';
 import AdjacencyComparisonGrid from './AdjacencyComparisonGrid';
 import ValidationResultsPanel from './ValidationResultsPanel';
 import TierDataAdmin from './TierDataAdmin';
+import ProgramSummaryView from './ProgramSummaryView';
 import { 
   transformKYCToMVPBrief, 
   getMVPBriefSummary, 
@@ -149,7 +149,7 @@ const MVPModule = ({ onNavigate }) => {
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'builder' | 'admin'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin'
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -312,21 +312,11 @@ const MVPModule = ({ onNavigate }) => {
     );
   }
 
-  // If in builder mode, show Briefing Builder
-  if (viewMode === 'builder') {
+  // If in program summary mode, show Program Summary View
+  if (viewMode === 'program') {
     return (
-      <BriefingBuilderView
-        kycData={kycData}
-        mvpData={briefInputs}
-        fyiProgram={fyiProgram}
-        tasteProfile={tasteProfileP}
-        projectId={projectId}
-        projectName={projectName}
+      <ProgramSummaryView
         onBack={() => setViewMode('overview')}
-        onSave={(brief) => {
-          console.log('Brief saved:', brief);
-          setViewMode('overview');
-        }}
       />
     );
   }
@@ -677,11 +667,11 @@ const MVPModule = ({ onNavigate }) => {
             Run Validation
           </button>
           <button
-            onClick={() => setViewMode('builder')}
+            onClick={() => setViewMode('program')}
             className="n4s-btn n4s-btn--secondary"
           >
-            <FileText />
-            Briefing Builder
+            <List />
+            Program Summary
           </button>
           <button
             onClick={() => setViewMode('admin')}
