@@ -1,5 +1,68 @@
 # N4S Session Log
 
+## Session: January 11, 2026 - 15K Matrix Enhancement + P1-M Testing
+
+### Objective
+Enhance 15K adjacency matrix for complete Red Flag and Bridge coverage. Test with Thornwood Estate.
+
+### Changes Implemented
+
+#### 1. 15K Adjacency Matrix Enhancement (`program-presets.ts`)
+
+**Expanded from 57 → 125 relationships**
+
+**Red Flag Coverage:**
+| Red Flag | Relationship | Status |
+|----------|--------------|--------|
+| #1 Guest→Primary Suite | PRI→FOY: S, PRI→GUEST: B | ✅ |
+| #2 Delivery→FOH | GAR→FOY/GR/DR: S | ✅ |
+| #3 Zone3 Wall→Zone0 | MEDIA→PRI/GUEST: S | ✅ |
+| #4 No Show Kitchen | KIT→FOY: B | ✅ |
+| #5 Guest→Kitchen Aisle | GUEST→KIT: S | ✅ |
+
+**Bridge Coverage:**
+| Bridge | Relationship | Status |
+|--------|--------------|--------|
+| Butler Pantry | DR→CHEF: B | ✅ |
+| Guest Autonomy | GUEST1→FOY: B | ✅ |
+| Sound Lock | FR→MEDIA: B | ✅ |
+| Wet-Feet Intercept | WLINK→POOLSUP: A | ✅ |
+| Ops Core | MUD→SCUL: A | ✅ |
+
+**Zone Organization:**
+- Z1: Arrival + Formal (FOY, OFF, GR, DR, WINE) - 18 relationships
+- Z2: Family Hub (FR, KIT, BKF, LIB, MEDIA) - 25 relationships
+- Z4: Wellness (WLINK, GYM, SPA, POOL, POOLSUP) - 15 relationships
+- Z5: Primary Suite (PRI, PRIBATH, PRICL, PRILOUNGE) - 12 relationships
+- Z6: Guest Suites (GUEST1, GUEST2, GUEST3) - 12 relationships
+- Z7: Service Core (CHEF, SCUL, MUD, GAR, LND) - 23 relationships
+- Z8: Outdoor (TERR, POOL) - 6 relationships
+
+#### 2. P1-M Workflow Test Suite
+
+**scripts/test-p1m.js** - Node.js test runner
+- Tier detection verification
+- Benchmark matrix loading
+- Module scoring algorithm
+- Deviation impact calculation
+
+**Test Results:**
+```
+Thornwood Estate @ 15K SF
+├── Tier Detection: ✓ 15K
+├── Benchmark: 125 relationships
+├── Baseline Score: 100/100
+├── With 1 Deviation: 98/100 (-2 points)
+└── All 8 Modules: ✓ Pass (80% threshold)
+```
+
+### Files Changed
+- `src/mansion-program/client/data/program-presets.ts` - 15K matrix (57→125 relationships)
+- `scripts/test-p1m.js` - Node.js test runner (new)
+- `src/mansion-program/test/p1m-workflow-test.ts` - TypeScript test (new)
+
+---
+
 ## Session: January 11, 2026 - MVP P1-M Workflow (Phase 2: Views & Navigation)
 
 ### Objective
