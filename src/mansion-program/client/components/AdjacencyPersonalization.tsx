@@ -26,9 +26,11 @@ import './AdjacencyPersonalization.css';
 
 export interface AdjacencyPersonalizationProps {
   kyc: KYCResponse;
-  preset: '10k' | '15k' | '20k';
+  preset: '5k' | '10k' | '15k' | '20k';
   baseSF: number;
   baseMatrix: AdjacencyRequirement[];
+  savedDecisions?: Record<string, string>;  // Previously saved decisions to restore
+  onDecisionChange?: (decisionId: string, optionId: string) => void;  // Called on each change
   onComplete: (result: PersonalizationOutput) => void;
   onCancel: () => void;
   onViewDiagram?: () => void;
@@ -49,6 +51,8 @@ export function AdjacencyPersonalization({
   preset,
   baseSF,
   baseMatrix,
+  savedDecisions,
+  onDecisionChange,
   onComplete,
   onCancel,
   onViewDiagram
@@ -63,11 +67,12 @@ export function AdjacencyPersonalization({
     [kyc, preset]
   );
   
-  // Initialize selections from recommendations
+  // Initialize selections from savedDecisions (if available) or recommendations
   const [selections, setSelections] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const rec of recommendations) {
-      initial[rec.decision.id] = rec.recommendedOption.id;
+      // Use saved decision if available, otherwise use recommendation
+      initial[rec.decision.id] = savedDecisions?.[rec.decision.id] || rec.recommendedOption.id;
     }
     return initial;
   });
@@ -91,6 +96,7 @@ export function AdjacencyPersonalization({
   // Get preset name
   const presetName = useMemo(() => {
     const names: Record<string, string> = {
+      '5k': '5,000 SF',
       '10k': '10,000 SF',
       '15k': '15,000 SF',
       '20k': '20,000 SF'
@@ -104,7 +110,11 @@ export function AdjacencyPersonalization({
       ...prev,
       [decisionId]: optionId
     }));
-  }, []);
+    // Notify parent for persistence
+    if (onDecisionChange) {
+      onDecisionChange(decisionId, optionId);
+    }
+  }, [onDecisionChange]);
   
   const handleExpandDecision = useCallback((decisionId: string) => {
     setDetailDecisionId(decisionId);

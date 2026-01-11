@@ -50,7 +50,7 @@ export interface EvaluationResult {
  */
 export function recommendAdjacencies(
   kyc: KYCResponse,
-  preset: '10k' | '15k' | '20k'
+  preset: '5k' | '10k' | '15k' | '20k'
 ): RecommendedDecision[] {
   const decisions = getDecisionsForPreset(preset);
   const recommendations: RecommendedDecision[] = [];

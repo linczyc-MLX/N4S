@@ -1,5 +1,112 @@
 # N4S Session Log
 
+## Session: January 11, 2026 - MVP Adjacency Phase 1 (5K Preset + Context Wiring)
+
+### Objective
+Implement P1-M workflow foundation: 5K adjacency preset and wire decision persistence to IONOS backend.
+
+### Changes Implemented
+
+#### 1. 5K Adjacency Preset (`src/mansion-program/client/data/program-presets.ts`)
+
+**New 5K Preset Added (Compact Luxury):**
+- Target: 5,000 SF | 4 bedrooms | single-level living | pool
+- 34 spaces (matching FYI 5K tier)
+- Simplified adjacency matrix (no wine room, library, chef's kitchen)
+- Two-node circulation strategy
+- Bridge config: wetFeetIntercept + opsCore only
+
+**Key 5K Relationships:**
+```typescript
+adjacencyMatrix5k: AdjacencyRequirement[] = [
+  // Entry control - Office near entry for professional separation
+  { fromSpaceCode: "FOY", toSpaceCode: "OFF", relationship: "A" },
+  // Open kitchen-family connection
+  { fromSpaceCode: "KIT", toSpaceCode: "FR", relationship: "A" },
+  // Service spine
+  { fromSpaceCode: "SCUL", toSpaceCode: "MUD", relationship: "A" },
+  // Media acoustic separation from bedrooms
+  { fromSpaceCode: "MEDIA", toSpaceCode: "PRI", relationship: "S" },
+  // ... 60+ total relationships
+]
+```
+
+#### 2. Adjacency Decisions Updated (`src/mansion-program/shared/adjacency-decisions.ts`)
+
+**5K Tier Support:**
+- Type definition: `applicablePresets: ('5k' | '10k' | '15k' | '20k')[]`
+- Most decisions now include 5K
+- Excluded from 5K: `wine-access` (no wine room at tier)
+- `getDecisionsForPreset()` accepts '5k'
+
+#### 3. MVP Data Persistence (`src/contexts/AppContext.jsx`)
+
+**New Data Structure in fyiData:**
+```javascript
+mvpAdjacencyConfig: {
+  tier: null,                    // '5k' | '10k' | '15k' | '20k'
+  decisionAnswers: {},           // { [decisionId]: optionId }
+  questionnaireCompletedAt: null,
+  validationRunAt: null,
+  validationResults: null,       // Cached validation results
+}
+```
+
+**New Context Functions:**
+- `updateMVPAdjacencyConfig(updates)` - Update full config
+- `updateMVPDecisionAnswer(decisionId, optionId)` - Save single decision
+
+#### 4. AdjacencyPersonalizationView Updated
+
+**New Props Flow:**
+- Loads `savedDecisions` from `fyiData.mvpAdjacencyConfig.decisionAnswers`
+- Calls `onDecisionChange` on each selection (immediate persistence)
+- Saves completion timestamp on finish
+
+**Data Flow:**
+```
+fyiData.mvpAdjacencyConfig.decisionAnswers → AdjacencyPersonalization
+                 ↓ (on change)
+updateMVPDecisionAnswer → fyiData → IONOS backend
+```
+
+#### 5. AdjacencyPersonalization.tsx Updated
+
+**New Props:**
+```typescript
+interface AdjacencyPersonalizationProps {
+  preset: '5k' | '10k' | '15k' | '20k';  // Added 5k
+  savedDecisions?: Record<string, string>;  // NEW: restore previous
+  onDecisionChange?: (decisionId: string, optionId: string) => void;  // NEW
+  // ... existing props
+}
+```
+
+**State Initialization:**
+```typescript
+const [selections, setSelections] = useState(() => {
+  // Use saved decision if available, otherwise use recommendation
+  initial[rec.decision.id] = savedDecisions?.[rec.decision.id] 
+    || rec.recommendedOption.id;
+});
+```
+
+### Files Changed
+- `src/mansion-program/client/data/program-presets.ts` - Added 5K preset
+- `src/mansion-program/shared/adjacency-decisions.ts` - Added 5K support
+- `src/mansion-program/client/components/AdjacencyPersonalization.tsx` - New props
+- `src/mansion-program/server/adjacency-recommender.ts` - 5K type support
+- `src/contexts/AppContext.jsx` - New mvpAdjacencyConfig structure
+- `src/components/MVP/AdjacencyPersonalizationView.jsx` - Context integration
+
+### Next Steps (Phase 2)
+1. Build read-only Adjacency Comparison Grid (Desired vs Proposed toggle)
+2. Build Validation Results Panel (matching mockup)
+3. Build Deviation Warnings Summary
+4. Wire to MVP module navigation
+
+---
+
 ## Session: January 10, 2026 - 5K Tier Implementation & FYI Display Simplification
 
 ### Objective

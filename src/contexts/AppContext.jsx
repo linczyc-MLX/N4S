@@ -102,7 +102,15 @@ const initialFYIData = {
   selections: {},  // { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
   // MVP data stored here because PHP backend only saves known fields (clientData, kycData, fyiData)
   mvpChecklistState: {},  // { [checklistItemId]: boolean }
-  mvpAdjacencyDecisions: {},  // { [decisionKey]: value }
+  mvpAdjacencyDecisions: {},  // DEPRECATED - use mvpAdjacencyConfig
+  // Full MVP adjacency configuration
+  mvpAdjacencyConfig: {
+    tier: null,                    // '5k' | '10k' | '15k' | '20k' - auto-detected from FYI
+    decisionAnswers: {},           // { [decisionId]: optionId }
+    questionnaireCompletedAt: null,
+    validationRunAt: null,
+    validationResults: null,       // Cached validation results
+  },
 };
 
 // Initial MVP data
@@ -588,6 +596,49 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update MVP adjacency configuration (decisions, validation results, etc.)
+  // NOTE: Stored in fyiData because PHP backend only saves clientData, kycData, fyiData
+  const updateMVPAdjacencyConfig = useCallback((updates) => {
+    console.log('[APP] updateMVPAdjacencyConfig:', updates);
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        mvpAdjacencyConfig: {
+          ...prev.fyiData?.mvpAdjacencyConfig,
+          ...updates,
+          // Deep merge decisionAnswers if provided
+          ...(updates.decisionAnswers && {
+            decisionAnswers: {
+              ...prev.fyiData?.mvpAdjacencyConfig?.decisionAnswers,
+              ...updates.decisionAnswers,
+            },
+          }),
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
+  // Save a single adjacency decision answer
+  const updateMVPDecisionAnswer = useCallback((decisionId, optionId) => {
+    console.log('[APP] updateMVPDecisionAnswer:', decisionId, optionId);
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        mvpAdjacencyConfig: {
+          ...prev.fyiData?.mvpAdjacencyConfig,
+          decisionAnswers: {
+            ...prev.fyiData?.mvpAdjacencyConfig?.decisionAnswers,
+            [decisionId]: optionId,
+          },
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
   // ---------------------------------------------------------------------------
   // COMPLETION CALCULATIONS
   // ---------------------------------------------------------------------------
@@ -739,6 +790,8 @@ export const AppProvider = ({ children }) => {
     initializeFYISelections,
     updateMVPData,
     updateMVPChecklistItem,
+    updateMVPAdjacencyConfig,
+    updateMVPDecisionAnswer,
 
     // UI state
     activeRespondent,

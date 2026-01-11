@@ -1,13 +1,16 @@
 /**
- * AdjacencyPersonalizationView (Updated for Phase 5C)
+ * AdjacencyPersonalizationView (Updated for Phase 5D)
  * 
- * Now uses useKYCData hook for proper context integration.
- * Includes KYC completeness checking before allowing personalization.
+ * Now uses AppContext for persistence to IONOS backend.
+ * Decisions are saved in real-time as user makes selections.
+ * Loads previously saved decisions on mount.
  * 
- * REPLACE: src/components/MVP/AdjacencyPersonalizationView.jsx
+ * Data Flow:
+ * - Load: fyiData.mvpAdjacencyConfig.decisionAnswers → AdjacencyPersonalization
+ * - Save: AdjacencyPersonalization → updateMVPAdjacencyConfig → fyiData → IONOS
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useCallback, useContext } from 'react';
 import { 
   ArrowLeft, 
   AlertTriangle, 
@@ -16,7 +19,10 @@ import {
   Info
 } from 'lucide-react';
 
-// Import the hook
+// Import context
+import AppContext from '../../contexts/AppContext';
+
+// Import the hook for KYC data
 import { useKYCData } from '../../hooks/useKYCData';
 
 // Import from mansion-program TypeScript module
@@ -142,13 +148,24 @@ export default function AdjacencyPersonalizationView({
   onGoToKYC,
   showProgress = true
 }) {
-  // Use the hook to get all KYC data
+  // Get context for persistence
+  const { 
+    fyiData, 
+    updateMVPAdjacencyConfig,
+    updateMVPDecisionAnswer 
+  } = useContext(AppContext);
+  
+  // Use the hook to get KYC data
   const {
     kycResponse,
     preset,
     baseSF,
     completeness
   } = useKYCData();
+  
+  // Get saved decisions from context
+  const savedDecisions = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
+  const savedTier = fyiData?.mvpAdjacencyConfig?.tier;
   
   // Get base preset data
   const presetData = useMemo(() => {
@@ -162,13 +179,40 @@ export default function AdjacencyPersonalizationView({
   
   const baseMatrix = presetData?.adjacencyMatrix || [];
   
-  // Handle completion
-  const handleComplete = (result) => {
-    console.log('Personalization complete:', result);
+  // Update tier in context when it changes (from FYI settings)
+  useEffect(() => {
+    if (preset && preset !== savedTier) {
+      console.log('[AdjacencyView] Updating tier:', preset);
+      updateMVPAdjacencyConfig({ tier: preset });
+    }
+  }, [preset, savedTier, updateMVPAdjacencyConfig]);
+  
+  // Handle decision change - save to context immediately
+  const handleDecisionChange = useCallback((decisionId, optionId) => {
+    console.log('[AdjacencyView] Decision changed:', decisionId, optionId);
+    updateMVPDecisionAnswer(decisionId, optionId);
+  }, [updateMVPDecisionAnswer]);
+  
+  // Handle completion - save final state and timestamp
+  const handleComplete = useCallback((result) => {
+    console.log('[AdjacencyView] Personalization complete:', result);
+    
+    // Save completion timestamp and all choices
+    const decisionAnswers = {};
+    result.choices.forEach(choice => {
+      decisionAnswers[choice.decisionId] = choice.selectedOptionId;
+    });
+    
+    updateMVPAdjacencyConfig({
+      tier: preset,
+      decisionAnswers,
+      questionnaireCompletedAt: new Date().toISOString(),
+    });
+    
     if (onComplete) {
       onComplete(result);
     }
-  };
+  }, [preset, updateMVPAdjacencyConfig, onComplete]);
   
   // If preset data failed, show error
   if (!presetData) {
@@ -284,6 +328,8 @@ export default function AdjacencyPersonalizationView({
         preset={preset}
         baseSF={baseSF}
         baseMatrix={baseMatrix}
+        savedDecisions={savedDecisions}
+        onDecisionChange={handleDecisionChange}
         onComplete={handleComplete}
         onCancel={onBack}
         onViewDiagram={onViewDiagram}

@@ -16,6 +16,251 @@ export interface ProgramPreset {
 }
 
 // ============================================================================
+// 5,000 SF PRESET (Compact Luxury)
+// ============================================================================
+
+const adjacencyMatrix5k: AdjacencyRequirement[] = [
+  // FOY relationships - Entry control point
+  { fromSpaceCode: "FOY", toSpaceCode: "OFF", relationship: "A" },
+  { fromSpaceCode: "FOY", toSpaceCode: "GR", relationship: "A" },
+  { fromSpaceCode: "FOY", toSpaceCode: "DR", relationship: "N" },
+  { fromSpaceCode: "FOY", toSpaceCode: "FR", relationship: "B" },
+  { fromSpaceCode: "FOY", toSpaceCode: "KIT", relationship: "B" },
+  { fromSpaceCode: "FOY", toSpaceCode: "SCUL", relationship: "S" },
+  { fromSpaceCode: "FOY", toSpaceCode: "MUD", relationship: "S" },
+  { fromSpaceCode: "FOY", toSpaceCode: "MEDIA", relationship: "S" },
+  { fromSpaceCode: "FOY", toSpaceCode: "TERR", relationship: "S" },
+  { fromSpaceCode: "FOY", toSpaceCode: "GYM", relationship: "S" },
+  { fromSpaceCode: "FOY", toSpaceCode: "POOL", relationship: "S" },
+  // OFF relationships - Near entry for professional separation
+  { fromSpaceCode: "OFF", toSpaceCode: "FOY", relationship: "A" },
+  { fromSpaceCode: "OFF", toSpaceCode: "GR", relationship: "S" },
+  { fromSpaceCode: "OFF", toSpaceCode: "DR", relationship: "S" },
+  // GR relationships - Formal showcase
+  { fromSpaceCode: "GR", toSpaceCode: "FOY", relationship: "A" },
+  { fromSpaceCode: "GR", toSpaceCode: "TERR", relationship: "N" },
+  { fromSpaceCode: "GR", toSpaceCode: "DR", relationship: "N" },
+  // DR relationships - Formal dining
+  { fromSpaceCode: "DR", toSpaceCode: "FOY", relationship: "N" },
+  { fromSpaceCode: "DR", toSpaceCode: "GR", relationship: "N" },
+  { fromSpaceCode: "DR", toSpaceCode: "KIT", relationship: "B" },
+  { fromSpaceCode: "DR", toSpaceCode: "SCUL", relationship: "N" },
+  // FR relationships - Family hub
+  { fromSpaceCode: "FR", toSpaceCode: "FOY", relationship: "B" },
+  { fromSpaceCode: "FR", toSpaceCode: "KIT", relationship: "A" },
+  { fromSpaceCode: "FR", toSpaceCode: "MEDIA", relationship: "N" },
+  { fromSpaceCode: "FR", toSpaceCode: "TERR", relationship: "A" },
+  { fromSpaceCode: "FR", toSpaceCode: "GYM", relationship: "N" },
+  // KIT relationships - Open to family, service to back
+  { fromSpaceCode: "KIT", toSpaceCode: "FOY", relationship: "B" },
+  { fromSpaceCode: "KIT", toSpaceCode: "FR", relationship: "A" },
+  { fromSpaceCode: "KIT", toSpaceCode: "BKF", relationship: "A" },
+  { fromSpaceCode: "KIT", toSpaceCode: "SCUL", relationship: "A" },
+  { fromSpaceCode: "KIT", toSpaceCode: "DR", relationship: "B" },
+  { fromSpaceCode: "KIT", toSpaceCode: "MUD", relationship: "N" },
+  { fromSpaceCode: "KIT", toSpaceCode: "TERR", relationship: "N" },
+  // SCUL relationships - Service spine
+  { fromSpaceCode: "SCUL", toSpaceCode: "KIT", relationship: "A" },
+  { fromSpaceCode: "SCUL", toSpaceCode: "MUD", relationship: "A" },
+  { fromSpaceCode: "SCUL", toSpaceCode: "DR", relationship: "N" },
+  // MUD relationships - Entry buffer
+  { fromSpaceCode: "MUD", toSpaceCode: "SCUL", relationship: "A" },
+  { fromSpaceCode: "MUD", toSpaceCode: "KIT", relationship: "N" },
+  { fromSpaceCode: "MUD", toSpaceCode: "GAR", relationship: "A" },
+  // MEDIA relationships - Acoustic control
+  { fromSpaceCode: "MEDIA", toSpaceCode: "FR", relationship: "N" },
+  { fromSpaceCode: "MEDIA", toSpaceCode: "PRI", relationship: "S" },
+  { fromSpaceCode: "MEDIA", toSpaceCode: "GST1", relationship: "S" },
+  { fromSpaceCode: "MEDIA", toSpaceCode: "GST2", relationship: "S" },
+  // GYM relationships - Connected to family zone
+  { fromSpaceCode: "GYM", toSpaceCode: "FR", relationship: "N" },
+  { fromSpaceCode: "GYM", toSpaceCode: "POOLSUP", relationship: "A" },
+  // TERR relationships - Outdoor living
+  { fromSpaceCode: "TERR", toSpaceCode: "FR", relationship: "A" },
+  { fromSpaceCode: "TERR", toSpaceCode: "POOL", relationship: "A" },
+  { fromSpaceCode: "TERR", toSpaceCode: "GR", relationship: "N" },
+  { fromSpaceCode: "TERR", toSpaceCode: "KIT", relationship: "N" },
+  // Primary Suite - Isolated from main living
+  { fromSpaceCode: "PRI", toSpaceCode: "PRIBATH", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "PRICL_HIS", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "PRICL_HER", relationship: "A" },
+  { fromSpaceCode: "PRI", toSpaceCode: "GST1", relationship: "B" },
+  { fromSpaceCode: "PRI", toSpaceCode: "MEDIA", relationship: "S" },
+  // Guest Suites - Clustered
+  { fromSpaceCode: "GST1", toSpaceCode: "GST2", relationship: "N" },
+  { fromSpaceCode: "GST2", toSpaceCode: "GST3", relationship: "N" },
+  { fromSpaceCode: "GST1", toSpaceCode: "PRI", relationship: "B" }
+];
+
+const nodes5k: CirculationNode[] = [
+  {
+    id: "node-1",
+    name: "Node 1: Entry + Formal",
+    description: "Arrival, formal entertaining, and office",
+    spaceCodes: ["FOY", "OFF", "GR", "DR", "PWD"]
+  },
+  {
+    id: "node-2",
+    name: "Node 2: Family Hub + Service",
+    description: "Daily living, kitchen, media, and service",
+    spaceCodes: ["FR", "KIT", "BKF", "SCUL", "MUD", "MEDIA", "TERR", "GYM", "POOLSUP"]
+  }
+];
+
+const crossLinks5k: CrossLink[] = [
+  { id: "cl-1", number: 1, name: "Formal View Axis", description: "Great Room to Terrace", fromSpaceCode: "GR", toSpaceCode: "TERR", purpose: "Near connection for formal view" },
+  { id: "cl-2", number: 2, name: "Daily Connector", description: "Foyer to Family", fromSpaceCode: "FOY", toSpaceCode: "FR", purpose: "Buffered daily connector" },
+  { id: "cl-3", number: 3, name: "Service Link", description: "Dining to Scullery", fromSpaceCode: "DR", toSpaceCode: "SCUL", purpose: "Near service connection" }
+];
+
+const preset5kSpaces: BriefSpace[] = [
+  // Level 1: Entry + Formal (~775 SF)
+  { id: "s1", code: "FOY", name: "Foyer / Gallery", targetSF: 200, zone: "Entry + Formal", level: 1, rationale: "Efficient arrival with coat storage" },
+  { id: "s2", code: "PWD", name: "Powder Room", targetSF: 45, zone: "Entry + Formal", level: 1, rationale: "Guest half-bath near entry" },
+  { id: "s3", code: "OFF", name: "Home Office", targetSF: 120, zone: "Entry + Formal", level: 1, rationale: "Work from home with professional separation" },
+  { id: "s4", code: "GR", name: "Great Room", targetSF: 350, zone: "Entry + Formal", level: 1, rationale: "Formal living and entertaining" },
+  { id: "s5", code: "DR", name: "Dining Room", targetSF: 180, zone: "Entry + Formal", level: 1, rationale: "Seats 6-8 with proper circulation" },
+  // Level 1: Family Hub (~910 SF)
+  { id: "s6", code: "FR", name: "Family Room", targetSF: 300, zone: "Family Hub", level: 1, rationale: "Casual daily living; open to kitchen" },
+  { id: "s7", code: "KIT", name: "Kitchen", targetSF: 250, zone: "Family Hub", level: 1, rationale: "Efficient layout with island" },
+  { id: "s8", code: "BKF", name: "Breakfast Nook", targetSF: 80, zone: "Family Hub", level: 1, rationale: "Casual daily dining" },
+  { id: "s9", code: "SCUL", name: "Scullery", targetSF: 100, zone: "Family Hub", level: 1, rationale: "Cleanup, pantry, service staging" },
+  { id: "s10", code: "MEDIA", name: "Media Room", targetSF: 180, zone: "Family Hub", level: 1, rationale: "TV viewing; acoustically considered" },
+  // Level 1: Service (~580 SF)
+  { id: "s11", code: "MUD", name: "Mudroom", targetSF: 100, zone: "Service", level: 1, rationale: "Daily entry from garage" },
+  { id: "s12", code: "LND", name: "Laundry", targetSF: 100, zone: "Service", level: 1, rationale: "Main floor laundry for convenience" },
+  { id: "s13", code: "MEP", name: "Mechanical", targetSF: 180, zone: "Service", level: 1, rationale: "HVAC, water heater, panels" },
+  { id: "s14", code: "STR", name: "Storage", targetSF: 120, zone: "Service", level: 1, rationale: "General household storage" },
+  { id: "s15", code: "GAR", name: "Garage (2-car)", targetSF: 450, zone: "Service", level: 1, rationale: "Attached two-car garage" },
+  // Level 1: Wellness (~210 SF)
+  { id: "s16", code: "GYM", name: "Gym / Exercise", targetSF: 150, zone: "Wellness", level: 1, rationale: "Home fitness area" },
+  { id: "s17", code: "POOLSUP", name: "Pool Support", targetSF: 60, zone: "Wellness", level: 1, rationale: "Pool equipment and storage" },
+  // Level 1: Outdoor (not counted)
+  { id: "s18", code: "TERR", name: "Terrace", targetSF: 0, zone: "Outdoor", level: 1, rationale: "Exterior - not counted in SF" },
+  { id: "s19", code: "POOL", name: "Pool", targetSF: 0, zone: "Outdoor", level: 1, rationale: "Exterior - not counted in SF" },
+  // Level 2: Primary Wing (~620 SF)
+  { id: "s20", code: "PRI", name: "Primary Bedroom", targetSF: 280, zone: "Primary Wing", level: 2, rationale: "Comfortable scale with seating area" },
+  { id: "s21", code: "PRIBATH", name: "Primary Bath", targetSF: 180, zone: "Primary Wing", level: 2, rationale: "Double vanity, shower, tub" },
+  { id: "s22", code: "PRICL_HIS", name: "His Closet", targetSF: 80, zone: "Primary Wing", level: 2, rationale: "Walk-in closet" },
+  { id: "s23", code: "PRICL_HER", name: "Her Closet", targetSF: 80, zone: "Primary Wing", level: 2, rationale: "Walk-in closet" },
+  // Level 2: Guest Suites (~860 SF)
+  { id: "s24", code: "GST1", name: "Guest Suite 1", targetSF: 300, zone: "Guest Wing", level: 2, rationale: "First guest bedroom with en-suite" },
+  { id: "s25", code: "GST2", name: "Guest Suite 2", targetSF: 280, zone: "Guest Wing", level: 2, rationale: "Second guest bedroom" },
+  { id: "s26", code: "GST3", name: "Guest Suite 3", targetSF: 280, zone: "Guest Wing", level: 2, rationale: "Third guest bedroom or flex" },
+  // Level 2: Circulation (~350 SF estimated)
+  { id: "s27", code: "CIRC2", name: "L2 Circulation", targetSF: 350, zone: "Circulation", level: 2, rationale: "Landing, hallways, stair" }
+];
+
+const bubbleDiagram5k = `flowchart TB
+  subgraph ENTRY["Entry + Formal"]
+    FOY["FOY: Foyer"]
+    OFF["OFF: Office"]
+    GR["GR: Great Room"]
+    DR["DR: Dining"]
+  end
+
+  subgraph FAMILY["Family Hub"]
+    FR["FR: Family Room"]
+    KIT["KIT: Kitchen"]
+    BKF["BKF: Breakfast"]
+    MEDIA["MEDIA: Media"]
+  end
+
+  subgraph SERVICE["Service Core"]
+    SCUL["SCUL: Scullery"]
+    MUD["MUD: Mudroom"]
+    LND["LND: Laundry"]
+  end
+
+  subgraph WELLNESS["Wellness"]
+    GYM["GYM: Gym"]
+    POOLSUP["POOLSUP: Pool Support"]
+  end
+
+  subgraph OUTDOOR["Outdoor"]
+    TERR["TERR: Terrace"]
+    POOL["POOL: Pool"]
+  end
+
+  subgraph PRIMARY["Primary Suite (L2)"]
+    PRI["PRI: Primary Bed"]
+    PRIBATH["PRIBATH: Bath"]
+    PRICL["PRICL: Closets"]
+  end
+
+  subgraph GUEST["Guest Wing (L2)"]
+    GST1["GST1: Guest 1"]
+    GST2["GST2: Guest 2"]
+    GST3["GST3: Guest 3"]
+  end
+
+  FOY === OFF
+  FOY === GR
+  FOY --- DR
+  FOY -.- FR
+
+  GR --- TERR
+  DR -.- KIT
+
+  FR === KIT
+  FR --- MEDIA
+  FR === TERR
+  KIT === BKF
+  KIT === SCUL
+  KIT --- MUD
+
+  SCUL === MUD
+  MUD === GAR
+
+  FR --- GYM
+  GYM === POOLSUP
+  TERR === POOL
+
+  MEDIA x--x PRI
+
+  PRI === PRIBATH
+  PRI === PRICL
+  PRI -.- GST1
+  GST1 --- GST2
+  GST2 --- GST3`;
+
+const twoNodeDescription5k = `Two-Node Circulation Strategy (5,000 SF - Compact Luxury)
+
+Node 1: Entry + Formal
+- Arrival and formal presentation zone
+- Contains: Foyer, Office, Great Room, Dining Room, Powder
+- Character: Welcoming, professional, guest-ready
+- Office adjacent to entry for work-from-home with separation
+
+Node 2: Family Hub + Service
+- Daily living and service zone
+- Contains: Family Room, Kitchen, Breakfast, Scullery, Mudroom, Media, Terrace, Gym
+- Character: Casual, functional, family-oriented
+- Open kitchen-family connection with service spine to back
+
+Single Kitchen Strategy (5K):
+- One efficient kitchen open to family room
+- Scullery provides cleanup/staging buffer
+- Direct dining connection for smaller-scale entertaining
+
+Level 2 Organization:
+- Primary Wing: Isolated with full bath and dual closets
+- Guest Suites: Three bedrooms clustered together
+- Shared bath option for two guest suites
+
+Cross-Links (Controlled Connections):
+1. Great Room to Terrace: Near connection (N) for indoor-outdoor flow
+2. Foyer to Family: Buffered (B) daily connector
+3. Dining to Scullery: Near (N) service connection
+
+Key 5K Optimizations:
+- No wine room, library, or chef's kitchen (not at tier)
+- Gym replaces full spa program
+- Pool support for basic wellness
+- Three guest suites maximum
+- Single-level main living preferred`;
+
+// ============================================================================
 // 10,000 SF PRESET
 // ============================================================================
 
@@ -915,6 +1160,26 @@ Key Corrections Applied:
 // ============================================================================
 
 export const programPresets: ProgramPreset[] = [
+  {
+    id: "5k",
+    name: "5,000 SF",
+    targetSF: 5000,
+    description: "Compact luxury | 4 bedrooms | single-level living | pool",
+    available: true,
+    spaces: preset5kSpaces,
+    adjacencyMatrix: adjacencyMatrix5k,
+    nodes: nodes5k,
+    crossLinks: crossLinks5k,
+    bridgeConfig: {
+      butlerPantry: false,    // No butler pantry at this tier
+      guestAutonomy: false,   // Guest suites clustered, no autonomy zone
+      soundLock: false,       // Media room separated but no dedicated sound lock
+      wetFeetIntercept: true, // Pool support zone included
+      opsCore: true           // Mudroom + laundry for operations
+    },
+    bubbleDiagramCode: bubbleDiagram5k,
+    twoNodeDescription: twoNodeDescription5k
+  },
   {
     id: "10k",
     name: "10,000 SF",

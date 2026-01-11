@@ -34,7 +34,7 @@ export interface AdjacencyDecision {
   primarySpace: string;         // The space being positioned
   icon: string;                 // Lucide icon name
   options: DecisionOption[];
-  applicablePresets: ('10k' | '15k' | '20k')[];
+  applicablePresets: ('5k' | '10k' | '15k' | '20k')[];
   kycFields: string[];          // Which KYC fields influence this
   priority: number;             // Display order (1 = highest)
 }
@@ -70,7 +70,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Office placement affects both your productivity and your household\'s daily flow. Consider who visits and when you work.',
     primarySpace: 'OFF',
     icon: 'Briefcase',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['workFromHome', 'clientMeetingsAtHome', 'childrenCount'],
     priority: 1,
     options: [
@@ -133,7 +133,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'This defines the heart of your home. Open plans maximize togetherness; separation allows focused cooking and reduces noise.',
     primarySpace: 'KIT',
     icon: 'ChefHat',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['cookingStyle', 'primaryCook', 'staffingPreference', 'entertainingFrequency'],
     priority: 2,
     options: [
@@ -195,7 +195,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Late-night movie watching requires acoustic separation from bedrooms. Consider who uses the media room and when.',
     primarySpace: 'MEDIA',
     icon: 'Tv',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['lateNightMediaUse', 'childrenCount', 'entertainingFrequency'],
     priority: 3,
     options: [
@@ -254,7 +254,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Extended family visits benefit from independence. Occasional guests may prefer connection to family life.',
     primarySpace: 'GSL1',
     icon: 'Users',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['guestStayFrequency', 'typicalGuestStayDuration', 'multiGenerationalHosting', 'elderlyResidents'],
     priority: 4,
     options: [
@@ -316,7 +316,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Your private retreat. Balance accessibility with sanctuary.',
     primarySpace: 'PRI',
     icon: 'BedDouble',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['privacyPreference', 'childrenCount', 'numberOfLevels'],
     priority: 5,
     options: [
@@ -376,7 +376,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Formal entertaining benefits from separation. Casual families prefer open connection.',
     primarySpace: 'DR',
     icon: 'Wine',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['formalDiningImportance', 'entertainingFrequency', 'typicalScale', 'staffingPreference'],
     priority: 6,
     options: [
@@ -497,7 +497,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'The mudroom handles daily chaos: groceries, packages, pets, kids. Good flow prevents bottlenecks.',
     primarySpace: 'MUD',
     icon: 'Home',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['pets', 'childrenCount', 'staffingPreference', 'packageDeliveryVolume'],
     priority: 8,
     options: [
@@ -615,7 +615,7 @@ export const ADJACENCY_DECISIONS: AdjacencyDecision[] = [
     context: 'Children benefit from clustering. Adult children or guests may prefer separation for privacy.',
     primarySpace: 'SEC1',
     icon: 'BedDouble',
-    applicablePresets: ['10k', '15k', '20k'],
+    applicablePresets: ['5k', '10k', '15k', '20k'],
     kycFields: ['childrenCount', 'childrenAges', 'composition', 'guestStayFrequency'],
     priority: 10,
     options: [
@@ -679,7 +679,7 @@ export function getDecisionById(id: string): AdjacencyDecision | undefined {
 /**
  * Get decisions applicable to a preset size
  */
-export function getDecisionsForPreset(preset: '10k' | '15k' | '20k'): AdjacencyDecision[] {
+export function getDecisionsForPreset(preset: '5k' | '10k' | '15k' | '20k'): AdjacencyDecision[] {
   return ADJACENCY_DECISIONS
     .filter(d => d.applicablePresets.includes(preset))
     .sort((a, b) => a.priority - b.priority);
