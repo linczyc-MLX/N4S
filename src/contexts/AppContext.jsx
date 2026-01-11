@@ -792,8 +792,6 @@ export const AppProvider = ({ children }) => {
     updateMVPChecklistItem,
     updateMVPAdjacencyConfig,
     updateMVPDecisionAnswer,
-    updateMVPAdjacencyConfig,
-    updateMVPDecisionAnswer,
 
     // UI state
     activeRespondent,

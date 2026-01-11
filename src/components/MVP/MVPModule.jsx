@@ -2,12 +2,15 @@ import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
-  Building, Layers, ArrowRight, FileText, Sparkles, BookOpen
+  Building, Layers, ArrowRight, FileText, Sparkles, BookOpen,
+  GitCompare, Play
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import ModuleLibraryView from './ModuleLibraryView';
+import AdjacencyComparisonGrid from './AdjacencyComparisonGrid';
+import ValidationResultsPanel from './ValidationResultsPanel';
 import { 
   transformKYCToMVPBrief, 
   getMVPBriefSummary, 
@@ -145,7 +148,7 @@ const MVPModule = ({ onNavigate }) => {
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'builder'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'builder'
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -323,6 +326,27 @@ const MVPModule = ({ onNavigate }) => {
           console.log('Brief saved:', brief);
           setViewMode('overview');
         }}
+      />
+    );
+  }
+
+  // If in comparison mode, show read-only Adjacency Comparison Grid
+  if (viewMode === 'comparison') {
+    return (
+      <AdjacencyComparisonGrid
+        onBack={() => setViewMode('overview')}
+        onRunValidation={() => setViewMode('validation')}
+      />
+    );
+  }
+
+  // If in validation mode, show Validation Results Panel
+  if (viewMode === 'validation') {
+    return (
+      <ValidationResultsPanel
+        onBack={() => setViewMode('overview')}
+        onViewMatrix={() => setViewMode('comparison')}
+        onEditDecisions={() => setViewMode('personalization')}
       />
     );
   }
@@ -608,32 +632,46 @@ const MVPModule = ({ onNavigate }) => {
       <div className="mvp-next-steps">
         <h3>
           <ArrowRight size={20} />
-          MVP Deployment Workflow
+          MVP P1-M Workflow
         </h3>
         <p>
-          Review the 8 validation modules, run validation checks, then configure adjacencies and generate your brief.
+          Answer layout questions, review the adjacency matrix comparison, run validation, then generate your brief.
         </p>
         <div className="mvp-next-steps__buttons">
           <button
             onClick={() => setViewMode('modules')}
-            className="n4s-btn n4s-btn--primary"
+            className="n4s-btn n4s-btn--secondary"
           >
             <BookOpen />
-            Review Module Library
+            Module Library
           </button>
           <button
             onClick={() => setViewMode('personalization')}
-            className="n4s-btn n4s-btn--secondary"
+            className="n4s-btn n4s-btn--primary"
           >
             <Sparkles />
-            Personalize Adjacencies
+            Answer Layout Questions
+          </button>
+          <button
+            onClick={() => setViewMode('comparison')}
+            className="n4s-btn n4s-btn--secondary"
+          >
+            <GitCompare />
+            View Adjacency Matrix
+          </button>
+          <button
+            onClick={() => setViewMode('validation')}
+            className="n4s-btn n4s-btn--secondary"
+          >
+            <Play />
+            Run Validation
           </button>
           <button
             onClick={() => setViewMode('builder')}
             className="n4s-btn n4s-btn--secondary"
           >
             <FileText />
-            Open Briefing Builder
+            Briefing Builder
           </button>
         </div>
       </div>
