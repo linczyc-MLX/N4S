@@ -534,36 +534,48 @@ Before creating any new UI component or report template, verify:
 
 Each N4S module has an assigned color that appears in the Task Matrix and module header bars. These colors help users understand where they are in the workflow.
 
-| Module | Letter | Color Name | Background | Text | Accent |
-|--------|--------|------------|------------|------|--------|
-| KYC | A | Navy | `rgba(26, 54, 93, 0.1)` | `#1a365d` | `#1a365d` |
-| FYI | C | Teal | `rgba(49, 151, 149, 0.15)` | `#285e61` | `#319795` |
-| MVP | M | Green | `rgba(72, 187, 120, 0.15)` | `#276749` | `#48bb78` |
-| KYM | B | Purple | `rgba(128, 90, 213, 0.1)` | `#553c9a` | `#805ad5` |
-| VMX | D | Gold | `rgba(201, 169, 98, 0.15)` | `#8b7355` | `#c9a962` |
+**Palette: Soft Pillow**
+
+| Module | Letter | Color Name | Background | Text |
+|--------|--------|------------|------------|------|
+| Dashboard | — | Navy | `#1e3a5f` | `#ffffff` |
+| KYC | A | Deep Blue | `#315098` | `#ffffff` |
+| FYI | C | Steel Blue | `#8CA8BE` | `#1a1a1a` |
+| MVP | M | Sage Green | `#AFBDB0` | `#1a1a1a` |
+| KYM | B | Dusty Rose | `#E4C0BE` | `#1a1a1a` |
+| VMX | D | Light Pink | `#FBD0E0` | `#1a1a1a` |
+| Settings | — | Gray | `#374151` | `#ffffff` |
 
 ### Module Header Implementation
 
-Each module's top header bar uses the module's background color with a 2px accent border:
+Each module's top header bar uses a solid background color with appropriate text contrast:
 
 ```css
-/* Example: FYI Module Header */
+/* Example: FYI Module Header (light background) */
 .main-header {
-  background: rgba(49, 151, 149, 0.15);
-  border-bottom: 2px solid #319795;
+  background: #8CA8BE;
 }
 
 .main-header__module {
-  color: #285e61;
+  color: #1a1a1a;
+}
+
+/* Example: KYC Module Header (dark background) */
+.main-header {
+  background: #315098;
+}
+
+.main-header__module {
+  color: #ffffff;
 }
 ```
 
 ### Task Matrix Cells
 
 Task Matrix cells use the same color mapping:
-- Background matches module color (10-15% opacity)
-- Text uses the darker text color for readability
-- Completed cells show checkmark in module accent color
+- Background matches module color
+- Text uses contrasting color for readability
+- Completed cells show checkmark in module color
 
 ---
 
@@ -573,6 +585,7 @@ Task Matrix cells use the same color mapping:
 |------|---------|---------|
 | 2026-01-06 | 1.0 | Initial brand guide created |
 | 2026-01-06 | 1.1 | Added Module Color System (Section 13) |
+| 2026-01-11 | 1.2 | Updated Module Colors to Soft Pillow palette |
 
 ---
 
