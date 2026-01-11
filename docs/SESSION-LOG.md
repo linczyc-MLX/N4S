@@ -1,5 +1,84 @@
 # N4S Session Log
 
+## Session: January 11, 2026 - MVP P1-M Workflow (Phase 2: Views & Navigation)
+
+### Objective
+Wire new MVP components and establish complete P1-M workflow navigation.
+
+### Changes Implemented
+
+#### 1. MVP Module Navigation (`src/components/MVP/MVPModule.jsx`)
+
+**New View Modes Added:**
+```javascript
+viewMode: 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'builder'
+```
+
+**P1-M Workflow Buttons:**
+- "Answer Layout Questions" → Personalization questionnaire
+- "View Adjacency Matrix" → Read-only comparison grid
+- "Run Validation" → Validation results panel
+- "Briefing Builder" → Brief generation
+
+**Component Imports:**
+- AdjacencyComparisonGrid (new)
+- ValidationResultsPanel (new)
+
+#### 2. Adjacency Comparison Grid (`src/components/MVP/AdjacencyComparisonGrid.jsx`)
+
+**Features:**
+- Read-only grid (no cell editing)
+- Desired/Proposed toggle switch
+- Deviation highlighting (amber background)
+- Zone and Level filters
+- Deviation summary at bottom
+- "Run Validation" action button
+
+**Props:**
+```javascript
+{ onBack, onRunValidation }
+```
+
+#### 3. Validation Results Panel (`src/components/MVP/ValidationResultsPanel.jsx`)
+
+**Features:**
+- Overall score circle (e.g., 87/100)
+- Pass/Warning/Fail status badge
+- Three tabs: Red Flags | Bridges | Module Scores
+- 8 module cards with progress bars and 80% threshold
+- 5 bridges with required/present status
+
+**Props:**
+```javascript
+{ onBack, onViewMatrix, onEditDecisions }
+```
+
+### Files Changed
+- `src/components/MVP/MVPModule.jsx` - New views + navigation
+- `src/components/MVP/AdjacencyComparisonGrid.jsx` - Added onRunValidation prop
+- `src/components/MVP/ValidationResultsPanel.jsx` - Added navigation props
+- `src/contexts/AppContext.jsx` - Fixed duplicate context entries
+
+### P1-M Workflow Complete
+```
+FYI Brief → Tier Detection → Answer Layout Questions
+                                    ↓
+                          View Adjacency Matrix
+                          (Desired vs Proposed)
+                                    ↓
+                            Run Validation
+                          (Score against 80% gate)
+                                    ↓
+                           Generate Brief
+```
+
+### Next Steps
+1. Test validation scoring algorithm
+2. Wire Mermaid diagram generation with bridges
+3. Add PDF export of validation results
+
+---
+
 ## Session: January 11, 2026 - MVP Adjacency Phase 1 (5K Preset + Context Wiring)
 
 ### Objective
