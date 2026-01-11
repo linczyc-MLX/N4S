@@ -3,236 +3,43 @@
  * 
  * Read-only adjacency matrix grid with Desired/Proposed toggle.
  * Shows N4S benchmark (Desired) vs client's selections (Proposed).
- * Highlights deviations and shows warning summary.
+ * Follows N4S Brand Guide styling.
  * 
  * NO interactive editing - grid cells are display-only.
  * Client makes decisions via the questionnaire, not by clicking cells.
  */
 
 import React, { useState, useMemo, useContext } from 'react';
-import { AlertTriangle, CheckCircle, Eye, GitCompare } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
 import { 
   getPreset,
   applyDecisionsToMatrix,
-  getDecisionsForPreset,
-  getOptionById
+  getDecisionsForPreset
 } from '../../mansion-program';
 
-// N4S Brand Colors
+// N4S Brand Colors (from Brand Guide)
 const COLORS = {
   navy: '#1e3a5f',
   gold: '#c9a227',
-  adjacent: '#22c55e',    // Green - A
-  near: '#3b82f6',        // Blue - N
-  buffered: '#f59e0b',    // Orange - B
-  separate: '#ef4444',    // Red - S
-  deviation: '#fef3c7',   // Light amber background for deviations
-  deviationBorder: '#f59e0b',
+  background: '#fafaf8',
+  surface: '#ffffff',
+  border: '#e5e5e0',
+  text: '#1a1a1a',
+  textMuted: '#6b6b6b',
+  success: '#2e7d32',
+  warning: '#f57c00',
+  error: '#d32f2f',
 };
 
-// Relationship display config
+// Relationship display config (matching BriefingBuilder matrix)
 const RELATIONSHIP_CONFIG = {
-  A: { label: 'A', name: 'Adjacent', color: COLORS.adjacent, description: 'Direct connection required' },
-  N: { label: 'N', name: 'Near', color: COLORS.near, description: 'Close proximity needed' },
-  B: { label: 'B', name: 'Buffered', color: COLORS.buffered, description: 'Buffer zone required' },
-  S: { label: 'S', name: 'Separate', color: COLORS.separate, description: 'Isolation required' },
+  A: { label: 'A', color: '#4caf50', description: 'Adjacent - Direct connection required' },
+  N: { label: 'N', color: '#2196f3', description: 'Near - Close proximity needed' },
+  B: { label: 'B', color: '#ff9800', description: 'Buffered - Buffer zone required' },
+  S: { label: 'S', color: '#f44336', description: 'Separate - Isolation required' },
 };
-
-/**
- * Legend component
- */
-function AdjacencyLegend() {
-  return (
-    <div className="flex flex-wrap gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-      <span className="text-sm font-medium text-gray-700">Adjacency Legend:</span>
-      {Object.entries(RELATIONSHIP_CONFIG).map(([key, config]) => (
-        <div key={key} className="flex items-center gap-2">
-          <span 
-            className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-            style={{ backgroundColor: config.color }}
-          >
-            {config.label}
-          </span>
-          <span className="text-sm text-gray-600">{config.name}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Toggle switch for Desired/Proposed view
- */
-function ViewToggle({ view, onViewChange, deviationCount }) {
-  return (
-    <div className="flex items-center gap-4 mb-4">
-      <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-white">
-        <button
-          onClick={() => onViewChange('desired')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-            view === 'desired' 
-              ? 'bg-navy text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          style={view === 'desired' ? { backgroundColor: COLORS.navy } : {}}
-        >
-          <Eye className="w-4 h-4" />
-          Desired (N4S Standard)
-        </button>
-        <button
-          onClick={() => onViewChange('proposed')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-            view === 'proposed' 
-              ? 'bg-navy text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          style={view === 'proposed' ? { backgroundColor: COLORS.navy } : {}}
-        >
-          <GitCompare className="w-4 h-4" />
-          Proposed (Your Selections)
-          {deviationCount > 0 && (
-            <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800">
-              {deviationCount} {deviationCount === 1 ? 'deviation' : 'deviations'}
-            </span>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Filter controls
- */
-function FilterControls({ zones, selectedZone, onZoneChange, levels, selectedLevel, onLevelChange, spaceCount }) {
-  return (
-    <div className="flex items-center gap-4 mb-4">
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">Filter by Zone:</label>
-        <select 
-          value={selectedZone}
-          onChange={(e) => onZoneChange(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
-        >
-          <option value="all">All Zones</option>
-          {zones.map(zone => (
-            <option key={zone} value={zone}>{zone}</option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">Filter by Level:</label>
-        <select 
-          value={selectedLevel}
-          onChange={(e) => onLevelChange(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
-        >
-          <option value="all">All Levels</option>
-          {levels.map(level => (
-            <option key={level} value={level}>Level {level}</option>
-          ))}
-        </select>
-      </div>
-      <span className="text-sm text-gray-500">
-        Showing {spaceCount} of {spaceCount} spaces
-      </span>
-    </div>
-  );
-}
-
-/**
- * Matrix cell component
- */
-function MatrixCell({ relationship, isDeviation, desiredRelationship }) {
-  if (!relationship) {
-    return (
-      <td className="border border-gray-200 w-10 h-10 text-center text-gray-300">
-        ·
-      </td>
-    );
-  }
-
-  const config = RELATIONSHIP_CONFIG[relationship];
-  const deviationStyle = isDeviation ? {
-    boxShadow: `inset 0 0 0 2px ${COLORS.deviationBorder}`,
-    backgroundColor: COLORS.deviation,
-  } : {};
-
-  return (
-    <td 
-      className="border border-gray-200 w-10 h-10 text-center relative"
-      style={deviationStyle}
-      title={isDeviation ? `Deviation: Desired ${desiredRelationship}, Proposed ${relationship}` : config?.description}
-    >
-      <span 
-        className="inline-flex items-center justify-center w-8 h-8 rounded text-white text-xs font-bold"
-        style={{ backgroundColor: config?.color || '#gray' }}
-      >
-        {relationship}
-      </span>
-      {isDeviation && (
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full" />
-      )}
-    </td>
-  );
-}
-
-/**
- * Deviation warnings summary
- */
-function DeviationSummary({ deviations, decisions }) {
-  if (deviations.length === 0) {
-    return (
-      <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-        <CheckCircle className="w-5 h-5 text-green-600" />
-        <span className="text-green-800 font-medium">
-          All adjacencies match N4S recommendations
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-      <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600" />
-        <span className="text-amber-800 font-medium">
-          {deviations.length} {deviations.length === 1 ? 'Deviation' : 'Deviations'} from N4S Standard
-        </span>
-      </div>
-      <ul className="space-y-2">
-        {deviations.map((dev, idx) => {
-          // Find which decision caused this deviation
-          const relatedDecision = decisions?.find(d => 
-            d.primarySpace === dev.fromSpace || d.primarySpace === dev.toSpace
-          );
-          
-          return (
-            <li key={idx} className="flex items-start gap-2 text-sm">
-              <span className="text-amber-600 mt-0.5">•</span>
-              <div>
-                <span className="font-medium text-amber-900">
-                  {dev.fromSpace} → {dev.toSpace}:
-                </span>
-                <span className="text-amber-700 ml-2">
-                  Desired <span className="font-mono bg-amber-100 px-1 rounded">{dev.desired}</span>,
-                  Proposed <span className="font-mono bg-amber-100 px-1 rounded">{dev.proposed}</span>
-                </span>
-                {relatedDecision && (
-                  <span className="text-amber-600 ml-2 text-xs">
-                    (from: {relatedDecision.title})
-                  </span>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
 
 /**
  * Main AdjacencyComparisonGrid component
@@ -240,17 +47,17 @@ function DeviationSummary({ deviations, decisions }) {
 export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
   // State
   const [view, setView] = useState('desired'); // 'desired' | 'proposed'
-  const [selectedZone, setSelectedZone] = useState('all');
-  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [filterZone, setFilterZone] = useState('all');
+  const [filterLevel, setFilterLevel] = useState('all');
 
   // Context
   const { fyiData } = useContext(AppContext);
-  const { preset } = useKYCData();
+  const { preset, baseSF } = useKYCData();
   
   // Get preset data
   const presetData = useMemo(() => {
     try {
-      return getPreset(preset);
+      return preset ? getPreset(preset) : null;
     } catch (e) {
       console.error('Failed to get preset:', e);
       return null;
@@ -276,212 +83,563 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
     const lookup = {};
     presetData.adjacencyMatrix.forEach(adj => {
       if (adj.fromSpaceCode && adj.toSpaceCode) {
-        const key = `${adj.fromSpaceCode}-${adj.toSpaceCode}`;
-        lookup[key] = adj.relationship;
+        lookup[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
       }
     });
     return lookup;
   }, [presetData]);
 
-  // Build proposed matrix (benchmark + decision modifications)
+  // Build proposed matrix with client decisions applied
   const proposedMatrix = useMemo(() => {
     if (!presetData?.adjacencyMatrix) return {};
     
-    // Convert saved decisions to choices format
+    // Build choices array from saved decisions
     const choices = Object.entries(savedDecisions).map(([decisionId, optionId]) => ({
       decisionId,
       selectedOptionId: optionId,
       isDefault: false,
       warnings: []
     }));
-
+    
     // Apply decisions to get proposed matrix
-    const updatedMatrix = applyDecisionsToMatrix(presetData.adjacencyMatrix, choices);
+    const applied = applyDecisionsToMatrix(presetData.adjacencyMatrix, choices);
     
     const lookup = {};
-    updatedMatrix.forEach(adj => {
+    applied.forEach(adj => {
       if (adj.fromSpaceCode && adj.toSpaceCode) {
-        const key = `${adj.fromSpaceCode}-${adj.toSpaceCode}`;
-        lookup[key] = adj.relationship;
+        lookup[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
       }
     });
     return lookup;
   }, [presetData, savedDecisions]);
 
-  // Calculate deviations
-  const deviations = useMemo(() => {
-    const devList = [];
-    const allKeys = new Set([...Object.keys(benchmarkMatrix), ...Object.keys(proposedMatrix)]);
-    
-    allKeys.forEach(key => {
-      const desired = benchmarkMatrix[key];
-      const proposed = proposedMatrix[key];
-      if (desired && proposed && desired !== proposed) {
-        const [fromSpace, toSpace] = key.split('-');
-        devList.push({ fromSpace, toSpace, desired, proposed });
-      }
-    });
-    
-    return devList;
-  }, [benchmarkMatrix, proposedMatrix]);
-
-  // Get spaces for grid
-  const spaces = useMemo(() => {
-    if (!presetData?.spaces) return [];
-    let filtered = [...presetData.spaces].filter(s => s.targetSF > 0); // Exclude outdoor/0 SF
-    
-    if (selectedZone !== 'all') {
-      filtered = filtered.filter(s => s.zone === selectedZone);
-    }
-    if (selectedLevel !== 'all') {
-      filtered = filtered.filter(s => s.level === parseInt(selectedLevel));
-    }
-    
-    return filtered;
-  }, [presetData, selectedZone, selectedLevel]);
-
-  // Get unique zones and levels
-  const zones = useMemo(() => {
-    if (!presetData?.spaces) return [];
-    return [...new Set(presetData.spaces.map(s => s.zone))].filter(Boolean);
-  }, [presetData]);
-
-  const levels = useMemo(() => {
-    if (!presetData?.spaces) return [];
-    return [...new Set(presetData.spaces.map(s => s.level))].filter(Boolean).sort();
-  }, [presetData]);
-
-  // Get space codes for grid
-  const spaceCodes = spaces.map(s => s.code);
-
-  // Current matrix based on view
+  // Get current matrix based on view
   const currentMatrix = view === 'desired' ? benchmarkMatrix : proposedMatrix;
 
-  // Check if cell is a deviation
-  const isDeviation = (fromCode, toCode) => {
-    if (view !== 'proposed') return false;
-    const key = `${fromCode}-${toCode}`;
-    return benchmarkMatrix[key] && proposedMatrix[key] && benchmarkMatrix[key] !== proposedMatrix[key];
+  // Find deviations between benchmark and proposed
+  const deviations = useMemo(() => {
+    const devs = [];
+    Object.keys(benchmarkMatrix).forEach(key => {
+      const benchmarkRel = benchmarkMatrix[key];
+      const proposedRel = proposedMatrix[key];
+      if (benchmarkRel && proposedRel && benchmarkRel !== proposedRel) {
+        const [from, to] = key.split('-');
+        devs.push({ fromSpace: from, toSpace: to, desired: benchmarkRel, proposed: proposedRel });
+      }
+    });
+    return devs;
+  }, [benchmarkMatrix, proposedMatrix]);
+
+  // Extract unique space codes from matrix
+  const spaceCodes = useMemo(() => {
+    const codes = new Set();
+    Object.keys(benchmarkMatrix).forEach(key => {
+      const [from, to] = key.split('-');
+      codes.add(from);
+      codes.add(to);
+    });
+    return Array.from(codes).sort();
+  }, [benchmarkMatrix]);
+
+  // Filter spaces
+  const filteredSpaces = useMemo(() => {
+    return spaceCodes;
+  }, [spaceCodes]);
+
+  // Check if a cell is a deviation
+  const isDeviation = (from, to) => {
+    return deviations.some(d => d.fromSpace === from && d.toSpace === to);
   };
 
   if (!presetData) {
     return (
-      <div className="p-6">
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-amber-800">Please complete FYI configuration first to view adjacency matrix.</p>
+      <div className="acg-container">
+        <div className="acg-header">
+          <button className="acg-back-btn" onClick={onBack}>
+            <ArrowLeft size={16} />
+            Back
+          </button>
+          <h1 className="acg-title">Adjacency Matrix</h1>
         </div>
+        <div className="acg-content">
+          <div className="acg-card">
+            <p>No preset data available. Please complete the FYI module first.</p>
+          </div>
+        </div>
+        <style>{componentStyles}</style>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-white">
+    <div className="acg-container">
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900" style={{ color: COLORS.navy }}>
-          Adjacency Matrix Comparison
-        </h2>
-        <p className="text-gray-600 mt-1">
-          Compare N4S recommended adjacencies with your personalized selections
+      <div className="acg-header">
+        <button className="acg-back-btn" onClick={onBack}>
+          <ArrowLeft size={16} />
+          Back
+        </button>
+        <div className="acg-title-row">
+          <h1 className="acg-title">Adjacency Matrix</h1>
+          <span className="acg-tier-badge">{preset?.toUpperCase()} TIER</span>
+        </div>
+        <p className="acg-subtitle">
+          Zone adjacency relationships for mansion program validation
+          {baseSF && ` • ${baseSF.toLocaleString()} SF Target`}
         </p>
       </div>
 
-      {/* Legend */}
-      <AdjacencyLegend />
-
-      {/* Toggle */}
-      <ViewToggle 
-        view={view} 
-        onViewChange={setView} 
-        deviationCount={deviations.length}
-      />
-
-      {/* Filters */}
-      <FilterControls
-        zones={zones}
-        selectedZone={selectedZone}
-        onZoneChange={setSelectedZone}
-        levels={levels}
-        selectedLevel={selectedLevel}
-        onLevelChange={setSelectedLevel}
-        spaceCount={spaces.length}
-      />
-
-      {/* Grid */}
-      <div className="overflow-auto border border-gray-200 rounded-lg">
-        <table className="border-collapse">
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 bg-gray-100 border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700">
-                From / To
-              </th>
-              {spaceCodes.map(code => (
-                <th 
-                  key={code} 
-                  className="bg-gray-100 border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 min-w-[40px]"
-                >
-                  {code}
-                </th>
+      <div className="acg-content">
+        <div className="acg-card">
+          {/* Toggle and Legend Row */}
+          <div className="acg-controls-row">
+            <div className="acg-legend">
+              {Object.entries(RELATIONSHIP_CONFIG).map(([key, config]) => (
+                <div key={key} className="acg-legend-item">
+                  <span 
+                    className="acg-legend-badge" 
+                    style={{ backgroundColor: config.color }}
+                  >
+                    {config.label}
+                  </span>
+                  <span className="acg-legend-text">{config.description}</span>
+                </div>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {spaceCodes.map(fromCode => (
-              <tr key={fromCode}>
-                <td className="sticky left-0 z-10 bg-gray-50 border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700">
-                  {fromCode}
-                </td>
-                {spaceCodes.map(toCode => {
-                  if (fromCode === toCode) {
-                    return (
-                      <td key={toCode} className="border border-gray-200 w-10 h-10 bg-gray-100 text-center text-gray-400">
-                        –
-                      </td>
-                    );
-                  }
-                  
-                  const key = `${fromCode}-${toCode}`;
-                  const relationship = currentMatrix[key];
-                  const deviation = isDeviation(fromCode, toCode);
-                  const desiredRel = benchmarkMatrix[key];
-                  
-                  return (
-                    <MatrixCell
-                      key={toCode}
-                      relationship={relationship}
-                      isDeviation={deviation}
-                      desiredRelationship={desiredRel}
-                    />
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </div>
 
-      {/* Deviation Summary */}
-      <DeviationSummary deviations={deviations} decisions={decisions} />
+            {/* Toggle Switch - Matching Image 4 style */}
+            <div className="acg-toggle-wrapper">
+              <div className="acg-toggle">
+                <button
+                  className={`acg-toggle-option ${view === 'desired' ? 'active' : ''}`}
+                  onClick={() => setView('desired')}
+                >
+                  Desired
+                </button>
+                <button
+                  className={`acg-toggle-option ${view === 'proposed' ? 'active' : ''}`}
+                  onClick={() => setView('proposed')}
+                >
+                  Achieved
+                </button>
+              </div>
+            </div>
+          </div>
 
-      {/* Action buttons */}
-      <div className="mt-6 flex justify-between items-center">
-        <p className="text-sm text-gray-500">
-          <strong>Note:</strong> This grid is read-only. To modify adjacencies, use the Layout Questionnaire.
-        </p>
-        {onRunValidation && (
-          <button
-            onClick={onRunValidation}
-            className="n4s-btn n4s-btn--primary flex items-center gap-2"
-            style={{ backgroundColor: COLORS.navy }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Run Validation
-          </button>
-        )}
+          {/* Filters */}
+          <div className="acg-filters-row">
+            <label className="acg-filter">
+              <span>Filter by Zone:</span>
+              <select value={filterZone} onChange={e => setFilterZone(e.target.value)}>
+                <option value="all">All Zones</option>
+              </select>
+            </label>
+            <label className="acg-filter">
+              <span>Filter by Level:</span>
+              <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}>
+                <option value="all">All Levels</option>
+              </select>
+            </label>
+            <span className="acg-space-count">
+              Showing {filteredSpaces.length} of {filteredSpaces.length} spaces
+            </span>
+          </div>
+
+          {/* Matrix Table */}
+          <div className="acg-matrix-wrapper">
+            <table className="acg-matrix-table">
+              <thead>
+                <tr>
+                  <th className="acg-corner-cell"></th>
+                  {filteredSpaces.map(code => (
+                    <th key={code} className="acg-header-cell">{code}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSpaces.map(fromCode => (
+                  <tr key={fromCode}>
+                    <th className="acg-row-header">{fromCode}</th>
+                    {filteredSpaces.map(toCode => {
+                      if (fromCode === toCode) {
+                        return <td key={`${fromCode}-${toCode}`} className="acg-cell acg-cell--diagonal">–</td>;
+                      }
+                      const key = `${fromCode}-${toCode}`;
+                      const relationship = currentMatrix[key];
+                      const deviation = view === 'proposed' && isDeviation(fromCode, toCode);
+                      const config = relationship ? RELATIONSHIP_CONFIG[relationship] : null;
+                      
+                      return (
+                        <td 
+                          key={`${fromCode}-${toCode}`} 
+                          className={`acg-cell ${deviation ? 'acg-cell--deviation' : ''}`}
+                          style={config ? { backgroundColor: config.color, color: '#fff' } : {}}
+                          title={config?.description}
+                        >
+                          {relationship || '·'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Deviation Summary */}
+          {deviations.length > 0 && (
+            <div className="acg-deviation-summary">
+              <div className="acg-deviation-header">
+                <AlertTriangle size={18} color={COLORS.warning} />
+                <span>
+                  {deviations.length} Deviation{deviations.length !== 1 ? 's' : ''} from N4S Standard
+                </span>
+              </div>
+              <ul className="acg-deviation-list">
+                {deviations.slice(0, 5).map((dev, idx) => (
+                  <li key={idx}>
+                    <strong>{dev.fromSpace} → {dev.toSpace}:</strong>{' '}
+                    Desired <code>{dev.desired}</code>, Proposed <code>{dev.proposed}</code>
+                  </li>
+                ))}
+                {deviations.length > 5 && (
+                  <li className="acg-deviation-more">...and {deviations.length - 5} more</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Action Row */}
+          <div className="acg-action-row">
+            <span className="acg-note">
+              This grid is read-only. To modify adjacencies, use the Layout Questionnaire.
+            </span>
+            {onRunValidation && (
+              <button className="acg-primary-btn" onClick={onRunValidation}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Run Validation
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+      <style>{componentStyles}</style>
     </div>
   );
 }
+
+// CSS following N4S Brand Guide
+const componentStyles = `
+.acg-container {
+  min-height: 100vh;
+  background-color: ${COLORS.background};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.acg-header {
+  background-color: ${COLORS.surface};
+  border-bottom: 1px solid ${COLORS.border};
+  padding: 1rem 1.5rem;
+}
+
+.acg-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: ${COLORS.textMuted};
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: all 0.15s ease;
+}
+
+.acg-back-btn:hover {
+  border-color: ${COLORS.navy};
+  color: ${COLORS.navy};
+}
+
+.acg-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.acg-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: ${COLORS.text};
+  margin: 0;
+}
+
+.acg-tier-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.acg-subtitle {
+  font-size: 0.875rem;
+  color: ${COLORS.textMuted};
+  margin-top: 0.25rem;
+}
+
+.acg-content {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.acg-card {
+  background-color: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.acg-controls-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.acg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.acg-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.acg-legend-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.acg-legend-text {
+  font-size: 0.8125rem;
+  color: ${COLORS.text};
+}
+
+.acg-toggle-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.acg-toggle {
+  display: flex;
+  background-color: ${COLORS.border};
+  border-radius: 20px;
+  padding: 4px;
+}
+
+.acg-toggle-option {
+  padding: 0.5rem 1.25rem;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background-color: transparent;
+  color: ${COLORS.textMuted};
+}
+
+.acg-toggle-option.active {
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+}
+
+.acg-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.acg-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+}
+
+.acg-filter select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid ${COLORS.border};
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background-color: ${COLORS.surface};
+  color: ${COLORS.text};
+}
+
+.acg-space-count {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+  margin-left: auto;
+}
+
+.acg-matrix-wrapper {
+  overflow-x: auto;
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+}
+
+.acg-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.acg-corner-cell,
+.acg-header-cell {
+  padding: 0.5rem;
+  background-color: ${COLORS.background};
+  border-bottom: 1px solid ${COLORS.border};
+  border-right: 1px solid ${COLORS.border};
+  font-weight: 600;
+  text-align: center;
+  min-width: 45px;
+  color: ${COLORS.text};
+}
+
+.acg-corner-cell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.acg-row-header {
+  padding: 0.5rem;
+  background-color: ${COLORS.background};
+  border-right: 1px solid ${COLORS.border};
+  font-weight: 600;
+  text-align: left;
+  color: ${COLORS.text};
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.acg-cell {
+  padding: 0.5rem;
+  text-align: center;
+  border-right: 1px solid ${COLORS.border};
+  border-bottom: 1px solid ${COLORS.border};
+  font-weight: 600;
+  min-width: 45px;
+  cursor: default;
+  color: ${COLORS.textMuted};
+}
+
+.acg-cell--diagonal {
+  background-color: #f0f0f0;
+  color: ${COLORS.textMuted};
+}
+
+.acg-cell--deviation {
+  outline: 2px solid ${COLORS.warning};
+  outline-offset: -2px;
+}
+
+.acg-deviation-summary {
+  background-color: #fff8e1;
+  border: 1px solid ${COLORS.warning};
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+
+.acg-deviation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: ${COLORS.warning};
+}
+
+.acg-deviation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.acg-deviation-list li {
+  font-size: 0.8125rem;
+  color: ${COLORS.text};
+  padding: 0.25rem 0;
+}
+
+.acg-deviation-list code {
+  background-color: #f5f0e8;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.acg-deviation-more {
+  color: ${COLORS.textMuted} !important;
+}
+
+.acg-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${COLORS.border};
+}
+
+.acg-note {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+}
+
+.acg-primary-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.acg-primary-btn:hover {
+  opacity: 0.9;
+}
+`;

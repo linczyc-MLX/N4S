@@ -3,7 +3,7 @@ import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
   Building, Layers, ArrowRight, FileText, Sparkles, BookOpen,
-  GitCompare, Play
+  GitCompare, Play, Database
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BriefingBuilderView from './BriefingBuilderView';
@@ -11,6 +11,7 @@ import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import ModuleLibraryView from './ModuleLibraryView';
 import AdjacencyComparisonGrid from './AdjacencyComparisonGrid';
 import ValidationResultsPanel from './ValidationResultsPanel';
+import TierDataAdmin from './TierDataAdmin';
 import { 
   transformKYCToMVPBrief, 
   getMVPBriefSummary, 
@@ -148,7 +149,7 @@ const MVPModule = ({ onNavigate }) => {
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'builder'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'builder' | 'admin'
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -347,6 +348,15 @@ const MVPModule = ({ onNavigate }) => {
         onBack={() => setViewMode('overview')}
         onViewMatrix={() => setViewMode('comparison')}
         onEditDecisions={() => setViewMode('personalization')}
+      />
+    );
+  }
+
+  // If in admin mode, show Tier Data Admin
+  if (viewMode === 'admin') {
+    return (
+      <TierDataAdmin
+        onBack={() => setViewMode('overview')}
       />
     );
   }
@@ -672,6 +682,13 @@ const MVPModule = ({ onNavigate }) => {
           >
             <FileText />
             Briefing Builder
+          </button>
+          <button
+            onClick={() => setViewMode('admin')}
+            className="n4s-btn n4s-btn--ghost"
+          >
+            <Database />
+            Tier Data Admin
           </button>
         </div>
       </div>

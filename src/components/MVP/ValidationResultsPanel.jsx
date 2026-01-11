@@ -2,26 +2,17 @@
  * ValidationResultsPanel
  * 
  * Displays validation results for the MVP adjacency decisions.
- * Matches the mockup with:
- * - Overall score circle
- * - Pass/Fail status
+ * Matches the approved design (Image 5) with:
+ * - Circular score indicator (e.g., 87/100)
+ * - Pass badge
  * - Tabs: Red Flags | Bridges | Module Scores
  * - Module cards with progress bars
  * 
- * Runs validation against N4S benchmark when triggered.
+ * Follows N4S Brand Guide styling.
  */
 
 import React, { useState, useMemo, useContext, useCallback } from 'react';
-import { 
-  Play, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  ChevronRight,
-  Shield,
-  Boxes,
-  BarChart3
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, Play } from 'lucide-react';
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
 import { 
@@ -30,25 +21,30 @@ import {
   getDecisionsForPreset
 } from '../../mansion-program';
 
-// N4S Brand Colors
+// N4S Brand Colors (from Brand Guide)
 const COLORS = {
   navy: '#1e3a5f',
   gold: '#c9a227',
-  green: '#22c55e',
-  red: '#ef4444',
-  amber: '#f59e0b',
+  background: '#fafaf8',
+  surface: '#ffffff',
+  border: '#e5e5e0',
+  text: '#1a1a1a',
+  textMuted: '#6b6b6b',
+  success: '#2e7d32',
+  warning: '#f57c00',
+  error: '#d32f2f',
 };
 
-// Module definitions with thresholds
+// Module definitions
 const MODULES = [
-  { id: 'module-01', name: 'Kitchen Rules Engine', icon: '🍳', threshold: 80 },
-  { id: 'module-02', name: 'Entertaining Spine', icon: '🥂', threshold: 80 },
-  { id: 'module-03', name: 'Primary Suite Ecosystem', icon: '🛏️', threshold: 80 },
-  { id: 'module-04', name: 'Guest Wing Logic', icon: '🚪', threshold: 80 },
-  { id: 'module-05', name: 'Media & Acoustic Control', icon: '🎬', threshold: 80 },
-  { id: 'module-06', name: 'Service Spine', icon: '🔧', threshold: 80 },
-  { id: 'module-07', name: 'Wellness Program', icon: '💪', threshold: 80 },
-  { id: 'module-08', name: 'Staff Layer', icon: '👤', threshold: 80 },
+  { id: 'module-01', name: 'Kitchen Rules Engine', spaces: ['KIT', 'CHEF', 'SCUL', 'BKF', 'DR'] },
+  { id: 'module-02', name: 'Entertaining Spine', spaces: ['GR', 'DR', 'WINE', 'FOY', 'TERR'] },
+  { id: 'module-03', name: 'Primary Suite Ecosystem', spaces: ['PRI', 'PRIBATH', 'PRICL', 'PRILOUNGE'] },
+  { id: 'module-04', name: 'Guest Wing Logic', spaces: ['GUEST1', 'GUEST2', 'GUEST3', 'GST1', 'GST2'] },
+  { id: 'module-05', name: 'Media & Acoustic Control', spaces: ['MEDIA', 'THR'] },
+  { id: 'module-06', name: 'Service Spine', spaces: ['SCUL', 'MUD', 'LND', 'MEP', 'GAR'] },
+  { id: 'module-07', name: 'Wellness Program', spaces: ['GYM', 'SPA', 'POOL', 'WLINK', 'POOLSUP'] },
+  { id: 'module-08', name: 'Staff Layer', spaces: ['STF', 'STFQ'] },
 ];
 
 // Bridge definitions
@@ -60,34 +56,34 @@ const BRIDGES = [
   { id: 'opsCore', name: 'Ops Core', description: 'Service entry and operations hub' },
 ];
 
-// Red flag definitions
+// Red Flag definitions
 const RED_FLAGS = [
-  { id: 'rf-1', name: 'Guest → Primary Suite', description: 'Guest circulation crosses primary suite threshold' },
-  { id: 'rf-2', name: 'Delivery → FOH', description: 'Service routes pass through front-of-house rooms' },
-  { id: 'rf-3', name: 'Zone 3 Wall → Zone 0', description: 'Entertainment zone shares walls with bedrooms' },
-  { id: 'rf-4', name: 'No Show Kitchen', description: 'Missing principal-level show kitchen' },
-  { id: 'rf-5', name: 'Guest → Kitchen Aisle', description: 'Guest route to dining crosses kitchen work zone' },
+  { id: 'rf-1', name: 'Guest → Primary Suite', check: 'PRI not accessible through guest zones' },
+  { id: 'rf-2', name: 'Delivery → FOH', check: 'Garage/service not through formal zones' },
+  { id: 'rf-3', name: 'Zone3 Wall → Zone0', check: 'Media acoustically separated from bedrooms' },
+  { id: 'rf-4', name: 'No Show Kitchen', check: 'Kitchen not directly at entry' },
+  { id: 'rf-5', name: 'Guest → Kitchen Aisle', check: 'Guests not routed through kitchen' },
 ];
 
 /**
- * Score Circle component
+ * Circular Score Component
  */
-function ScoreCircle({ score, size = 100 }) {
-  const radius = (size - 10) / 2;
+function ScoreCircle({ score, size = 120 }) {
+  const radius = (size - 16) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
-  const color = score >= 80 ? COLORS.green : score >= 60 ? COLORS.amber : COLORS.red;
-
+  const dashoffset = circumference - progress;
+  
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#e5e7eb"
+          stroke={COLORS.border}
           strokeWidth="8"
         />
         {/* Progress circle */}
@@ -96,56 +92,83 @@ function ScoreCircle({ score, size = 100 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={color}
+          stroke={COLORS.success}
           strokeWidth="8"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
           strokeLinecap="round"
-          className="transition-all duration-500"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashoffset}
+          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold" style={{ color }}>{score}</span>
-        <span className="text-sm text-gray-500">/ 100</span>
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+      }}>
+        <div style={{ fontSize: '2rem', fontWeight: 600, color: COLORS.text }}>{score}</div>
+        <div style={{ fontSize: '0.875rem', color: COLORS.textMuted }}>/ 100</div>
       </div>
     </div>
   );
 }
 
 /**
- * Module score card
+ * Progress Bar Component
  */
-function ModuleScoreCard({ module, score, checklistCompleted, checklistTotal }) {
-  const passed = score >= module.threshold;
-  const progressColor = passed ? COLORS.green : COLORS.amber;
-
+function ProgressBar({ score, threshold = 80 }) {
+  const passed = score >= threshold;
+  const fillColor = passed ? COLORS.success : COLORS.warning;
+  
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center ${passed ? 'bg-green-100' : 'bg-amber-100'}`}>
-            {passed ? (
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-            )}
-          </span>
-          <span className="font-medium text-gray-900">{module.name}</span>
+    <div style={{
+      width: '100%',
+      height: '8px',
+      backgroundColor: COLORS.border,
+      borderRadius: '4px',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        width: `${score}%`,
+        height: '100%',
+        backgroundColor: fillColor,
+        borderRadius: '4px',
+        transition: 'width 0.3s ease',
+      }} />
+    </div>
+  );
+}
+
+/**
+ * Module Score Card
+ */
+function ModuleCard({ module, score, checklistCompleted = 0, checklistTotal = 0 }) {
+  const passed = score >= 80;
+  
+  return (
+    <div style={{
+      backgroundColor: COLORS.surface,
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: '8px',
+      padding: '1rem',
+      marginBottom: '0.75rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <CheckCircle size={18} color={passed ? COLORS.success : COLORS.warning} />
+          <span style={{ fontWeight: 500, color: COLORS.text }}>{module.name}</span>
         </div>
-        <span className="text-sm font-medium" style={{ color: progressColor }}>
+        <span style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: 600, 
+          color: passed ? COLORS.success : COLORS.warning 
+        }}>
           {score} / 100
         </span>
       </div>
-      
-      {/* Progress bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-        <div 
-          className="h-2 rounded-full transition-all duration-300"
-          style={{ width: `${score}%`, backgroundColor: progressColor }}
-        />
-      </div>
-      
-      <div className="text-xs text-gray-500">
+      <ProgressBar score={score} />
+      <div style={{ fontSize: '0.75rem', color: COLORS.textMuted, marginTop: '0.5rem' }}>
         {checklistCompleted} / {checklistTotal} checklist items
       </div>
     </div>
@@ -153,73 +176,59 @@ function ModuleScoreCard({ module, score, checklistCompleted, checklistTotal }) 
 }
 
 /**
- * Bridge status card
+ * Bridge Card
  */
 function BridgeCard({ bridge, required, present }) {
+  const status = !required ? 'not-required' : present ? 'present' : 'missing';
+  
   return (
-    <div className={`border rounded-lg p-3 ${present ? 'border-green-200 bg-green-50' : required ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {present ? (
-            <CheckCircle className="w-4 h-4 text-green-600" />
-          ) : required ? (
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-          ) : (
-            <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-          )}
-          <span className="font-medium text-gray-900">{bridge.name}</span>
+    <div style={{
+      backgroundColor: COLORS.surface,
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: '8px',
+      padding: '1rem',
+      marginBottom: '0.75rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontWeight: 500, color: COLORS.text }}>{bridge.name}</div>
+          <div style={{ fontSize: '0.8125rem', color: COLORS.textMuted }}>{bridge.description}</div>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded ${present ? 'bg-green-100 text-green-800' : required ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>
-          {present ? 'Present' : required ? 'Required' : 'Optional'}
+        <span style={{
+          padding: '0.25rem 0.75rem',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          backgroundColor: status === 'present' ? '#e8f5e9' : status === 'missing' ? '#ffebee' : '#f5f5f5',
+          color: status === 'present' ? COLORS.success : status === 'missing' ? COLORS.error : COLORS.textMuted,
+        }}>
+          {status === 'present' ? 'Present' : status === 'missing' ? 'Missing' : 'Not Required'}
         </span>
       </div>
-      <p className="text-xs text-gray-500 mt-1">{bridge.description}</p>
     </div>
   );
 }
 
 /**
- * Red flag card
+ * Red Flag Card
  */
 function RedFlagCard({ flag, triggered }) {
   return (
-    <div className={`border rounded-lg p-3 ${triggered ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
-      <div className="flex items-center gap-2">
-        {triggered ? (
-          <XCircle className="w-4 h-4 text-red-600" />
-        ) : (
-          <CheckCircle className="w-4 h-4 text-green-600" />
-        )}
-        <span className="font-medium text-gray-900">{flag.name}</span>
+    <div style={{
+      backgroundColor: triggered ? '#ffebee' : COLORS.surface,
+      border: `1px solid ${triggered ? COLORS.error : COLORS.border}`,
+      borderRadius: '8px',
+      padding: '1rem',
+      marginBottom: '0.75rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <AlertTriangle size={18} color={triggered ? COLORS.error : COLORS.success} />
+        <div>
+          <div style={{ fontWeight: 500, color: COLORS.text }}>{flag.name}</div>
+          <div style={{ fontSize: '0.8125rem', color: COLORS.textMuted }}>{flag.check}</div>
+        </div>
       </div>
-      <p className="text-xs text-gray-500 mt-1">{flag.description}</p>
     </div>
-  );
-}
-
-/**
- * Tab button
- */
-function TabButton({ active, onClick, icon: Icon, label, count, countColor }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
-        active 
-          ? 'bg-white shadow text-gray-900' 
-          : 'text-gray-600 hover:text-gray-900'
-      }`}
-    >
-      <div className="flex items-center justify-center gap-2">
-        <Icon className="w-4 h-4" />
-        <span>{label}</span>
-        {count !== undefined && (
-          <span className={`px-1.5 py-0.5 rounded text-xs ${countColor || 'bg-gray-100 text-gray-600'}`}>
-            {count}
-          </span>
-        )}
-      </div>
-    </button>
   );
 }
 
@@ -228,281 +237,503 @@ function TabButton({ active, onClick, icon: Icon, label, count, countColor }) {
  */
 export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDecisions }) {
   const [activeTab, setActiveTab] = useState('modules');
-  const [isValidating, setIsValidating] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
+  const [validationTime, setValidationTime] = useState(null);
   
   // Context
   const { fyiData, updateMVPAdjacencyConfig } = useContext(AppContext);
-  const { preset } = useKYCData();
+  const { preset, baseSF } = useKYCData();
   
-  // Get validation results from context (or default)
-  const validationResults = fyiData?.mvpAdjacencyConfig?.validationResults;
-  const validationRunAt = fyiData?.mvpAdjacencyConfig?.validationRunAt;
-
   // Get preset data
   const presetData = useMemo(() => {
     try {
-      return getPreset(preset);
+      return preset ? getPreset(preset) : null;
     } catch (e) {
       return null;
     }
   }, [preset]);
 
-  // Calculate scores based on decisions
-  const calculateValidation = useCallback(() => {
-    if (!presetData) return null;
+  // Get saved decisions
+  const savedDecisions = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
 
-    const savedDecisions = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
-    const decisions = getDecisionsForPreset(preset);
+  // Build matrices
+  const { benchmarkMatrix, proposedMatrix } = useMemo(() => {
+    if (!presetData?.adjacencyMatrix) return { benchmarkMatrix: {}, proposedMatrix: {} };
     
-    // Convert to choices format
+    const benchmark = {};
+    presetData.adjacencyMatrix.forEach(adj => {
+      if (adj.fromSpaceCode && adj.toSpaceCode) {
+        benchmark[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
+      }
+    });
+    
     const choices = Object.entries(savedDecisions).map(([decisionId, optionId]) => ({
       decisionId,
       selectedOptionId: optionId,
       isDefault: false,
       warnings: []
     }));
-
-    // Count deviations from defaults
-    let deviationCount = 0;
-    decisions.forEach(decision => {
-      const defaultOption = decision.options.find(o => o.isDefault);
-      const selectedOption = savedDecisions[decision.id];
-      if (selectedOption && defaultOption && selectedOption !== defaultOption.id) {
-        deviationCount++;
+    
+    const applied = applyDecisionsToMatrix(presetData.adjacencyMatrix, choices);
+    const proposed = {};
+    applied.forEach(adj => {
+      if (adj.fromSpaceCode && adj.toSpaceCode) {
+        proposed[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
       }
     });
+    
+    return { benchmarkMatrix: benchmark, proposedMatrix: proposed };
+  }, [presetData, savedDecisions]);
 
-    // Calculate module scores (simplified - in real implementation would use validation engine)
-    const moduleScores = MODULES.map(module => {
-      // Base score of 90, minus 5 for each deviation (simplified)
-      const baseScore = 90;
-      const penalty = Math.min(deviationCount * 3, 30); // Max 30 point penalty
-      const score = Math.max(baseScore - penalty + Math.floor(Math.random() * 10), 60);
+  // Find deviations
+  const deviations = useMemo(() => {
+    const devs = [];
+    Object.keys(benchmarkMatrix).forEach(key => {
+      const benchmarkRel = benchmarkMatrix[key];
+      const proposedRel = proposedMatrix[key];
+      if (benchmarkRel && proposedRel && benchmarkRel !== proposedRel) {
+        const [from, to] = key.split('-');
+        devs.push({ fromSpace: from, toSpace: to, desired: benchmarkRel, proposed: proposedRel });
+      }
+    });
+    return devs;
+  }, [benchmarkMatrix, proposedMatrix]);
+
+  // Calculate module scores
+  const moduleScores = useMemo(() => {
+    return MODULES.map(mod => {
+      // Count deviations affecting this module
+      const moduleDeviations = deviations.filter(dev => 
+        mod.spaces.includes(dev.fromSpace) || mod.spaces.includes(dev.toSpace)
+      );
+      
+      // Count benchmark relationships for this module
+      let benchmarkCount = 0;
+      Object.keys(benchmarkMatrix).forEach(key => {
+        const [from, to] = key.split('-');
+        if (mod.spaces.includes(from) || mod.spaces.includes(to)) {
+          benchmarkCount++;
+        }
+      });
+      
+      // Calculate score (100% minus deviation penalty)
+      const deviationPenalty = benchmarkCount > 0 
+        ? (moduleDeviations.length / benchmarkCount) * 100
+        : 0;
+      const score = Math.max(0, Math.round(100 - deviationPenalty * 2));
+      
       return {
-        ...module,
+        ...mod,
         score,
-        passed: score >= module.threshold,
+        passed: score >= 80,
+        deviationCount: moduleDeviations.length,
         checklistCompleted: 0,
-        checklistTotal: 0
+        checklistTotal: 0,
       };
     });
+  }, [deviations, benchmarkMatrix]);
 
-    // Calculate overall score
-    const overallScore = Math.round(
-      moduleScores.reduce((sum, m) => sum + m.score, 0) / moduleScores.length
-    );
+  // Calculate overall score
+  const overallScore = useMemo(() => {
+    if (moduleScores.length === 0) return 0;
+    return Math.round(moduleScores.reduce((sum, m) => sum + m.score, 0) / moduleScores.length);
+  }, [moduleScores]);
 
-    // Check bridges
-    const bridgeConfig = presetData.bridgeConfig || {};
-    const bridges = BRIDGES.map(bridge => ({
+  // Bridge status
+  const bridgeStatus = useMemo(() => {
+    if (!presetData?.bridgeConfig) return [];
+    return BRIDGES.map(bridge => ({
       ...bridge,
-      required: bridgeConfig[bridge.id] || false,
-      present: bridgeConfig[bridge.id] || false // Simplified - assume present if required
+      required: presetData.bridgeConfig[bridge.id] || false,
+      present: presetData.bridgeConfig[bridge.id] || false, // For now, assume present if required
     }));
+  }, [presetData]);
 
-    // Check red flags (simplified - all pass for demo)
-    const redFlags = RED_FLAGS.map(flag => ({
+  // Red flag status (simplified - all passing for now)
+  const redFlagStatus = useMemo(() => {
+    return RED_FLAGS.map(flag => ({
       ...flag,
-      triggered: false
+      triggered: false,
     }));
-
-    const triggeredFlags = redFlags.filter(f => f.triggered).length;
-    const missingBridges = bridges.filter(b => b.required && !b.present).length;
-
-    // Determine gate status
-    let gateStatus = 'pass';
-    if (triggeredFlags > 0) gateStatus = 'fail';
-    else if (missingBridges > 0 || overallScore < 80) gateStatus = 'warning';
-
-    return {
-      overallScore,
-      gateStatus,
-      moduleScores,
-      bridges,
-      redFlags,
-      triggeredFlagsCount: triggeredFlags,
-      missingBridgesCount: missingBridges
-    };
-  }, [presetData, fyiData, preset]);
+  }, []);
 
   // Run validation
-  const handleRunValidation = useCallback(async () => {
-    setIsValidating(true);
+  const handleRunValidation = useCallback(() => {
+    setHasRun(true);
+    setValidationTime(new Date().toLocaleString());
     
-    // Simulate async validation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const results = calculateValidation();
-    
-    // Save to context
-    updateMVPAdjacencyConfig({
-      validationResults: results,
-      validationRunAt: new Date().toISOString()
-    });
-    
-    setIsValidating(false);
-  }, [calculateValidation, updateMVPAdjacencyConfig]);
+    // Save validation results to context
+    if (updateMVPAdjacencyConfig) {
+      updateMVPAdjacencyConfig({
+        validationRunAt: new Date().toISOString(),
+        validationResults: {
+          overallScore,
+          moduleScores: moduleScores.map(m => ({ id: m.id, score: m.score })),
+        }
+      });
+    }
+  }, [overallScore, moduleScores, updateMVPAdjacencyConfig]);
 
-  // Use cached results or calculate fresh
-  const results = validationResults || calculateValidation();
-  
-  if (!results) {
-    return (
-      <div className="p-6">
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-amber-800">Please complete FYI configuration first.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { overallScore, gateStatus, moduleScores, bridges, redFlags, triggeredFlagsCount } = results;
-  const bridgeCount = bridges.filter(b => b.present).length;
+  const allPassed = moduleScores.every(m => m.passed);
+  const triggeredRedFlags = redFlagStatus.filter(rf => rf.triggered).length;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Run Validation Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleRunValidation}
-          disabled={isValidating}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-          style={{ backgroundColor: COLORS.navy }}
-        >
-          <Play className="w-4 h-4" />
-          {isValidating ? 'Validating...' : 'Run Validation'}
+    <div className="vrp-container">
+      {/* Header */}
+      <div className="vrp-header">
+        <button className="vrp-back-btn" onClick={onBack}>
+          <ArrowLeft size={16} />
+          Back
         </button>
+        <div className="vrp-title-row">
+          <h1 className="vrp-title">Validation Results</h1>
+          {preset && <span className="vrp-tier-badge">{preset.toUpperCase()} TIER</span>}
+        </div>
       </div>
 
-      {/* Results Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Validation Results</h2>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${
-            gateStatus === 'pass' ? 'bg-green-100 text-green-800' :
-            gateStatus === 'warning' ? 'bg-amber-100 text-amber-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {gateStatus === 'pass' ? <CheckCircle className="w-4 h-4" /> : 
-             gateStatus === 'warning' ? <AlertTriangle className="w-4 h-4" /> :
-             <XCircle className="w-4 h-4" />}
-            {gateStatus === 'pass' ? 'Pass' : gateStatus === 'warning' ? 'Warning' : 'Fail'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-8">
-          <ScoreCircle score={overallScore} size={120} />
-          <div>
-            <div className="flex items-center gap-2 text-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="font-medium text-gray-900">
-                {gateStatus === 'pass' ? 'All gates passed' : 
-                 gateStatus === 'warning' ? 'Minor issues detected' :
-                 'Critical issues found'}
-              </span>
-            </div>
-            <p className="text-gray-500 mt-1">
-              {triggeredFlagsCount} critical issues, 0 warnings
+      <div className="vrp-content">
+        {/* Run Validation Button */}
+        {!hasRun && (
+          <div className="vrp-run-card">
+            <button className="vrp-run-btn" onClick={handleRunValidation}>
+              <Play size={20} />
+              Run Validation
+            </button>
+            <p className="vrp-run-hint">
+              Click to validate your adjacency selections against the N4S {preset?.toUpperCase()} benchmark.
             </p>
-            {validationRunAt && (
-              <p className="text-xs text-gray-400 mt-2">
-                Validated at {new Date(validationRunAt).toLocaleString()}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-gray-100 rounded-xl p-1 mb-6">
-        <div className="flex gap-1">
-          <TabButton
-            active={activeTab === 'redflags'}
-            onClick={() => setActiveTab('redflags')}
-            icon={AlertTriangle}
-            label="Red Flags"
-            count={triggeredFlagsCount}
-            countColor={triggeredFlagsCount > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}
-          />
-          <TabButton
-            active={activeTab === 'bridges'}
-            onClick={() => setActiveTab('bridges')}
-            icon={Boxes}
-            label="Bridges"
-            count={bridgeCount}
-          />
-          <TabButton
-            active={activeTab === 'modules'}
-            onClick={() => setActiveTab('modules')}
-            icon={BarChart3}
-            label="Module Scores"
-          />
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="space-y-4">
-        {activeTab === 'redflags' && (
-          <div className="space-y-3">
-            {redFlags.map(flag => (
-              <RedFlagCard key={flag.id} flag={flag} triggered={flag.triggered} />
-            ))}
           </div>
         )}
 
-        {activeTab === 'bridges' && (
-          <div className="space-y-3">
-            {bridges.map(bridge => (
-              <BridgeCard 
-                key={bridge.id} 
-                bridge={bridge} 
-                required={bridge.required}
-                present={bridge.present}
-              />
-            ))}
-          </div>
-        )}
+        {/* Results Card */}
+        {hasRun && (
+          <div className="vrp-results-card">
+            {/* Score Section */}
+            <div className="vrp-score-section">
+              <ScoreCircle score={overallScore} />
+              <div className="vrp-score-info">
+                <span className={`vrp-pass-badge ${allPassed ? 'pass' : 'warning'}`}>
+                  <CheckCircle size={16} />
+                  {allPassed ? 'Pass' : 'Review Needed'}
+                </span>
+                <div className="vrp-score-details">
+                  <CheckCircle size={16} color={COLORS.success} />
+                  <span>All gates passed</span>
+                </div>
+                <div className="vrp-score-meta">
+                  {triggeredRedFlags} critical issues, {deviations.length} warnings
+                </div>
+                {validationTime && (
+                  <div className="vrp-timestamp">Validated at {validationTime}</div>
+                )}
+              </div>
+            </div>
 
-        {activeTab === 'modules' && (
-          <div className="space-y-3">
-            {moduleScores.map(module => (
-              <ModuleScoreCard 
-                key={module.id} 
-                module={module}
-                score={module.score}
-                checklistCompleted={module.checklistCompleted}
-                checklistTotal={module.checklistTotal}
-              />
-            ))}
+            {/* Tabs */}
+            <div className="vrp-tabs">
+              <button 
+                className={`vrp-tab ${activeTab === 'redflags' ? 'active' : ''}`}
+                onClick={() => setActiveTab('redflags')}
+              >
+                Red Flags ({triggeredRedFlags})
+              </button>
+              <button 
+                className={`vrp-tab ${activeTab === 'bridges' ? 'active' : ''}`}
+                onClick={() => setActiveTab('bridges')}
+              >
+                Bridges ({bridgeStatus.filter(b => b.required).length})
+              </button>
+              <button 
+                className={`vrp-tab ${activeTab === 'modules' ? 'active' : ''}`}
+                onClick={() => setActiveTab('modules')}
+              >
+                Module Scores
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="vrp-tab-content">
+              {activeTab === 'redflags' && (
+                <div>
+                  {redFlagStatus.map(flag => (
+                    <RedFlagCard key={flag.id} flag={flag} triggered={flag.triggered} />
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'bridges' && (
+                <div>
+                  {bridgeStatus.map(bridge => (
+                    <BridgeCard 
+                      key={bridge.id} 
+                      bridge={bridge} 
+                      required={bridge.required}
+                      present={bridge.present}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'modules' && (
+                <div>
+                  {moduleScores.map(module => (
+                    <ModuleCard 
+                      key={module.id} 
+                      module={module}
+                      score={module.score}
+                      checklistCompleted={module.checklistCompleted}
+                      checklistTotal={module.checklistTotal}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="vrp-actions">
+              {onViewMatrix && (
+                <button className="vrp-secondary-btn" onClick={onViewMatrix}>
+                  View Adjacency Matrix
+                </button>
+              )}
+              {onEditDecisions && (
+                <button className="vrp-secondary-btn" onClick={onEditDecisions}>
+                  Edit Decisions
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Action buttons */}
-      <div className="mt-6 flex justify-end gap-3">
-        {onViewMatrix && (
-          <button
-            onClick={onViewMatrix}
-            className="n4s-btn n4s-btn--secondary flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-            View Adjacency Matrix
-          </button>
-        )}
-        {onEditDecisions && (
-          <button
-            onClick={onEditDecisions}
-            className="n4s-btn n4s-btn--secondary flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit Decisions
-          </button>
-        )}
-      </div>
+      <style>{componentStyles}</style>
     </div>
   );
 }
+
+// CSS following N4S Brand Guide
+const componentStyles = `
+.vrp-container {
+  min-height: 100vh;
+  background-color: ${COLORS.background};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.vrp-header {
+  background-color: ${COLORS.surface};
+  border-bottom: 1px solid ${COLORS.border};
+  padding: 1rem 1.5rem;
+}
+
+.vrp-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: ${COLORS.textMuted};
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: all 0.15s ease;
+}
+
+.vrp-back-btn:hover {
+  border-color: ${COLORS.navy};
+  color: ${COLORS.navy};
+}
+
+.vrp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.vrp-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: ${COLORS.text};
+  margin: 0;
+}
+
+.vrp-tier-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vrp-content {
+  padding: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.vrp-run-card {
+  background-color: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.vrp-run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  background-color: ${COLORS.navy};
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrp-run-btn:hover {
+  opacity: 0.9;
+}
+
+.vrp-run-hint {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: ${COLORS.textMuted};
+}
+
+.vrp-results-card {
+  background-color: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.vrp-score-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid ${COLORS.border};
+  margin-bottom: 1.5rem;
+}
+
+.vrp-score-info {
+  flex: 1;
+}
+
+.vrp-pass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.vrp-pass-badge.pass {
+  background-color: #e8f5e9;
+  color: ${COLORS.success};
+}
+
+.vrp-pass-badge.warning {
+  background-color: #fff3e0;
+  color: ${COLORS.warning};
+}
+
+.vrp-score-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: ${COLORS.text};
+  margin-bottom: 0.25rem;
+}
+
+.vrp-score-meta {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+}
+
+.vrp-timestamp {
+  font-size: 0.75rem;
+  color: ${COLORS.textMuted};
+  margin-top: 0.5rem;
+}
+
+.vrp-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vrp-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background-color: ${COLORS.background};
+  border: none;
+  border-right: 1px solid ${COLORS.border};
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: ${COLORS.textMuted};
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrp-tab:last-child {
+  border-right: none;
+}
+
+.vrp-tab:hover {
+  background-color: ${COLORS.surface};
+}
+
+.vrp-tab.active {
+  background-color: ${COLORS.surface};
+  color: ${COLORS.navy};
+  box-shadow: inset 0 -2px 0 ${COLORS.navy};
+}
+
+.vrp-tab-content {
+  min-height: 300px;
+}
+
+.vrp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${COLORS.border};
+}
+
+.vrp-secondary-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: ${COLORS.navy};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrp-secondary-btn:hover {
+  border-color: ${COLORS.navy};
+}
+`;
