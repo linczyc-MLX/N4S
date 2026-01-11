@@ -4089,6 +4089,20 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   height: 16px;
 }
 
+/* MVP Module Header Actions */
+.mvp-module__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 16px;
+}
+
+.mvp-module__header-actions .n4s-btn--sm {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
+
 /* MVP Module Save Area */
 .mvp-module__save-area {
   display: flex;

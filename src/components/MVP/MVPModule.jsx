@@ -3,7 +3,7 @@ import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
   Building, Layers, ArrowRight, Sparkles, BookOpen,
-  GitCompare, Play, Database, List
+  GitCompare, Play, Database, List, FileText
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
@@ -12,6 +12,7 @@ import AdjacencyComparisonGrid from './AdjacencyComparisonGrid';
 import ValidationResultsPanel from './ValidationResultsPanel';
 import TierDataAdmin from './TierDataAdmin';
 import ProgramSummaryView from './ProgramSummaryView';
+import MVPDocumentation from './MVPDocumentation';
 import { 
   transformKYCToMVPBrief, 
   getMVPBriefSummary, 
@@ -149,7 +150,7 @@ const MVPModule = ({ onNavigate }) => {
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
   const [showRawData, setShowRawData] = useState(false);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin' | 'docs'
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -351,6 +352,15 @@ const MVPModule = ({ onNavigate }) => {
     );
   }
 
+  // If in docs mode, show MVP Documentation
+  if (viewMode === 'docs') {
+    return (
+      <MVPDocumentation
+        onClose={() => setViewMode('overview')}
+      />
+    );
+  }
+
   if (!briefInputs) {
     return (
       <div className="mvp-module">
@@ -399,6 +409,18 @@ const MVPModule = ({ onNavigate }) => {
               <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
             )}
           </p>
+        </div>
+        
+        {/* Header Actions */}
+        <div className="mvp-module__header-actions">
+          <button 
+            className="n4s-btn n4s-btn--ghost n4s-btn--sm"
+            onClick={() => setViewMode('docs')}
+            title="View Documentation"
+          >
+            <FileText size={16} />
+            Documentation
+          </button>
         </div>
         
         {/* Save Status */}
