@@ -1,5 +1,103 @@
 # N4S Session Log
 
+## Session: January 11, 2026 - Data Flow & Navigation Fixes
+
+### Issues Identified (from client review)
+1. **Bridges all showing "Present"** - Not derived from user's actual decisions
+2. **Red Flags were mocked** - Not computed from adjacency matrix
+3. **No warning when no decisions** - User needs to know to complete Layout Questions
+4. **Navigation inconsistent** - Back buttons had different text/behavior
+
+### Root Cause Analysis
+
+**Bridge Issue:**
+- 15K preset has `bridgeConfig: { butlerPantry: true, guestAutonomy: true, ... }` as defaults
+- ValidationResultsPanel was showing preset defaults as "Present"
+- Should show: `Required` = preset benchmark, `Present` = user's decision selections
+
+**Red Flag Issue:**
+- Red flags were hardcoded as `triggered: false`
+- Should actually check adjacency matrix relationships
+
+### Fixes Implemented
+
+#### 1. ValidationResultsPanel - Complete Rewrite
+
+**Bridges now derived from decisions:**
+```javascript
+// Check each saved decision for bridgeRequired
+Object.entries(savedDecisions).forEach(([decisionId, optionId]) => {
+  const decision = ADJACENCY_DECISIONS.find(d => d.id === decisionId);
+  if (decision) {
+    const option = decision.options.find(o => o.id === optionId);
+    if (option?.bridgeRequired) {
+      enabledBridges.add(option.bridgeRequired);
+    }
+  }
+});
+```
+
+**Red flags computed from matrix:**
+```javascript
+// Example: Guest → Primary Suite check
+const rel = matrix['GUEST1-PRI'] || matrix['PRI-GUEST1'];
+triggered: rel === 'A' || rel === 'N';  // Should be B or S
+```
+
+**5 Red Flag Checks:**
+| Red Flag | Check | Violation |
+|----------|-------|-----------|
+| RF1: Guest→Primary | GUEST1-PRI | A or N |
+| RF2: Delivery→FOH | GAR-FOY, GAR-GR | A or N |
+| RF3: Media→Bedroom | MEDIA-PRI, MEDIA-GUEST1 | A or N |
+| RF4: Kitchen at Entry | KIT-FOY | A |
+| RF5: Guest Through Kitchen | GUEST1-KIT | A or N |
+
+**No-decisions warning:**
+- Shows alert when `savedDecisions` is empty
+- Links to "Answer Layout Questions"
+
+#### 2. Navigation Consistency
+
+**Standard back button:**
+- Text: "Back to MVP Overview"
+- Position: Top-left, below header
+- Style: Ghost button with ArrowLeft icon
+
+**Updated components:**
+- AdjacencyComparisonGrid
+- TierDataAdmin
+- ValidationResultsPanel (already correct)
+
+#### 3. Navigation Structure Document
+
+Created `docs/MVP-NAVIGATION.md`:
+- Screen hierarchy map
+- Back button rules
+- Cross-screen navigation patterns
+
+### Data Flow Clarification
+
+```
+User answers Layout Questions
+       ↓
+Saved to fyiData.mvpAdjacencyConfig.decisionAnswers
+       ↓
+ValidationResultsPanel reads decisions
+       ↓
+Derives bridges from bridgeRequired field
+       ↓
+Shows: Required (benchmark) vs Present (user selections)
+```
+
+### Files Changed
+- `src/components/MVP/ValidationResultsPanel.jsx` - Complete rewrite
+- `src/components/MVP/AdjacencyComparisonGrid.jsx` - Back button
+- `src/components/MVP/TierDataAdmin.jsx` - Back button
+- `docs/MVP-NAVIGATION.md` - NEW
+
+---
+
 ## Session: January 11, 2026 - N4S Brand Guide Compliance Fixes
 
 ### Objective
