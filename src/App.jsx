@@ -13,15 +13,16 @@ import FYIModule from './components/FYI/FYIModule';
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
-// Module color mapping (solid backgrounds for header)
+// Module color mapping (SOLID backgrounds per Brand Guide Section 13)
+// Using the darker "Text" colors as solid backgrounds for white text readability
 const moduleColors = {
-  dashboard: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },             // Navy with gold accent
-  kyc: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },                   // Navy - A
-  fyi: { bg: '#1e3a5f', text: '#ffffff', accent: '#319795' },                   // Navy with teal accent
-  mvp: { bg: '#1e3a5f', text: '#ffffff', accent: '#48bb78' },                   // Navy with green accent
-  kym: { bg: '#1e3a5f', text: '#ffffff', accent: '#805ad5' },                   // Navy with purple accent
-  vmx: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a962' },                   // Navy with gold accent
-  settings: { bg: '#1e3a5f', text: '#ffffff', accent: '#6b7280' },              // Navy with gray accent
+  dashboard: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },             // Navy (brand primary)
+  kyc: { bg: '#1a365d', text: '#ffffff', accent: '#1a365d' },                   // Navy (Brand Guide: KYC)
+  fyi: { bg: '#285e61', text: '#ffffff', accent: '#319795' },                   // Dark Teal (Brand Guide: FYI)
+  mvp: { bg: '#276749', text: '#ffffff', accent: '#48bb78' },                   // Dark Green (Brand Guide: MVP)
+  kym: { bg: '#553c9a', text: '#ffffff', accent: '#805ad5' },                   // Dark Purple (Brand Guide: KYM)
+  vmx: { bg: '#8b7355', text: '#ffffff', accent: '#c9a962' },                   // Dark Gold (Brand Guide: VMX)
+  settings: { bg: '#374151', text: '#ffffff', accent: '#9ca3af' },              // Gray (utility)
 };
 
 // Simple Settings Panel component
