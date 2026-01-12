@@ -13,8 +13,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, DollarSign, Clock, Activity, RefreshCw,
   Home, Users, MapPin, Search, Filter, LayoutGrid, BarChart2,
-  Bed, Bath, Maximize, Trees, Calendar, ExternalLink,
-  GraduationCap, ChevronDown, AlertCircle, CheckCircle2
+  Bed, Bath, Maximize, Trees, Calendar, ExternalLink, X,
+  GraduationCap, ChevronDown, AlertCircle, CheckCircle2, Database
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
@@ -151,6 +151,171 @@ const PropertyCard = ({ property, onClick }) => {
             <ExternalLink size={12} /> View Listing
           </a>
         )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Property Detail Modal - Full details with "View Listing" button
+ */
+const PropertyDetailModal = ({ property, isOpen, onClose }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (!isOpen || !property) return null;
+
+  const formatPrice = (value) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(value);
+
+  const formatSqft = (value) => new Intl.NumberFormat('en-US').format(value);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return { bg: '#dcfce7', text: '#166534' };
+      case 'pending': return { bg: '#fef9c3', text: '#854d0e' };
+      case 'sold': return { bg: '#dbeafe', text: '#1e40af' };
+      default: return { bg: '#f3f4f6', text: '#374151' };
+    }
+  };
+
+  const statusStyle = getStatusColor(property.status);
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="kym-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="kym-modal-content">
+        {/* Header */}
+        <div className="kym-modal-header">
+          <h2 className="kym-modal-title">{property.address}</h2>
+          <div className="kym-modal-header-actions">
+            <span 
+              className="kym-modal-status"
+              style={{ background: statusStyle.bg, color: statusStyle.text }}
+            >
+              {property.status}
+            </span>
+            <button className="kym-modal-close" onClick={onClose}>
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Image */}
+        <div className="kym-modal-image-container">
+          {property.imageUrl && !imageError ? (
+            <img 
+              src={property.imageUrl} 
+              alt={property.address}
+              className="kym-modal-image"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="kym-modal-image-placeholder">
+              <Home size={64} />
+              <span>{property.sqft > 15000 ? 'Estate' : 'Luxury'}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Location */}
+        <div className="kym-modal-location">
+          <MapPin size={16} />
+          <span>{property.city}, {property.state} {property.zipCode}</span>
+        </div>
+
+        {/* Price Info */}
+        <div className="kym-modal-price-section">
+          <div>
+            <span className="kym-modal-price-label">Asking Price</span>
+            <span className="kym-modal-price-value">{formatPrice(property.askingPrice)}</span>
+          </div>
+          <div>
+            <span className="kym-modal-price-label">Price per Sq Ft</span>
+            <span className="kym-modal-price-ppsf">{formatPrice(property.pricePerSqFt)}</span>
+          </div>
+        </div>
+
+        {/* Property Specs */}
+        <div className="kym-modal-specs">
+          <div className="kym-modal-spec">
+            <Bed size={20} />
+            <span className="kym-modal-spec-value">{property.beds}</span>
+            <span className="kym-modal-spec-label">Bedrooms</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Bath size={20} />
+            <span className="kym-modal-spec-value">{property.baths}</span>
+            <span className="kym-modal-spec-label">Bathrooms</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Maximize size={20} />
+            <span className="kym-modal-spec-value">{formatSqft(property.sqft)}</span>
+            <span className="kym-modal-spec-label">Sq Ft</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Trees size={20} />
+            <span className="kym-modal-spec-value">{property.acreage?.toFixed(2)}</span>
+            <span className="kym-modal-spec-label">Acres</span>
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div className="kym-modal-details">
+          {property.yearBuilt && (
+            <div className="kym-modal-detail">
+              <Home size={14} />
+              <span>Year Built: <strong>{property.yearBuilt}</strong></span>
+            </div>
+          )}
+          <div className="kym-modal-detail">
+            <Calendar size={14} />
+            <span>Days on Market: <strong>{property.daysOnMarket}</strong></span>
+          </div>
+        </div>
+
+        {/* Features */}
+        {property.features && property.features.length > 0 && (
+          <div className="kym-modal-features">
+            {property.features.map((feature, i) => (
+              <span key={i} className="kym-modal-feature-tag">{feature}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="kym-modal-footer">
+          <div className="kym-modal-source">
+            {property.dataSource && property.dataSource !== 'generated' && (
+              <span className="kym-modal-source-badge">
+                <Database size={12} />
+                {property.dataSource === 'realtor' ? 'Realtor.com' : property.dataSource}
+              </span>
+            )}
+          </div>
+          <div className="kym-modal-actions">
+            {property.listingUrl && (
+              <button 
+                className="kym-modal-btn kym-modal-btn--primary"
+                onClick={() => window.open(property.listingUrl, '_blank')}
+              >
+                <ExternalLink size={16} />
+                View Listing
+              </button>
+            )}
+            <button 
+              className="kym-modal-btn kym-modal-btn--secondary"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -526,9 +691,12 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   
   // Filters for comparable properties
   const [priceRange, setPriceRange] = useState([5000000, 25000000]);
-  const [sqftRange, setSqftRange] = useState([10000, 20000]);
+  const [sqftRange, setSqftRange] = useState([5500, 26000]); // Lower minimum to 5,500
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
+  
+  // Property detail modal
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   // Get client location from KYC if available
   const clientLocation = kycData?.principal?.projectParameters?.projectCity ? {
@@ -892,7 +1060,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                       <PropertyCard 
                         key={property.id} 
                         property={property}
-                        onClick={() => {/* Open detail modal */}}
+                        onClick={() => setSelectedProperty(property)}
                       />
                     ))}
                   </div>
@@ -1061,6 +1229,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
           </div>
         )}
       </div>
+
+      {/* Property Detail Modal */}
+      <PropertyDetailModal 
+        property={selectedProperty}
+        isOpen={!!selectedProperty}
+        onClose={() => setSelectedProperty(null)}
+      />
     </div>
   );
 };
@@ -1104,8 +1279,9 @@ function generateMockLocationData(zipCode) {
   ];
 
   for (let i = 0; i < 12; i++) {
-    const sqft = 10000 + Math.floor(Math.random() * 10000);
-    const pricePerSqFt = 1200 + Math.floor(Math.random() * 800);
+    // Generate wider range of sqft: 5,500 to 26,000
+    const sqft = 5500 + Math.floor(Math.random() * 20500);
+    const pricePerSqFt = 1000 + Math.floor(Math.random() * 1000);
     const askingPrice = sqft * pricePerSqFt;
     const selectedFeatures = features
       .sort(() => Math.random() - 0.5)
@@ -1121,15 +1297,15 @@ function generateMockLocationData(zipCode) {
       soldPrice: Math.random() > 0.7 ? askingPrice * (0.95 + Math.random() * 0.1) : null,
       pricePerSqFt,
       sqft,
-      beds: 5 + Math.floor(Math.random() * 4),
-      baths: 6 + Math.floor(Math.random() * 5),
+      beds: 4 + Math.floor(Math.random() * 5),
+      baths: 5 + Math.floor(Math.random() * 6),
       acreage: 0.5 + Math.random() * 3,
       yearBuilt: 2010 + Math.floor(Math.random() * 14),
       features: selectedFeatures,
       status: ['active', 'active', 'active', 'pending', 'sold'][Math.floor(Math.random() * 5)],
       daysOnMarket: Math.floor(Math.random() * 120),
       imageUrl: null,
-      listingUrl: null,
+      listingUrl: `https://www.realtor.com/example/${zipCode}/${i}`,
       dataSource: 'generated',
     });
   }

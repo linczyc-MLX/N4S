@@ -46,8 +46,7 @@ const setCachedData = (key, data) => {
 export const fetchProperties = async (zipCode, options = {}) => {
   const {
     limit = 50,
-    minPrice = 5000000,
-    minSqft = 8000,
+    minPrice = 3000000, // Lower to get more results for filtering
     status = ['for_sale', 'ready_to_build'],
   } = options;
 
@@ -80,9 +79,7 @@ export const fetchProperties = async (zipCode, options = {}) => {
       list_price: {
         min: minPrice,
       },
-      sqft: {
-        min: minSqft,
-      },
+      // Note: Removed sqft filter to allow client-side filtering of all property sizes
     }),
   });
 
@@ -135,14 +132,19 @@ const transformProperties = (apiResults) => {
       pricePerSqFt,
       sqft,
       beds: description.beds || 0,
-      baths: description.baths || 0,
+      baths: description.baths || description.baths_full || 0,
       acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
       yearBuilt: description.year_built || null,
       features,
       status: mapStatus(property.status),
       daysOnMarket: Math.max(0, daysOnMarket),
-      imageUrl: property.primary_photo?.href || null,
-      listingUrl: property.href || null,
+      // Try multiple image sources - API returns different structures
+      imageUrl: property.primary_photo?.href 
+        || (property.photos && property.photos[0]?.href) 
+        || null,
+      // Listing URL - construct from property_id if href not available
+      listingUrl: property.href 
+        || (property.property_id ? `https://www.realtor.com/realestateandhomes-detail/${property.property_id}` : null),
       dataSource: 'realtor',
     };
   });
