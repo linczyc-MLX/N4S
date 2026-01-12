@@ -6,7 +6,7 @@
  */
 
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // =============================================================================
 // N4S BRAND CONSTANTS
@@ -286,7 +286,7 @@ export const generateKYMReport = async (data) => {
     ['Inventory Range', `${formatCurrency(marketData?.minPrice || 0)} - ${formatCurrency(marketData?.maxPrice || 0)}`],
   ];
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: currentY,
     head: [],
     body: metricsData,
@@ -320,7 +320,7 @@ export const generateKYMReport = async (data) => {
       p.scoring.matchLevel,
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: currentY,
       head: [['Persona', 'Match', 'Level']],
       body: topPersonas,
@@ -373,7 +373,7 @@ export const generateKYMReport = async (data) => {
       ['Average Price/SF', formatCurrency(marketData.avgPricePerSqFt)],
     ];
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: currentY,
       body: pricingData,
       theme: 'plain',
@@ -410,7 +410,7 @@ export const generateKYMReport = async (data) => {
     ['Avg Days on Market', `${marketData?.avgDaysOnMarket || 'N/A'} days`],
   ];
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: currentY,
     body: inventoryData,
     theme: 'plain',
@@ -454,7 +454,7 @@ export const generateKYMReport = async (data) => {
       p.status.charAt(0).toUpperCase() + p.status.slice(1),
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: currentY,
       head: [['Address', 'Price', 'Size', 'Price/SF', 'Bed/Bath', 'Status']],
       body: propertyTableData,
@@ -509,7 +509,7 @@ export const generateKYMReport = async (data) => {
       ]);
 
     if (featureData.length > 0) {
-      doc.autoTable({
+      autoTable(doc, {
         startY: currentY,
         head: [['Feature', 'Count', '% of Listings']],
         body: featureData,
@@ -661,7 +661,7 @@ export const generateKYMReport = async (data) => {
       p.scoring.confidence,
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: currentY,
       head: [['Rank', 'Persona', 'Score', 'Match Level', 'Confidence']],
       body: allPersonasData,
@@ -734,7 +734,7 @@ export const generateKYMReport = async (data) => {
         programData.push(['Market Comparison', sizeComparison]);
       }
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: currentY,
         body: programData,
         theme: 'plain',
@@ -783,7 +783,7 @@ export const generateKYMReport = async (data) => {
         return [spaceName, appeal.slice(0, 2).join(', ')];
       });
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: currentY,
         head: [['Space', 'Primary Buyer Appeal']],
         body: spaceData,
