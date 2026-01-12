@@ -1175,3 +1175,122 @@ Updated Section 13 with Soft Pillow palette:
 - Change: Updated Module Colors to Soft Pillow palette
 
 ---
+
+## Session: January 11, 2026 (Part 2) - KYM Module Implementation
+
+### Overview
+
+Built the KYM (Know Your Market) module based on the Market-Intel Replit prototype. The module provides market intelligence for luxury residential development including market analysis, comparable properties with live API integration, and demographics with buyer personas.
+
+### Source Analysis
+
+**Replit Prototype Components Analyzed:**
+- `server/services/property-service.ts` - Live API integration with Realtor.com via RapidAPI
+- `server/routes.ts` - API endpoints for location data, properties, demographics
+- `client/src/pages/` - Market Analysis, Comparable Properties, Demographics, Report pages
+- `client/src/context/location-context.tsx` - Location state management
+- `shared/schema.ts` - Data types and validation schemas
+
+### KYM Module Structure
+
+```
+src/components/KYM/
+├── KYMModule.jsx         # Main module with tabs
+├── KYMModule.css         # N4S-branded styles
+├── KYMDocumentation.jsx  # 4-tab documentation
+└── index.js              # Module exports
+```
+
+### Features Implemented
+
+#### 1. Market Analysis Tab
+- Market KPIs: Growth Rate, Median $/SF, Listing Duration, Demand Index
+- 12-month trend visualization
+- Market summary with outlook text
+
+#### 2. Comparable Properties Tab
+- Property grid with filtering
+- Price range and SF range filters
+- Property cards with specs, features, status badges
+- Search by address
+- Support for live API data (via RAPIDAPI_KEY env var)
+- Fallback to generated sample data
+
+#### 3. Demographics Tab
+- Population, income, education stats
+- Income distribution visualization
+- Target buyer personas
+- Feature priority matrix (9 features ranked by importance)
+
+### Integration Points
+
+**App.jsx Changes:**
+- Added Map icon import from lucide-react
+- Added KYMModule import
+- Added 'kym' to modules array (between MVP and Settings)
+- Added 'kym' to modulesWithDocs array
+- Added KYM case in renderModule()
+
+**Dashboard.jsx Changes:**
+- Enabled KYM module (removed comingSoon flag)
+- Updated description to match actual functionality
+- KYM now navigable from dashboard
+
+### API Integration Notes
+
+**Live Data (when RAPIDAPI_KEY configured):**
+- Fetches real property listings from Realtor.com API
+- Caches results for 30 minutes
+- Falls back to generated data on API failure
+
+**Current Status:**
+- Module uses generated mock data by default
+- Ready for live API integration when keys provided
+- API endpoints match Market-Intel prototype structure
+
+### Alignment Model Concept
+
+Proposed framework for P2 "Have a Story to Tell":
+
+**Data Sources to Correlate:**
+1. KYC: Budget, location, lifestyle, family needs
+2. FYI: Spaces, features, SF allocation, tier
+3. MVP: Adjacency decisions, red flags, bridges
+4. KYM: Market $/SF, buyer personas, feature priorities
+
+**Proposed Scores:**
+1. Price Positioning Score (client $/SF vs market median)
+2. Feature Alignment Score (FYI features vs buyer priorities)
+3. Buyer Persona Match Score (client profile vs personas)
+4. Market Timing Score (demand index + growth rate)
+
+**Story Elements:**
+- Investment positioning statement
+- Target buyer profile match
+- Feature differentiation analysis
+- Market timing validation
+
+### Files Created
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `KYMModule.jsx` | ~900 | Main module with all three tabs |
+| `KYMModule.css` | ~700 | Full styling following N4S brand |
+| `KYMDocumentation.jsx` | ~450 | 4-tab documentation |
+| `index.js` | 2 | Module exports |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/App.jsx` | Added KYM import, navigation, routing |
+| `src/components/Dashboard.jsx` | Enabled KYM module |
+
+### Build Status
+
+✅ Build successful - all files compile correctly
+✅ KYM module accessible via sidebar navigation
+✅ Documentation accessible via header button
+✅ Dusty Rose (#E4C0BE) header color applied
+
+---

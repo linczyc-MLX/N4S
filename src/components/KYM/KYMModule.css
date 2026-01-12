@@ -1,0 +1,1125 @@
+/**
+ * KYM Module Styles - Know Your Market
+ * Following N4S Brand Guide conventions
+ * Module Color: Dusty Rose #E4C0BE
+ */
+
+/* =============================================================================
+   MODULE CONTAINER
+   ============================================================================= */
+
+.kym-module {
+  background: var(--color-background, #fafaf8);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =============================================================================
+   HEADER
+   ============================================================================= */
+
+.kym-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+  flex-wrap: wrap;
+}
+
+.kym-header__title-area {
+  flex: 1;
+  min-width: 200px;
+}
+
+.kym-header__title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--n4s-navy, #1e3a5f);
+  margin: 0 0 0.25rem 0;
+}
+
+.kym-header__subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  margin: 0;
+}
+
+.kym-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.kym-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kym-refresh-btn:hover {
+  background: var(--color-background, #fafaf8);
+  border-color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   DATA SOURCE INDICATOR
+   ============================================================================= */
+
+.kym-data-source {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-data-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.kym-data-badge--realtor {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.kym-data-badge--generated {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.kym-data-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+/* =============================================================================
+   TABS
+   ============================================================================= */
+
+.kym-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+  overflow-x: auto;
+}
+
+.kym-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b6b6b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.kym-tab:hover {
+  background: var(--color-background, #fafaf8);
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-tab--active {
+  background: var(--n4s-navy, #1e3a5f);
+  color: white;
+  border-color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-tab--active:hover {
+  background: var(--n4s-navy, #1e3a5f);
+  color: white;
+}
+
+/* =============================================================================
+   CONTENT AREA
+   ============================================================================= */
+
+.kym-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.kym-loading,
+.kym-empty,
+.kym-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-loading svg,
+.kym-empty svg {
+  opacity: 0.3;
+}
+
+.kym-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+/* Spinning animation */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   LOCATION SELECTOR
+   ============================================================================= */
+
+.kym-location-selector {
+  position: relative;
+}
+
+.kym-location-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 200px;
+}
+
+.kym-location-button:hover {
+  border-color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-location-button svg.rotated {
+  transform: rotate(180deg);
+}
+
+.kym-location-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 280px;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.kym-location-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-location-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.kym-location-section {
+  padding: 0.5rem 0;
+}
+
+.kym-location-section-title {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-location-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a1a);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.kym-location-option:hover {
+  background: var(--color-background, #fafaf8);
+}
+
+.kym-location-option--active {
+  background: rgba(30, 58, 95, 0.1);
+  color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-location-option--highlight {
+  background: #E4C0BE20;
+}
+
+.kym-location-zip {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+/* =============================================================================
+   KPI CARDS
+   ============================================================================= */
+
+.kym-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kym-kpi-card {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.kym-kpi-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(30, 58, 95, 0.1);
+  border-radius: 6px;
+  color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+  margin-bottom: 0.5rem;
+}
+
+.kym-kpi-change {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.kym-kpi-change--positive {
+  color: var(--color-success, #2e7d32);
+}
+
+.kym-kpi-change--negative {
+  color: var(--color-error, #d32f2f);
+}
+
+/* =============================================================================
+   MARKET CHARTS
+   ============================================================================= */
+
+.kym-market-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .kym-market-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kym-chart-card {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-chart-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+  margin: 0 0 1rem 0;
+}
+
+.kym-chart-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 200px;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-mini-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100px;
+  width: 100%;
+  padding-top: 1rem;
+}
+
+.kym-trend-bar {
+  flex: 1;
+  min-width: 20px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s ease;
+}
+
+.kym-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.kym-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-summary-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.kym-summary-item span {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-summary-item strong {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.kym-market-outlook {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-market-outlook h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.kym-market-outlook p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* =============================================================================
+   COMPARABLE PROPERTIES
+   ============================================================================= */
+
+.kym-comparables-layout {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.kym-filters-panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1rem;
+  height: fit-content;
+  position: sticky;
+  top: 0;
+}
+
+.kym-filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.kym-filters-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.kym-filters-header button {
+  font-size: 0.75rem;
+  color: var(--n4s-navy, #1e3a5f);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.kym-filter-group {
+  margin-bottom: 1.25rem;
+}
+
+.kym-filter-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b6b6b);
+  margin-bottom: 0.5rem;
+}
+
+.kym-range-display {
+  font-size: 0.75rem;
+  color: var(--color-text, #1a1a1a);
+  margin-bottom: 0.5rem;
+}
+
+.kym-filter-group input[type="range"] {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.kym-status-badges,
+.kym-feature-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.kym-status-badge,
+.kym-feature-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.kym-status-badge {
+  background: var(--color-background, #fafaf8);
+  border: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-status-badge--active { background: #dcfce7; color: #166534; }
+.kym-status-badge--pending { background: #fef9c3; color: #854d0e; }
+.kym-status-badge--sold { background: #dbeafe; color: #1e40af; }
+
+.kym-feature-badge {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-comparables-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.kym-comparables-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.kym-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-search-box {
+  flex: 1;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 6px;
+}
+
+.kym-search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.kym-property-count {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  margin-left: auto;
+}
+
+.kym-property-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+/* =============================================================================
+   PROPERTY CARD
+   ============================================================================= */
+
+.kym-property-card {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kym-property-card:hover {
+  border-color: var(--n4s-navy, #1e3a5f);
+}
+
+.kym-property-image {
+  position: relative;
+  height: 180px;
+  background: var(--color-background, #fafaf8);
+}
+
+.kym-property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kym-property-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.5rem;
+  color: var(--n4s-navy, #1e3a5f);
+  opacity: 0.2;
+}
+
+.kym-property-status {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  text-transform: capitalize;
+}
+
+.kym-property-new {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--n4s-navy, #1e3a5f);
+  color: white;
+}
+
+.kym-property-content {
+  padding: 1rem;
+}
+
+.kym-property-address {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kym-property-location {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #6b6b6b);
+  margin: 0 0 0.75rem 0;
+}
+
+.kym-property-specs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-property-specs span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.kym-property-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.kym-property-price {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-property-ppsf {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-property-dom {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-property-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-feature-tag {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  background: var(--color-background, #fafaf8);
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 4px;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-property-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--n4s-navy, #1e3a5f);
+  text-decoration: none;
+}
+
+.kym-property-link:hover {
+  text-decoration: underline;
+}
+
+/* =============================================================================
+   DEMOGRAPHICS
+   ============================================================================= */
+
+.kym-demographics {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.kym-demo-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.kym-demo-kpi {
+  display: flex;
+  gap: 1rem;
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-demo-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(30, 58, 95, 0.1);
+  border-radius: 6px;
+  color: var(--n4s-navy, #1e3a5f);
+  flex-shrink: 0;
+}
+
+.kym-demo-kpi-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.kym-demo-kpi-label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-demo-kpi-value {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-demo-kpi-change {
+  font-size: 0.75rem;
+  color: var(--color-success, #2e7d32);
+}
+
+.kym-demo-kpi-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b6b6b);
+}
+
+.kym-demo-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.kym-demo-chart-card {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-demo-chart-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.kym-income-bars,
+.kym-education-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.kym-income-bar-row,
+.kym-edu-bar-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 50px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kym-income-label {
+  font-size: 0.8125rem;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-income-bar-track,
+.kym-edu-bar-track {
+  height: 8px;
+  background: var(--color-background, #fafaf8);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kym-income-bar-fill,
+.kym-edu-bar-fill {
+  height: 100%;
+  background: var(--n4s-navy, #1e3a5f);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.kym-income-value {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.kym-edu-bar-row span:first-child {
+  font-size: 0.8125rem;
+}
+
+.kym-edu-bar-row span:last-child {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+/* =============================================================================
+   BUYER PERSONAS
+   ============================================================================= */
+
+.kym-personas-section {
+  margin-top: 1rem;
+}
+
+.kym-personas-section h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--n4s-navy, #1e3a5f);
+  margin: 0 0 0.25rem 0;
+}
+
+.kym-personas-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  margin: 0 0 1.5rem 0;
+}
+
+.kym-personas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kym-persona-card {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-persona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.kym-persona-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-persona-likelihood {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #E4C0BE;
+  border-radius: 4px;
+  color: var(--color-text, #1a1a1a);
+}
+
+.kym-persona-description {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #6b6b6b);
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+.kym-persona-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  margin-bottom: 1rem;
+}
+
+.kym-persona-details strong {
+  color: var(--color-text-muted, #6b6b6b);
+  font-weight: 500;
+}
+
+.kym-persona-priorities {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e5e5e0);
+}
+
+.kym-persona-priorities strong {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b6b6b);
+  margin-bottom: 0.5rem;
+}
+
+.kym-persona-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.kym-priority-tag {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  background: var(--color-background, #fafaf8);
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 4px;
+}
+
+/* =============================================================================
+   FEATURE PRIORITIES
+   ============================================================================= */
+
+.kym-feature-priorities {
+  background: white;
+  border: 1px solid var(--color-border, #e5e5e0);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.kym-feature-priorities h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.kym-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.kym-priority-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.kym-priority-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.kym-priority-badge {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--color-background, #fafaf8);
+  border-radius: 4px;
+}
+
+.kym-priority-bar {
+  height: 6px;
+  background: var(--color-background, #fafaf8);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.kym-priority-fill {
+  height: 100%;
+  background: #E4C0BE;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .kym-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kym-header__actions {
+    justify-content: flex-start;
+  }
+
+  .kym-comparables-layout {
+    flex-direction: column;
+  }
+
+  .kym-filters-panel {
+    width: 100%;
+    position: static;
+  }
+
+  .kym-property-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kym-demo-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .kym-personas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kym-income-bar-row,
+  .kym-edu-bar-row {
+    grid-template-columns: 80px 1fr 40px;
+  }
+}
