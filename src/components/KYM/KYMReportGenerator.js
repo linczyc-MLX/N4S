@@ -97,25 +97,31 @@ export const generateKYMReport = async (data) => {
   let currentY = 0;
 
   // Get client info from KYC
-  // Principal name is stored in designIdentity section
-  const principalFirstName = kycData?.principal?.designIdentity?.principalName || '';
-  const secondaryName = kycData?.principal?.designIdentity?.secondaryName || '';
-  // Build full client name: "FirstName LastName" or "FirstName & SecondaryName LastName" for couples
-  const clientBaseName = kycData?.principal?.designIdentity?.clientBaseName || '';
-  const clientType = kycData?.principal?.designIdentity?.clientType || '';
+  // KYC structure: kycData.principal.portfolioContext contains client names
+  const principalFirstName = kycData?.principal?.portfolioContext?.principalFirstName || '';
+  const principalLastName = kycData?.principal?.portfolioContext?.principalLastName || '';
+  const secondaryFirstName = kycData?.principal?.portfolioContext?.secondaryFirstName || '';
+  const secondaryLastName = kycData?.principal?.portfolioContext?.secondaryLastName || '';
   
-  // Format client name based on client type
+  // Format client name - use portfolioContext names
   let clientName = 'Client';
-  if (principalFirstName && clientBaseName) {
-    if (clientType === 'couple' && secondaryName) {
-      clientName = `${principalFirstName} & ${secondaryName} ${clientBaseName}`;
+  if (principalFirstName && principalLastName) {
+    // Check if there's a secondary/partner
+    if (secondaryFirstName && secondaryLastName === principalLastName) {
+      // Same last name - "John & Jane Smith"
+      clientName = `${principalFirstName} & ${secondaryFirstName} ${principalLastName}`;
+    } else if (secondaryFirstName && secondaryLastName) {
+      // Different last names - "John Smith & Jane Doe"
+      clientName = `${principalFirstName} ${principalLastName} & ${secondaryFirstName} ${secondaryLastName}`;
     } else {
-      clientName = `${principalFirstName} ${clientBaseName}`;
+      // Single principal - "John Smith"
+      clientName = `${principalFirstName} ${principalLastName}`;
     }
   } else if (principalFirstName) {
     clientName = principalFirstName;
   }
   
+  // Project parameters - kycData.principal.projectParameters
   const projectName = kycData?.principal?.projectParameters?.projectName || 'Luxury Residence';
   const projectCity = kycData?.principal?.projectParameters?.projectCity || locationData?.location?.city || '';
   const projectState = kycData?.principal?.projectParameters?.projectState || locationData?.location?.state || '';
