@@ -2,17 +2,21 @@
  * kymApiService.js
  * 
  * Service for fetching live market data from Realtor.com via RapidAPI
+ * and location validation via Zippopotam.us
  * 
- * API: Realty in US (by API Dojo)
- * Docs: https://rapidapi.com/apidojo/api/realty-in-us
+ * APIs:
+ * - Realty in US (by API Dojo): https://rapidapi.com/apidojo/api/realty-in-us
+ * - Zippopotam.us (free): https://api.zippopotam.us
  */
 
 const RAPIDAPI_KEY = process.env.REACT_APP_RAPIDAPI_KEY;
 const RAPIDAPI_HOST = 'realty-in-us.p.rapidapi.com';
+const ZIPPOPOTAM_BASE_URL = 'https://api.zippopotam.us/us';
 
-// Cache for API responses (30 minute TTL)
+// Cache for API responses
 const cache = new Map();
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for property data
+const LOCATION_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours for location data
 
 /**
  * Check if we have a valid API key configured
@@ -21,12 +25,87 @@ export const hasApiKey = () => {
   return Boolean(RAPIDAPI_KEY && RAPIDAPI_KEY.length > 10);
 };
 
+// ============================================================================
+// LOCATION LOOKUP (Zippopotam.us - Free, No API Key Required)
+// ============================================================================
+
+/**
+ * Search for a location by ZIP code using Zippopotam.us
+ * Returns location info if valid ZIP, null if invalid
+ */
+export const lookupZipCode = async (zipCode) => {
+  const cleanZip = zipCode.replace(/\D/g, '').slice(0, 5);
+  
+  if (cleanZip.length !== 5) {
+    return null;
+  }
+
+  const cacheKey = `location-${cleanZip}`;
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < LOCATION_CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    const response = await fetch(`${ZIPPOPOTAM_BASE_URL}/${cleanZip}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // Invalid ZIP code
+      }
+      throw new Error(`Zippopotam API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.places || data.places.length === 0) {
+      return null;
+    }
+
+    const place = data.places[0];
+    const locationData = {
+      zipCode: data['post code'],
+      city: place['place name'],
+      state: place['state abbreviation'],
+      stateFull: place.state,
+      formattedName: `${place['place name']}, ${place['state abbreviation']} ${data['post code']}`,
+      latitude: parseFloat(place.latitude),
+      longitude: parseFloat(place.longitude),
+    };
+
+    cache.set(cacheKey, { data: locationData, timestamp: Date.now() });
+    return locationData;
+  } catch (error) {
+    console.error('[KYM API] Location lookup error:', error);
+    return null;
+  }
+};
+
+/**
+ * Search locations by partial ZIP code (for autocomplete)
+ * Note: Zippopotam only does exact matches, so we validate if it's a complete ZIP
+ */
+export const searchLocations = async (query) => {
+  const cleanQuery = query.replace(/\D/g, '').slice(0, 5);
+  
+  if (cleanQuery.length < 5) {
+    return []; // Need complete 5-digit ZIP for Zippopotam
+  }
+
+  const location = await lookupZipCode(cleanQuery);
+  return location ? [location] : [];
+};
+
+// ============================================================================
+// PROPERTY DATA (Realtor.com via RapidAPI - Requires API Key)
+// ============================================================================
+
 /**
  * Get cached data if valid
  */
-const getCachedData = (key) => {
+const getCachedData = (key, ttl = CACHE_TTL) => {
   const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < ttl) {
     console.log(`[KYM API] Cache hit for ${key}`);
     return cached.data;
   }
@@ -42,112 +121,126 @@ const setCachedData = (key, data) => {
 
 /**
  * Fetch properties from Realtor.com API
+ * Returns real property listings with real URLs, or empty array if no API key/no results
  */
 export const fetchProperties = async (zipCode, options = {}) => {
   const {
     limit = 50,
-    minPrice = 3000000, // Lower to get more results for filtering
+    minPrice = 3000000,
     status = ['for_sale', 'ready_to_build'],
   } = options;
+
+  // No API key = no properties (we don't generate fake ones)
+  if (!hasApiKey()) {
+    console.log('[KYM API] No API key configured - cannot fetch properties');
+    return [];
+  }
 
   const cacheKey = `properties-${zipCode}-${limit}-${minPrice}`;
   const cached = getCachedData(cacheKey);
   if (cached) return cached;
 
-  if (!hasApiKey()) {
-    throw new Error('API key not configured');
-  }
-
   console.log(`[KYM API] Fetching properties for ${zipCode}...`);
 
-  const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-RapidAPI-Key': RAPIDAPI_KEY,
-      'X-RapidAPI-Host': RAPIDAPI_HOST,
-    },
-    body: JSON.stringify({
-      limit,
-      offset: 0,
-      postal_code: zipCode,
-      status,
-      sort: {
-        direction: 'desc',
-        field: 'list_price',
+  try {
+    const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       },
-      list_price: {
-        min: minPrice,
-      },
-      // Note: Removed sqft filter to allow client-side filtering of all property sizes
-    }),
-  });
+      body: JSON.stringify({
+        limit,
+        offset: 0,
+        postal_code: zipCode,
+        status,
+        sort: {
+          direction: 'desc',
+          field: 'list_price',
+        },
+        list_price: {
+          min: minPrice,
+        },
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[KYM API] Error:', response.status, errorText);
-    throw new Error(`API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[KYM API] Error:', response.status, errorText);
+      return []; // Return empty, not fake data
+    }
+
+    const data = await response.json();
+    
+    // Transform API response - only real properties with real URLs
+    const properties = transformProperties(data.data?.home_search?.results || []);
+    
+    setCachedData(cacheKey, properties);
+    console.log(`[KYM API] Fetched ${properties.length} real properties`);
+    
+    return properties;
+  } catch (error) {
+    console.error('[KYM API] Fetch error:', error);
+    return []; // Return empty on error, never fake data
   }
-
-  const data = await response.json();
-  
-  // Transform API response to our format
-  const properties = transformProperties(data.data?.home_search?.results || []);
-  
-  setCachedData(cacheKey, properties);
-  console.log(`[KYM API] Fetched ${properties.length} properties`);
-  
-  return properties;
 };
 
 /**
  * Transform Realtor.com API response to our property format
+ * IMPORTANT: Only includes real data from API - no fabricated URLs or addresses
  */
 const transformProperties = (apiResults) => {
-  return apiResults.map((item, index) => {
-    const property = item;
-    const location = property.location || {};
-    const address = location.address || {};
-    const description = property.description || {};
-    
-    const sqft = description.sqft || 10000;
-    const listPrice = property.list_price || 10000000;
-    const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
+  return apiResults
+    .filter(item => {
+      // Only include properties with real addresses
+      const address = item.location?.address?.line;
+      return address && address !== 'Address unavailable';
+    })
+    .map((item) => {
+      const property = item;
+      const location = property.location || {};
+      const address = location.address || {};
+      const description = property.description || {};
+      
+      const sqft = description.sqft || 0;
+      const listPrice = property.list_price || 0;
+      const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
 
-    // Map features from property tags
-    const features = mapFeatures(property.tags || [], property.flags || {});
+      // Map features from property tags
+      const features = mapFeatures(property.tags || [], property.flags || {});
 
-    // Calculate days on market
-    const listDate = property.list_date ? new Date(property.list_date) : new Date();
-    const daysOnMarket = Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24));
+      // Calculate days on market
+      const listDate = property.list_date ? new Date(property.list_date) : null;
+      const daysOnMarket = listDate 
+        ? Math.max(0, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : null;
 
-    return {
-      id: property.property_id || `prop-${index}`,
-      address: address.line || 'Address unavailable',
-      city: address.city || '',
-      state: address.state_code || address.state || '',
-      zipCode: address.postal_code || '',
-      askingPrice: listPrice,
-      soldPrice: property.sold_price || null,
-      pricePerSqFt,
-      sqft,
-      beds: description.beds || 0,
-      baths: description.baths || description.baths_full || 0,
-      acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
-      yearBuilt: description.year_built || null,
-      features,
-      status: mapStatus(property.status),
-      daysOnMarket: Math.max(0, daysOnMarket),
-      // Try multiple image sources - API returns different structures
-      imageUrl: property.primary_photo?.href 
-        || (property.photos && property.photos[0]?.href) 
-        || null,
-      // Listing URL - construct from property_id if href not available
-      listingUrl: property.href 
-        || (property.property_id ? `https://www.realtor.com/realestateandhomes-detail/${property.property_id}` : null),
-      dataSource: 'realtor',
-    };
-  });
+      return {
+        id: property.property_id,
+        address: address.line,
+        city: address.city || '',
+        state: address.state_code || address.state || '',
+        zipCode: address.postal_code || '',
+        askingPrice: listPrice,
+        soldPrice: property.sold_price || null,
+        pricePerSqFt,
+        sqft,
+        beds: description.beds || 0,
+        baths: description.baths || description.baths_full || 0,
+        acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
+        yearBuilt: description.year_built || null,
+        features,
+        status: mapStatus(property.status),
+        daysOnMarket,
+        // REAL image URL from API - or null (never fake)
+        imageUrl: property.primary_photo?.href || (property.photos?.[0]?.href) || null,
+        // REAL listing URL from API - this is the actual Realtor.com link
+        listingUrl: property.href || null,
+        dataSource: 'realtor',
+      };
+    })
+    .filter(p => p.id && p.listPrice > 0); // Only include valid properties
 };
 
 /**
@@ -301,36 +394,46 @@ const LUXURY_MARKETS = [
 
 /**
  * Main function to fetch all location data
+ * Uses Zippopotam.us for location validation (free)
+ * Uses Realtor.com for property data (requires API key)
  */
 export const fetchLocationData = async (zipCode) => {
-  // Fetch properties
+  // First, validate the ZIP code using Zippopotam (free, no key needed)
+  const locationInfo = await lookupZipCode(zipCode);
+  
+  if (!locationInfo) {
+    return {
+      error: 'Invalid ZIP code',
+      location: null,
+      marketData: null,
+      properties: [],
+      dataSource: null,
+    };
+  }
+
+  // Fetch real properties from Realtor.com (requires API key)
+  // This returns [] if no API key configured - we do NOT generate fake properties
   const properties = await fetchProperties(zipCode);
   
-  // Calculate market data from properties
-  const marketData = await fetchMarketData(zipCode, properties);
-  
-  // Get location info
-  const market = LUXURY_MARKETS.find(m => m.zipCode === zipCode) || {
-    zipCode,
-    city: properties[0]?.city || 'Unknown',
-    state: properties[0]?.state || '',
-  };
+  // Calculate market data from real properties (if we have any)
+  const marketData = properties.length > 0 
+    ? await fetchMarketData(zipCode, properties)
+    : null;
 
   return {
-    location: {
-      zipCode: market.zipCode,
-      city: market.city,
-      state: market.state,
-      formattedName: `${market.city}, ${market.state}`,
-    },
+    location: locationInfo,
     marketData,
     properties,
-    dataSource: 'realtor',
+    propertyCount: properties.length,
+    dataSource: properties.length > 0 ? 'realtor' : null,
+    apiKeyConfigured: hasApiKey(),
   };
 };
 
 export default {
   hasApiKey,
+  lookupZipCode,
+  searchLocations,
   fetchProperties,
   fetchMarketData,
   fetchLocationData,
