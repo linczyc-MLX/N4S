@@ -16,13 +16,14 @@ import {
   Home, Users, MapPin, Search, Filter, LayoutGrid, BarChart2,
   Bed, Bath, Maximize, Trees, Calendar, ExternalLink, X,
   GraduationCap, ChevronDown, AlertCircle, CheckCircle2, Database,
-  Settings, Loader2, Target
+  Settings, Loader2, Target, FileDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
 import * as kymApi from './kymApiService';
-import { calculateAllPersonaScores, extractClientData } from './BAMScoring';
+import { calculateAllPersonaScores, extractClientData, PERSONAS } from './BAMScoring';
 import { BAMView } from './BAMComponents';
+import { generateKYMReport } from './KYMReportGenerator';
 import './KYMModule.css';
 
 // N4S Brand Colors
@@ -764,9 +765,23 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [statusFilter, setStatusFilter] = useState(['active', 'pending', 'sold']);
-
+  const [featureFilter, setFeatureFilter] = useState([]);
+  
+  // Available feature filters
+  const FEATURE_OPTIONS = [
+    'Swimming Pool',
+    'Guest House', 
+    'Den or Office',
+    'Elevator',
+    'Wine Cellar',
+    'Theater'
+  ];
+  
   // Property detail modal
   const [selectedProperty, setSelectedProperty] = useState(null);
+  
+  // Export report state
+  const [isExporting, setIsExporting] = useState(false);
 
   // BAM: Calculate buyer persona scores
   const personaResults = useMemo(() => {
@@ -896,16 +911,78 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     fetchLocationData(selectedZipCode);
   };
 
+  // Export PDF report
+  const handleExportReport = async () => {
+    if (!locationData) return;
+    
+    setIsExporting(true);
+    try {
+      // Prepare market data summary
+      const properties = locationData.properties || [];
+      const prices = properties.map(p => p.askingPrice).filter(p => p > 0);
+      const sqfts = properties.map(p => p.sqft).filter(s => s > 0);
+      const doms = properties.map(p => p.daysOnMarket).filter(d => d !== null && d !== undefined);
+      
+      const marketData = {
+        medianPrice: prices.length > 0 ? prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)] : 0,
+        avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+        minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+        maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
+        avgPricePerSqFt: prices.length > 0 && sqfts.length > 0 
+          ? Math.round(prices.reduce((a, b) => a + b, 0) / sqfts.reduce((a, b) => a + b, 0))
+          : 0,
+        avgSqFt: sqfts.length > 0 ? Math.round(sqfts.reduce((a, b) => a + b, 0) / sqfts.length) : 0,
+        avgDaysOnMarket: doms.length > 0 ? Math.round(doms.reduce((a, b) => a + b, 0) / doms.length) : null,
+      };
+
+      // Build persona results with full data
+      const fullPersonaResults = personaResults.map(p => ({
+        ...p,
+        ...PERSONAS[p.id],
+      }));
+
+      await generateKYMReport({
+        kycData,
+        locationData,
+        marketData,
+        properties,
+        demographics: locationData.demographics,
+        personaResults: fullPersonaResults,
+        fyiData,
+        mvpData,
+      });
+      
+      console.log('[KYM] Report exported successfully');
+    } catch (error) {
+      console.error('[KYM] Export error:', error);
+      setError('Failed to export report. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Filter properties (only works on real API data)
   const filteredProperties = (locationData?.properties || []).filter(property => {
     const matchesPrice = property.askingPrice >= priceRange[0] && property.askingPrice <= priceRange[1];
     const matchesSqft = property.sqft >= sqftRange[0] && property.sqft <= sqftRange[1];
     const matchesStatus = statusFilter.includes(property.status);
-    const matchesSearch = !searchQuery ||
+    const matchesSearch = !searchQuery || 
       property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.city.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesPrice && matchesSqft && matchesStatus && matchesSearch;
+    // Feature filter: property must have ALL selected features
+    const matchesFeatures = featureFilter.length === 0 || 
+      featureFilter.every(feature => property.features?.includes(feature));
+    return matchesPrice && matchesSqft && matchesStatus && matchesSearch && matchesFeatures;
   });
+
+  // Toggle feature filter
+  const toggleFeatureFilter = (feature) => {
+    setFeatureFilter(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -913,6 +990,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     setSqftRange([5500, 26000]);
     setSearchQuery('');
     setStatusFilter(['active', 'pending', 'sold']);
+    setFeatureFilter([]);
   };
 
   // Check if we have any properties to show
@@ -946,6 +1024,15 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
             clientLocation={clientLocation}
             locationData={locationData}
           />
+          <button 
+            className="kym-export-btn"
+            onClick={handleExportReport}
+            disabled={isLoading || isExporting || !locationData}
+            title="Export Market Intelligence Report"
+          >
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export Report'}
+          </button>
           <button 
             className="kym-refresh-btn"
             onClick={handleRefresh}
@@ -1209,6 +1296,32 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                         Sold
                       </button>
                     </div>
+                  </div>
+
+                  <div className="kym-filter-group">
+                    <label>Features</label>
+                    <div className="kym-feature-filter-buttons">
+                      {FEATURE_OPTIONS.map(feature => (
+                        <button
+                          key={feature}
+                          className={`kym-feature-filter-btn ${featureFilter.includes(feature) ? 'kym-feature-filter-btn--active' : ''}`}
+                          onClick={() => toggleFeatureFilter(feature)}
+                        >
+                          {feature}
+                        </button>
+                      ))}
+                    </div>
+                    {featureFilter.length > 0 && (
+                      <div className="kym-active-filters">
+                        <span className="kym-active-filters-label">Active: </span>
+                        {featureFilter.map(f => (
+                          <span key={f} className="kym-active-filter-tag">
+                            {f}
+                            <button onClick={() => toggleFeatureFilter(f)}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

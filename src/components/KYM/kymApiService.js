@@ -188,37 +188,13 @@ export const fetchProperties = async (zipCode, options = {}) => {
 
 /**
  * Upgrade thumbnail image URLs to large resolution
- * Handles multiple Realtor.com/rdcpix.com URL patterns
  */
 const upgradeImageUrl = (url) => {
   if (!url) return null;
-
-  let upgraded = url
-    // Pattern: -s.jpg, -t.jpg, -m.jpg → -l.jpg (with dash)
-    .replace(/-s\.jpg/gi, '-l.jpg')
-    .replace(/-t\.jpg/gi, '-l.jpg')
-    .replace(/-m\.jpg/gi, '-l.jpg')
-    // Pattern: s.jpg, t.jpg, m.jpg at end → l.jpg (no dash)
-    .replace(/s\.jpg$/i, 'l.jpg')
-    .replace(/t\.jpg$/i, 'l.jpg')
-    .replace(/m\.jpg$/i, 'l.jpg')
-    // Pattern: _s.jpg, _t.jpg, _m.jpg → _l.jpg (underscore)
-    .replace(/_s\.jpg/gi, '_l.jpg')
-    .replace(/_t\.jpg/gi, '_l.jpg')
-    .replace(/_m\.jpg/gi, '_l.jpg')
-    // Pattern: /s/ or /t/ or /m/ in path → /l/
-    .replace(/\/s\//g, '/l/')
-    .replace(/\/t\//g, '/l/')
-    .replace(/\/m\//g, '/l/');
-
-  // Remove size-limiting query parameters if present
-  if (upgraded.includes('?')) {
-    upgraded = upgraded.replace(/[?&](w|h|width|height|size)=\d+/gi, '');
-    // Clean up orphaned ? or &
-    upgraded = upgraded.replace(/\?&/, '?').replace(/\?$/, '');
-  }
-
-  return upgraded;
+  return url
+    .replace(/-s\.jpg/gi, '-l.jpg')   // small → large
+    .replace(/-t\.jpg/gi, '-l.jpg')   // thumb → large
+    .replace(/-m\.jpg/gi, '-l.jpg');  // medium → large
 };
 
 /**
@@ -260,8 +236,8 @@ const transformProperties = (apiResults) => {
       const listPrice = property.list_price || 0;
       const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
 
-      // Map features from ALL possible API sources
-      const features = mapFeatures(property, description);
+      // Map features from property tags
+      const features = mapFeatures(property.tags || [], property.flags || {});
 
       // Calculate days on market
       const listDate = property.list_date ? new Date(property.list_date) : null;
@@ -319,163 +295,52 @@ const mapStatus = (apiStatus) => {
 };
 
 /**
- * Map property data to our feature list
- * Comprehensively checks ALL possible API response locations
+ * Map property tags to our feature list
  */
-const mapFeatures = (property = {}, description = {}) => {
+const mapFeatures = (tags = [], flags = {}) => {
   const featureMapping = {
     'pool': 'Swimming Pool',
     'swimming': 'Swimming Pool',
     'waterfront': 'Waterfront',
-    'water view': 'Waterfront',
     'view': 'Views',
     'golf': 'Golf Course Access',
     'gated': 'Gated Community',
     'smart_home': 'Smart Home',
-    'smart home': 'Smart Home',
     'wine_cellar': 'Wine Cellar',
-    'wine cellar': 'Wine Cellar',
-    'wine room': 'Wine Cellar',
+    'wine': 'Wine Cellar',
     'theater': 'Theater',
     'theatre': 'Theater',
     'screening': 'Theater',
-    'home theater': 'Theater',
-    'media room': 'Theater',
     'gym': 'Gym',
-    'fitness': 'Gym',
     'spa': 'Spa',
     'tennis': 'Tennis Court',
     'guest_house': 'Guest House',
     'guest house': 'Guest House',
-    'guesthouse': 'Guest House',
     'casita': 'Guest House',
-    'in-law': 'Guest House',
-    'mother-in-law': 'Guest House',
-    'au pair': 'Guest House',
     'elevator': 'Elevator',
     'lift': 'Elevator',
     'office': 'Den or Office',
     'den': 'Den or Office',
     'study': 'Den or Office',
     'library': 'Den or Office',
-    'home office': 'Den or Office',
   };
 
   const features = [];
-
-  const addFeature = (value) => {
-    if (value && !features.includes(value)) features.push(value);
-  };
-
-  const checkString = (str) => {
-    if (!str || typeof str !== 'string') return;
-    const strLower = str.toLowerCase();
+  
+  // Map from tags
+  tags.forEach(tag => {
+    const tagLower = tag.toLowerCase();
     for (const [key, value] of Object.entries(featureMapping)) {
-      if (strLower.includes(key)) {
-        addFeature(value);
+      if (tagLower.includes(key)) {
+        if (!features.includes(value)) features.push(value);
       }
     }
-  };
+  });
 
-  const checkArray = (arr) => {
-    if (!Array.isArray(arr)) return;
-    arr.forEach(item => {
-      if (typeof item === 'string') {
-        checkString(item);
-      } else if (item && typeof item === 'object') {
-        // Check common object property names
-        checkString(item.name);
-        checkString(item.text);
-        checkString(item.category);
-        checkString(item.display_name);
-        checkString(item.value);
-      }
-    });
-  };
-
-  const checkObject = (obj) => {
-    if (!obj || typeof obj !== 'object') return;
-    // Recursively check all string values in an object
-    Object.values(obj).forEach(val => {
-      if (typeof val === 'string') {
-        checkString(val);
-      } else if (Array.isArray(val)) {
-        checkArray(val);
-      }
-    });
-  };
-
-  // 1. Check description boolean fields
-  if (description.pool || description.has_pool) addFeature('Swimming Pool');
-  if (description.spa || description.has_spa) addFeature('Spa');
-  if (description.elevator || description.has_elevator) addFeature('Elevator');
-
-  // 2. Check property.tags (common location)
-  checkArray(property.tags);
-
-  // 3. Check property.features
-  checkArray(property.features);
-
-  // 4. Check property.details (sometimes features are here)
-  if (property.details) {
-    if (Array.isArray(property.details)) {
-      checkArray(property.details);
-    } else {
-      checkObject(property.details);
-    }
-  }
-
-  // 5. Check property.community (community amenities like "Community elevator")
-  if (property.community) {
-    checkObject(property.community);
-    checkArray(property.community?.amenities);
-    checkArray(property.community?.features);
-  }
-
-  // 6. Check property.hoa (HOA amenities)
-  if (property.hoa) {
-    checkArray(property.hoa?.amenities);
-    checkArray(property.hoa?.features);
-  }
-
-  // 7. Check property.building (building features)
-  if (property.building) {
-    checkObject(property.building);
-    checkArray(property.building?.amenities);
-    checkArray(property.building?.features);
-  }
-
-  // 8. Check description.features
-  checkArray(description.features);
-  checkArray(description.amenities);
-
-  // 9. Check property.amenities directly
-  checkArray(property.amenities);
-
-  // 10. Check property flags
-  const flags = property.flags || {};
-  if (flags.is_new_construction) addFeature('New Construction');
-  if (flags.is_senior_community) addFeature('Senior Community');
-
-  // 11. Check property.branding or property.lead_attributes (sometimes has features)
-  if (property.lead_attributes) {
-    checkObject(property.lead_attributes);
-  }
-
-  // 12. Last resort: stringify and search (catches nested features anywhere)
-  try {
-    const propStr = JSON.stringify(property).toLowerCase();
-    // Only check for very specific keywords to avoid false positives
-    if (propStr.includes('"elevator"') || propStr.includes('has_elevator')) addFeature('Elevator');
-    if (propStr.includes('"pool"') || propStr.includes('swimming_pool') || propStr.includes('has_pool')) addFeature('Swimming Pool');
-    if (propStr.includes('"wine_cellar"') || propStr.includes('"wine cellar"') || propStr.includes('"wine room"')) addFeature('Wine Cellar');
-    if (propStr.includes('"theater"') || propStr.includes('"theatre"') || propStr.includes('"home_theater"')) addFeature('Theater');
-    if (propStr.includes('"guest_house"') || propStr.includes('"guest house"') || propStr.includes('"casita"')) addFeature('Guest House');
-    if (propStr.includes('"library"') || propStr.includes('"home_office"') || propStr.includes('"den"')) addFeature('Den or Office');
-  } catch (e) {
-    // Ignore stringify errors
-  }
-
+  // Add from flags
+  if (flags.is_new_construction) features.push('New Construction');
+  if (flags.is_senior_community) features.push('Senior Community');
+  
   return features;
 };
 
