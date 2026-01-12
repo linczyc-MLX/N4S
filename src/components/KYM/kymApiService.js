@@ -127,7 +127,8 @@ export const fetchProperties = async (zipCode, options = {}) => {
   const {
     limit = 50,
     minPrice = 1000000,  // Lowered from $3M to capture more luxury listings
-    status = ['for_sale', 'ready_to_build'],
+    status = ['for_sale', 'ready_to_build', 'pending', 'sold'],  // Include all listing statuses
+    propertyTypes = null,  // null = all types including land; or specify ['single_family', 'land', 'condo', etc.]
   } = options;
 
   // No API key = no properties (we don't generate fake ones)
@@ -136,7 +137,7 @@ export const fetchProperties = async (zipCode, options = {}) => {
     return [];
   }
 
-  const cacheKey = `properties-${zipCode}-${limit}-${minPrice}`;
+  const cacheKey = `properties-${zipCode}-${limit}-${minPrice}-${status.join(',')}`;
   const cached = getCachedData(cacheKey);
   if (cached) return cached;
 
@@ -162,6 +163,9 @@ export const fetchProperties = async (zipCode, options = {}) => {
         list_price: {
           min: minPrice,
         },
+        // Include all property types by default (homes + land)
+        // API types: single_family, multi_family, condo, townhouse, land, farm, mobile, other
+        ...(propertyTypes && { type: propertyTypes }),
       }),
     });
 
@@ -216,6 +220,10 @@ const transformProperties = (apiResults) => {
         ? Math.max(0, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
         : null;
 
+      // Get property type (land, single_family, condo, etc.)
+      const propertyType = description.type || 'single_family';
+      const isLand = propertyType === 'land' || propertyType === 'farm';
+
       return {
         id: property.property_id,
         address: address.line,
@@ -230,6 +238,9 @@ const transformProperties = (apiResults) => {
         baths: description.baths || description.baths_full || 0,
         acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
         yearBuilt: description.year_built || null,
+        propertyType,  // e.g., 'single_family', 'land', 'condo', 'townhouse'
+        propertyTypeDisplay: formatPropertyType(propertyType),  // Human-readable
+        isLand,  // Quick flag for land/farm listings
         features,
         status: mapStatus(property.status),
         daysOnMarket,
@@ -241,6 +252,23 @@ const transformProperties = (apiResults) => {
       };
     })
     .filter(p => p.id && p.askingPrice > 0); // Only include valid properties
+};
+
+/**
+ * Format property type for display
+ */
+const formatPropertyType = (type) => {
+  const typeMap = {
+    'single_family': 'Single Family',
+    'multi_family': 'Multi Family',
+    'condo': 'Condo',
+    'townhouse': 'Townhouse',
+    'land': 'Land',
+    'farm': 'Farm/Ranch',
+    'mobile': 'Mobile Home',
+    'other': 'Other',
+  };
+  return typeMap[type] || type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Home';
 };
 
 /**
