@@ -233,14 +233,34 @@ const transformProperties = (apiResults) => {
         features,
         status: mapStatus(property.status),
         daysOnMarket,
-        // REAL image URL from API - or null (never fake)
-        imageUrl: property.primary_photo?.href || (property.photos?.[0]?.href) || null,
+        // REAL image URL from API - upgraded to large size for clarity
+        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href) || null),
         // REAL listing URL from API - this is the actual Realtor.com link
         listingUrl: property.href || null,
         dataSource: 'realtor',
       };
     })
     .filter(p => p.id && p.askingPrice > 0); // Only include valid properties
+};
+
+/**
+ * Upgrade Realtor.com image URL to higher resolution
+ * Thumbnail URLs end in patterns like -s.jpg, -t.jpg, -m.jpg
+ * We replace with -l.jpg (large) or -od.jpg (original) for better quality
+ */
+const upgradeImageUrl = (url) => {
+  if (!url) return null;
+
+  // Realtor.com/rdcpix.com URLs have size suffixes before the extension
+  // Common patterns: -s.jpg (small), -t.jpg (thumb), -m.jpg (medium)
+  // Replace with -l.jpg (large) for better quality
+  return url
+    .replace(/-s\.jpg/gi, '-l.jpg')
+    .replace(/-t\.jpg/gi, '-l.jpg')
+    .replace(/-m\.jpg/gi, '-l.jpg')
+    .replace(/s\.jpg$/i, 'l.jpg')
+    .replace(/t\.jpg$/i, 'l.jpg')
+    .replace(/m\.jpg$/i, 'l.jpg');
 };
 
 /**
