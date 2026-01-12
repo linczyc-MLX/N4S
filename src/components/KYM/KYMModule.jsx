@@ -178,6 +178,252 @@ const BuyerPersonaCard = ({ persona }) => (
   </div>
 );
 
+/**
+ * AnimatedLineChart - SVG-based line chart with left-to-right animation
+ * Mimics Recharts behavior without the dependency
+ */
+const AnimatedLineChart = ({ data, height = 280 }) => {
+  const [isAnimated, setIsAnimated] = useState(false);
+  
+  useEffect(() => {
+    // Trigger animation after mount
+    const timer = setTimeout(() => setIsAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, [data]);
+
+  // Reset animation when data changes
+  useEffect(() => {
+    setIsAnimated(false);
+    const timer = setTimeout(() => setIsAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, [data]);
+
+  if (!data || data.length === 0) return null;
+
+  // Chart dimensions
+  const padding = { top: 20, right: 60, bottom: 40, left: 70 };
+  const width = 600;
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  // Calculate scales
+  const prices = data.map(d => d.medianPrice);
+  const volumes = data.map(d => d.salesVolume);
+  
+  const priceMin = Math.min(...prices) * 0.9;
+  const priceMax = Math.max(...prices) * 1.1;
+  const volumeMin = 0;
+  const volumeMax = Math.max(...volumes) * 1.2;
+
+  // Format price for Y-axis labels
+  const formatPrice = (value) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    return `$${(value / 1000).toFixed(0)}K`;
+  };
+
+  // Calculate point positions
+  const getX = (index) => padding.left + (index / (data.length - 1)) * chartWidth;
+  const getPriceY = (price) => padding.top + chartHeight - ((price - priceMin) / (priceMax - priceMin)) * chartHeight;
+  const getVolumeY = (volume) => padding.top + chartHeight - ((volume - volumeMin) / (volumeMax - volumeMin)) * chartHeight;
+
+  // Create smooth bezier curve path
+  const createSmoothPath = (points) => {
+    if (points.length < 2) return '';
+    
+    let path = `M ${points[0].x} ${points[0].y}`;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+      
+      // Catmull-Rom to Bezier conversion for smooth curves
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    
+    return path;
+  };
+
+  // Generate points for both lines
+  const pricePoints = data.map((d, i) => ({ x: getX(i), y: getPriceY(d.medianPrice) }));
+  const volumePoints = data.map((d, i) => ({ x: getX(i), y: getVolumeY(d.salesVolume) }));
+
+  const pricePath = createSmoothPath(pricePoints);
+  const volumePath = createSmoothPath(volumePoints);
+
+  // Calculate path lengths for animation
+  const pathLength = chartWidth * 2; // Approximate
+
+  // Y-axis tick values
+  const priceTicks = [priceMin, (priceMin + priceMax) / 2, priceMax];
+  const volumeTicks = [0, Math.round(volumeMax / 2), Math.round(volumeMax)];
+
+  return (
+    <div className="kym-animated-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} className="kym-chart-svg">
+        {/* Grid lines */}
+        <g className="kym-chart-grid">
+          {[0.25, 0.5, 0.75, 1].map((pct, i) => (
+            <line
+              key={i}
+              x1={padding.left}
+              y1={padding.top + chartHeight * (1 - pct)}
+              x2={width - padding.right}
+              y2={padding.top + chartHeight * (1 - pct)}
+              stroke="#e5e5e0"
+              strokeDasharray="3 3"
+            />
+          ))}
+        </g>
+
+        {/* Left Y-axis (Price) */}
+        <g className="kym-chart-axis kym-chart-axis--left">
+          {priceTicks.map((tick, i) => (
+            <text
+              key={i}
+              x={padding.left - 10}
+              y={getPriceY(tick)}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fontSize="11"
+              fill="#6b6b6b"
+            >
+              {formatPrice(tick)}
+            </text>
+          ))}
+        </g>
+
+        {/* Right Y-axis (Volume) */}
+        <g className="kym-chart-axis kym-chart-axis--right">
+          {volumeTicks.map((tick, i) => (
+            <text
+              key={i}
+              x={width - padding.right + 10}
+              y={getVolumeY(tick)}
+              textAnchor="start"
+              dominantBaseline="middle"
+              fontSize="11"
+              fill="#6b6b6b"
+            >
+              {tick}
+            </text>
+          ))}
+        </g>
+
+        {/* X-axis labels */}
+        <g className="kym-chart-axis kym-chart-axis--bottom">
+          {data.map((d, i) => (
+            <text
+              key={i}
+              x={getX(i)}
+              y={height - padding.bottom + 20}
+              textAnchor="middle"
+              fontSize="11"
+              fill="#6b6b6b"
+            >
+              {d.month}
+            </text>
+          ))}
+        </g>
+
+        {/* Price line (navy) */}
+        <path
+          d={pricePath}
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`kym-chart-line ${isAnimated ? 'kym-chart-line--animated' : ''}`}
+          style={{
+            strokeDasharray: pathLength,
+            strokeDashoffset: isAnimated ? 0 : pathLength,
+          }}
+        />
+
+        {/* Volume line (teal) */}
+        <path
+          d={volumePath}
+          fill="none"
+          stroke="#0d9488"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`kym-chart-line ${isAnimated ? 'kym-chart-line--animated' : ''}`}
+          style={{
+            strokeDasharray: pathLength,
+            strokeDashoffset: isAnimated ? 0 : pathLength,
+            transitionDelay: '0.3s',
+          }}
+        />
+
+        {/* Interactive dots (hidden until hover) */}
+        {isAnimated && pricePoints.map((point, i) => (
+          <g key={`dot-${i}`} className="kym-chart-dot-group">
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="4"
+              fill={COLORS.navy}
+              className="kym-chart-dot"
+            />
+            <circle
+              cx={volumePoints[i].x}
+              cy={volumePoints[i].y}
+              r="4"
+              fill="#0d9488"
+              className="kym-chart-dot"
+            />
+            {/* Hover area */}
+            <rect
+              x={point.x - 20}
+              y={padding.top}
+              width="40"
+              height={chartHeight}
+              fill="transparent"
+              className="kym-chart-hover-area"
+            />
+            {/* Tooltip */}
+            <g className="kym-chart-tooltip" transform={`translate(${point.x}, ${Math.min(point.y, volumePoints[i].y) - 10})`}>
+              <rect
+                x="-50"
+                y="-45"
+                width="100"
+                height="40"
+                rx="4"
+                fill="white"
+                stroke="#e5e5e0"
+              />
+              <text x="0" y="-28" textAnchor="middle" fontSize="10" fill="#6b6b6b">{data[i].month}</text>
+              <text x="0" y="-14" textAnchor="middle" fontSize="11" fill={COLORS.navy} fontWeight="600">
+                {formatPrice(data[i].medianPrice)}
+              </text>
+            </g>
+          </g>
+        ))}
+      </svg>
+
+      {/* Legend */}
+      <div className="kym-chart-legend">
+        <div className="kym-chart-legend-item">
+          <span className="kym-chart-legend-dot" style={{ background: COLORS.navy }}></span>
+          Median Price
+        </div>
+        <div className="kym-chart-legend-item">
+          <span className="kym-chart-legend-dot" style={{ background: '#0d9488' }}></span>
+          Sales Volume
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LocationSelector = ({ selectedZipCode, onSelect, clientLocation }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -458,18 +704,10 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                 <div className="kym-market-charts">
                   <div className="kym-chart-card kym-chart-card--wide">
                     <h3>Price Trends (12 Months)</h3>
-                    <div className="kym-chart-placeholder">
-                      <TrendingUp size={48} style={{ opacity: 0.2 }} />
-                      <p>Historical price trend visualization</p>
-                      <div className="kym-mini-trend">
-                        {locationData.marketData.historicalData?.map((d, i) => (
-                          <div key={i} className="kym-trend-bar" style={{ 
-                            height: `${(d.medianPrice / 20000000) * 100}%`,
-                            background: COLORS.navy
-                          }} title={`${d.month}: ${formatCurrency(d.medianPrice)}`} />
-                        ))}
-                      </div>
-                    </div>
+                    <AnimatedLineChart 
+                      data={locationData.marketData.historicalData} 
+                      height={280}
+                    />
                   </div>
                   
                   <div className="kym-chart-card">
