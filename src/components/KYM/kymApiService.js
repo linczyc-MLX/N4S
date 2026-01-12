@@ -188,13 +188,37 @@ export const fetchProperties = async (zipCode, options = {}) => {
 
 /**
  * Upgrade thumbnail image URLs to large resolution
+ * Handles multiple Realtor.com/rdcpix.com URL patterns
  */
 const upgradeImageUrl = (url) => {
   if (!url) return null;
-  return url
-    .replace(/-s\.jpg/gi, '-l.jpg')   // small → large
-    .replace(/-t\.jpg/gi, '-l.jpg')   // thumb → large
-    .replace(/-m\.jpg/gi, '-l.jpg');  // medium → large
+
+  let upgraded = url
+    // Pattern: -s.jpg, -t.jpg, -m.jpg → -l.jpg (with dash)
+    .replace(/-s\.jpg/gi, '-l.jpg')
+    .replace(/-t\.jpg/gi, '-l.jpg')
+    .replace(/-m\.jpg/gi, '-l.jpg')
+    // Pattern: s.jpg, t.jpg, m.jpg at end → l.jpg (no dash)
+    .replace(/s\.jpg$/i, 'l.jpg')
+    .replace(/t\.jpg$/i, 'l.jpg')
+    .replace(/m\.jpg$/i, 'l.jpg')
+    // Pattern: _s.jpg, _t.jpg, _m.jpg → _l.jpg (underscore)
+    .replace(/_s\.jpg/gi, '_l.jpg')
+    .replace(/_t\.jpg/gi, '_l.jpg')
+    .replace(/_m\.jpg/gi, '_l.jpg')
+    // Pattern: /s/ or /t/ or /m/ in path → /l/
+    .replace(/\/s\//g, '/l/')
+    .replace(/\/t\//g, '/l/')
+    .replace(/\/m\//g, '/l/');
+
+  // Remove size-limiting query parameters if present
+  if (upgraded.includes('?')) {
+    upgraded = upgraded.replace(/[?&](w|h|width|height|size)=\d+/gi, '');
+    // Clean up orphaned ? or &
+    upgraded = upgraded.replace(/\?&/, '?').replace(/\?$/, '');
+  }
+
+  return upgraded;
 };
 
 /**
