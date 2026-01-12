@@ -301,7 +301,7 @@ export const generateKYMReport = async (data) => {
     ['Median Listing Price', formatCurrency(marketData?.medianPrice || 0)],
     ['Avg Price per SF', formatCurrency(marketData?.avgPricePerSqFt || 0)],
     ['Avg Days on Market', `${marketData?.avgDaysOnMarket || 'N/A'} days`],
-    ['Inventory Range', `${formatCurrency(marketData?.minPrice || 0)} - ${formatCurrency(marketData?.maxPrice || 0)}`],
+    ['Inventory Range', `${formatCurrency(marketData?.minPrice || 0)} – ${formatCurrency(marketData?.maxPrice || 0)}`],
   ];
 
   autoTable(doc, {
@@ -315,11 +315,10 @@ export const generateKYMReport = async (data) => {
       textColor: COLORS.text,
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { halign: 'right' },
+      0: { fontStyle: 'bold', cellWidth: 50 },
+      1: { halign: 'right', cellWidth: 70 },
     },
     margin: { left: margin, right: margin },
-    tableWidth: contentWidth / 2,
   });
 
   currentY = doc.lastAutoTable.finalY + 15;
@@ -387,7 +386,7 @@ export const generateKYMReport = async (data) => {
     const pricingData = [
       ['Median Listing Price', formatCurrency(marketData.medianPrice)],
       ['Average Listing Price', formatCurrency(marketData.avgPrice)],
-      ['Price Range', `${formatCurrency(marketData.minPrice)} - ${formatCurrency(marketData.maxPrice)}`],
+      ['Price Range', `${formatCurrency(marketData.minPrice)} – ${formatCurrency(marketData.maxPrice)}`],
       ['Average Price/SF', formatCurrency(marketData.avgPricePerSqFt)],
     ];
 
@@ -395,13 +394,12 @@ export const generateKYMReport = async (data) => {
       startY: currentY,
       body: pricingData,
       theme: 'plain',
-      styles: { fontSize: 10, cellPadding: 3 },
+      styles: { fontSize: 10, cellPadding: 4 },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60 },
-        1: { halign: 'right' },
+        0: { fontStyle: 'bold', cellWidth: 50 },
+        1: { halign: 'right', cellWidth: 70 },
       },
       margin: { left: margin },
-      tableWidth: contentWidth / 2,
     });
 
     currentY = doc.lastAutoTable.finalY + 15;
@@ -422,7 +420,7 @@ export const generateKYMReport = async (data) => {
 
   const inventoryData = [
     ['Active Listings', formatNumber(activeCount)],
-    ['Pending Sales', formatNumber(pendingCount)],
+    ['Pending Sales', pendingCount > 0 ? formatNumber(pendingCount) : 'N/A'],
     ['Recently Sold', formatNumber(soldCount)],
     ['Total Properties Analyzed', formatNumber(properties?.length || 0)],
     ['Avg Days on Market', `${marketData?.avgDaysOnMarket || 'N/A'} days`],
@@ -432,13 +430,12 @@ export const generateKYMReport = async (data) => {
     startY: currentY,
     body: inventoryData,
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 3 },
+    styles: { fontSize: 10, cellPadding: 4 },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { halign: 'right' },
+      0: { fontStyle: 'bold', cellWidth: 50 },
+      1: { halign: 'right', cellWidth: 70 },
     },
     margin: { left: margin },
-    tableWidth: contentWidth / 2,
   });
 
   currentY = doc.lastAutoTable.finalY + 15;
@@ -756,7 +753,7 @@ export const generateKYMReport = async (data) => {
         startY: currentY,
         body: programData,
         theme: 'plain',
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 9, cellPadding: 2 },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 55 },
         },
@@ -764,7 +761,7 @@ export const generateKYMReport = async (data) => {
         tableWidth: contentWidth * 0.6,
       });
 
-      currentY = doc.lastAutoTable.finalY + 10;
+      currentY = doc.lastAutoTable.finalY + 6;
     }
 
     // Key Spaces and Buyer Appeal
@@ -775,7 +772,7 @@ export const generateKYMReport = async (data) => {
       doc.setFontSize(10);
       doc.setTextColor(...COLORS.text);
       doc.text('Key Spaces & Buyer Appeal', margin, currentY);
-      currentY += 7;
+      currentY += 5;
 
       // Map spaces to buyer appeal
       const spaceAppeal = {
@@ -795,7 +792,7 @@ export const generateKYMReport = async (data) => {
         'Den or Office': ['Finance Executive', 'Tech Executive', 'Family Office'],
       };
 
-      const spaceData = fyiData.selectedSpaces.slice(0, 10).map(space => {
+      const spaceData = fyiData.selectedSpaces.slice(0, 8).map(space => {
         const spaceName = typeof space === 'string' ? space : space.name;
         const appeal = spaceAppeal[spaceName] || ['Various'];
         return [spaceName, appeal.slice(0, 2).join(', ')];
@@ -812,7 +809,7 @@ export const generateKYMReport = async (data) => {
           fontStyle: 'bold',
           fontSize: 9,
         },
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 9, cellPadding: 2 },
         columnStyles: {
           0: { cellWidth: 50 },
         },
@@ -820,7 +817,7 @@ export const generateKYMReport = async (data) => {
         tableWidth: contentWidth * 0.7,
       });
 
-      currentY = doc.lastAutoTable.finalY + 15;
+      currentY = doc.lastAutoTable.finalY + 8;
     }
   }
 
