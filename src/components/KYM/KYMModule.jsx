@@ -764,18 +764,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [statusFilter, setStatusFilter] = useState(['active', 'pending', 'sold']);
-  const [featureFilter, setFeatureFilter] = useState([]);
-  
-  // Available feature filters
-  const FEATURE_OPTIONS = [
-    'Swimming Pool',
-    'Guest House', 
-    'Den or Office',
-    'Elevator',
-    'Wine Cellar',
-    'Theater'
-  ];
-  
+
   // Property detail modal
   const [selectedProperty, setSelectedProperty] = useState(null);
 
@@ -912,23 +901,11 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     const matchesPrice = property.askingPrice >= priceRange[0] && property.askingPrice <= priceRange[1];
     const matchesSqft = property.sqft >= sqftRange[0] && property.sqft <= sqftRange[1];
     const matchesStatus = statusFilter.includes(property.status);
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.city.toLowerCase().includes(searchQuery.toLowerCase());
-    // Feature filter: property must have ALL selected features
-    const matchesFeatures = featureFilter.length === 0 || 
-      featureFilter.every(feature => property.features?.includes(feature));
-    return matchesPrice && matchesSqft && matchesStatus && matchesSearch && matchesFeatures;
+    return matchesPrice && matchesSqft && matchesStatus && matchesSearch;
   });
-
-  // Toggle feature filter
-  const toggleFeatureFilter = (feature) => {
-    setFeatureFilter(prev => 
-      prev.includes(feature) 
-        ? prev.filter(f => f !== feature)
-        : [...prev, feature]
-    );
-  };
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -936,7 +913,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     setSqftRange([5500, 26000]);
     setSearchQuery('');
     setStatusFilter(['active', 'pending', 'sold']);
-    setFeatureFilter([]);
   };
 
   // Check if we have any properties to show
@@ -1233,32 +1209,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                         Sold
                       </button>
                     </div>
-                  </div>
-
-                  <div className="kym-filter-group">
-                    <label>Features</label>
-                    <div className="kym-feature-filter-buttons">
-                      {FEATURE_OPTIONS.map(feature => (
-                        <button
-                          key={feature}
-                          className={`kym-feature-filter-btn ${featureFilter.includes(feature) ? 'kym-feature-filter-btn--active' : ''}`}
-                          onClick={() => toggleFeatureFilter(feature)}
-                        >
-                          {feature}
-                        </button>
-                      ))}
-                    </div>
-                    {featureFilter.length > 0 && (
-                      <div className="kym-active-filters">
-                        <span className="kym-active-filters-label">Active: </span>
-                        {featureFilter.map(f => (
-                          <span key={f} className="kym-active-filter-tag">
-                            {f}
-                            <button onClick={() => toggleFeatureFilter(f)}>×</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
