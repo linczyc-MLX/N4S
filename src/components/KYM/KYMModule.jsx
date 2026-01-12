@@ -942,22 +942,24 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
               {locationData?.propertyCount || 0} properties from Realtor.com
             </span>
           </>
-        ) : apiKeyConfigured ? (
+        ) : dataSource === 'estimates' ? (
           <>
-            <span className="kym-data-badge kym-data-badge--empty">
-              <AlertCircle size={14} /> No Listings Found
+            <span className="kym-data-badge kym-data-badge--estimates">
+              <Activity size={14} /> Market Estimates
             </span>
             <span className="kym-data-note">
-              No luxury properties ($3M+) available in this area
+              {apiKeyConfigured 
+                ? 'No luxury listings ($3M+) in this area. Showing market estimates.'
+                : 'Add REACT_APP_RAPIDAPI_KEY for live property listings.'}
             </span>
           </>
         ) : (
           <>
-            <span className="kym-data-badge kym-data-badge--config">
-              <Settings size={14} /> API Key Required
+            <span className="kym-data-badge kym-data-badge--error">
+              <AlertCircle size={14} /> Loading Error
             </span>
             <span className="kym-data-note">
-              Add REACT_APP_RAPIDAPI_KEY to .env.local for live property data
+              {error || 'Unable to load market data'}
             </span>
           </>
         )}
