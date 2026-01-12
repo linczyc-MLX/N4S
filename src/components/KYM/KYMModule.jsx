@@ -1158,9 +1158,30 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                   <div className="kym-filter-group">
                     <label>Property Status</label>
                     <div className="kym-status-badges">
-                      <span className="kym-status-badge kym-status-badge--active">Active</span>
-                      <span className="kym-status-badge kym-status-badge--pending">Pending</span>
-                      <span className="kym-status-badge kym-status-badge--sold">Sold</span>
+                      <button
+                        className={`kym-status-badge kym-status-badge--all ${statusFilter.length === 3 ? 'active' : ''}`}
+                        onClick={() => setStatusFilter(['active', 'pending', 'sold'])}
+                      >
+                        All
+                      </button>
+                      <button
+                        className={`kym-status-badge kym-status-badge--active ${statusFilter.length === 1 && statusFilter[0] === 'active' ? 'active' : ''}`}
+                        onClick={() => setStatusFilter(['active'])}
+                      >
+                        Active
+                      </button>
+                      <button
+                        className={`kym-status-badge kym-status-badge--pending ${statusFilter.length === 1 && statusFilter[0] === 'pending' ? 'active' : ''}`}
+                        onClick={() => setStatusFilter(['pending'])}
+                      >
+                        Pending
+                      </button>
+                      <button
+                        className={`kym-status-badge kym-status-badge--sold ${statusFilter.length === 1 && statusFilter[0] === 'sold' ? 'active' : ''}`}
+                        onClick={() => setStatusFilter(['sold'])}
+                      >
+                        Sold
+                      </button>
                     </div>
                   </div>
 
