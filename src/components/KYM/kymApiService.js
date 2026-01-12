@@ -260,8 +260,13 @@ const transformProperties = (apiResults) => {
       const listPrice = property.list_price || 0;
       const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
 
-      // Map features from property tags
-      const features = mapFeatures(property.tags || [], property.flags || {});
+      // Map features from multiple API sources (tags, description, features array)
+      const features = mapFeatures(
+        property.tags || [],
+        property.flags || {},
+        description,
+        property.features || []
+      );
 
       // Calculate days on market
       const listDate = property.list_date ? new Date(property.list_date) : null;
@@ -319,9 +324,10 @@ const mapStatus = (apiStatus) => {
 };
 
 /**
- * Map property tags to our feature list
+ * Map property data to our feature list
+ * Checks multiple API sources: tags, flags, description fields, and features array
  */
-const mapFeatures = (tags = [], flags = {}) => {
+const mapFeatures = (tags = [], flags = {}, description = {}, featuresArray = []) => {
   const featureMapping = {
     'pool': 'Swimming Pool',
     'swimming': 'Swimming Pool',
@@ -331,40 +337,101 @@ const mapFeatures = (tags = [], flags = {}) => {
     'gated': 'Gated Community',
     'smart_home': 'Smart Home',
     'wine_cellar': 'Wine Cellar',
+    'wine cellar': 'Wine Cellar',
     'wine': 'Wine Cellar',
     'theater': 'Theater',
     'theatre': 'Theater',
     'screening': 'Theater',
+    'home theater': 'Theater',
+    'media room': 'Theater',
     'gym': 'Gym',
+    'fitness': 'Gym',
     'spa': 'Spa',
     'tennis': 'Tennis Court',
     'guest_house': 'Guest House',
     'guest house': 'Guest House',
+    'guesthouse': 'Guest House',
     'casita': 'Guest House',
+    'in-law': 'Guest House',
+    'mother-in-law': 'Guest House',
     'elevator': 'Elevator',
     'lift': 'Elevator',
     'office': 'Den or Office',
     'den': 'Den or Office',
     'study': 'Den or Office',
     'library': 'Den or Office',
+    'home office': 'Den or Office',
   };
 
   const features = [];
-  
-  // Map from tags
-  tags.forEach(tag => {
-    const tagLower = tag.toLowerCase();
-    for (const [key, value] of Object.entries(featureMapping)) {
-      if (tagLower.includes(key)) {
-        if (!features.includes(value)) features.push(value);
-      }
-    }
-  });
 
-  // Add from flags
-  if (flags.is_new_construction) features.push('New Construction');
-  if (flags.is_senior_community) features.push('Senior Community');
-  
+  const addFeature = (value) => {
+    if (!features.includes(value)) features.push(value);
+  };
+
+  // 1. Check description boolean fields (Realtor.com API often uses these)
+  if (description.pool || description.has_pool || description.swimming_pool) {
+    addFeature('Swimming Pool');
+  }
+  if (description.spa || description.has_spa) {
+    addFeature('Spa');
+  }
+  if (description.garage) {
+    // Could add garage feature if needed
+  }
+
+  // 2. Map from tags array
+  if (Array.isArray(tags)) {
+    tags.forEach(tag => {
+      if (typeof tag === 'string') {
+        const tagLower = tag.toLowerCase();
+        for (const [key, value] of Object.entries(featureMapping)) {
+          if (tagLower.includes(key)) {
+            addFeature(value);
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Map from features array (another API field)
+  if (Array.isArray(featuresArray)) {
+    featuresArray.forEach(feature => {
+      if (typeof feature === 'string') {
+        const featureLower = feature.toLowerCase();
+        for (const [key, value] of Object.entries(featureMapping)) {
+          if (featureLower.includes(key)) {
+            addFeature(value);
+          }
+        }
+      } else if (feature && typeof feature === 'object') {
+        // Some APIs return features as objects with name/category
+        const featureName = (feature.name || feature.text || feature.category || '').toLowerCase();
+        for (const [key, value] of Object.entries(featureMapping)) {
+          if (featureName.includes(key)) {
+            addFeature(value);
+          }
+        }
+      }
+    });
+  }
+
+  // 4. Check description sub-objects (some APIs nest features)
+  if (description.features && Array.isArray(description.features)) {
+    description.features.forEach(f => {
+      const fLower = (typeof f === 'string' ? f : f?.name || '').toLowerCase();
+      for (const [key, value] of Object.entries(featureMapping)) {
+        if (fLower.includes(key)) {
+          addFeature(value);
+        }
+      }
+    });
+  }
+
+  // 5. Add from flags
+  if (flags.is_new_construction) addFeature('New Construction');
+  if (flags.is_senior_community) addFeature('Senior Community');
+
   return features;
 };
 
