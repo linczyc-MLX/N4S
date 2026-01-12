@@ -126,9 +126,8 @@ const setCachedData = (key, data) => {
 export const fetchProperties = async (zipCode, options = {}) => {
   const {
     limit = 50,
-    minPrice = 1000000,  // Lowered from $3M to capture more luxury listings
-    status = ['for_sale', 'ready_to_build', 'pending', 'sold'],  // Include all listing statuses
-    propertyTypes = null,  // null = all types including land; or specify ['single_family', 'land', 'condo', etc.]
+    minPrice = 1000000, // Lowered from $3M to capture more luxury listings
+    status = ['for_sale', 'ready_to_build', 'pending', 'sold'],
   } = options;
 
   // No API key = no properties (we don't generate fake ones)
@@ -137,7 +136,7 @@ export const fetchProperties = async (zipCode, options = {}) => {
     return [];
   }
 
-  const cacheKey = `properties-${zipCode}-${limit}-${minPrice}-${status.join(',')}`;
+  const cacheKey = `properties-${zipCode}-${limit}-${minPrice}`;
   const cached = getCachedData(cacheKey);
   if (cached) return cached;
 
@@ -163,9 +162,6 @@ export const fetchProperties = async (zipCode, options = {}) => {
         list_price: {
           min: minPrice,
         },
-        // Include all property types by default (homes + land)
-        // API types: single_family, multi_family, condo, townhouse, land, farm, mobile, other
-        ...(propertyTypes && { type: propertyTypes }),
       }),
     });
 
@@ -188,6 +184,35 @@ export const fetchProperties = async (zipCode, options = {}) => {
     console.error('[KYM API] Fetch error:', error);
     return []; // Return empty on error, never fake data
   }
+};
+
+/**
+ * Upgrade thumbnail image URLs to large resolution
+ */
+const upgradeImageUrl = (url) => {
+  if (!url) return null;
+  return url
+    .replace(/-s\.jpg/gi, '-l.jpg')   // small → large
+    .replace(/-t\.jpg/gi, '-l.jpg')   // thumb → large
+    .replace(/-m\.jpg/gi, '-l.jpg');  // medium → large
+};
+
+/**
+ * Format property type for display
+ */
+const formatPropertyType = (type) => {
+  if (!type) return 'Single Family';
+  const typeMap = {
+    'single_family': 'Single Family',
+    'condo': 'Condo',
+    'townhouse': 'Townhouse',
+    'multi_family': 'Multi Family',
+    'land': 'Land',
+    'farm': 'Farm/Ranch',
+    'mobile': 'Mobile',
+    'apartment': 'Apartment',
+  };
+  return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 /**
@@ -220,9 +245,9 @@ const transformProperties = (apiResults) => {
         ? Math.max(0, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
         : null;
 
-      // Get property type (land, single_family, condo, etc.)
+      // Get property type
       const propertyType = description.type || 'single_family';
-      const isLand = propertyType === 'land' || propertyType === 'farm';
+      const isLand = ['land', 'farm'].includes(propertyType);
 
       return {
         id: property.property_id,
@@ -238,57 +263,21 @@ const transformProperties = (apiResults) => {
         baths: description.baths || description.baths_full || 0,
         acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
         yearBuilt: description.year_built || null,
-        propertyType,  // e.g., 'single_family', 'land', 'condo', 'townhouse'
-        propertyTypeDisplay: formatPropertyType(propertyType),  // Human-readable
-        isLand,  // Quick flag for land/farm listings
         features,
         status: mapStatus(property.status),
         daysOnMarket,
-        // REAL image URL from API - upgraded to large size for clarity
-        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href) || null),
+        // Property type fields
+        propertyType,
+        propertyTypeDisplay: formatPropertyType(propertyType),
+        isLand,
+        // REAL image URL from API - upgraded to large resolution
+        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href)),
         // REAL listing URL from API - this is the actual Realtor.com link
         listingUrl: property.href || null,
         dataSource: 'realtor',
       };
     })
-    .filter(p => p.id && p.askingPrice > 0); // Only include valid properties
-};
-
-/**
- * Format property type for display
- */
-const formatPropertyType = (type) => {
-  const typeMap = {
-    'single_family': 'Single Family',
-    'multi_family': 'Multi Family',
-    'condo': 'Condo',
-    'townhouse': 'Townhouse',
-    'land': 'Land',
-    'farm': 'Farm/Ranch',
-    'mobile': 'Mobile Home',
-    'other': 'Other',
-  };
-  return typeMap[type] || type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Home';
-};
-
-/**
- * Upgrade Realtor.com image URL to higher resolution
- * Thumbnail URLs end in patterns like -s.jpg, -t.jpg, -m.jpg
- * We replace with -l.jpg (large) or -od.jpg (original) for better quality
- */
-const upgradeImageUrl = (url) => {
-  if (!url) return null;
-
-  // Realtor.com/rdcpix.com URLs have size suffixes before the extension
-  // Common patterns: -s.jpg (small), -t.jpg (thumb), -m.jpg (medium)
-  // Replace with -l.jpg (large) for better quality
-  return url
-    .replace(/-s\.jpg/gi, '-l.jpg')
-    .replace(/-t\.jpg/gi, '-l.jpg')
-    .replace(/-m\.jpg/gi, '-l.jpg')
-    .replace(/s\.jpg$/i, 'l.jpg')
-    .replace(/t\.jpg$/i, 'l.jpg')
-    .replace(/m\.jpg$/i, 'l.jpg');
+    .filter(p => p.id && p.askingPrice > 0); // Fixed: was listPrice, now askingPrice
 };
 
 /**

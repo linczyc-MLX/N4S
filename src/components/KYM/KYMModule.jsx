@@ -4,22 +4,25 @@
  * Market intelligence module that provides:
  * 1. Market Analysis - Local market trends and KPIs
  * 2. Comparable Properties - Live property data via API
- * 3. Demographics - Population analysis and buyer personas
+ * 3. Demographics - Population analysis
+ * 4. Buyer Alignment (BAM) - Persona matching based on design decisions
  * 
  * Uses client's project location from KYC data when available.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   TrendingUp, DollarSign, Clock, Activity, RefreshCw,
   Home, Users, MapPin, Search, Filter, LayoutGrid, BarChart2,
   Bed, Bath, Maximize, Trees, Calendar, ExternalLink, X,
   GraduationCap, ChevronDown, AlertCircle, CheckCircle2, Database,
-  Settings, Loader2
+  Settings, Loader2, Target
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
 import * as kymApi from './kymApiService';
+import { calculateAllPersonaScores, extractClientData } from './BAMScoring';
+import { BAMView } from './BAMComponents';
 import './KYMModule.css';
 
 // N4S Brand Colors
@@ -99,17 +102,18 @@ const PropertyCard = ({ property, onClick }) => {
           <Home size={32} />
           <span>{property.sqft > 15000 ? 'Estate' : 'Luxury'}</span>
         </div>
-        <span
+        <span 
           className="kym-property-status"
           style={{ background: statusStyle.bg, color: statusStyle.text }}
         >
           {property.status}
         </span>
-        {property.propertyTypeDisplay && property.propertyTypeDisplay !== 'Single Family' && (
-          <span className="kym-property-type">{property.propertyTypeDisplay}</span>
-        )}
         {property.daysOnMarket <= 7 && (
           <span className="kym-property-new">New</span>
+        )}
+        {/* Property type badge - don't show for single family (most common) */}
+        {property.propertyTypeDisplay && property.propertyType !== 'single_family' && (
+          <span className="kym-property-type">{property.propertyTypeDisplay}</span>
         )}
       </div>
       <div className="kym-property-content">
@@ -737,7 +741,7 @@ const LocationSelector = ({ selectedZipCode, onSelect, onZipSearch, clientLocati
 // =============================================================================
 
 const KYMModule = ({ showDocs, onCloseDocs }) => {
-  const { kycData } = useAppContext();
+  const { kycData, fyiData, mvpData } = useAppContext();
   const [activeTab, setActiveTab] = useState('market');
   const [selectedZipCode, setSelectedZipCode] = useState('90210');
   const [locationData, setLocationData] = useState(null);
@@ -763,6 +767,17 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   
   // Property detail modal
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // BAM: Calculate buyer persona scores
+  const personaResults = useMemo(() => {
+    const clientData = extractClientData(
+      kycData, 
+      fyiData, 
+      mvpData, 
+      locationData?.location
+    );
+    return calculateAllPersonaScores(clientData);
+  }, [kycData, fyiData, mvpData, locationData?.location]);
 
   // Get client location from KYC if available
   const clientLocation = kycData?.principal?.projectParameters?.projectCity ? {
@@ -991,6 +1006,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
           <Users size={16} />
           Demographics
         </button>
+        <button 
+          className={`kym-tab ${activeTab === 'buyers' ? 'kym-tab--active' : ''}`}
+          onClick={() => setActiveTab('buyers')}
+        >
+          <Target size={16} />
+          Buyer Alignment
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -1157,27 +1179,27 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
                   <div className="kym-filter-group">
                     <label>Property Status</label>
-                    <div className="kym-status-badges">
+                    <div className="kym-status-filter-buttons">
                       <button
-                        className={`kym-status-badge kym-status-badge--all ${statusFilter.length === 3 ? 'active' : ''}`}
+                        className={`kym-status-filter-btn ${statusFilter.length === 3 ? 'kym-status-filter-btn--active' : ''}`}
                         onClick={() => setStatusFilter(['active', 'pending', 'sold'])}
                       >
                         All
                       </button>
                       <button
-                        className={`kym-status-badge kym-status-badge--active ${statusFilter.length === 1 && statusFilter[0] === 'active' ? 'active' : ''}`}
+                        className={`kym-status-filter-btn kym-status-filter-btn--active-status ${statusFilter.length === 1 && statusFilter[0] === 'active' ? 'kym-status-filter-btn--active' : ''}`}
                         onClick={() => setStatusFilter(['active'])}
                       >
                         Active
                       </button>
                       <button
-                        className={`kym-status-badge kym-status-badge--pending ${statusFilter.length === 1 && statusFilter[0] === 'pending' ? 'active' : ''}`}
+                        className={`kym-status-filter-btn kym-status-filter-btn--pending-status ${statusFilter.length === 1 && statusFilter[0] === 'pending' ? 'kym-status-filter-btn--active' : ''}`}
                         onClick={() => setStatusFilter(['pending'])}
                       >
                         Pending
                       </button>
                       <button
-                        className={`kym-status-badge kym-status-badge--sold ${statusFilter.length === 1 && statusFilter[0] === 'sold' ? 'active' : ''}`}
+                        className={`kym-status-filter-btn kym-status-filter-btn--sold-status ${statusFilter.length === 1 && statusFilter[0] === 'sold' ? 'kym-status-filter-btn--active' : ''}`}
                         onClick={() => setStatusFilter(['sold'])}
                       >
                         Sold
@@ -1433,6 +1455,14 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Buyer Alignment Tab (BAM) */}
+        {activeTab === 'buyers' && (
+          <BAMView 
+            personaResults={personaResults}
+            marketData={locationData}
+          />
         )}
       </div>
 
