@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
+import * as kymApi from './kymApiService';
 import './KYMModule.css';
 
 // N4S Brand Colors
@@ -536,17 +537,41 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     zipCode: null // Would need to be looked up
   } : null;
 
-  // Fetch location data
+  // Fetch location data - tries live API first, falls back to mock
   const fetchLocationData = useCallback(async (zipCode) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // In production, this would call: /api/locations/${zipCode}
-      // For now, generate mock data
+      // Check if API key is configured
+      if (kymApi.hasApiKey()) {
+        console.log('[KYM] Attempting live API fetch...');
+        try {
+          const liveData = await kymApi.fetchLocationData(zipCode);
+          
+          // Merge with demographics (API doesn't provide this)
+          const mockData = generateMockLocationData(zipCode);
+          const fullData = {
+            ...liveData,
+            demographics: mockData.demographics,
+            buyerPersonas: mockData.buyerPersonas,
+          };
+          
+          setLocationData(fullData);
+          setDataSource('realtor');
+          console.log('[KYM] Live data loaded successfully');
+          return;
+        } catch (apiError) {
+          console.warn('[KYM] Live API failed, falling back to mock:', apiError.message);
+        }
+      } else {
+        console.log('[KYM] No API key configured, using sample data');
+      }
+      
+      // Fallback to mock data
       const mockData = generateMockLocationData(zipCode);
       setLocationData(mockData);
-      setDataSource(mockData.dataSource || 'generated');
+      setDataSource('generated');
     } catch (err) {
       setError(err.message || 'Failed to fetch location data');
       setLocationData(null);
