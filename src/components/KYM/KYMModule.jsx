@@ -99,12 +99,15 @@ const PropertyCard = ({ property, onClick }) => {
           <Home size={32} />
           <span>{property.sqft > 15000 ? 'Estate' : 'Luxury'}</span>
         </div>
-        <span 
+        <span
           className="kym-property-status"
           style={{ background: statusStyle.bg, color: statusStyle.text }}
         >
           {property.status}
         </span>
+        {property.propertyTypeDisplay && property.propertyTypeDisplay !== 'Single Family' && (
+          <span className="kym-property-type">{property.propertyTypeDisplay}</span>
+        )}
         {property.daysOnMarket <= 7 && (
           <span className="kym-property-new">New</span>
         )}
