@@ -97,7 +97,25 @@ export const generateKYMReport = async (data) => {
   let currentY = 0;
 
   // Get client info from KYC
-  const clientName = kycData?.principal?.name || 'Client';
+  // Principal name is stored in designIdentity section
+  const principalFirstName = kycData?.principal?.designIdentity?.principalName || '';
+  const secondaryName = kycData?.principal?.designIdentity?.secondaryName || '';
+  // Build full client name: "FirstName LastName" or "FirstName & SecondaryName LastName" for couples
+  const clientBaseName = kycData?.principal?.designIdentity?.clientBaseName || '';
+  const clientType = kycData?.principal?.designIdentity?.clientType || '';
+  
+  // Format client name based on client type
+  let clientName = 'Client';
+  if (principalFirstName && clientBaseName) {
+    if (clientType === 'couple' && secondaryName) {
+      clientName = `${principalFirstName} & ${secondaryName} ${clientBaseName}`;
+    } else {
+      clientName = `${principalFirstName} ${clientBaseName}`;
+    }
+  } else if (principalFirstName) {
+    clientName = principalFirstName;
+  }
+  
   const projectName = kycData?.principal?.projectParameters?.projectName || 'Luxury Residence';
   const projectCity = kycData?.principal?.projectParameters?.projectCity || locationData?.location?.city || '';
   const projectState = kycData?.principal?.projectParameters?.projectState || locationData?.location?.state || '';
@@ -651,7 +669,7 @@ export const generateKYMReport = async (data) => {
     doc.setFontSize(11);
     doc.setTextColor(...COLORS.text);
     doc.text('All Personas Summary', margin, currentY);
-    currentY += 7;
+    currentY += 5;
 
     const allPersonasData = personaResults.map((p, i) => [
       `${i + 1}`,
@@ -672,7 +690,7 @@ export const generateKYMReport = async (data) => {
         fontStyle: 'bold',
         fontSize: 9,
       },
-      styles: { fontSize: 9, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 2 },
       columnStyles: {
         0: { halign: 'center', cellWidth: 15 },
         1: { cellWidth: 50 },
@@ -683,7 +701,7 @@ export const generateKYMReport = async (data) => {
       margin: { left: margin, right: margin },
     });
 
-    currentY = doc.lastAutoTable.finalY + 15;
+    currentY = doc.lastAutoTable.finalY + 10;
   }
 
   // ==========================================================================
@@ -694,10 +712,10 @@ export const generateKYMReport = async (data) => {
     currentY = checkPageBreak(100);
     
     doc.setFont(FONTS.heading, 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setTextColor(...COLORS.navy);
     doc.text('Design Alignment Insights', margin, currentY);
-    currentY += 10;
+    currentY += 6;
 
     doc.setFont(FONTS.body, 'normal');
     doc.setFontSize(9);
@@ -813,17 +831,17 @@ export const generateKYMReport = async (data) => {
   currentY = checkPageBreak(80);
 
   doc.setFont(FONTS.heading, 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setTextColor(...COLORS.navy);
   doc.text('Strategic Recommendations', margin, currentY);
-  currentY += 12;
+  currentY += 8;
 
   // Market Positioning
   doc.setFont(FONTS.body, 'bold');
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.text);
   doc.text('Market Positioning', margin, currentY);
-  currentY += 6;
+  currentY += 5;
 
   doc.setFont(FONTS.body, 'normal');
   doc.setFontSize(9);
@@ -840,7 +858,7 @@ export const generateKYMReport = async (data) => {
   
   const posSplit = doc.splitTextToSize(positioningText, contentWidth);
   doc.text(posSplit, margin, currentY);
-  currentY += posSplit.length * 4 + 8;
+  currentY += posSplit.length * 4 + 5;
 
   // Target Buyer Strategy
   if (personaResults?.length > 0) {
@@ -848,7 +866,7 @@ export const generateKYMReport = async (data) => {
     doc.setFontSize(10);
     doc.setTextColor(...COLORS.text);
     doc.text('Target Buyer Strategy', margin, currentY);
-    currentY += 6;
+    currentY += 5;
 
     doc.setFont(FONTS.body, 'normal');
     doc.setFontSize(9);
@@ -867,7 +885,7 @@ export const generateKYMReport = async (data) => {
 
     const stratSplit = doc.splitTextToSize(strategyText, contentWidth);
     doc.text(stratSplit, margin, currentY);
-    currentY += stratSplit.length * 4 + 8;
+    currentY += stratSplit.length * 4 + 5;
   }
 
   // Recommendations
@@ -875,7 +893,7 @@ export const generateKYMReport = async (data) => {
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.text);
   doc.text('Key Recommendations', margin, currentY);
-  currentY += 6;
+  currentY += 5;
 
   const recommendations = [];
   
@@ -903,7 +921,7 @@ export const generateKYMReport = async (data) => {
   
   recommendations.forEach((rec, i) => {
     doc.text(`${i + 1}. ${rec}`, margin + 3, currentY);
-    currentY += 5;
+    currentY += 4;
   });
 
   // ==========================================================================
