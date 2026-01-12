@@ -126,7 +126,7 @@ const setCachedData = (key, data) => {
 export const fetchProperties = async (zipCode, options = {}) => {
   const {
     limit = 50,
-    minPrice = 3000000,
+    minPrice = 1000000,  // Lowered from $3M to capture more luxury listings
     status = ['for_sale', 'ready_to_build'],
   } = options;
 
@@ -240,7 +240,7 @@ const transformProperties = (apiResults) => {
         dataSource: 'realtor',
       };
     })
-    .filter(p => p.id && p.listPrice > 0); // Only include valid properties
+    .filter(p => p.id && p.askingPrice > 0); // Only include valid properties
 };
 
 /**
