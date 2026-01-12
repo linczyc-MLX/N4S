@@ -764,6 +764,17 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [statusFilter, setStatusFilter] = useState(['active', 'pending', 'sold']);
+  const [featureFilter, setFeatureFilter] = useState([]);
+  
+  // Available feature filters
+  const FEATURE_OPTIONS = [
+    'Swimming Pool',
+    'Guest House', 
+    'Den or Office',
+    'Elevator',
+    'Wine Cellar',
+    'Theater'
+  ];
   
   // Property detail modal
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -904,8 +915,29 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     const matchesSearch = !searchQuery || 
       property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.city.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesPrice && matchesSqft && matchesStatus && matchesSearch;
+    // Feature filter: property must have ALL selected features
+    const matchesFeatures = featureFilter.length === 0 || 
+      featureFilter.every(feature => property.features?.includes(feature));
+    return matchesPrice && matchesSqft && matchesStatus && matchesSearch && matchesFeatures;
   });
+
+  // Toggle feature filter
+  const toggleFeatureFilter = (feature) => {
+    setFeatureFilter(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setPriceRange([5000000, 25000000]);
+    setSqftRange([5500, 26000]);
+    setSearchQuery('');
+    setStatusFilter(['active', 'pending', 'sold']);
+    setFeatureFilter([]);
+  };
 
   // Check if we have any properties to show
   const hasProperties = locationData?.properties?.length > 0;
@@ -1124,11 +1156,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                 <div className="kym-filters-panel">
                   <div className="kym-filters-header">
                     <h3>Filters</h3>
-                    <button onClick={() => {
-                      setPriceRange([5000000, 25000000]);
-                      setSqftRange([10000, 20000]);
-                      setSearchQuery('');
-                    }}>Clear All</button>
+                    <button onClick={clearAllFilters}>Clear All</button>
                   </div>
 
                   <div className="kym-filter-group">
@@ -1209,12 +1237,28 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
                   <div className="kym-filter-group">
                     <label>Features</label>
-                    <div className="kym-feature-badges">
-                      <span className="kym-feature-badge">Pool</span>
-                      <span className="kym-feature-badge">Wine Cellar</span>
-                      <span className="kym-feature-badge">Theater</span>
-                      <span className="kym-feature-badge">Guest House</span>
+                    <div className="kym-feature-filter-buttons">
+                      {FEATURE_OPTIONS.map(feature => (
+                        <button
+                          key={feature}
+                          className={`kym-feature-filter-btn ${featureFilter.includes(feature) ? 'kym-feature-filter-btn--active' : ''}`}
+                          onClick={() => toggleFeatureFilter(feature)}
+                        >
+                          {feature}
+                        </button>
+                      ))}
                     </div>
+                    {featureFilter.length > 0 && (
+                      <div className="kym-active-filters">
+                        <span className="kym-active-filters-label">Active: </span>
+                        {featureFilter.map(f => (
+                          <span key={f} className="kym-active-filter-tag">
+                            {f}
+                            <button onClick={() => toggleFeatureFilter(f)}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1288,12 +1332,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                     <p>Your filters are hiding all {locationData?.properties?.length || 0} properties.</p>
                     <button 
                       className="kym-reset-filters-btn"
-                      onClick={() => {
-                        setPriceRange([5000000, 25000000]);
-                        setSqftRange([5500, 26000]);
-                        setSearchQuery('');
-                        setStatusFilter(['active', 'pending', 'sold']);
-                      }}
+                      onClick={clearAllFilters}
                     >
                       Reset Filters
                     </button>

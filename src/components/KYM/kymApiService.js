@@ -299,18 +299,30 @@ const mapStatus = (apiStatus) => {
  */
 const mapFeatures = (tags = [], flags = {}) => {
   const featureMapping = {
-    'pool': 'Private Pool',
+    'pool': 'Swimming Pool',
+    'swimming': 'Swimming Pool',
     'waterfront': 'Waterfront',
     'view': 'Views',
     'golf': 'Golf Course Access',
     'gated': 'Gated Community',
     'smart_home': 'Smart Home',
     'wine_cellar': 'Wine Cellar',
-    'theater': 'Home Theater',
+    'wine': 'Wine Cellar',
+    'theater': 'Theater',
+    'theatre': 'Theater',
+    'screening': 'Theater',
     'gym': 'Gym',
     'spa': 'Spa',
     'tennis': 'Tennis Court',
     'guest_house': 'Guest House',
+    'guest house': 'Guest House',
+    'casita': 'Guest House',
+    'elevator': 'Elevator',
+    'lift': 'Elevator',
+    'office': 'Den or Office',
+    'den': 'Den or Office',
+    'study': 'Den or Office',
+    'library': 'Den or Office',
   };
 
   const features = [];
