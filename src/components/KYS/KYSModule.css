@@ -81,18 +81,22 @@
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
+  overflow: hidden;
 }
 
 .kys-panel-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #e5e5e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* =============================================================================
@@ -384,6 +388,7 @@
 .kys-assessment__sidebar {
   position: sticky;
   top: 1rem;
+  overflow: hidden;
 }
 
 .kys-assessment__main {
@@ -393,6 +398,7 @@
 .kys-assessment__results {
   position: sticky;
   top: 1rem;
+  overflow: hidden;
 }
 
 /* =============================================================================
@@ -409,10 +415,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .kys-form__field label {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   color: #6b6b6b;
   text-transform: uppercase;
@@ -425,10 +432,13 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid #e5e5e0;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-family: 'Inter', -apple-system, sans-serif;
   background: white;
   transition: border-color 0.15s ease;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .kys-form__field input:focus,
@@ -445,11 +455,11 @@
 .kys-form__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .kys-form__field--small {
-  max-width: 80px;
+  max-width: 70px;
 }
 
 /* =============================================================================
@@ -810,11 +820,12 @@
 }
 
 .kys-summary__category-bar {
-  width: 80px;
+  width: 60px;
   height: 6px;
   background: #e5e5e0;
   border-radius: 3px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .kys-summary__category-fill {
@@ -829,6 +840,7 @@
   color: #1a1a1a;
   width: 2rem;
   text-align: right;
+  flex-shrink: 0;
 }
 
 .kys-summary__recommendation {
