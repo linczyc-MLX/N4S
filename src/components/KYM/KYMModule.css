@@ -2854,3 +2854,93 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =============================================================================
+   LAND DETAIL MODAL ENHANCEMENTS
+   ============================================================================= */
+
+.kym-modal-btn--gold {
+  background: linear-gradient(135deg, #c9a227 0%, #d4b237 100%);
+  color: white;
+  border: none;
+}
+
+.kym-modal-btn--gold:hover {
+  background: linear-gradient(135deg, #b8911f 0%, #c9a227 100%);
+}
+
+.kym-modal-image-placeholder--land {
+  background: linear-gradient(135deg, #e8f4e8 0%, #d4e8d4 100%);
+}
+
+.kym-modal-feature-tag--land {
+  background: #e8f4e8;
+  color: #2d5a2d;
+}
+
+/* =============================================================================
+   LAND CARD ENHANCEMENTS
+   ============================================================================= */
+
+.kym-land-card-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.kym-land-card-dom {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.kym-land-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kym-view-listing-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.4rem;
+  color: #1e3a5f;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #e5e5e0;
+  border-radius: 6px;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.kym-view-listing-link:hover {
+  background: #f8f9fa;
+  border-color: #1e3a5f;
+}
+
+/* =============================================================================
+   PRICE INPUT WITH DATALIST
+   ============================================================================= */
+
+.kym-price-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e5e5e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+}
+
+.kym-price-input:focus {
+  outline: none;
+  border-color: #1e3a5f;
+}
+
+.kym-price-input::placeholder {
+  color: #aaa;
+}

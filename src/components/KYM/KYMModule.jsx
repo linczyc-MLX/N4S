@@ -353,6 +353,159 @@ const BuyerPersonaCard = ({ persona }) => (
   </div>
 );
 
+// =============================================================================
+// LAND DETAIL MODAL
+// =============================================================================
+
+const LandDetailModal = ({ parcel, isOpen, onClose, onExportToKYS }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (!isOpen || !parcel) return null;
+
+  const formatPrice = (value) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(value);
+
+  const formatNumber = (value) => new Intl.NumberFormat('en-US').format(value);
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="kym-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="kym-modal-content">
+        {/* Header */}
+        <div className="kym-modal-header">
+          <h2 className="kym-modal-title">{parcel.address}</h2>
+          <div className="kym-modal-header-actions">
+            <span 
+              className="kym-modal-status"
+              style={{ background: '#dcfce7', color: '#166534' }}
+            >
+              Active
+            </span>
+            <button className="kym-modal-close" onClick={onClose}>
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Image */}
+        <div className="kym-modal-image-container">
+          {parcel.imageUrl && !imageError ? (
+            <img 
+              src={parcel.imageUrl} 
+              alt={parcel.address}
+              className="kym-modal-image"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="kym-modal-image-placeholder kym-modal-image-placeholder--land">
+              <Map size={64} />
+              <span>Land Parcel</span>
+            </div>
+          )}
+        </div>
+
+        {/* Location */}
+        <div className="kym-modal-location">
+          <MapPin size={16} />
+          <span>{parcel.city}, {parcel.state} {parcel.zipCode}</span>
+        </div>
+
+        {/* Price Info */}
+        <div className="kym-modal-price-section">
+          <div>
+            <span className="kym-modal-price-label">Asking Price</span>
+            <span className="kym-modal-price-value">{formatPrice(parcel.askingPrice)}</span>
+          </div>
+          <div>
+            <span className="kym-modal-price-label">Price per Acre</span>
+            <span className="kym-modal-price-ppsf">{formatPrice(parcel.pricePerAcre)}</span>
+          </div>
+        </div>
+
+        {/* Land Specs */}
+        <div className="kym-modal-specs">
+          <div className="kym-modal-spec">
+            <Trees size={20} />
+            <span className="kym-modal-spec-value">{parcel.acreage?.toFixed(2)}</span>
+            <span className="kym-modal-spec-label">Acres</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Maximize size={20} />
+            <span className="kym-modal-spec-value">{formatNumber(parcel.lotSqft || 0)}</span>
+            <span className="kym-modal-spec-label">Sq Ft</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Home size={20} />
+            <span className="kym-modal-spec-value">{parcel.zoning || 'Residential'}</span>
+            <span className="kym-modal-spec-label">Zoning</span>
+          </div>
+          <div className="kym-modal-spec">
+            <Calendar size={20} />
+            <span className="kym-modal-spec-value">{parcel.daysOnMarket || '—'}</span>
+            <span className="kym-modal-spec-label">Days on Market</span>
+          </div>
+        </div>
+
+        {/* Features */}
+        {parcel.features && parcel.features.length > 0 && (
+          <div className="kym-modal-features">
+            {parcel.features.map((feature, i) => (
+              <span key={i} className="kym-modal-feature-tag kym-modal-feature-tag--land">{feature}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="kym-modal-footer">
+          <div className="kym-modal-source">
+            {parcel.dataSource && parcel.dataSource !== 'generated' && (
+              <span className="kym-modal-source-badge">
+                <Database size={12} />
+                Realtor.com
+              </span>
+            )}
+          </div>
+          <div className="kym-modal-actions">
+            {parcel.listingUrl && (
+              <button 
+                className="kym-modal-btn kym-modal-btn--primary"
+                onClick={() => window.open(parcel.listingUrl, '_blank')}
+              >
+                <ExternalLink size={16} />
+                View Listing
+              </button>
+            )}
+            {onExportToKYS && (
+              <button 
+                className="kym-modal-btn kym-modal-btn--gold"
+                onClick={() => {
+                  onExportToKYS(parcel);
+                  onClose();
+                }}
+              >
+                <Plus size={16} />
+                Add to KYS
+              </button>
+            )}
+            <button 
+              className="kym-modal-btn kym-modal-btn--secondary"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /**
  * AnimatedLineChart - SVG-based line chart with left-to-right animation
  * Mimics Recharts behavior without the dependency
@@ -1551,32 +1704,58 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                       <div className="kym-range-inputs">
                         <div className="kym-range-input">
                           <span>Min</span>
-                          <select 
-                            value={landPriceRange[0]}
-                            onChange={(e) => setLandPriceRange([Number(e.target.value), landPriceRange[1]])}
-                          >
-                            <option value={100000}>$100K</option>
-                            <option value={250000}>$250K</option>
-                            <option value={500000}>$500K</option>
-                            <option value={1000000}>$1M</option>
-                            <option value={2000000}>$2M</option>
-                            <option value={5000000}>$5M</option>
-                          </select>
+                          <input
+                            type="text"
+                            list="price-options-min"
+                            value={landPriceRange[0] >= 1000000 ? `$${(landPriceRange[0] / 1000000).toFixed(1)}M` : `$${(landPriceRange[0] / 1000).toFixed(0)}K`}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[$,KM]/gi, '');
+                              const num = parseFloat(val);
+                              if (!isNaN(num)) {
+                                const multiplier = e.target.value.toLowerCase().includes('m') ? 1000000 : 
+                                                   e.target.value.toLowerCase().includes('k') ? 1000 : 1;
+                                setLandPriceRange([num * multiplier, landPriceRange[1]]);
+                              }
+                            }}
+                            placeholder="$500K"
+                            className="kym-price-input"
+                          />
+                          <datalist id="price-options-min">
+                            <option value="$100K" />
+                            <option value="$250K" />
+                            <option value="$500K" />
+                            <option value="$1M" />
+                            <option value="$2M" />
+                            <option value="$5M" />
+                          </datalist>
                         </div>
                         <span className="kym-range-separator">-</span>
                         <div className="kym-range-input">
                           <span>Max</span>
-                          <select 
-                            value={landPriceRange[1]}
-                            onChange={(e) => setLandPriceRange([landPriceRange[0], Number(e.target.value)])}
-                          >
-                            <option value={1000000}>$1M</option>
-                            <option value={2500000}>$2.5M</option>
-                            <option value={5000000}>$5M</option>
-                            <option value={10000000}>$10M</option>
-                            <option value={25000000}>$25M</option>
-                            <option value={50000000}>$50M</option>
-                          </select>
+                          <input
+                            type="text"
+                            list="price-options-max"
+                            value={landPriceRange[1] >= 1000000 ? `$${(landPriceRange[1] / 1000000).toFixed(1)}M` : `$${(landPriceRange[1] / 1000).toFixed(0)}K`}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[$,KM]/gi, '');
+                              const num = parseFloat(val);
+                              if (!isNaN(num)) {
+                                const multiplier = e.target.value.toLowerCase().includes('m') ? 1000000 : 
+                                                   e.target.value.toLowerCase().includes('k') ? 1000 : 1;
+                                setLandPriceRange([landPriceRange[0], num * multiplier]);
+                              }
+                            }}
+                            placeholder="$10M"
+                            className="kym-price-input"
+                          />
+                          <datalist id="price-options-max">
+                            <option value="$1M" />
+                            <option value="$2.5M" />
+                            <option value="$5M" />
+                            <option value="$10M" />
+                            <option value="$25M" />
+                            <option value="$50M" />
+                          </datalist>
                         </div>
                       </div>
                     </div>
@@ -1690,6 +1869,11 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                               <span><Trees size={14} /> {parcel.acreage} acres</span>
                               <span><DollarSign size={14} /> ${(parcel.pricePerAcre / 1000).toFixed(0)}K/acre</span>
                             </div>
+                            <div className="kym-land-card-meta">
+                              <span className="kym-land-card-dom">
+                                <Calendar size={12} /> {parcel.daysOnMarket || '—'} days
+                              </span>
+                            </div>
                             {parcel.features && parcel.features.length > 0 && (
                               <div className="kym-land-card-features">
                                 {parcel.features.slice(0, 3).map((feature, i) => (
@@ -1700,16 +1884,30 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                                 )}
                               </div>
                             )}
-                            <button 
-                              className="kym-export-kys-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                exportToKYSLibrary(parcel);
-                              }}
-                            >
-                              <Plus size={14} />
-                              Add to KYS Library
-                            </button>
+                            <div className="kym-land-card-actions">
+                              {parcel.listingUrl && (
+                                <a
+                                  href={parcel.listingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="kym-view-listing-link"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLink size={12} />
+                                  View Listing
+                                </a>
+                              )}
+                              <button 
+                                className="kym-export-kys-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  exportToKYSLibrary(parcel);
+                                }}
+                              >
+                                <Plus size={14} />
+                                Add to KYS Library
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1884,6 +2082,14 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         property={selectedProperty}
         isOpen={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
+      />
+
+      {/* Land Detail Modal */}
+      <LandDetailModal 
+        parcel={selectedParcel}
+        isOpen={!!selectedParcel}
+        onClose={() => setSelectedParcel(null)}
+        onExportToKYS={exportToKYSLibrary}
       />
 
       {/* Legal Disclaimer */}

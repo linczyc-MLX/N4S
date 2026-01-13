@@ -675,7 +675,7 @@ const SiteAssessmentView = ({ site, onUpdateSite, onBack }) => {
 // =============================================================================
 
 const KYSModule = ({ showDocs, onCloseDocs }) => {
-  const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
+  const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved, projects, activeProjectId, kycData } = useAppContext();
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'assessment' | 'comparison' | 'library'
   
@@ -687,6 +687,14 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
   
   // Assessment mode: 'library' (testing) or 'project' (live assessment)
   const [assessmentMode, setAssessmentMode] = useState('project');
+  
+  // Selected project for Live Project mode
+  const [selectedProjectId, setSelectedProjectId] = useState(activeProjectId);
+  
+  // Get the current active project name for display
+  const activeProject = useMemo(() => {
+    return projects?.find(p => p.id === selectedProjectId);
+  }, [projects, selectedProjectId]);
 
   // Refresh library from localStorage
   const refreshLibrary = useCallback(() => {
@@ -805,6 +813,29 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
               Test Library
             </button>
           </div>
+          
+          {/* Project Selector - shown in Live Project mode */}
+          {assessmentMode === 'project' && projects && projects.length > 0 && (
+            <div className="kys-project-selector">
+              <select
+                value={selectedProjectId || ''}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="kys-project-dropdown"
+              >
+                <option value="">Select Project...</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              {activeProject && (
+                <span className="kys-project-indicator">
+                  Comparing against: <strong>{activeProject.name}</strong>
+                </span>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="kys-module__save-area">
