@@ -942,17 +942,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [landError, setLandError] = useState(null);
   const [landPriceRange, setLandPriceRange] = useState([500000, 10000000]);
   const [acreageRange, setAcreageRange] = useState([1, 20]);
-  const [landFeatureFilter, setLandFeatureFilter] = useState([]);
   const [showLandFilters, setShowLandFilters] = useState(true);
   const [selectedParcel, setSelectedParcel] = useState(null);
   
-  // Land feature options (from your document)
-  const LAND_FEATURE_OPTIONS = [
-    'Waterfront', 'Ocean View', 'Lake View', 'River View',
-    'Hill/Mtn View', 'City View', 'Golf Course', 
-    'Corner Lot', 'Cul-de-sac', 'Gated Community',
-    'Wooded', 'Cleared', 'Flat Terrain', 'Utilities Available'
-  ];
+  // URL paste feature for direct Realtor.com links
+  const [pastedListingUrl, setPastedListingUrl] = useState('');
+  const [isFetchingListing, setIsFetchingListing] = useState(false);
+  const [fetchListingError, setFetchListingError] = useState(null);
 
   // Acreage options for dropdown
   const ACREAGE_OPTIONS = [
@@ -1076,11 +1072,9 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     return landData.parcels.filter(parcel => {
       const matchesPrice = parcel.askingPrice >= landPriceRange[0] && parcel.askingPrice <= landPriceRange[1];
       const matchesAcreage = parcel.acreage >= acreageRange[0] && parcel.acreage <= acreageRange[1];
-      const matchesFeatures = landFeatureFilter.length === 0 || 
-        landFeatureFilter.every(feature => parcel.features?.includes(feature));
-      return matchesPrice && matchesAcreage && matchesFeatures;
+      return matchesPrice && matchesAcreage;
     });
-  }, [landData?.parcels, landPriceRange, acreageRange, landFeatureFilter]);
+  }, [landData?.parcels, landPriceRange, acreageRange]);
 
   // Export parcel to KYS Library
   const exportToKYSLibrary = useCallback((parcel) => {
@@ -1125,6 +1119,42 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     
     alert(`"${parcel.address}" has been added to your KYS Site Library.`);
   }, []);
+
+  // Fetch property details from pasted Realtor.com URL
+  const handleFetchListingByUrl = useCallback(async () => {
+    if (!pastedListingUrl) return;
+    
+    setIsFetchingListing(true);
+    setFetchListingError(null);
+    
+    try {
+      // Extract property ID from URL
+      // URL format: https://www.realtor.com/realestateandhomes-detail/ADDRESS_M12345-67890
+      const match = pastedListingUrl.match(/M(\d+-\d+)/);
+      if (!match) {
+        throw new Error('Invalid Realtor.com URL. Please paste a full property listing URL.');
+      }
+      
+      const propertyId = `M${match[1]}`;
+      console.log('[KYM] Fetching property by ID:', propertyId);
+      
+      const parcelData = await kymApi.fetchPropertyById(propertyId, pastedListingUrl);
+      
+      if (!parcelData) {
+        throw new Error('Could not fetch property details. Please try again.');
+      }
+      
+      // Show the modal with the fetched property
+      setSelectedParcel(parcelData);
+      setPastedListingUrl(''); // Clear input on success
+      
+    } catch (err) {
+      console.error('[KYM] URL fetch error:', err);
+      setFetchListingError(err.message || 'Failed to fetch listing');
+    } finally {
+      setIsFetchingListing(false);
+    }
+  }, [pastedListingUrl]);
 
   // Handle ZIP code search input
   const handleZipSearchChange = (e) => {
@@ -1789,28 +1819,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                       </div>
                     </div>
 
-                    <div className="kym-filter-group">
-                      <label>Site Features</label>
-                      <div className="kym-feature-checkboxes">
-                        {LAND_FEATURE_OPTIONS.map(feature => (
-                          <label key={feature} className="kym-feature-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={landFeatureFilter.includes(feature)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setLandFeatureFilter([...landFeatureFilter, feature]);
-                                } else {
-                                  setLandFeatureFilter(landFeatureFilter.filter(f => f !== feature));
-                                }
-                              }}
-                            />
-                            <span>{feature}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
                     <button 
                       className="kym-search-land-btn"
                       onClick={() => fetchLandDataForLocation(selectedZipCode)}
@@ -1818,6 +1826,35 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                       <Search size={16} />
                       Search Land
                     </button>
+
+                    {/* Direct Listing URL Input */}
+                    <div className="kym-url-paste-section">
+                      <label>Or paste Realtor.com URL</label>
+                      <div className="kym-url-input-group">
+                        <input
+                          type="text"
+                          placeholder="https://www.realtor.com/realestateandhomes-detail/..."
+                          value={pastedListingUrl}
+                          onChange={(e) => setPastedListingUrl(e.target.value)}
+                          className="kym-url-input"
+                        />
+                        <button
+                          className="kym-url-add-btn"
+                          onClick={handleFetchListingByUrl}
+                          disabled={!pastedListingUrl || isFetchingListing}
+                        >
+                          {isFetchingListing ? (
+                            <RefreshCw size={14} className="spinning" />
+                          ) : (
+                            <Plus size={14} />
+                          )}
+                          {isFetchingListing ? 'Loading...' : 'Add'}
+                        </button>
+                      </div>
+                      {fetchListingError && (
+                        <span className="kym-url-error">{fetchListingError}</span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1921,7 +1958,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                         onClick={() => {
                           setLandPriceRange([500000, 10000000]);
                           setAcreageRange([1, 20]);
-                          setLandFeatureFilter([]);
                         }}
                       >
                         Reset Filters

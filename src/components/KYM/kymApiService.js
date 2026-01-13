@@ -934,6 +934,156 @@ export const fetchLandData = async (zipCode, options = {}) => {
   };
 };
 
+// ============================================================================
+// FETCH PROPERTY BY ID (from pasted URL)
+// ============================================================================
+
+/**
+ * Extract property ID from Realtor.com URL
+ */
+const extractPropertyIdFromUrl = (url) => {
+  // URL formats:
+  // https://www.realtor.com/realestateandhomes-detail/1818-Franklin-Canyon-Dr_Beverly-Hills_CA_90210_M90172-52608
+  // The property ID is at the end: M90172-52608
+  const match = url.match(/M(\d+-\d+)/);
+  return match ? `M${match[1]}` : null;
+};
+
+/**
+ * Fetch property details by property ID
+ */
+export const fetchPropertyById = async (propertyId, originalUrl) => {
+  if (!hasApiKey()) {
+    console.log('[KYM API] No API key configured for property lookup');
+    // Return a basic parcel with just the URL so user can still view listing
+    return {
+      id: propertyId,
+      address: 'Property Details',
+      city: '',
+      state: '',
+      zipCode: '',
+      askingPrice: 0,
+      pricePerAcre: 0,
+      acreage: 0,
+      lotSqft: 0,
+      features: [],
+      status: 'active',
+      daysOnMarket: null,
+      zoning: 'Unknown',
+      imageUrl: null,
+      listingUrl: originalUrl,
+      dataSource: 'url_only',
+    };
+  }
+
+  console.log(`[KYM API] Fetching property details for ${propertyId}...`);
+
+  try {
+    const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/detail', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      },
+      body: JSON.stringify({
+        property_id: propertyId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[KYM API] Property detail error:', response.status, errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const property = data.data?.home;
+    
+    if (!property) {
+      throw new Error('Property not found');
+    }
+
+    console.log('[KYM API] Property details received:', property);
+
+    // Transform to our parcel format
+    const location = property.location || {};
+    const address = location.address || {};
+    const description = property.description || {};
+    
+    const lotSqft = description.lot_sqft || 0;
+    const acreage = lotSqft > 0 ? lotSqft / 43560 : 0;
+    const listPrice = property.list_price || property.price || 0;
+    const pricePerAcre = acreage > 0 ? Math.round(listPrice / acreage) : 0;
+
+    // Extract features from tags
+    const features = [];
+    if (property.tags) {
+      property.tags.forEach(tag => {
+        const tagLower = tag.toLowerCase();
+        if (tagLower.includes('waterfront')) features.push('Waterfront');
+        if (tagLower.includes('ocean')) features.push('Ocean View');
+        if (tagLower.includes('lake')) features.push('Lake View');
+        if (tagLower.includes('mountain') || tagLower.includes('hill')) features.push('Hill/Mtn View');
+        if (tagLower.includes('golf')) features.push('Golf Course');
+        if (tagLower.includes('gated')) features.push('Gated');
+      });
+    }
+
+    // Calculate days on market
+    const listDate = property.list_date ? new Date(property.list_date) : null;
+    const daysOnMarket = listDate 
+      ? Math.max(1, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
+      : null;
+
+    return {
+      id: propertyId,
+      address: address.line || 'Unknown Address',
+      city: address.city || '',
+      state: address.state_code || address.state || '',
+      zipCode: address.postal_code || '',
+      askingPrice: listPrice,
+      pricePerAcre,
+      acreage: Math.round(acreage * 100) / 100,
+      lotSqft,
+      sqft: description.sqft || 0,
+      beds: description.beds || 0,
+      baths: description.baths || 0,
+      features,
+      status: property.status || 'active',
+      daysOnMarket,
+      zoning: description.zoning || 'Residential',
+      yearBuilt: description.year_built || null,
+      imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href)),
+      listingUrl: originalUrl || property.href || null,
+      dataSource: 'realtor',
+      latitude: location.coordinate?.lat || null,
+      longitude: location.coordinate?.lon || null,
+    };
+  } catch (error) {
+    console.error('[KYM API] Property fetch error:', error);
+    // Return basic parcel with URL on error
+    return {
+      id: propertyId,
+      address: 'Property Details',
+      city: '',
+      state: '',
+      zipCode: '',
+      askingPrice: 0,
+      pricePerAcre: 0,
+      acreage: 0,
+      lotSqft: 0,
+      features: [],
+      status: 'active',
+      daysOnMarket: null,
+      zoning: 'Unknown',
+      imageUrl: null,
+      listingUrl: originalUrl,
+      dataSource: 'url_only',
+    };
+  }
+};
+
 export default {
   hasApiKey,
   lookupZipCode,
@@ -945,4 +1095,5 @@ export default {
   fetchLandListings,
   fetchLandData,
   generateFallbackLandParcels,
+  fetchPropertyById,
 };
