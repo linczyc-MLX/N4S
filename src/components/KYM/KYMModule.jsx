@@ -1300,31 +1300,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                     </div>
                   </div>
 
-                  <div className="kym-filter-group">
-                    <label>Features</label>
-                    <div className="kym-feature-filter-buttons">
-                      {FEATURE_OPTIONS.map(feature => (
-                        <button
-                          key={feature}
-                          className={`kym-feature-filter-btn ${featureFilter.includes(feature) ? 'kym-feature-filter-btn--active' : ''}`}
-                          onClick={() => toggleFeatureFilter(feature)}
-                        >
-                          {feature}
-                        </button>
-                      ))}
-                    </div>
-                    {featureFilter.length > 0 && (
-                      <div className="kym-active-filters">
-                        <span className="kym-active-filters-label">Active: </span>
-                        {featureFilter.map(f => (
-                          <span key={f} className="kym-active-filter-tag">
-                            {f}
-                            <button onClick={() => toggleFeatureFilter(f)}>×</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -1473,6 +1448,39 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                   </div>
 
                   <div className="kym-demo-chart-card">
+                    <h3>Age Distribution</h3>
+                    <div className="kym-age-distribution">
+                      {locationData.demographics.ageDistribution.map((d, i) => (
+                        <div key={i} className="kym-age-bar-group">
+                          <span className="kym-age-label">{d.range}</span>
+                          <div className="kym-age-bars">
+                            <div className="kym-age-bar-container kym-age-male">
+                              <div 
+                                className="kym-age-bar-fill"
+                                style={{ width: `${d.male * 2.5}%` }}
+                              />
+                              <span>{d.male}%</span>
+                            </div>
+                            <div className="kym-age-bar-container kym-age-female">
+                              <div 
+                                className="kym-age-bar-fill"
+                                style={{ width: `${d.female * 2.5}%` }}
+                              />
+                              <span>{d.female}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="kym-age-legend">
+                        <span className="kym-age-legend-male">■ Male</span>
+                        <span className="kym-age-legend-female">■ Female</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="kym-demo-charts">
+                  <div className="kym-demo-chart-card">
                     <h3>Education Levels</h3>
                     <div className="kym-education-bars">
                       <div className="kym-edu-bar-row">
@@ -1496,58 +1504,6 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                         </div>
                         <span>{locationData.demographics.educationLevels.graduate}%</span>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Buyer Personas Section */}
-                <div className="kym-personas-section">
-                  <h2>Target Buyer Personas</h2>
-                  <p className="kym-personas-subtitle">
-                    Identified demographic groups most likely to invest in luxury residences
-                  </p>
-                  
-                  {locationData.buyerPersonas && locationData.buyerPersonas.length > 0 ? (
-                    <div className="kym-personas-grid">
-                      {locationData.buyerPersonas.map(persona => (
-                        <BuyerPersonaCard key={persona.id} persona={persona} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="kym-empty">
-                      <Users size={48} />
-                      <p>No buyer personas available for this location</p>
-                    </div>
-                  )}
-
-                  {/* Feature Priority Matrix */}
-                  <div className="kym-feature-priorities">
-                    <h3>Must-Have Features by Priority</h3>
-                    <div className="kym-priority-grid">
-                      {[
-                        { feature: 'Gourmet Kitchen', priority: 95 },
-                        { feature: 'Private Pool & Spa', priority: 92 },
-                        { feature: 'Security System', priority: 90 },
-                        { feature: 'Smart Home Technology', priority: 88 },
-                        { feature: 'Home Theater', priority: 85 },
-                        { feature: 'Eco-Friendly Features', priority: 80 },
-                        { feature: 'Wine Cellar', priority: 78 },
-                        { feature: 'Guest House', priority: 72 },
-                        { feature: 'Tennis Court', priority: 65 },
-                      ].map((item, i) => (
-                        <div key={i} className="kym-priority-item">
-                          <div className="kym-priority-header">
-                            <span>{item.feature}</span>
-                            <span className="kym-priority-badge">{item.priority}%</span>
-                          </div>
-                          <div className="kym-priority-bar">
-                            <div 
-                              className="kym-priority-fill"
-                              style={{ width: `${item.priority}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -1598,10 +1554,167 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
 /**
  * Generate demographics estimate based on location
- * Uses seeded random for consistent results per ZIP code
+ * Uses hardcoded data for known luxury markets, seeded random for others
  */
 function generateDemographicsEstimate(zipCode, location) {
-  // Seeded random based on ZIP code for consistency
+  // HARDCODED DEMOGRAPHICS FOR KNOWN LUXURY MARKETS (matching Replit)
+  const KNOWN_DEMOGRAPHICS = {
+    '90210': {
+      totalPopulation: 32500,
+      populationGrowth: 1.8,
+      medianHouseholdIncome: 185000,
+      averageAge: 44,
+      educationLevels: { highSchool: 98, bachelors: 72, graduate: 45 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 8 },
+        { bracket: '$50K-$100K', percentage: 12 },
+        { bracket: '$100K-$200K', percentage: 25 },
+        { bracket: '$200K-$500K', percentage: 32 },
+        { bracket: '$500K-$1M', percentage: 15 },
+        { bracket: '>$1M', percentage: 8 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 6, female: 7 },
+        { range: '26-35', male: 12, female: 14 },
+        { range: '36-45', male: 15, female: 16 },
+        { range: '46-55', male: 14, female: 13 },
+        { range: '56-65', male: 10, female: 11 },
+        { range: '65+', male: 8, female: 9 },
+      ],
+    },
+    '90265': { // Malibu
+      totalPopulation: 12645,
+      populationGrowth: 0.9,
+      medianHouseholdIncome: 195000,
+      averageAge: 48,
+      educationLevels: { highSchool: 97, bachelors: 68, graduate: 42 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 10 },
+        { bracket: '$50K-$100K', percentage: 14 },
+        { bracket: '$100K-$200K', percentage: 22 },
+        { bracket: '$200K-$500K', percentage: 28 },
+        { bracket: '$500K-$1M', percentage: 16 },
+        { bracket: '>$1M', percentage: 10 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 5, female: 5 },
+        { range: '26-35', male: 10, female: 11 },
+        { range: '36-45', male: 14, female: 15 },
+        { range: '46-55', male: 16, female: 15 },
+        { range: '56-65', male: 12, female: 13 },
+        { range: '65+', male: 10, female: 11 },
+      ],
+    },
+    '33139': { // Miami Beach
+      totalPopulation: 91718,
+      populationGrowth: 3.2,
+      medianHouseholdIncome: 145000,
+      averageAge: 41,
+      educationLevels: { highSchool: 92, bachelors: 58, graduate: 28 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 15 },
+        { bracket: '$50K-$100K', percentage: 20 },
+        { bracket: '$100K-$200K', percentage: 28 },
+        { bracket: '$200K-$500K', percentage: 25 },
+        { bracket: '$500K-$1M', percentage: 8 },
+        { bracket: '>$1M', percentage: 4 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 8, female: 9 },
+        { range: '26-35', male: 16, female: 17 },
+        { range: '36-45', male: 14, female: 13 },
+        { range: '46-55', male: 11, female: 10 },
+        { range: '56-65', male: 8, female: 9 },
+        { range: '65+', male: 7, female: 8 },
+      ],
+    },
+    '10019': { // Manhattan
+      totalPopulation: 1628700,
+      populationGrowth: 0.5,
+      medianHouseholdIncome: 138000,
+      averageAge: 37,
+      educationLevels: { highSchool: 89, bachelors: 62, graduate: 35 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 22 },
+        { bracket: '$50K-$100K', percentage: 18 },
+        { bracket: '$100K-$200K', percentage: 24 },
+        { bracket: '$200K-$500K', percentage: 22 },
+        { bracket: '$500K-$1M', percentage: 9 },
+        { bracket: '>$1M', percentage: 5 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 10, female: 11 },
+        { range: '26-35', male: 18, female: 19 },
+        { range: '36-45', male: 15, female: 14 },
+        { range: '46-55', male: 10, female: 9 },
+        { range: '56-65', male: 7, female: 8 },
+        { range: '65+', male: 5, female: 6 },
+      ],
+    },
+    '81611': { // Aspen
+      totalPopulation: 7004,
+      populationGrowth: 1.2,
+      medianHouseholdIncome: 125000,
+      averageAge: 42,
+      educationLevels: { highSchool: 96, bachelors: 65, graduate: 32 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 18 },
+        { bracket: '$50K-$100K', percentage: 22 },
+        { bracket: '$100K-$200K', percentage: 26 },
+        { bracket: '$200K-$500K', percentage: 20 },
+        { bracket: '$500K-$1M', percentage: 10 },
+        { bracket: '>$1M', percentage: 4 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 8, female: 8 },
+        { range: '26-35', male: 14, female: 15 },
+        { range: '36-45', male: 16, female: 15 },
+        { range: '46-55', male: 12, female: 11 },
+        { range: '56-65', male: 9, female: 10 },
+        { range: '65+', male: 6, female: 7 },
+      ],
+    },
+    '33480': { // Palm Beach
+      totalPopulation: 8776,
+      populationGrowth: 0.8,
+      medianHouseholdIncome: 205000,
+      averageAge: 56,
+      educationLevels: { highSchool: 98, bachelors: 70, graduate: 40 },
+      incomeDistribution: [
+        { bracket: '<$50K', percentage: 6 },
+        { bracket: '$50K-$100K', percentage: 10 },
+        { bracket: '$100K-$200K', percentage: 20 },
+        { bracket: '$200K-$500K', percentage: 30 },
+        { bracket: '$500K-$1M', percentage: 20 },
+        { bracket: '>$1M', percentage: 14 },
+      ],
+      ageDistribution: [
+        { range: '18-25', male: 3, female: 3 },
+        { range: '26-35', male: 6, female: 7 },
+        { range: '36-45', male: 10, female: 11 },
+        { range: '46-55', male: 14, female: 13 },
+        { range: '56-65', male: 16, female: 17 },
+        { range: '65+', male: 18, female: 20 },
+      ],
+    },
+  };
+
+  // Check for hardcoded data first
+  const knownData = KNOWN_DEMOGRAPHICS[zipCode];
+  if (knownData) {
+    console.log(`[KYM] Using hardcoded demographics for ${zipCode}`);
+    return {
+      id: `demo-${zipCode}`,
+      location: location?.formattedName || `${location?.city}, ${location?.state}`,
+      zipCode,
+      ...knownData,
+      dataSource: 'census_estimates',
+    };
+  }
+
+  // For unknown markets, use seeded random for consistency
+  console.log(`[KYM] Generating seeded demographics for ${zipCode}`);
+  
   let seed = 0;
   for (let i = 0; i < zipCode.length; i++) {
     seed = ((seed << 5) - seed) + zipCode.charCodeAt(i);
@@ -1614,7 +1727,7 @@ function generateDemographicsEstimate(zipCode, location) {
     return (seed >>> 0) / 4294967295;
   };
 
-  // State-based income multipliers (approximate affluence)
+  // State-based income multipliers
   const stateMultipliers = {
     CA: 1.3, NY: 1.4, FL: 1.1, TX: 1.0, CO: 1.2,
     CT: 1.3, MA: 1.35, NJ: 1.25, WA: 1.25, AZ: 0.95,
@@ -1623,7 +1736,7 @@ function generateDemographicsEstimate(zipCode, location) {
   
   const baseIncome = 120000 * multiplier;
   const medianIncome = Math.round(baseIncome * (0.8 + seededRandom() * 0.8));
-  const isAffluent = medianIncome > 180000;
+  const isAffluent = medianIncome > 150000;
 
   return {
     id: `demo-${zipCode}`,
@@ -1634,31 +1747,27 @@ function generateDemographicsEstimate(zipCode, location) {
     medianHouseholdIncome: medianIncome,
     averageAge: Math.round(35 + seededRandom() * 15),
     educationLevels: {
-      highSchool: Math.round(90 + seededRandom() * 9),
-      bachelors: Math.round((isAffluent ? 55 : 35) + seededRandom() * 25),
-      graduate: Math.round((isAffluent ? 30 : 15) + seededRandom() * 20),
+      highSchool: Math.round(88 + seededRandom() * 10),
+      bachelors: Math.round((isAffluent ? 50 : 30) + seededRandom() * 25),
+      graduate: Math.round((isAffluent ? 25 : 12) + seededRandom() * 20),
     },
-    incomeDistribution: isAffluent ? [
-      { bracket: '$500K+', percentage: Math.round(15 + seededRandom() * 15) },
-      { bracket: '$200K-$500K', percentage: Math.round(25 + seededRandom() * 15) },
-      { bracket: '$100K-$200K', percentage: Math.round(25 + seededRandom() * 10) },
-      { bracket: '$50K-$100K', percentage: Math.round(15 + seededRandom() * 10) },
-      { bracket: 'Under $50K', percentage: Math.round(5 + seededRandom() * 10) },
-    ] : [
-      { bracket: '$500K+', percentage: Math.round(3 + seededRandom() * 5) },
-      { bracket: '$200K-$500K', percentage: Math.round(10 + seededRandom() * 10) },
-      { bracket: '$100K-$200K', percentage: Math.round(25 + seededRandom() * 15) },
-      { bracket: '$50K-$100K', percentage: Math.round(30 + seededRandom() * 10) },
-      { bracket: 'Under $50K', percentage: Math.round(20 + seededRandom() * 15) },
+    incomeDistribution: [
+      { bracket: '<$50K', percentage: Math.round(isAffluent ? 8 + seededRandom() * 7 : 18 + seededRandom() * 10) },
+      { bracket: '$50K-$100K', percentage: Math.round(isAffluent ? 12 + seededRandom() * 8 : 22 + seededRandom() * 10) },
+      { bracket: '$100K-$200K', percentage: Math.round(22 + seededRandom() * 10) },
+      { bracket: '$200K-$500K', percentage: Math.round(isAffluent ? 28 + seededRandom() * 10 : 15 + seededRandom() * 8) },
+      { bracket: '$500K-$1M', percentage: Math.round(isAffluent ? 12 + seededRandom() * 8 : 4 + seededRandom() * 5) },
+      { bracket: '>$1M', percentage: Math.round(isAffluent ? 6 + seededRandom() * 6 : 2 + seededRandom() * 3) },
     ],
     ageDistribution: [
-      { range: '0-17', male: Math.round(8 + seededRandom() * 4), female: Math.round(7 + seededRandom() * 4) },
-      { range: '18-34', male: Math.round(10 + seededRandom() * 6), female: Math.round(10 + seededRandom() * 6) },
-      { range: '35-54', male: Math.round(14 + seededRandom() * 8), female: Math.round(14 + seededRandom() * 8) },
-      { range: '55-74', male: Math.round(10 + seededRandom() * 8), female: Math.round(11 + seededRandom() * 8) },
-      { range: '75+', male: Math.round(3 + seededRandom() * 5), female: Math.round(4 + seededRandom() * 6) },
+      { range: '18-25', male: Math.round(6 + seededRandom() * 5), female: Math.round(6 + seededRandom() * 5) },
+      { range: '26-35', male: Math.round(12 + seededRandom() * 6), female: Math.round(12 + seededRandom() * 6) },
+      { range: '36-45', male: Math.round(14 + seededRandom() * 5), female: Math.round(14 + seededRandom() * 5) },
+      { range: '46-55', male: Math.round(12 + seededRandom() * 5), female: Math.round(11 + seededRandom() * 5) },
+      { range: '56-65', male: Math.round(9 + seededRandom() * 5), female: Math.round(9 + seededRandom() * 5) },
+      { range: '65+', male: Math.round(6 + seededRandom() * 6), female: Math.round(7 + seededRandom() * 6) },
     ],
-    dataNote: 'Estimates based on regional characteristics. For precise data, consult US Census Bureau.',
+    dataSource: 'estimates',
   };
 }
 
