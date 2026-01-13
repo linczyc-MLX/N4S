@@ -1136,9 +1136,33 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
       }
       
       const propertyId = `M${match[1]}`;
-      console.log('[KYM] Fetching property by ID:', propertyId);
+      console.log('[KYM] Looking for property ID:', propertyId);
       
-      const parcelData = await kymApi.fetchPropertyById(propertyId, pastedListingUrl);
+      // FIRST: Check if property already exists in our fetched land parcels
+      if (landData?.parcels) {
+        const existingParcel = landData.parcels.find(p => p.id === propertyId);
+        if (existingParcel) {
+          console.log('[KYM] Found property in existing land data!');
+          setSelectedParcel(existingParcel);
+          setPastedListingUrl('');
+          return;
+        }
+      }
+      
+      // SECOND: Check if property exists in our fetched comparable properties
+      if (locationData?.properties) {
+        const existingProperty = locationData.properties.find(p => p.id === propertyId);
+        if (existingProperty) {
+          console.log('[KYM] Found property in existing property data!');
+          setSelectedParcel(existingProperty);
+          setPastedListingUrl('');
+          return;
+        }
+      }
+      
+      // THIRD: Search for property using list API (the one that works)
+      console.log('[KYM] Property not in cache, searching via API...');
+      const parcelData = await kymApi.fetchPropertyByUrl(pastedListingUrl);
       
       if (!parcelData) {
         throw new Error('Could not fetch property details. Please try again.');
@@ -1154,7 +1178,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     } finally {
       setIsFetchingListing(false);
     }
-  }, [pastedListingUrl]);
+  }, [pastedListingUrl, landData?.parcels, locationData?.properties]);
 
   // Handle ZIP code search input
   const handleZipSearchChange = (e) => {
