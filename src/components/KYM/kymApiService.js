@@ -939,41 +939,80 @@ export const fetchLandData = async (zipCode, options = {}) => {
 // ============================================================================
 
 /**
- * Extract property ID from Realtor.com URL
+ * Parse address info from Realtor.com URL
+ * URL format: /1818-Franklin-Canyon-Dr_Beverly-Hills_CA_90210_M90172-52608
  */
-const extractPropertyIdFromUrl = (url) => {
-  // URL formats:
-  // https://www.realtor.com/realestateandhomes-detail/1818-Franklin-Canyon-Dr_Beverly-Hills_CA_90210_M90172-52608
-  // The property ID is at the end: M90172-52608
-  const match = url.match(/M(\d+-\d+)/);
-  return match ? `M${match[1]}` : null;
+const parseAddressFromUrl = (url) => {
+  try {
+    // Extract the path part after /realestateandhomes-detail/
+    const pathMatch = url.match(/realestateandhomes-detail\/([^?]+)/);
+    if (!pathMatch) return null;
+    
+    const path = pathMatch[1];
+    // Split by underscore: ADDRESS_CITY_STATE_ZIP_ID
+    const parts = path.split('_');
+    
+    if (parts.length < 4) return null;
+    
+    // Last part is the property ID (M12345-67890)
+    // Second to last is ZIP
+    // Third to last is State
+    // Everything before that is address and city
+    
+    const propertyIdPart = parts[parts.length - 1]; // M90172-52608
+    const zipCode = parts[parts.length - 2]; // 90210
+    const state = parts[parts.length - 3]; // CA
+    
+    // City is the part before state (may have hyphens)
+    const city = parts[parts.length - 4].replace(/-/g, ' '); // Beverly-Hills → Beverly Hills
+    
+    // Address is everything before city
+    const addressParts = parts.slice(0, parts.length - 4);
+    const address = addressParts.join(' ').replace(/-/g, ' '); // 1818-Franklin-Canyon-Dr → 1818 Franklin Canyon Dr
+    
+    return {
+      address: address || 'Unknown Address',
+      city: city || '',
+      state: state || '',
+      zipCode: zipCode || '',
+      propertyId: propertyIdPart,
+    };
+  } catch (e) {
+    console.error('[KYM API] Error parsing URL:', e);
+    return null;
+  }
 };
 
 /**
  * Fetch property details by property ID
  */
 export const fetchPropertyById = async (propertyId, originalUrl) => {
+  // Parse address from URL first - this always works
+  const urlParsed = parseAddressFromUrl(originalUrl);
+  
+  // Create base parcel from URL parsing
+  const baseParse = {
+    id: propertyId,
+    address: urlParsed?.address || 'Property Details',
+    city: urlParsed?.city || '',
+    state: urlParsed?.state || '',
+    zipCode: urlParsed?.zipCode || '',
+    askingPrice: 0,
+    pricePerAcre: 0,
+    acreage: 0,
+    lotSqft: 0,
+    features: [],
+    status: 'active',
+    daysOnMarket: null,
+    zoning: 'Residential',
+    imageUrl: null,
+    listingUrl: originalUrl,
+    dataSource: 'url_parsed',
+  };
+
   if (!hasApiKey()) {
-    console.log('[KYM API] No API key configured for property lookup');
-    // Return a basic parcel with just the URL so user can still view listing
-    return {
-      id: propertyId,
-      address: 'Property Details',
-      city: '',
-      state: '',
-      zipCode: '',
-      askingPrice: 0,
-      pricePerAcre: 0,
-      acreage: 0,
-      lotSqft: 0,
-      features: [],
-      status: 'active',
-      daysOnMarket: null,
-      zoning: 'Unknown',
-      imageUrl: null,
-      listingUrl: originalUrl,
-      dataSource: 'url_only',
-    };
+    console.log('[KYM API] No API key - using URL-parsed data');
+    return baseParse;
   }
 
   console.log(`[KYM API] Fetching property details for ${propertyId}...`);
@@ -1062,25 +1101,8 @@ export const fetchPropertyById = async (propertyId, originalUrl) => {
     };
   } catch (error) {
     console.error('[KYM API] Property fetch error:', error);
-    // Return basic parcel with URL on error
-    return {
-      id: propertyId,
-      address: 'Property Details',
-      city: '',
-      state: '',
-      zipCode: '',
-      askingPrice: 0,
-      pricePerAcre: 0,
-      acreage: 0,
-      lotSqft: 0,
-      features: [],
-      status: 'active',
-      daysOnMarket: null,
-      zoning: 'Unknown',
-      imageUrl: null,
-      listingUrl: originalUrl,
-      dataSource: 'url_only',
-    };
+    // Return URL-parsed data on error (at least has address info)
+    return baseParse;
   }
 };
 
