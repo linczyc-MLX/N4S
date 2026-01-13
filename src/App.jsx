@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck, FileText, Map
+  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin
 } from 'lucide-react';
 
 // Import modules
 import Dashboard from './components/Dashboard';
 import KYCModule from './components/KYC/KYCModule';
+import KYSModule from './components/KYS/KYSModule';
 import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 import KYMModule from './components/KYM/KYMModule';
@@ -18,6 +19,7 @@ import { AppProvider, useAppContext } from './contexts/AppContext';
 const moduleColors = {
   dashboard: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },             // Navy (brand primary) - KEEP
   kyc: { bg: '#315098', text: '#ffffff', accent: '#315098' },                   // Deep Blue (Soft Pillow 1)
+  kys: { bg: '#C4A484', text: '#1a1a1a', accent: '#C4A484' },                   // Copper (Site Assessment)
   fyi: { bg: '#8CA8BE', text: '#1a1a1a', accent: '#8CA8BE' },                   // Steel Blue (Soft Pillow 2)
   mvp: { bg: '#AFBDB0', text: '#1a1a1a', accent: '#AFBDB0' },                   // Sage Green (Soft Pillow 3)
   kym: { bg: '#E4C0BE', text: '#1a1a1a', accent: '#E4C0BE' },                   // Dusty Rose (Soft Pillow 4)
@@ -83,23 +85,26 @@ const AppContent = () => {
     setShowDocs(false);
   }, [activeModule]);
 
-  // Module order: Dashboard, KYC, FYI, MVP, KYM, Settings
+  // Module order: Dashboard, KYC, FYI, MVP, KYS, KYM, Settings
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
     { id: 'fyi', label: 'FYI', icon: Search, description: 'Find Your Inspiration' },
     { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
+    { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
     { id: 'kym', label: 'KYM', icon: Map, description: 'Know Your Market' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
   // Modules that have documentation
-  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym'];
+  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kys', 'kym'];
 
   const renderModule = () => {
     switch (activeModule) {
       case 'kyc':
         return <KYCModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
+      case 'kys':
+        return <KYSModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'mvp':
         return <MVPModule onNavigate={setActiveModule} showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'fyi':

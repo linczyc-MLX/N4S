@@ -122,6 +122,13 @@ const initialMVPData = {
   completedAt: null,
 };
 
+// Initial KYS data (Site-Vision Compatibility Assessment)
+const initialKYSData = {
+  sites: [],                 // Array of site assessments
+  selectedSiteId: null,      // Currently selected site
+  comparisonEnabled: false,  // Multi-site comparison mode
+};
+
 // Empty project template
 const getEmptyProjectData = () => ({
   id: null,
@@ -138,6 +145,7 @@ const getEmptyProjectData = () => ({
   },
   fyiData: JSON.parse(JSON.stringify(initialFYIData)),
   mvpData: JSON.parse(JSON.stringify(initialMVPData)),
+  kysData: JSON.parse(JSON.stringify(initialKYSData)),
   activeRespondent: 'principal',
 });
 
@@ -202,6 +210,7 @@ export const AppProvider = ({ children }) => {
   const kycData = projectData.kycData;
   const fyiData = projectData.fyiData;
   const mvpData = projectData.mvpData || initialMVPData;
+  const kysData = projectData.kysData || initialKYSData;
 
   // ---------------------------------------------------------------------------
   // LOAD INITIAL DATA FROM SERVER
@@ -639,6 +648,40 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update KYS data (Site-Vision Compatibility Assessment)
+  // NOTE: Stored in fyiData because PHP backend only saves clientData, kycData, fyiData
+  const updateKYSData = useCallback((updates) => {
+    console.log('[APP] updateKYSData:', updates);
+    setProjectData(prev => {
+      // KYS data is stored in fyiData.kysData for backend compatibility
+      const currentKysData = prev.fyiData?.kysData || initialKYSData;
+      
+      return {
+        ...prev,
+        fyiData: {
+          ...prev.fyiData,
+          kysData: {
+            ...currentKysData,
+            ...updates,
+            // Deep merge sites if provided
+            ...(updates.sites && {
+              sites: updates.sites,
+            }),
+          },
+        },
+        // Also store at top level for easy access
+        kysData: {
+          ...currentKysData,
+          ...updates,
+          ...(updates.sites && {
+            sites: updates.sites,
+          }),
+        },
+      };
+    });
+    markChanged();
+  }, [markChanged]);
+
   // ---------------------------------------------------------------------------
   // COMPLETION CALCULATIONS
   // ---------------------------------------------------------------------------
@@ -780,6 +823,7 @@ export const AppProvider = ({ children }) => {
     kycData,
     fyiData,
     mvpData,
+    kysData,
 
     // Data updates
     updateClientData,
@@ -792,6 +836,7 @@ export const AppProvider = ({ children }) => {
     updateMVPChecklistItem,
     updateMVPAdjacencyConfig,
     updateMVPDecisionAnswer,
+    updateKYSData,
 
     // UI state
     activeRespondent,

@@ -540,6 +540,7 @@ Each N4S module has an assigned color that appears in the Task Matrix and module
 |--------|--------|------------|------------|------|
 | Dashboard | — | Navy | `#1e3a5f` | `#ffffff` |
 | KYC | A | Deep Blue | `#315098` | `#ffffff` |
+| KYS | — | Copper | `#C4A484` | `#1a1a1a` |
 | FYI | C | Steel Blue | `#8CA8BE` | `#1a1a1a` |
 | MVP | M | Sage Green | `#AFBDB0` | `#1a1a1a` |
 | KYM | B | Dusty Rose | `#E4C0BE` | `#1a1a1a` |
@@ -586,6 +587,7 @@ Task Matrix cells use the same color mapping:
 | 2026-01-06 | 1.0 | Initial brand guide created |
 | 2026-01-06 | 1.1 | Added Module Color System (Section 13) |
 | 2026-01-11 | 1.2 | Updated Module Colors to Soft Pillow palette |
+| 2026-01-13 | 1.3 | Added KYS (Know Your Site) module with Copper color |
 
 ---
 
