@@ -16,7 +16,7 @@ import {
   Home, Users, MapPin, Search, Filter, LayoutGrid, BarChart2,
   Bed, Bath, Maximize, Trees, Calendar, ExternalLink, X,
   GraduationCap, ChevronDown, AlertCircle, CheckCircle2, Database,
-  Settings, Loader2, Target, FileDown
+  Settings, Loader2, Target, FileDown, Map, Mountain, Waves, Plus
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
@@ -783,6 +783,37 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   // Export report state
   const [isExporting, setIsExporting] = useState(false);
 
+  // Land Acquisition tab state
+  const [landData, setLandData] = useState(null);
+  const [isLoadingLand, setIsLoadingLand] = useState(false);
+  const [landError, setLandError] = useState(null);
+  const [landPriceRange, setLandPriceRange] = useState([500000, 10000000]);
+  const [acreageRange, setAcreageRange] = useState([1, 20]);
+  const [landFeatureFilter, setLandFeatureFilter] = useState([]);
+  const [showLandFilters, setShowLandFilters] = useState(true);
+  const [selectedParcel, setSelectedParcel] = useState(null);
+  
+  // Land feature options (from your document)
+  const LAND_FEATURE_OPTIONS = [
+    'Waterfront', 'Ocean View', 'Lake View', 'River View',
+    'Hill/Mtn View', 'City View', 'Golf Course', 
+    'Corner Lot', 'Cul-de-sac', 'Gated Community',
+    'Wooded', 'Cleared', 'Flat Terrain', 'Utilities Available'
+  ];
+
+  // Acreage options for dropdown
+  const ACREAGE_OPTIONS = [
+    { value: 0.25, label: '¼ acre' },
+    { value: 0.5, label: '½ acre' },
+    { value: 1, label: '1 acre' },
+    { value: 2, label: '2 acres' },
+    { value: 5, label: '5 acres' },
+    { value: 10, label: '10 acres' },
+    { value: 20, label: '20 acres' },
+    { value: 50, label: '50 acres' },
+    { value: 100, label: '100+ acres' },
+  ];
+
   // BAM: Calculate buyer persona scores
   const personaResults = useMemo(() => {
     const clientData = extractClientData(
@@ -845,6 +876,101 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // Fetch land data for Land Acquisition tab
+  const fetchLandDataForLocation = useCallback(async (zipCode) => {
+    setIsLoadingLand(true);
+    setLandError(null);
+    
+    try {
+      console.log('[KYM] Fetching land data for ZIP:', zipCode);
+      const result = await kymApi.fetchLandData(zipCode, {
+        minAcreage: acreageRange[0],
+        maxAcreage: acreageRange[1],
+        minPrice: landPriceRange[0],
+        maxPrice: landPriceRange[1],
+      });
+      
+      if (result.error) {
+        setLandError(result.error);
+        setLandData(null);
+        return;
+      }
+
+      setLandData(result);
+      console.log(`[KYM] Loaded ${result.parcels.length} land parcels`);
+    } catch (err) {
+      console.error('[KYM] Land fetch error:', err);
+      setLandError(err.message || 'Failed to fetch land data');
+      setLandData(null);
+    } finally {
+      setIsLoadingLand(false);
+    }
+  }, [acreageRange, landPriceRange]);
+
+  // Fetch land data when switching to land tab or when location changes
+  useEffect(() => {
+    if (activeTab === 'land' && selectedZipCode && !landData) {
+      fetchLandDataForLocation(selectedZipCode);
+    }
+  }, [activeTab, selectedZipCode, landData, fetchLandDataForLocation]);
+
+  // Filter land parcels
+  const filteredLandParcels = useMemo(() => {
+    if (!landData?.parcels) return [];
+    
+    return landData.parcels.filter(parcel => {
+      const matchesPrice = parcel.askingPrice >= landPriceRange[0] && parcel.askingPrice <= landPriceRange[1];
+      const matchesAcreage = parcel.acreage >= acreageRange[0] && parcel.acreage <= acreageRange[1];
+      const matchesFeatures = landFeatureFilter.length === 0 || 
+        landFeatureFilter.every(feature => parcel.features?.includes(feature));
+      return matchesPrice && matchesAcreage && matchesFeatures;
+    });
+  }, [landData?.parcels, landPriceRange, acreageRange, landFeatureFilter]);
+
+  // Export parcel to KYS Library
+  const exportToKYSLibrary = useCallback((parcel) => {
+    const siteData = {
+      id: `site-${Date.now()}`,
+      name: parcel.address,
+      address: parcel.address,
+      city: parcel.city,
+      state: parcel.state,
+      zipCode: parcel.zipCode,
+      acreage: parcel.acreage,
+      askingPrice: parcel.askingPrice,
+      pricePerAcre: parcel.pricePerAcre,
+      features: parcel.features || [],
+      zoning: parcel.zoning,
+      coordinates: {
+        lat: parcel.latitude,
+        lng: parcel.longitude,
+      },
+      sourceUrl: parcel.listingUrl,
+      imageUrl: parcel.imageUrl,
+      addedDate: new Date().toISOString(),
+      notes: '',
+    };
+    
+    // Get existing library from localStorage or initialize
+    const existingLibrary = JSON.parse(localStorage.getItem('n4s-kys-site-library') || '[]');
+    
+    // Check if already exists
+    const exists = existingLibrary.some(site => 
+      site.address === siteData.address && site.zipCode === siteData.zipCode
+    );
+    
+    if (exists) {
+      alert('This site is already in your KYS Library.');
+      return;
+    }
+    
+    // Add to library
+    existingLibrary.push(siteData);
+    localStorage.setItem('n4s-kys-site-library', JSON.stringify(existingLibrary));
+    
+    alert(`"${parcel.address}" has been added to your KYS Site Library.`);
   }, []);
 
   // Handle ZIP code search input
@@ -1095,6 +1221,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         >
           <Home size={16} />
           Comparable Properties
+        </button>
+        <button 
+          className={`kym-tab ${activeTab === 'land' ? 'kym-tab--active' : ''}`}
+          onClick={() => setActiveTab('land')}
+        >
+          <Map size={16} />
+          Land Acquisition
         </button>
         <button 
           className={`kym-tab ${activeTab === 'demographics' ? 'kym-tab--active' : ''}`}
@@ -1380,6 +1513,226 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Land Acquisition Tab */}
+        {activeTab === 'land' && (
+          <div className="kym-land-acquisition">
+            {isLoadingLand ? (
+              <div className="kym-loading">
+                <RefreshCw size={24} className="spinning" />
+                <span>Loading land parcels...</span>
+              </div>
+            ) : landError ? (
+              <div className="kym-error">
+                <AlertCircle size={20} />
+                <span>{landError}</span>
+              </div>
+            ) : !selectedZipCode ? (
+              <div className="kym-empty">
+                <Map size={48} />
+                <p>Select a location to search for land parcels</p>
+              </div>
+            ) : (
+              <div className="kym-land-layout">
+                {/* Filters Sidebar */}
+                {showLandFilters && (
+                  <div className="kym-filters-sidebar">
+                    <div className="kym-filters-header">
+                      <h3>Land Filters</h3>
+                      <button onClick={() => setShowLandFilters(false)}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                    
+                    <div className="kym-filter-group">
+                      <label>Price Range</label>
+                      <div className="kym-range-inputs">
+                        <div className="kym-range-input">
+                          <span>Min</span>
+                          <select 
+                            value={landPriceRange[0]}
+                            onChange={(e) => setLandPriceRange([Number(e.target.value), landPriceRange[1]])}
+                          >
+                            <option value={100000}>$100K</option>
+                            <option value={250000}>$250K</option>
+                            <option value={500000}>$500K</option>
+                            <option value={1000000}>$1M</option>
+                            <option value={2000000}>$2M</option>
+                            <option value={5000000}>$5M</option>
+                          </select>
+                        </div>
+                        <span className="kym-range-separator">-</span>
+                        <div className="kym-range-input">
+                          <span>Max</span>
+                          <select 
+                            value={landPriceRange[1]}
+                            onChange={(e) => setLandPriceRange([landPriceRange[0], Number(e.target.value)])}
+                          >
+                            <option value={1000000}>$1M</option>
+                            <option value={2500000}>$2.5M</option>
+                            <option value={5000000}>$5M</option>
+                            <option value={10000000}>$10M</option>
+                            <option value={25000000}>$25M</option>
+                            <option value={50000000}>$50M</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="kym-filter-group">
+                      <label>Lot Size</label>
+                      <div className="kym-range-inputs">
+                        <div className="kym-range-input">
+                          <span>Min</span>
+                          <select 
+                            value={acreageRange[0]}
+                            onChange={(e) => setAcreageRange([Number(e.target.value), acreageRange[1]])}
+                          >
+                            {ACREAGE_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <span className="kym-range-separator">-</span>
+                        <div className="kym-range-input">
+                          <span>Max</span>
+                          <select 
+                            value={acreageRange[1]}
+                            onChange={(e) => setAcreageRange([acreageRange[0], Number(e.target.value)])}
+                          >
+                            {ACREAGE_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="kym-filter-group">
+                      <label>Site Features</label>
+                      <div className="kym-feature-checkboxes">
+                        {LAND_FEATURE_OPTIONS.map(feature => (
+                          <label key={feature} className="kym-feature-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={landFeatureFilter.includes(feature)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setLandFeatureFilter([...landFeatureFilter, feature]);
+                                } else {
+                                  setLandFeatureFilter(landFeatureFilter.filter(f => f !== feature));
+                                }
+                              }}
+                            />
+                            <span>{feature}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button 
+                      className="kym-search-land-btn"
+                      onClick={() => fetchLandDataForLocation(selectedZipCode)}
+                    >
+                      <Search size={16} />
+                      Search Land
+                    </button>
+                  </div>
+                )}
+
+                {/* Land Results */}
+                <div className="kym-land-main">
+                  <div className="kym-land-toolbar">
+                    <button 
+                      className="kym-filter-toggle"
+                      onClick={() => setShowLandFilters(!showLandFilters)}
+                    >
+                      <Filter size={16} />
+                    </button>
+                    <span className="kym-land-count">
+                      {filteredLandParcels.length} parcels
+                    </span>
+                    {landData?.dataSource === 'generated' && (
+                      <span className="kym-data-note-small">
+                        Sample data shown. Add API key for live listings.
+                      </span>
+                    )}
+                  </div>
+
+                  {filteredLandParcels.length > 0 ? (
+                    <div className="kym-land-grid">
+                      {filteredLandParcels.map(parcel => (
+                        <div 
+                          key={parcel.id} 
+                          className="kym-land-card"
+                          onClick={() => setSelectedParcel(parcel)}
+                        >
+                          <div className="kym-land-card-image">
+                            {parcel.imageUrl ? (
+                              <img src={parcel.imageUrl} alt={parcel.address} />
+                            ) : (
+                              <div className="kym-land-card-placeholder">
+                                <Map size={32} />
+                              </div>
+                            )}
+                            <div className="kym-land-card-price">
+                              ${(parcel.askingPrice / 1000000).toFixed(2)}M
+                            </div>
+                          </div>
+                          <div className="kym-land-card-content">
+                            <h4>{parcel.address}</h4>
+                            <p className="kym-land-card-location">
+                              {parcel.city}, {parcel.state} {parcel.zipCode}
+                            </p>
+                            <div className="kym-land-card-stats">
+                              <span><Trees size={14} /> {parcel.acreage} acres</span>
+                              <span><DollarSign size={14} /> ${(parcel.pricePerAcre / 1000).toFixed(0)}K/acre</span>
+                            </div>
+                            {parcel.features && parcel.features.length > 0 && (
+                              <div className="kym-land-card-features">
+                                {parcel.features.slice(0, 3).map((feature, i) => (
+                                  <span key={i} className="kym-land-feature-tag">{feature}</span>
+                                ))}
+                                {parcel.features.length > 3 && (
+                                  <span className="kym-land-feature-more">+{parcel.features.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                            <button 
+                              className="kym-export-kys-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportToKYSLibrary(parcel);
+                              }}
+                            >
+                              <Plus size={14} />
+                              Add to KYS Library
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="kym-empty">
+                      <Map size={48} />
+                      <p>No land parcels match your filters</p>
+                      <button 
+                        className="kym-reset-filters-btn"
+                        onClick={() => {
+                          setLandPriceRange([500000, 10000000]);
+                          setAcreageRange([1, 20]);
+                          setLandFeatureFilter([]);
+                        }}
+                      >
+                        Reset Filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

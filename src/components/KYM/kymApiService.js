@@ -645,6 +645,295 @@ export const fetchLocationData = async (zipCode) => {
   };
 };
 
+// ============================================================================
+// LAND SEARCH (Lot/Land Parcels)
+// ============================================================================
+
+// Land feature mapping from API tags
+const LAND_FEATURE_MAPPING = {
+  'waterfront': 'Waterfront',
+  'water front': 'Waterfront',
+  'ocean': 'Ocean View',
+  'ocean_view': 'Ocean View',
+  'lake': 'Lake View',
+  'lake_view': 'Lake View',
+  'river': 'River View',
+  'river_view': 'River View',
+  'mountain': 'Hill/Mtn View',
+  'hill': 'Hill/Mtn View',
+  'city_view': 'City View',
+  'city view': 'City View',
+  'golf': 'Golf Course',
+  'golf_course': 'Golf Course',
+  'corner': 'Corner Lot',
+  'corner_lot': 'Corner Lot',
+  'cul-de-sac': 'Cul-de-sac',
+  'culdesac': 'Cul-de-sac',
+  'cul_de_sac': 'Cul-de-sac',
+  'gated': 'Gated Community',
+  'private': 'Private Road',
+  'wooded': 'Wooded',
+  'cleared': 'Cleared',
+  'flat': 'Flat Terrain',
+  'sloped': 'Sloped',
+  'utilities': 'Utilities Available',
+};
+
+/**
+ * Map land tags to display features
+ */
+const mapLandFeatures = (tags = []) => {
+  const features = [];
+  
+  tags.forEach(tag => {
+    const tagLower = tag.toLowerCase();
+    for (const [key, value] of Object.entries(LAND_FEATURE_MAPPING)) {
+      if (tagLower.includes(key)) {
+        if (!features.includes(value)) features.push(value);
+      }
+    }
+  });
+  
+  return features;
+};
+
+/**
+ * Fetch land/lot listings from Realtor.com API
+ */
+export const fetchLandListings = async (zipCode, options = {}) => {
+  const { 
+    limit = 50,
+    minAcreage = 0.25,
+    maxAcreage = 100,
+    minPrice = 100000,
+    maxPrice = 50000000,
+  } = options;
+
+  if (!hasApiKey()) {
+    console.log('[KYM API] No API key configured for land search');
+    return [];
+  }
+
+  const cacheKey = `land-${zipCode}-${minAcreage}-${maxAcreage}-${minPrice}-${maxPrice}`;
+  const cached = getCachedData(cacheKey);
+  if (cached) return cached;
+
+  console.log(`[KYM API] Fetching land listings for ${zipCode}...`);
+
+  try {
+    const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      },
+      body: JSON.stringify({
+        limit,
+        offset: 0,
+        postal_code: zipCode,
+        status: ['for_sale'],
+        type: ['land'], // Only land/lots
+        sort: {
+          direction: 'desc',
+          field: 'list_price',
+        },
+        lot_sqft: {
+          min: Math.round(minAcreage * 43560),
+          max: Math.round(maxAcreage * 43560),
+        },
+        list_price: {
+          min: minPrice,
+          max: maxPrice,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[KYM API] Land search error:', response.status, errorText);
+      return [];
+    }
+
+    const data = await response.json();
+    const results = data.data?.home_search?.results || [];
+    
+    console.log(`[KYM API] Land API returned ${results.length} parcels`);
+    
+    const landParcels = transformLandListings(results);
+    
+    if (landParcels.length > 0) {
+      setCachedData(cacheKey, landParcels);
+    }
+    
+    return landParcels;
+  } catch (error) {
+    console.error('[KYM API] Land fetch error:', error);
+    return [];
+  }
+};
+
+/**
+ * Transform Realtor.com API response to land parcel format
+ */
+const transformLandListings = (apiResults) => {
+  return apiResults
+    .filter(item => {
+      const address = item.location?.address?.line;
+      return address && address !== 'Address unavailable';
+    })
+    .map((item) => {
+      const property = item;
+      const location = property.location || {};
+      const address = location.address || {};
+      const description = property.description || {};
+      
+      const lotSqft = description.lot_sqft || 0;
+      const acreage = lotSqft > 0 ? lotSqft / 43560 : 0;
+      const listPrice = property.list_price || 0;
+      const pricePerAcre = acreage > 0 ? Math.round(listPrice / acreage) : 0;
+
+      const features = mapLandFeatures(property.tags || []);
+
+      // Calculate days on market
+      const listDate = property.list_date ? new Date(property.list_date) : null;
+      const daysOnMarket = listDate 
+        ? Math.max(1, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : 30;
+
+      return {
+        id: property.property_id,
+        address: address.line,
+        city: address.city || '',
+        state: address.state_code || address.state || '',
+        zipCode: address.postal_code || '',
+        askingPrice: listPrice,
+        pricePerAcre,
+        acreage: Math.round(acreage * 100) / 100,
+        lotSqft,
+        features,
+        status: 'active',
+        daysOnMarket,
+        zoning: description.zoning || 'Residential',
+        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href)),
+        listingUrl: property.href || null,
+        dataSource: 'realtor',
+        latitude: location.coordinate?.lat || null,
+        longitude: location.coordinate?.lon || null,
+      };
+    })
+    .filter(p => p.id && p.askingPrice > 0 && p.acreage > 0);
+};
+
+/**
+ * Generate fallback land parcels when API returns empty
+ */
+export const generateFallbackLandParcels = (zipCode, location) => {
+  console.log(`[KYM API] Generating fallback land parcels for ${zipCode}`);
+  
+  const rand = seededRandom(zipCode + '-land');
+  const stateData = STATE_BASE_PRICES[location.state] || { basePricePerSqFt: 700, incomeMultiplier: 1.0 };
+  const parcels = [];
+  
+  const streetNames = [
+    'Ranch Road', 'Mountain View Drive', 'Valley Lane', 'Hilltop Circle', 
+    'Sunset Boulevard', 'Oak Ridge Road', 'River Road', 'Meadow Lane',
+    'Estate Drive', 'Vista Court', 'Canyon Road', 'Ridgeline Way',
+  ];
+  
+  const possibleFeatures = [
+    'Waterfront', 'Ocean View', 'Lake View', 'Hill/Mtn View', 'City View',
+    'Golf Course', 'Corner Lot', 'Cul-de-sac', 'Gated Community', 'Wooded',
+    'Cleared', 'Flat Terrain', 'Utilities Available',
+  ];
+  
+  const numParcels = 6 + Math.floor(rand() * 8);
+  
+  for (let i = 0; i < numParcels; i++) {
+    const acreage = Math.round((0.5 + rand() * 10) * 100) / 100;
+    const basePricePerAcre = stateData.basePricePerSqFt * 43560 * 0.05 * (0.5 + rand() * 1);
+    const askingPrice = Math.round(acreage * basePricePerAcre);
+    
+    const numFeatures = 2 + Math.floor(rand() * 4);
+    const shuffled = [...possibleFeatures].sort(() => 0.5 - rand());
+    const features = shuffled.slice(0, numFeatures);
+
+    parcels.push({
+      id: `${zipCode}-land-${i}`,
+      address: `${1000 + i * 100} ${streetNames[i % streetNames.length]}`,
+      city: location.city,
+      state: location.state,
+      zipCode,
+      askingPrice,
+      pricePerAcre: Math.round(basePricePerAcre),
+      acreage,
+      lotSqft: Math.round(acreage * 43560),
+      features,
+      status: 'active',
+      daysOnMarket: Math.floor(30 + rand() * 180),
+      zoning: 'Residential',
+      imageUrl: LUXURY_PROPERTY_IMAGES[i % LUXURY_PROPERTY_IMAGES.length],
+      dataSource: 'generated',
+      latitude: null,
+      longitude: null,
+    });
+  }
+
+  return parcels;
+};
+
+/**
+ * Fetch land data for a location
+ */
+export const fetchLandData = async (zipCode, options = {}) => {
+  // Validate ZIP code first
+  let locationInfo = await lookupZipCode(zipCode);
+  
+  if (!locationInfo) {
+    const knownMarket = LUXURY_MARKETS.find(m => m.zipCode === zipCode);
+    if (knownMarket) {
+      locationInfo = {
+        zipCode: knownMarket.zipCode,
+        city: knownMarket.city,
+        state: knownMarket.state,
+        stateFull: knownMarket.state,
+        formattedName: `${knownMarket.city}, ${knownMarket.state} ${knownMarket.zipCode}`,
+        latitude: 0,
+        longitude: 0,
+      };
+    } else {
+      return {
+        error: 'Invalid ZIP code',
+        location: null,
+        parcels: [],
+        dataSource: null,
+        apiKeyConfigured: hasApiKey(),
+      };
+    }
+  }
+
+  // Try to fetch real land listings from API
+  let parcels = await fetchLandListings(zipCode, options);
+  let dataSource = 'realtor';
+  
+  // If API returns empty, generate fallback parcels
+  if (parcels.length === 0) {
+    parcels = generateFallbackLandParcels(zipCode, locationInfo);
+    dataSource = 'generated';
+    console.log(`[KYM API] Using ${parcels.length} generated fallback land parcels`);
+  } else {
+    console.log(`[KYM API] Using ${parcels.length} real land parcels from Realtor.com`);
+  }
+
+  return {
+    location: locationInfo,
+    parcels,
+    parcelCount: parcels.length,
+    dataSource,
+    apiKeyConfigured: hasApiKey(),
+  };
+};
+
 export default {
   hasApiKey,
   lookupZipCode,
@@ -653,4 +942,7 @@ export default {
   fetchLocationData,
   getMarketData,
   generateFallbackProperties,
+  fetchLandListings,
+  fetchLandData,
+  generateFallbackLandParcels,
 };

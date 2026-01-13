@@ -677,7 +677,49 @@ const SiteAssessmentView = ({ site, onUpdateSite, onBack }) => {
 const KYSModule = ({ showDocs, onCloseDocs }) => {
   const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   const [selectedSiteId, setSelectedSiteId] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'assessment' | 'comparison'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'assessment' | 'comparison' | 'library'
+  
+  // Site Library from KYM Land Acquisition
+  const [siteLibrary, setSiteLibrary] = useState(() => {
+    const stored = localStorage.getItem('n4s-kys-site-library');
+    return stored ? JSON.parse(stored) : [];
+  });
+  
+  // Assessment mode: 'library' (testing) or 'project' (live assessment)
+  const [assessmentMode, setAssessmentMode] = useState('project');
+
+  // Refresh library from localStorage
+  const refreshLibrary = useCallback(() => {
+    const stored = localStorage.getItem('n4s-kys-site-library');
+    setSiteLibrary(stored ? JSON.parse(stored) : []);
+  }, []);
+
+  // Remove site from library
+  const removeFromLibrary = useCallback((siteId) => {
+    const updated = siteLibrary.filter(s => s.id !== siteId);
+    localStorage.setItem('n4s-kys-site-library', JSON.stringify(updated));
+    setSiteLibrary(updated);
+  }, [siteLibrary]);
+
+  // Import library site as new assessment
+  const importLibrarySite = useCallback((librarySite) => {
+    const newSite = createEmptySiteAssessment();
+    newSite.basicInfo = {
+      name: librarySite.name || librarySite.address,
+      address: librarySite.address,
+      city: librarySite.city,
+      state: librarySite.state,
+      zipCode: librarySite.zipCode,
+      acreage: librarySite.acreage?.toString() || '',
+      listingPrice: librarySite.askingPrice?.toString() || '',
+      notes: `Imported from KYM Land Acquisition.\nFeatures: ${(librarySite.features || []).join(', ')}\nSource: ${librarySite.sourceUrl || 'N/A'}`,
+    };
+    const updatedSites = [...(kysData?.sites || []), newSite];
+    updateKYSData({ sites: updatedSites });
+    setSelectedSiteId(newSite.id);
+    setViewMode('assessment');
+    setAssessmentMode('library'); // Switch to library mode when testing a library site
+  }, [kysData?.sites, updateKYSData]);
 
   // Get sites from context or initialize empty
   const sites = kysData?.sites || [];
@@ -743,21 +785,64 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kys-module">
-      {/* Save Button Area - Always visible */}
-      <div className="kys-module__save-area">
+      {/* Header with Mode Toggle and Save */}
+      <div className="kys-module__header">
+        <div className="kys-module__mode-toggle">
+          <span className="kys-mode-label">Assessment Mode:</span>
+          <div className="kys-mode-buttons">
+            <button
+              className={`kys-mode-btn ${assessmentMode === 'project' ? 'kys-mode-btn--active' : ''}`}
+              onClick={() => setAssessmentMode('project')}
+            >
+              <Building2 size={14} />
+              Live Project
+            </button>
+            <button
+              className={`kys-mode-btn ${assessmentMode === 'library' ? 'kys-mode-btn--active' : ''}`}
+              onClick={() => setAssessmentMode('library')}
+            >
+              <Grid size={14} />
+              Test Library
+            </button>
+          </div>
+        </div>
+        
+        <div className="kys-module__save-area">
+          <button
+            className={`kys-btn ${hasUnsavedChanges ? 'kys-btn--primary' : 'kys-btn--secondary'}`}
+            onClick={saveNow}
+            disabled={isSaving || !hasUnsavedChanges}
+          >
+            <Save size={16} />
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+          </button>
+          {lastSaved && !hasUnsavedChanges && (
+            <span className="kys-module__save-time">
+              Last saved: {new Date(lastSaved).toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* View Tabs */}
+      <div className="kys-view-tabs">
         <button
-          className={`kys-btn ${hasUnsavedChanges ? 'kys-btn--primary' : 'kys-btn--secondary'}`}
-          onClick={saveNow}
-          disabled={isSaving || !hasUnsavedChanges}
+          className={`kys-view-tab ${viewMode === 'list' ? 'kys-view-tab--active' : ''}`}
+          onClick={() => setViewMode('list')}
         >
-          <Save size={16} />
-          {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+          <List size={16} />
+          Site Assessments
         </button>
-        {lastSaved && !hasUnsavedChanges && (
-          <span className="kys-module__save-time">
-            Last saved: {new Date(lastSaved).toLocaleTimeString()}
-          </span>
-        )}
+        <button
+          className={`kys-view-tab ${viewMode === 'library' ? 'kys-view-tab--active' : ''}`}
+          onClick={() => { setViewMode('library'); refreshLibrary(); }}
+        >
+          <Grid size={16} />
+          Site Library
+          {siteLibrary.length > 0 && (
+            <span className="kys-tab-badge">{siteLibrary.length}</span>
+          )}
+        </button>
       </div>
 
       {viewMode === 'list' && (
@@ -767,7 +852,77 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
           onCreateSite={handleCreateSite}
           onDeleteSite={handleDeleteSite}
           onDuplicateSite={handleDuplicateSite}
+          assessmentMode={assessmentMode}
         />
+      )}
+
+      {viewMode === 'library' && (
+        <div className="kys-library-view">
+          <div className="kys-library-header">
+            <h2>Site Library</h2>
+            <p>Sites imported from KYM Land Acquisition for testing against your client's vision.</p>
+          </div>
+          
+          {siteLibrary.length === 0 ? (
+            <div className="kys-empty-state">
+              <MapPin size={48} />
+              <h3>No Sites in Library</h3>
+              <p>Add sites from the KYM Land Acquisition tab to test them here.</p>
+            </div>
+          ) : (
+            <div className="kys-library-grid">
+              {siteLibrary.map(site => (
+                <div key={site.id} className="kys-library-card">
+                  <div className="kys-library-card__image">
+                    {site.imageUrl ? (
+                      <img src={site.imageUrl} alt={site.name} />
+                    ) : (
+                      <div className="kys-library-card__placeholder">
+                        <MapPin size={32} />
+                      </div>
+                    )}
+                    <div className="kys-library-card__price">
+                      ${((site.askingPrice || 0) / 1000000).toFixed(2)}M
+                    </div>
+                  </div>
+                  <div className="kys-library-card__content">
+                    <h4>{site.name || site.address}</h4>
+                    <p className="kys-library-card__location">
+                      {site.city}, {site.state} {site.zipCode}
+                    </p>
+                    <div className="kys-library-card__stats">
+                      <span>{site.acreage} acres</span>
+                      {site.features && site.features.length > 0 && (
+                        <span>{site.features.length} features</span>
+                      )}
+                    </div>
+                    {site.features && site.features.length > 0 && (
+                      <div className="kys-library-card__features">
+                        {site.features.slice(0, 3).map((f, i) => (
+                          <span key={i} className="kys-feature-tag">{f}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="kys-library-card__actions">
+                      <button
+                        className="kys-btn kys-btn--primary"
+                        onClick={() => importLibrarySite(site)}
+                      >
+                        Test This Site
+                      </button>
+                      <button
+                        className="kys-btn kys-btn--danger-outline"
+                        onClick={() => removeFromLibrary(site.id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {viewMode === 'assessment' && selectedSite && (
@@ -775,6 +930,7 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
           site={selectedSite}
           onUpdateSite={handleUpdateSite}
           onBack={handleBackToList}
+          assessmentMode={assessmentMode}
         />
       )}
     </div>

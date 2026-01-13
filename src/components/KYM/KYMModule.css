@@ -2586,3 +2586,271 @@
 .kym-age-legend-female {
   color: #e07a9a !important;
 }
+
+/* =============================================================================
+   LAND ACQUISITION TAB
+   ============================================================================= */
+
+.kym-land-acquisition {
+  min-height: 400px;
+}
+
+.kym-land-layout {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.kym-land-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.kym-land-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.kym-land-count {
+  font-weight: 500;
+  color: #1e3a5f;
+}
+
+.kym-data-note-small {
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: auto;
+}
+
+.kym-land-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.kym-land-card {
+  background: white;
+  border: 1px solid #e5e5e0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kym-land-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #c9a227;
+}
+
+.kym-land-card-image {
+  position: relative;
+  height: 160px;
+  background: linear-gradient(135deg, #e8f4e8 0%, #d4e8d4 100%);
+}
+
+.kym-land-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kym-land-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b8e6b;
+}
+
+.kym-land-card-price {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(30, 58, 95, 0.95);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.kym-land-card-content {
+  padding: 1rem;
+}
+
+.kym-land-card-content h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kym-land-card-location {
+  font-size: 0.8rem;
+  color: #6b6b6b;
+  margin: 0 0 0.75rem 0;
+}
+
+.kym-land-card-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.kym-land-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #444;
+}
+
+.kym-land-card-stats svg {
+  color: #1e3a5f;
+}
+
+.kym-land-card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.kym-land-feature-tag {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background: #e8f0e8;
+  color: #2d5a2d;
+  border-radius: 4px;
+}
+
+.kym-land-feature-more {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background: #f0f0f0;
+  color: #666;
+  border-radius: 4px;
+}
+
+.kym-export-kys-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2a4a6f 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kym-export-kys-btn:hover {
+  background: linear-gradient(135deg, #c9a227 0%, #d4b237 100%);
+}
+
+/* Feature Checkboxes */
+.kym-feature-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.kym-feature-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.kym-feature-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1e3a5f;
+  cursor: pointer;
+}
+
+.kym-search-land-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #c9a227 0%, #d4b237 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kym-search-land-btn:hover {
+  background: linear-gradient(135deg, #b8911f 0%, #c9a227 100%);
+}
+
+/* Range inputs styling */
+.kym-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kym-range-input {
+  flex: 1;
+}
+
+.kym-range-input span {
+  display: block;
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.kym-range-input select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e5e5e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  cursor: pointer;
+}
+
+.kym-range-input select:focus {
+  outline: none;
+  border-color: #1e3a5f;
+}
+
+.kym-range-separator {
+  color: #888;
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .kym-land-layout {
+    flex-direction: column;
+  }
+  
+  .kym-feature-checkboxes {
+    grid-template-columns: 1fr;
+  }
+}
