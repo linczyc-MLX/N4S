@@ -938,6 +938,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   // Land Acquisition tab state
   const [landData, setLandData] = useState(null);
+  const [landDataZipCode, setLandDataZipCode] = useState(null); // Track which ZIP the land data is for
   const [isLoadingLand, setIsLoadingLand] = useState(false);
   const [landError, setLandError] = useState(null);
   const [landPriceRange, setLandPriceRange] = useState([500000, 10000000]);
@@ -1061,7 +1062,8 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
       }
 
       setLandData(result);
-      console.log(`[KYM] Loaded ${result.parcels.length} land parcels`);
+      setLandDataZipCode(zipCode); // Track which ZIP this data is for
+      console.log(`[KYM] Loaded ${result.parcels.length} land parcels for ${zipCode}`);
     } catch (err) {
       console.error('[KYM] Land fetch error:', err);
       setLandError(err.message || 'Failed to fetch land data');
@@ -1073,10 +1075,11 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   // Fetch land data when switching to land tab or when location changes
   useEffect(() => {
-    if (activeTab === 'land' && selectedZipCode && !landData) {
+    // Fetch if on land tab and either no data or data is for a different ZIP
+    if (activeTab === 'land' && selectedZipCode && (!landData || landDataZipCode !== selectedZipCode)) {
       fetchLandDataForLocation(selectedZipCode);
     }
-  }, [activeTab, selectedZipCode, landData, fetchLandDataForLocation]);
+  }, [activeTab, selectedZipCode, landData, landDataZipCode, fetchLandDataForLocation]);
 
   // Filter land parcels
   const filteredLandParcels = useMemo(() => {
