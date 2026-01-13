@@ -1052,7 +1052,20 @@ export const fetchPropertyByUrl = async (originalUrl) => {
     });
 
     console.log(`[KYM API] General search returned ${results.length} properties`);
-    let property = results.find(p => p.property_id === propertyId);
+    console.log(`[KYM API] Sample property_ids from API:`, JSON.stringify(results.slice(0, 10).map(p => p.property_id)));
+
+    // Property ID matching - handle M prefix and dash variations
+    // URL format: M21699-31041, API format: 2169931041 (no M, no dash)
+    const normalizeId = (id) => id?.replace(/^M/, '').replace(/-/g, '') || '';
+    const normalizedTarget = normalizeId(propertyId);
+    console.log('[KYM API] Normalized target ID:', normalizedTarget);
+
+    const matchesId = (id) => {
+      if (!id) return false;
+      return normalizeId(id) === normalizedTarget;
+    };
+
+    let property = results.find(p => matchesId(p.property_id));
 
     // SECOND: If not found, try land-specific search
     if (!property) {
@@ -1067,7 +1080,8 @@ export const fetchPropertyByUrl = async (originalUrl) => {
       });
 
       console.log(`[KYM API] Land search returned ${results.length} parcels`);
-      property = results.find(p => p.property_id === propertyId);
+      console.log(`[KYM API] Land parcel IDs from API:`, JSON.stringify(results.slice(0, 10).map(p => p.property_id)));
+      property = results.find(p => matchesId(p.property_id));
     }
 
     if (!property) {

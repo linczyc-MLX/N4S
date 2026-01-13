@@ -1149,19 +1149,36 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         throw new Error('Invalid Realtor.com URL. Please paste a full property listing URL.');
       }
 
-      const propertyId = `M${match[1]}`;
+      // Property ID from URL includes "M" prefix, but API may return with or without
+      const propertyIdWithM = `M${match[1]}`;
+      const propertyIdWithoutM = match[1];
 
       // Use refs to get current data (avoids stale closure)
       const currentLandData = landDataRef.current;
       const currentLocationData = locationDataRef.current;
 
-      console.log('[KYM] Looking for property ID:', propertyId);
+      console.log('[KYM] Looking for property ID:', propertyIdWithM, 'or', propertyIdWithoutM);
       console.log('[KYM] Land parcels available:', currentLandData?.parcels?.length || 0);
-      console.log('[KYM] Land parcel IDs:', currentLandData?.parcels?.map(p => p.id) || []);
+      // Force show actual IDs (not just Array(n))
+      const landIds = currentLandData?.parcels?.map(p => p.id) || [];
+      console.log('[KYM] Land parcel IDs:', JSON.stringify(landIds));
+
+      // Helper to match property ID (handles M prefix and dash variations)
+      // URL format: M21699-31041, API format: 2169931041 (no M, no dash)
+      const normalizeId = (id) => id?.replace(/^M/, '').replace(/-/g, '') || '';
+      const normalizedTarget = normalizeId(propertyIdWithM);
+
+      const matchesPropertyId = (id) => {
+        if (!id) return false;
+        const normalizedId = normalizeId(id);
+        return normalizedId === normalizedTarget;
+      };
+
+      console.log('[KYM] Normalized target ID:', normalizedTarget);
 
       // FIRST: Check if property already exists in our fetched land parcels
       if (currentLandData?.parcels) {
-        const existingParcel = currentLandData.parcels.find(p => p.id === propertyId);
+        const existingParcel = currentLandData.parcels.find(p => matchesPropertyId(p.id));
         if (existingParcel) {
           console.log('[KYM] Found property in existing land data!', existingParcel);
           setSelectedParcel(existingParcel);
@@ -1174,7 +1191,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
       // SECOND: Check if property exists in our fetched comparable properties
       if (currentLocationData?.properties) {
         console.log('[KYM] Comparable properties available:', currentLocationData.properties.length);
-        const existingProperty = currentLocationData.properties.find(p => p.id === propertyId);
+        const existingProperty = currentLocationData.properties.find(p => matchesPropertyId(p.id));
         if (existingProperty) {
           console.log('[KYM] Found property in existing property data!', existingProperty);
           setSelectedParcel(existingProperty);
