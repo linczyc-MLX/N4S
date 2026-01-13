@@ -7,6 +7,11 @@
  * APIs:
  * - Realty in US (by API Dojo): https://rapidapi.com/apidojo/api/realty-in-us
  * - Zippopotam.us (free): https://api.zippopotam.us
+ * 
+ * Architecture matches Replit Market-Intel:
+ * - Hardcoded market data for known luxury markets
+ * - Seeded random for consistent data on unknown markets
+ * - Fallback property generation when API returns empty
  */
 
 const RAPIDAPI_KEY = process.env.REACT_APP_RAPIDAPI_KEY;
@@ -18,9 +23,133 @@ const cache = new Map();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for property data
 const LOCATION_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours for location data
 
-/**
- * Check if we have a valid API key configured
- */
+// ============================================================================
+// HARDCODED LUXURY MARKET DATA (Matching Replit)
+// ============================================================================
+
+const LUXURY_MARKETS = [
+  { zipCode: '90210', city: 'Beverly Hills', state: 'CA' },
+  { zipCode: '90265', city: 'Malibu', state: 'CA' },
+  { zipCode: '33139', city: 'Miami Beach', state: 'FL' },
+  { zipCode: '10019', city: 'Manhattan', state: 'NY' },
+  { zipCode: '81611', city: 'Aspen', state: 'CO' },
+  { zipCode: '33480', city: 'Palm Beach', state: 'FL' },
+  { zipCode: '94027', city: 'Atherton', state: 'CA' },
+  { zipCode: '06830', city: 'Greenwich', state: 'CT' },
+];
+
+// Hardcoded market stats for known luxury markets (NOT random)
+const KNOWN_MARKET_DATA = {
+  '90210': {
+    growthRate: 8.5,
+    medianPricePerSqFt: 1850,
+    avgListingDuration: 42,
+    demandIndex: 8.2,
+  },
+  '90265': {
+    growthRate: 11.2,
+    medianPricePerSqFt: 2250,
+    avgListingDuration: 52,
+    demandIndex: 8.7,
+  },
+  '33139': {
+    growthRate: 12.3,
+    medianPricePerSqFt: 1250,
+    avgListingDuration: 35,
+    demandIndex: 9.1,
+  },
+  '10019': {
+    growthRate: 5.2,
+    medianPricePerSqFt: 2100,
+    avgListingDuration: 55,
+    demandIndex: 7.5,
+  },
+  '81611': {
+    growthRate: 15.8,
+    medianPricePerSqFt: 2400,
+    avgListingDuration: 68,
+    demandIndex: 6.8,
+  },
+  '33480': {
+    growthRate: 9.7,
+    medianPricePerSqFt: 1650,
+    avgListingDuration: 48,
+    demandIndex: 7.9,
+  },
+  '94027': {
+    growthRate: 7.3,
+    medianPricePerSqFt: 2800,
+    avgListingDuration: 75,
+    demandIndex: 6.5,
+  },
+  '06830': {
+    growthRate: 6.8,
+    medianPricePerSqFt: 1450,
+    avgListingDuration: 62,
+    demandIndex: 7.2,
+  },
+};
+
+// State-based price multipliers for unknown markets
+const STATE_BASE_PRICES = {
+  CA: { basePricePerSqFt: 1200, incomeMultiplier: 1.3 },
+  NY: { basePricePerSqFt: 1500, incomeMultiplier: 1.4 },
+  FL: { basePricePerSqFt: 800, incomeMultiplier: 1.1 },
+  TX: { basePricePerSqFt: 600, incomeMultiplier: 1.0 },
+  CO: { basePricePerSqFt: 900, incomeMultiplier: 1.2 },
+  WA: { basePricePerSqFt: 1000, incomeMultiplier: 1.25 },
+  MA: { basePricePerSqFt: 1100, incomeMultiplier: 1.35 },
+  IL: { basePricePerSqFt: 700, incomeMultiplier: 1.05 },
+  AZ: { basePricePerSqFt: 550, incomeMultiplier: 1.0 },
+  NV: { basePricePerSqFt: 650, incomeMultiplier: 1.05 },
+  CT: { basePricePerSqFt: 1000, incomeMultiplier: 1.3 },
+  NJ: { basePricePerSqFt: 900, incomeMultiplier: 1.2 },
+};
+
+// Luxury features for generated properties
+const LUXURY_FEATURES = [
+  'Private Pool', 'Wine Cellar', 'Home Theater', 'Smart Home', 'Guest House',
+  'Tennis Court', 'Gym', 'Spa', "Chef's Kitchen", 'Ocean View', 'Mountain View',
+  'Golf Course Access', 'Private Beach', 'Helipad', 'Car Gallery',
+];
+
+// Placeholder images for generated properties
+const LUXURY_PROPERTY_IMAGES = [
+  'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80',
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80',
+  'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80',
+  'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&q=80',
+  'https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?w=800&q=80',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80',
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80',
+];
+
+// ============================================================================
+// SEEDED RANDOM (Consistent per ZIP code - matches Replit)
+// ============================================================================
+
+function seededRandom(seed) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return () => {
+    hash = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
+    hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35);
+    hash ^= hash >>> 16;
+    return (hash >>> 0) / 4294967295;
+  };
+}
+
+// ============================================================================
+// API KEY CHECK
+// ============================================================================
+
 export const hasApiKey = () => {
   return Boolean(RAPIDAPI_KEY && RAPIDAPI_KEY.length > 10);
 };
@@ -29,10 +158,6 @@ export const hasApiKey = () => {
 // LOCATION LOOKUP (Zippopotam.us - Free, No API Key Required)
 // ============================================================================
 
-/**
- * Search for a location by ZIP code using Zippopotam.us
- * Returns location info if valid ZIP, null if invalid
- */
 export const lookupZipCode = async (zipCode) => {
   const cleanZip = zipCode.replace(/\D/g, '').slice(0, 5);
   
@@ -51,7 +176,7 @@ export const lookupZipCode = async (zipCode) => {
     
     if (!response.ok) {
       if (response.status === 404) {
-        return null; // Invalid ZIP code
+        return null;
       }
       throw new Error(`Zippopotam API error: ${response.status}`);
     }
@@ -81,15 +206,11 @@ export const lookupZipCode = async (zipCode) => {
   }
 };
 
-/**
- * Search locations by partial ZIP code (for autocomplete)
- * Note: Zippopotam only does exact matches, so we validate if it's a complete ZIP
- */
 export const searchLocations = async (query) => {
   const cleanQuery = query.replace(/\D/g, '').slice(0, 5);
   
   if (cleanQuery.length < 5) {
-    return []; // Need complete 5-digit ZIP for Zippopotam
+    return [];
   }
 
   const location = await lookupZipCode(cleanQuery);
@@ -97,12 +218,9 @@ export const searchLocations = async (query) => {
 };
 
 // ============================================================================
-// PROPERTY DATA (Realtor.com via RapidAPI - Requires API Key)
+// CACHE HELPERS
 // ============================================================================
 
-/**
- * Get cached data if valid
- */
 const getCachedData = (key, ttl = CACHE_TTL) => {
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < ttl) {
@@ -112,37 +230,34 @@ const getCachedData = (key, ttl = CACHE_TTL) => {
   return null;
 };
 
-/**
- * Store data in cache
- */
 const setCachedData = (key, data) => {
   cache.set(key, { data, timestamp: Date.now() });
 };
 
+// ============================================================================
+// PROPERTY DATA (Realtor.com via RapidAPI)
+// ============================================================================
+
 /**
  * Fetch properties from Realtor.com API
- * Returns real property listings with real URLs, or empty array if no API key/no results
+ * Only fetches for_sale status (like Replit) for accurate data
  */
 export const fetchProperties = async (zipCode, options = {}) => {
-  const {
-    limit = 50,
-    minPrice = 1000000, // Lowered from $3M to capture more luxury listings
-    status = ['for_sale', 'ready_to_build', 'pending', 'sold'],
-  } = options;
+  const { limit = 50 } = options;
 
-  // No API key = no properties (we don't generate fake ones)
   if (!hasApiKey()) {
-    console.log('[KYM API] No API key configured - cannot fetch properties');
+    console.log('[KYM API] No API key configured - will use generated fallback');
     return [];
   }
 
-  const cacheKey = `properties-${zipCode}-${limit}-${minPrice}`;
+  const cacheKey = `properties-${zipCode}-${limit}`;
   const cached = getCachedData(cacheKey);
   if (cached) return cached;
 
   console.log(`[KYM API] Fetching properties for ${zipCode}...`);
 
   try {
+    // Match Replit: only fetch for_sale, sorted by price desc
     const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
       method: 'POST',
       headers: {
@@ -154,13 +269,10 @@ export const fetchProperties = async (zipCode, options = {}) => {
         limit,
         offset: 0,
         postal_code: zipCode,
-        status,
+        status: ['for_sale'], // Only active listings like Replit
         sort: {
           direction: 'desc',
           field: 'list_price',
-        },
-        list_price: {
-          min: minPrice,
         },
       }),
     });
@@ -168,57 +280,106 @@ export const fetchProperties = async (zipCode, options = {}) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[KYM API] Error:', response.status, errorText);
-      return []; // Return empty, not fake data
+      return [];
     }
 
     const data = await response.json();
+    const results = data.data?.home_search?.results || [];
     
-    // Transform API response - only real properties with real URLs
-    const properties = transformProperties(data.data?.home_search?.results || []);
+    console.log(`[KYM API] API returned ${results.length} properties`);
     
-    setCachedData(cacheKey, properties);
-    console.log(`[KYM API] Fetched ${properties.length} real properties`);
+    const properties = transformProperties(results);
     
+    if (properties.length > 0) {
+      setCachedData(cacheKey, properties);
+    }
+    
+    console.log(`[KYM API] Transformed ${properties.length} valid properties`);
     return properties;
   } catch (error) {
     console.error('[KYM API] Fetch error:', error);
-    return []; // Return empty on error, never fake data
+    return [];
   }
 };
 
 /**
- * Upgrade thumbnail image URLs to large resolution
- * Handles multiple Realtor.com/rdcpix.com URL patterns
+ * Transform Realtor.com API response to our property format
+ */
+const transformProperties = (apiResults) => {
+  return apiResults
+    .filter(item => {
+      const address = item.location?.address?.line;
+      return address && address !== 'Address unavailable';
+    })
+    .map((item) => {
+      const property = item;
+      const location = property.location || {};
+      const address = location.address || {};
+      const description = property.description || {};
+      
+      // Handle missing sqft - default to reasonable estimate
+      const sqft = description.sqft || 0;
+      const listPrice = property.list_price || 0;
+      const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
+
+      const features = mapFeatures(property.tags || [], property.flags || {});
+
+      // Calculate days on market
+      const listDate = property.list_date ? new Date(property.list_date) : null;
+      const daysOnMarket = listDate 
+        ? Math.max(1, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : 30; // Default to 30 if no list date
+
+      const propertyType = description.type || 'single_family';
+      const isLand = ['land', 'farm'].includes(propertyType);
+
+      return {
+        id: property.property_id,
+        address: address.line,
+        city: address.city || '',
+        state: address.state_code || address.state || '',
+        zipCode: address.postal_code || '',
+        askingPrice: listPrice,
+        soldPrice: property.sold_price || null,
+        pricePerSqFt,
+        sqft,
+        beds: description.beds || 0,
+        baths: description.baths || description.baths_full || 0,
+        acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
+        yearBuilt: description.year_built || null,
+        features,
+        status: 'active', // We only fetch for_sale now
+        daysOnMarket,
+        propertyType,
+        propertyTypeDisplay: formatPropertyType(propertyType),
+        isLand,
+        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href)),
+        listingUrl: property.href || null,
+        dataSource: 'realtor',
+      };
+    })
+    .filter(p => p.id && p.askingPrice > 0);
+};
+
+/**
+ * Upgrade thumbnail URLs to large resolution
  */
 const upgradeImageUrl = (url) => {
   if (!url) return null;
 
-  let upgraded = url
-    // Pattern: -s.jpg, -t.jpg, -m.jpg → -l.jpg (with dash)
+  return url
     .replace(/-s\.jpg/gi, '-l.jpg')
     .replace(/-t\.jpg/gi, '-l.jpg')
     .replace(/-m\.jpg/gi, '-l.jpg')
-    // Pattern: s.jpg, t.jpg, m.jpg at end → l.jpg (no dash)
     .replace(/s\.jpg$/i, 'l.jpg')
     .replace(/t\.jpg$/i, 'l.jpg')
     .replace(/m\.jpg$/i, 'l.jpg')
-    // Pattern: _s.jpg, _t.jpg, _m.jpg → _l.jpg (underscore)
     .replace(/_s\.jpg/gi, '_l.jpg')
     .replace(/_t\.jpg/gi, '_l.jpg')
     .replace(/_m\.jpg/gi, '_l.jpg')
-    // Pattern: /s/ or /t/ or /m/ in path → /l/
     .replace(/\/s\//g, '/l/')
     .replace(/\/t\//g, '/l/')
     .replace(/\/m\//g, '/l/');
-
-  // Remove size-limiting query parameters if present
-  if (upgraded.includes('?')) {
-    upgraded = upgraded.replace(/[?&](w|h|width|height|size)=\d+/gi, '');
-    // Clean up orphaned ? or &
-    upgraded = upgraded.replace(/\?&/, '?').replace(/\?$/, '');
-  }
-
-  return upgraded;
 };
 
 /**
@@ -240,91 +401,12 @@ const formatPropertyType = (type) => {
 };
 
 /**
- * Transform Realtor.com API response to our property format
- * IMPORTANT: Only includes real data from API - no fabricated URLs or addresses
- */
-const transformProperties = (apiResults) => {
-  return apiResults
-    .filter(item => {
-      // Only include properties with real addresses
-      const address = item.location?.address?.line;
-      return address && address !== 'Address unavailable';
-    })
-    .map((item) => {
-      const property = item;
-      const location = property.location || {};
-      const address = location.address || {};
-      const description = property.description || {};
-      
-      const sqft = description.sqft || 0;
-      const listPrice = property.list_price || 0;
-      const pricePerSqFt = sqft > 0 ? Math.round(listPrice / sqft) : 0;
-
-      // Map features from property tags
-      const features = mapFeatures(property.tags || [], property.flags || {});
-
-      // Calculate days on market
-      const listDate = property.list_date ? new Date(property.list_date) : null;
-      const daysOnMarket = listDate 
-        ? Math.max(0, Math.floor((Date.now() - listDate.getTime()) / (1000 * 60 * 60 * 24)))
-        : null;
-
-      // Get property type
-      const propertyType = description.type || 'single_family';
-      const isLand = ['land', 'farm'].includes(propertyType);
-
-      return {
-        id: property.property_id,
-        address: address.line,
-        city: address.city || '',
-        state: address.state_code || address.state || '',
-        zipCode: address.postal_code || '',
-        askingPrice: listPrice,
-        soldPrice: property.sold_price || null,
-        pricePerSqFt,
-        sqft,
-        beds: description.beds || 0,
-        baths: description.baths || description.baths_full || 0,
-        acreage: description.lot_sqft ? description.lot_sqft / 43560 : 0,
-        yearBuilt: description.year_built || null,
-        features,
-        status: mapStatus(property.status),
-        daysOnMarket,
-        // Property type fields
-        propertyType,
-        propertyTypeDisplay: formatPropertyType(propertyType),
-        isLand,
-        // REAL image URL from API - upgraded to large resolution
-        imageUrl: upgradeImageUrl(property.primary_photo?.href || (property.photos?.[0]?.href)),
-        // REAL listing URL from API - this is the actual Realtor.com link
-        listingUrl: property.href || null,
-        dataSource: 'realtor',
-      };
-    })
-    .filter(p => p.id && p.askingPrice > 0); // Fixed: was listPrice, now askingPrice
-};
-
-/**
- * Map API status to our status format
- */
-const mapStatus = (apiStatus) => {
-  const statusMap = {
-    'for_sale': 'active',
-    'ready_to_build': 'active',
-    'pending': 'pending',
-    'sold': 'sold',
-    'off_market': 'sold',
-  };
-  return statusMap[apiStatus] || 'active';
-};
-
-/**
- * Map property tags to our feature list
+ * Map property tags to features
  */
 const mapFeatures = (tags = [], flags = {}) => {
   const featureMapping = {
-    'pool': 'Swimming Pool',
-    'swimming': 'Swimming Pool',
+    'pool': 'Private Pool',
+    'swimming': 'Private Pool',
     'waterfront': 'Waterfront',
     'view': 'Views',
     'golf': 'Golf Course Access',
@@ -332,9 +414,9 @@ const mapFeatures = (tags = [], flags = {}) => {
     'smart_home': 'Smart Home',
     'wine_cellar': 'Wine Cellar',
     'wine': 'Wine Cellar',
-    'theater': 'Theater',
-    'theatre': 'Theater',
-    'screening': 'Theater',
+    'theater': 'Home Theater',
+    'theatre': 'Home Theater',
+    'screening': 'Home Theater',
     'gym': 'Gym',
     'spa': 'Spa',
     'tennis': 'Tennis Court',
@@ -351,7 +433,6 @@ const mapFeatures = (tags = [], flags = {}) => {
 
   const features = [];
   
-  // Map from tags
   tags.forEach(tag => {
     const tagLower = tag.toLowerCase();
     for (const [key, value] of Object.entries(featureMapping)) {
@@ -361,117 +442,155 @@ const mapFeatures = (tags = [], flags = {}) => {
     }
   });
 
-  // Add from flags
   if (flags.is_new_construction) features.push('New Construction');
-  if (flags.is_senior_community) features.push('Senior Community');
   
-  return features;
+  return features.slice(0, 8);
+};
+
+// ============================================================================
+// MARKET DATA (Hardcoded for known markets, seeded random for others)
+// ============================================================================
+
+/**
+ * Generate historical data with seeded random for consistency
+ */
+const generateHistoricalData = (rand, basePrice, growthRate) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthlyGrowth = growthRate / 12 / 100;
+  
+  return months.map((month, i) => {
+    // Calculate price trending upward
+    const monthsBack = 11 - i;
+    const price = basePrice / Math.pow(1 + monthlyGrowth, monthsBack);
+    
+    return {
+      month,
+      medianPrice: Math.round(price + (rand() - 0.5) * 500000),
+      salesVolume: Math.round(8 + rand() * 15),
+      daysOnMarket: Math.round(35 + rand() * 30),
+    };
+  });
 };
 
 /**
- * Fetch location/market data
- * Note: The free tier doesn't include detailed market statistics.
- * We generate estimates based on property data.
+ * Get market data for a ZIP code
+ * Uses hardcoded data for known luxury markets, seeded random for others
  */
-export const fetchMarketData = async (zipCode, properties = []) => {
-  if (properties.length === 0) {
-    return null;
+export const getMarketData = (zipCode, location) => {
+  // Check for hardcoded luxury market data first
+  const knownData = KNOWN_MARKET_DATA[zipCode];
+  
+  if (knownData) {
+    console.log(`[KYM API] Using hardcoded market data for ${zipCode}`);
+    const rand = seededRandom(zipCode);
+    const basePrice = knownData.medianPricePerSqFt * 12000;
+    
+    return {
+      id: `market-${zipCode}`,
+      location: `${location.city}, ${location.state}`,
+      zipCode,
+      growthRate: knownData.growthRate,
+      medianPricePerSqFt: knownData.medianPricePerSqFt,
+      avgListingDuration: knownData.avgListingDuration,
+      demandIndex: knownData.demandIndex,
+      historicalData: generateHistoricalData(rand, basePrice, knownData.growthRate),
+      dataSource: 'known_market',
+    };
   }
 
-  // Calculate market statistics from property data
-  const prices = properties.map(p => p.askingPrice).sort((a, b) => a - b);
-  const pricesPerSqFt = properties.map(p => p.pricePerSqFt).filter(p => p > 0).sort((a, b) => a - b);
-  const daysOnMarket = properties.map(p => p.daysOnMarket).sort((a, b) => a - b);
-
-  const medianPrice = prices[Math.floor(prices.length / 2)] || 0;
-  const medianPricePerSqFt = pricesPerSqFt[Math.floor(pricesPerSqFt.length / 2)] || 0;
-  const avgListingDuration = daysOnMarket.length > 0 
-    ? Math.round(daysOnMarket.reduce((a, b) => a + b, 0) / daysOnMarket.length)
-    : 60;
-
-  // Estimate growth rate and demand index based on listing duration
-  const growthRate = avgListingDuration < 30 ? 12 + Math.random() * 5 
-    : avgListingDuration < 60 ? 8 + Math.random() * 4 
-    : 3 + Math.random() * 5;
+  // For unknown markets, use seeded random based on ZIP
+  console.log(`[KYM API] Generating seeded market data for ${zipCode}`);
+  const rand = seededRandom(zipCode);
+  const stateData = STATE_BASE_PRICES[location.state] || { basePricePerSqFt: 700, incomeMultiplier: 1.0 };
   
-  const demandIndex = avgListingDuration < 30 ? 8 + Math.random() * 2
-    : avgListingDuration < 60 ? 6 + Math.random() * 2
-    : 4 + Math.random() * 2;
-
-  // Generate historical data (estimated trend)
-  const historicalData = generateHistoricalData(medianPrice, growthRate);
-
-  const market = LUXURY_MARKETS.find(m => m.zipCode === zipCode) || 
-    { city: properties[0]?.city || 'Unknown', state: properties[0]?.state || '' };
-
+  const priceVariance = 0.7 + rand() * 0.6;
+  const medianPricePerSqFt = Math.round(stateData.basePricePerSqFt * priceVariance);
+  const basePrice = medianPricePerSqFt * 12000;
+  const growthRate = Math.round((3 + rand() * 15) * 10) / 10;
+  
   return {
     id: `market-${zipCode}`,
-    location: `${market.city}, ${market.state}`,
+    location: `${location.city}, ${location.state}`,
     zipCode,
-    medianPrice,
+    growthRate,
     medianPricePerSqFt,
-    avgListingDuration,
-    growthRate: parseFloat(growthRate.toFixed(1)),
-    demandIndex: parseFloat(demandIndex.toFixed(1)),
-    historicalData,
-    propertyCount: properties.length,
-    dataSource: 'realtor',
+    avgListingDuration: Math.round(30 + rand() * 60),
+    demandIndex: Math.round((5 + rand() * 5) * 10) / 10,
+    historicalData: generateHistoricalData(rand, basePrice, growthRate),
+    dataSource: 'estimates',
   };
 };
 
+// ============================================================================
+// FALLBACK PROPERTY GENERATION (When API returns empty)
+// ============================================================================
+
 /**
- * Generate estimated historical data based on current median and growth rate
+ * Generate fallback properties with seeded random for consistency
  */
-const generateHistoricalData = (currentMedian, annualGrowth) => {
-  const monthlyGrowth = annualGrowth / 12 / 100;
-  const data = [];
+export const generateFallbackProperties = (zipCode, location) => {
+  console.log(`[KYM API] Generating fallback properties for ${zipCode}`);
   
-  for (let i = 11; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
+  const rand = seededRandom(zipCode);
+  const stateData = STATE_BASE_PRICES[location.state] || { basePricePerSqFt: 700, incomeMultiplier: 1.0 };
+  const properties = [];
+  
+  const streetNames = [
+    'Main Street', 'Oak Avenue', 'Park Boulevard', 'Lake Drive', 'Hill Road',
+    'Valley Way', 'Forest Lane', 'Sunset Drive', 'River Road', 'Mountain View',
+    'Estate Lane', 'Royal Palm Drive', 'Canyon Road', 'Harbor View', 'Vista Circle',
+  ];
+  
+  const numProperties = 8 + Math.floor(rand() * 12);
+  
+  for (let i = 0; i < numProperties; i++) {
+    const sqft = 10000 + Math.floor(rand() * 10000);
+    const priceVariance = 0.7 + rand() * 0.6;
+    const pricePerSqFt = Math.round(stateData.basePricePerSqFt * priceVariance);
+    const askingPrice = sqft * pricePerSqFt;
     
-    // Work backwards from current price
-    const monthsBack = 11 - i;
-    const price = currentMedian / Math.pow(1 + monthlyGrowth, monthsBack);
+    const statuses = ['active', 'active', 'active', 'pending', 'sold'];
+    const status = statuses[Math.floor(rand() * statuses.length)];
+    const soldPrice = status === 'sold' ? askingPrice * (0.92 + rand() * 0.1) : null;
     
-    // Estimate sales volume (inverse relationship with price)
-    const baseVolume = 15;
-    const volumeVariation = Math.random() * 10 - 5;
-    const salesVolume = Math.max(5, Math.round(baseVolume + volumeVariation));
-    
-    data.push({
-      month: date.toLocaleString('default', { month: 'short' }),
-      medianPrice: Math.round(price),
-      salesVolume,
-      daysOnMarket: Math.round(30 + Math.random() * 40),
+    const numFeatures = 3 + Math.floor(rand() * 5);
+    const shuffled = [...LUXURY_FEATURES].sort(() => 0.5 - rand());
+    const features = shuffled.slice(0, numFeatures);
+
+    properties.push({
+      id: `${zipCode}-gen-${i}`,
+      address: `${100 + i * 50} ${streetNames[i % streetNames.length]}`,
+      city: location.city,
+      state: location.state,
+      zipCode,
+      askingPrice: Math.round(askingPrice),
+      soldPrice: soldPrice ? Math.round(soldPrice) : null,
+      pricePerSqFt,
+      sqft,
+      beds: 5 + Math.floor(rand() * 4),
+      baths: 6 + Math.floor(rand() * 6),
+      acreage: 0.5 + rand() * 3,
+      yearBuilt: 2010 + Math.floor(rand() * 14),
+      features,
+      status,
+      daysOnMarket: Math.floor(rand() * 120),
+      imageUrl: LUXURY_PROPERTY_IMAGES[i % LUXURY_PROPERTY_IMAGES.length],
+      dataSource: 'generated',
     });
   }
-  
-  return data;
+
+  return properties;
 };
 
-/**
- * Known luxury markets for reference
- */
-const LUXURY_MARKETS = [
-  { zipCode: '90210', city: 'Beverly Hills', state: 'CA' },
-  { zipCode: '90265', city: 'Malibu', state: 'CA' },
-  { zipCode: '33139', city: 'Miami Beach', state: 'FL' },
-  { zipCode: '10019', city: 'Manhattan', state: 'NY' },
-  { zipCode: '81611', city: 'Aspen', state: 'CO' },
-  { zipCode: '33480', city: 'Palm Beach', state: 'FL' },
-  { zipCode: '94027', city: 'Atherton', state: 'CA' },
-  { zipCode: '94301', city: 'Palo Alto', state: 'CA' },
-  { zipCode: '06830', city: 'Greenwich', state: 'CT' },
-];
+// ============================================================================
+// MAIN FETCH FUNCTION
+// ============================================================================
 
 /**
- * Main function to fetch all location data
- * Uses Zippopotam.us for location validation (free)
- * Uses Realtor.com for property data (requires API key)
+ * Fetch all location data (market + properties + demographics)
  */
 export const fetchLocationData = async (zipCode) => {
-  // First, try to validate the ZIP code using Zippopotam
+  // Validate ZIP code first
   let locationInfo = await lookupZipCode(zipCode);
   
   // Fallback to known markets if Zippopotam fails
@@ -500,18 +619,20 @@ export const fetchLocationData = async (zipCode) => {
     }
   }
 
-  // Fetch real properties from Realtor.com (requires API key)
-  // This returns [] if no API key configured - we do NOT generate fake properties
-  const properties = await fetchProperties(zipCode);
+  // Get market data (hardcoded or seeded)
+  const marketData = getMarketData(zipCode, locationInfo);
+
+  // Try to fetch real properties from API
+  let properties = await fetchProperties(zipCode);
+  let dataSource = 'realtor';
   
-  // Generate market data - from real properties if available, otherwise estimates
-  let marketData;
-  if (properties.length > 0) {
-    // Calculate from real data
-    marketData = await fetchMarketData(zipCode, properties);
+  // If API returns empty, generate fallback properties
+  if (properties.length === 0) {
+    properties = generateFallbackProperties(zipCode, locationInfo);
+    dataSource = hasApiKey() ? 'generated' : 'generated';
+    console.log(`[KYM API] Using ${properties.length} generated fallback properties`);
   } else {
-    // Generate market estimates based on location (not fake listings!)
-    marketData = generateMarketEstimates(zipCode, locationInfo);
+    console.log(`[KYM API] Using ${properties.length} real properties from Realtor.com`);
   }
 
   return {
@@ -519,69 +640,8 @@ export const fetchLocationData = async (zipCode) => {
     marketData,
     properties,
     propertyCount: properties.length,
-    dataSource: properties.length > 0 ? 'realtor' : 'estimates',
+    dataSource,
     apiKeyConfigured: hasApiKey(),
-  };
-};
-
-/**
- * Generate market estimates when no live property data available
- * This is statistical estimation, not fake listings
- */
-const generateMarketEstimates = (zipCode, location) => {
-  // Seeded random for consistency
-  let seed = 0;
-  for (let i = 0; i < zipCode.length; i++) {
-    seed = ((seed << 5) - seed) + zipCode.charCodeAt(i);
-    seed = seed & seed;
-  }
-  const seededRandom = () => {
-    seed = Math.imul(seed ^ (seed >>> 16), 0x85ebca6b);
-    seed = Math.imul(seed ^ (seed >>> 13), 0xc2b2ae35);
-    seed ^= seed >>> 16;
-    return (seed >>> 0) / 4294967295;
-  };
-
-  // State-based price multipliers
-  const stateMultipliers = {
-    CA: 1.8, NY: 2.0, FL: 1.3, TX: 0.9, CO: 1.4,
-    CT: 1.6, MA: 1.5, NJ: 1.4, WA: 1.3, AZ: 0.85,
-  };
-  const multiplier = stateMultipliers[location?.state] || 1.0;
-  
-  const basePricePerSqFt = 800 * multiplier;
-  const medianPricePerSqFt = Math.round(basePricePerSqFt * (0.8 + seededRandom() * 0.4));
-  const medianPrice = medianPricePerSqFt * 12000; // Typical luxury home size
-
-  // Generate historical trend
-  const historicalData = [];
-  const monthlyGrowth = (0.05 + seededRandom() * 0.08) / 12;
-  for (let i = 11; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    const monthsBack = 11 - i;
-    const price = medianPrice / Math.pow(1 + monthlyGrowth, monthsBack);
-    
-    historicalData.push({
-      month: date.toLocaleString('default', { month: 'short' }),
-      medianPrice: Math.round(price),
-      salesVolume: Math.round(8 + seededRandom() * 12),
-      daysOnMarket: Math.round(35 + seededRandom() * 45),
-    });
-  }
-
-  return {
-    id: `market-${zipCode}`,
-    location: location?.formattedName || `${location?.city}, ${location?.state}`,
-    zipCode,
-    medianPrice,
-    medianPricePerSqFt,
-    avgListingDuration: Math.round(40 + seededRandom() * 40),
-    growthRate: parseFloat((5 + seededRandom() * 10).toFixed(1)),
-    demandIndex: parseFloat((5 + seededRandom() * 4).toFixed(1)),
-    historicalData,
-    dataSource: 'estimates',
-    dataNote: 'Market estimates based on regional characteristics. Configure API key for live data.',
   };
 };
 
@@ -590,6 +650,7 @@ export default {
   lookupZipCode,
   searchLocations,
   fetchProperties,
-  fetchMarketData,
   fetchLocationData,
+  getMarketData,
+  generateFallbackProperties,
 };

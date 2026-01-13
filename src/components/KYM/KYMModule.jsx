@@ -961,10 +961,12 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     }
   };
 
-  // Filter properties (only works on real API data)
+  // Filter properties - handle missing sqft gracefully
   const filteredProperties = (locationData?.properties || []).filter(property => {
     const matchesPrice = property.askingPrice >= priceRange[0] && property.askingPrice <= priceRange[1];
-    const matchesSqft = property.sqft >= sqftRange[0] && property.sqft <= sqftRange[1];
+    // Allow properties with no sqft data (land, etc.) or within range
+    const matchesSqft = !property.sqft || property.sqft === 0 || 
+      (property.sqft >= sqftRange[0] && property.sqft <= sqftRange[1]);
     const matchesStatus = statusFilter.includes(property.status);
     const matchesSearch = !searchQuery || 
       property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1574,6 +1576,16 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         isOpen={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
       />
+
+      {/* Legal Disclaimer */}
+      <div className="kym-legal-disclaimer">
+        <p>
+          <strong>Disclaimer:</strong> The real estate data displayed is for informational purposes only. 
+          Users should not rely on the accuracy of any market data, property listings, or comparable 
+          sales shown. N4S does not offer advice on the purchase of residential real estate. 
+          All investment decisions should be made in consultation with qualified professionals.
+        </p>
+      </div>
     </div>
   );
 };
