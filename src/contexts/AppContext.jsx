@@ -263,8 +263,11 @@ export const AppProvider = ({ children }) => {
               console.log('[APP] Loaded project:', activeId);
               console.log('[APP] FYI selections:', data.fyiData?.selections);
               console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
+              console.log('[APP] KYS data from fyiData:', data.fyiData?.kysData);
               setActiveProjectIdState(activeId);
               // Merge with defaults to handle old projects missing new fields
+              // Extract kysData from fyiData where it's stored for backend compatibility
+              const loadedKysData = data.fyiData?.kysData || initialKYSData;
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
@@ -276,6 +279,8 @@ export const AppProvider = ({ children }) => {
                   ...initialMVPData,
                   ...data.mvpData,
                 },
+                // Ensure kysData is available at top level for component access
+                kysData: loadedKysData,
               });
               setActiveRespondent(data.activeRespondent || 'principal');
             }
@@ -318,6 +323,7 @@ export const AppProvider = ({ children }) => {
     console.log('[APP] Saving to server...');
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
     console.log('[APP] MVP checklist being saved:', dataToSave.fyiData?.mvpChecklistState);
+    console.log('[APP] KYS data being saved (in fyiData):', dataToSave.fyiData?.kysData);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -356,8 +362,11 @@ export const AppProvider = ({ children }) => {
         console.log('[APP] Switched to project:', projectId);
         console.log('[APP] MVP data:', data.mvpData);
         console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
+        console.log('[APP] KYS data from fyiData:', data.fyiData?.kysData);
         setActiveProjectIdState(projectId);
         // Merge with defaults to handle old projects missing new fields
+        // Extract kysData from fyiData where it's stored for backend compatibility
+        const loadedKysData = data.fyiData?.kysData || initialKYSData;
         setProjectData({
           ...getEmptyProjectData(),
           ...data,
@@ -369,6 +378,8 @@ export const AppProvider = ({ children }) => {
             ...initialMVPData,
             ...data.mvpData,
           },
+          // Ensure kysData is available at top level for component access
+          kysData: loadedKysData,
         });
         setActiveRespondent(data.activeRespondent || 'principal');
         await api.setState('activeProjectId', projectId);
