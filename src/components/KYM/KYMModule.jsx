@@ -944,7 +944,20 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [acreageRange, setAcreageRange] = useState([1, 20]);
   const [showLandFilters, setShowLandFilters] = useState(true);
   const [selectedParcel, setSelectedParcel] = useState(null);
-  
+
+  // Refs to avoid stale closure issues in URL paste callback
+  const landDataRef = useRef(landData);
+  const locationDataRef = useRef(locationData);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    landDataRef.current = landData;
+  }, [landData]);
+
+  useEffect(() => {
+    locationDataRef.current = locationData;
+  }, [locationData]);
+
   // URL paste feature for direct Realtor.com links
   const [pastedListingUrl, setPastedListingUrl] = useState('');
   const [isFetchingListing, setIsFetchingListing] = useState(false);
@@ -1121,12 +1134,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   }, []);
 
   // Fetch property details from pasted Realtor.com URL
+  // Uses refs to avoid stale closure issues with landData/locationData
   const handleFetchListingByUrl = useCallback(async () => {
     if (!pastedListingUrl) return;
-    
+
     setIsFetchingListing(true);
     setFetchListingError(null);
-    
+
     try {
       // Extract property ID from URL
       // URL format: https://www.realtor.com/realestateandhomes-detail/ADDRESS_M12345-67890
@@ -1134,51 +1148,78 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
       if (!match) {
         throw new Error('Invalid Realtor.com URL. Please paste a full property listing URL.');
       }
-      
-      const propertyId = `M${match[1]}`;
-      console.log('[KYM] Looking for property ID:', propertyId);
-      
+
+      // Property ID from URL includes "M" prefix, but API may return with or without
+      const propertyIdWithM = `M${match[1]}`;
+      const propertyIdWithoutM = match[1];
+
+      // Use refs to get current data (avoids stale closure)
+      const currentLandData = landDataRef.current;
+      const currentLocationData = locationDataRef.current;
+
+      console.log('[KYM] Looking for property ID:', propertyIdWithM, 'or', propertyIdWithoutM);
+      console.log('[KYM] Land parcels available:', currentLandData?.parcels?.length || 0);
+      // Force show actual IDs (not just Array(n))
+      const landIds = currentLandData?.parcels?.map(p => p.id) || [];
+      console.log('[KYM] Land parcel IDs:', JSON.stringify(landIds));
+
+      // Helper to match property ID (handles M prefix and dash variations)
+      // URL format: M21699-31041, API format: 2169931041 (no M, no dash)
+      const normalizeId = (id) => id?.replace(/^M/, '').replace(/-/g, '') || '';
+      const normalizedTarget = normalizeId(propertyIdWithM);
+
+      const matchesPropertyId = (id) => {
+        if (!id) return false;
+        const normalizedId = normalizeId(id);
+        return normalizedId === normalizedTarget;
+      };
+
+      console.log('[KYM] Normalized target ID:', normalizedTarget);
+
       // FIRST: Check if property already exists in our fetched land parcels
-      if (landData?.parcels) {
-        const existingParcel = landData.parcels.find(p => p.id === propertyId);
+      if (currentLandData?.parcels) {
+        const existingParcel = currentLandData.parcels.find(p => matchesPropertyId(p.id));
         if (existingParcel) {
-          console.log('[KYM] Found property in existing land data!');
+          console.log('[KYM] Found property in existing land data!', existingParcel);
           setSelectedParcel(existingParcel);
           setPastedListingUrl('');
+          setIsFetchingListing(false);
           return;
         }
       }
-      
+
       // SECOND: Check if property exists in our fetched comparable properties
-      if (locationData?.properties) {
-        const existingProperty = locationData.properties.find(p => p.id === propertyId);
+      if (currentLocationData?.properties) {
+        console.log('[KYM] Comparable properties available:', currentLocationData.properties.length);
+        const existingProperty = currentLocationData.properties.find(p => matchesPropertyId(p.id));
         if (existingProperty) {
-          console.log('[KYM] Found property in existing property data!');
+          console.log('[KYM] Found property in existing property data!', existingProperty);
           setSelectedParcel(existingProperty);
           setPastedListingUrl('');
+          setIsFetchingListing(false);
           return;
         }
       }
-      
+
       // THIRD: Search for property using list API (the one that works)
       console.log('[KYM] Property not in cache, searching via API...');
       const parcelData = await kymApi.fetchPropertyByUrl(pastedListingUrl);
-      
+
       if (!parcelData) {
         throw new Error('Could not fetch property details. Please try again.');
       }
-      
+
       // Show the modal with the fetched property
       setSelectedParcel(parcelData);
       setPastedListingUrl(''); // Clear input on success
-      
+
     } catch (err) {
       console.error('[KYM] URL fetch error:', err);
       setFetchListingError(err.message || 'Failed to fetch listing');
     } finally {
       setIsFetchingListing(false);
     }
-  }, [pastedListingUrl, landData?.parcels, locationData?.properties]);
+  }, [pastedListingUrl]); // Only depend on pastedListingUrl - use refs for data
 
   // Handle ZIP code search input
   const handleZipSearchChange = (e) => {

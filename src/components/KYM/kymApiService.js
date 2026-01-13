@@ -1020,41 +1020,72 @@ export const fetchPropertyByUrl = async (originalUrl) => {
   }
 
   try {
-    // Use the LIST endpoint (which works!) to search by ZIP code
-    const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': RAPIDAPI_HOST,
-      },
-      body: JSON.stringify({
-        limit: 200,  // Get more results to find our property
-        offset: 0,
-        postal_code: urlParsed.zipCode,
-        status: ['for_sale', 'ready_to_build'],
-        sort: {
-          direction: 'desc',
-          field: 'list_date',
+    // Helper function to search API
+    const searchProperties = async (searchParams) => {
+      const response = await fetch('https://realty-in-us.p.rapidapi.com/properties/v3/list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': RAPIDAPI_KEY,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
         },
-      }),
+        body: JSON.stringify(searchParams),
+      });
+
+      if (!response.ok) {
+        console.error('[KYM API] List search error:', response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      return data.data?.home_search?.results || [];
+    };
+
+    // FIRST: Try general search (all property types)
+    console.log(`[KYM API] Searching for ${propertyId} in ZIP ${urlParsed.zipCode}...`);
+    let results = await searchProperties({
+      limit: 200,
+      offset: 0,
+      postal_code: urlParsed.zipCode,
+      status: ['for_sale', 'ready_to_build', 'pending'],
+      sort: { direction: 'desc', field: 'list_date' },
     });
 
-    if (!response.ok) {
-      console.error('[KYM API] List search error:', response.status);
-      return createBaseParsedParcel(urlParsed, originalUrl);
+    console.log(`[KYM API] General search returned ${results.length} properties`);
+    console.log(`[KYM API] Sample property_ids from API:`, JSON.stringify(results.slice(0, 10).map(p => p.property_id)));
+
+    // Property ID matching - handle M prefix and dash variations
+    // URL format: M21699-31041, API format: 2169931041 (no M, no dash)
+    const normalizeId = (id) => id?.replace(/^M/, '').replace(/-/g, '') || '';
+    const normalizedTarget = normalizeId(propertyId);
+    console.log('[KYM API] Normalized target ID:', normalizedTarget);
+
+    const matchesId = (id) => {
+      if (!id) return false;
+      return normalizeId(id) === normalizedTarget;
+    };
+
+    let property = results.find(p => matchesId(p.property_id));
+
+    // SECOND: If not found, try land-specific search
+    if (!property) {
+      console.log('[KYM API] Not in general results, trying land-specific search...');
+      results = await searchProperties({
+        limit: 100,
+        offset: 0,
+        postal_code: urlParsed.zipCode,
+        status: ['for_sale'],
+        type: ['land'],
+        sort: { direction: 'desc', field: 'list_price' },
+      });
+
+      console.log(`[KYM API] Land search returned ${results.length} parcels`);
+      console.log(`[KYM API] Land parcel IDs from API:`, JSON.stringify(results.slice(0, 10).map(p => p.property_id)));
+      property = results.find(p => matchesId(p.property_id));
     }
 
-    const data = await response.json();
-    const results = data.data?.home_search?.results || [];
-    
-    console.log(`[KYM API] Search returned ${results.length} properties, looking for ${propertyId}...`);
-    
-    // Find our specific property by ID
-    const property = results.find(p => p.property_id === propertyId);
-    
     if (!property) {
-      console.log('[KYM API] Property not found in search results, using URL-parsed data');
+      console.log('[KYM API] Property not found in any search results, using URL-parsed data');
       return createBaseParsedParcel(urlParsed, originalUrl);
     }
 
