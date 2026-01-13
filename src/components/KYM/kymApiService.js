@@ -151,7 +151,22 @@ function seededRandom(seed) {
 // ============================================================================
 
 export const hasApiKey = () => {
-  return Boolean(RAPIDAPI_KEY && RAPIDAPI_KEY.length > 10);
+  // Check if key exists and is not a placeholder
+  if (!RAPIDAPI_KEY || RAPIDAPI_KEY.length < 10) return false;
+  
+  // Common placeholder patterns to reject
+  const placeholders = [
+    'your_api_key',
+    'your_rapidapi_key',
+    'your-api-key',
+    'api_key_here',
+    'insert_key',
+    'placeholder',
+    'xxxxxxxx',
+  ];
+  
+  const keyLower = RAPIDAPI_KEY.toLowerCase();
+  return !placeholders.some(p => keyLower.includes(p));
 };
 
 // ============================================================================
