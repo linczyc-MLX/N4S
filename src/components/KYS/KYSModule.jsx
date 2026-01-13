@@ -675,7 +675,7 @@ const SiteAssessmentView = ({ site, onUpdateSite, onBack }) => {
 // =============================================================================
 
 const KYSModule = ({ showDocs, onCloseDocs }) => {
-  const { kysData, updateKYSData } = useAppContext();
+  const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'assessment' | 'comparison'
 
@@ -743,6 +743,23 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kys-module">
+      {/* Save Button Area - Always visible */}
+      <div className="kys-module__save-area">
+        <button
+          className={`kys-btn ${hasUnsavedChanges ? 'kys-btn--primary' : 'kys-btn--secondary'}`}
+          onClick={saveNow}
+          disabled={isSaving || !hasUnsavedChanges}
+        >
+          <Save size={16} />
+          {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+        </button>
+        {lastSaved && !hasUnsavedChanges && (
+          <span className="kys-module__save-time">
+            Last saved: {new Date(lastSaved).toLocaleTimeString()}
+          </span>
+        )}
+      </div>
+
       {viewMode === 'list' && (
         <SiteListView
           sites={sites}

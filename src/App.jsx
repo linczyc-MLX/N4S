@@ -85,19 +85,20 @@ const AppContent = () => {
     setShowDocs(false);
   }, [activeModule]);
 
-  // Module order: Dashboard, KYC, FYI, MVP, KYS, KYM, Settings
+  // Module order: Dashboard, KYC, FYI, MVP, KYM, KYS, Settings
+  // KYS after KYM because site assessment needs validated program AND market context
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
     { id: 'fyi', label: 'FYI', icon: Search, description: 'Find Your Inspiration' },
     { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
-    { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
     { id: 'kym', label: 'KYM', icon: Map, description: 'Know Your Market' },
+    { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
   // Modules that have documentation
-  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kys', 'kym'];
+  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym', 'kys'];
 
   const renderModule = () => {
     switch (activeModule) {

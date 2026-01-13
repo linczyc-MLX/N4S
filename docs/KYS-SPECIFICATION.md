@@ -3,35 +3,35 @@
 
 > **Purpose**: Evaluate potential sites against client's VALIDATED program BEFORE capital commitment
 > **Arvin's Rule**: "You make your money on the buy"
-> **Version**: 1.1
+> **Version**: 1.2
 > **Created**: January 13, 2026
 
 ---
 
 ## 1. Module Overview
 
-KYS is a gateway decision module that answers: **"Can THIS site accommodate the validated program?"**
+KYS is a gateway decision module that answers: **"Can THIS site accommodate the validated program in this market context?"**
 
-Unlike KYM (ongoing market intelligence), KYS produces a **GO/NO-GO recommendation** with traffic lights.
+KYS produces a **GO/NO-GO recommendation** with traffic lights before capital is committed.
 
 ### Key Differentiators
 - Prevents the "Palazzo Problem" — building the wrong thing on the wrong site
 - Multi-site comparison (up to 4 sites)
 - Deal-breaker detection with automatic RED flags
-- Findings flow forward to KYM
+- Incorporates market context from KYM
 
 ### Workflow Position
 ```
-KYC → FYI → MVP → KYS → KYM → VMX
-                   ↑
-               GATEWAY
+KYC → FYI → MVP → KYM → KYS → VMX
+                         ↑
+                     GATEWAY
 ```
 
-**Why after MVP (not after KYC):**
+**Why after KYM:**
 - FYI defines the space program (what we're trying to fit)
 - MVP validates and may adjust the program (10K → 15K scenario)
-- KYS evaluates if candidate sites can accommodate the **validated** program
-- KYM then positions the selected site in the market
+- KYM establishes market context (what comparables sold for, buyer demographics)
+- KYS evaluates if candidate sites work for the validated program IN that market context
 
 ### Data Dependencies (Inputs from Prior Modules)
 | From Module | Data Needed |
@@ -39,6 +39,7 @@ KYC → FYI → MVP → KYS → KYM → VMX
 | KYC | Client flexibility index, vision description, budget |
 | FYI | Target SF, footprint, number of levels, guest house, principal rooms |
 | MVP | Validated tier (5K/10K/15K/20K), final adjacency requirements |
+| KYM | Market comparables, price positioning, buyer demographics, neighborhood context |
 
 ---
 
@@ -266,11 +267,17 @@ Site Info → Physical → Views → Privacy → Adjacencies → Market → Visi
 - Final adjacency requirements
 - Confirmed program (may have changed from initial FYI)
 
-### To KYM (Output)
-- Market positioning insights
-- Site context for comparable search
-- Buyer demographic notes
-- Constraints documentation
+### From KYM (Input)
+- Market comparables and sold prices
+- Buyer demographic expectations
+- Style absorption history in micro-market
+- Neighborhood value context
+
+### Outputs (Site Selection Report)
+- GO/NO-GO recommendation with traffic light
+- Site-specific constraints for design team
+- Deal-breaker log (including any client waivers)
+- Multi-site comparison ranking (if applicable)
 
 ---
 

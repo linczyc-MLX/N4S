@@ -19,6 +19,26 @@
 }
 
 /* =============================================================================
+   SAVE AREA
+   ============================================================================= */
+
+.kys-module__save-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e5e5e0;
+  border-radius: 8px;
+}
+
+.kys-module__save-time {
+  font-size: 0.75rem;
+  color: #6b6b6b;
+}
+
+/* =============================================================================
    BUTTONS
    ============================================================================= */
 
@@ -69,6 +89,19 @@
 .kys-btn--danger:hover {
   color: #d32f2f;
   background: rgba(211, 47, 47, 0.05);
+}
+
+.kys-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kys-btn--primary:disabled:hover {
+  background: #1e3a5f;
+}
+
+.kys-btn--secondary:disabled:hover {
+  border-color: #e5e5e0;
 }
 
 /* =============================================================================

@@ -179,10 +179,10 @@ function WorkflowTab() {
       <div className="doc-card">
         <h3 className="doc-subsection-title">Position in N4S Journey</h3>
         <p className="doc-paragraph">
-          KYS comes after MVP because it needs the validated program — what you're actually 
-          trying to fit on the site. A client might start thinking 10,000 SF but after FYI 
-          and MVP validation, realize they need 15,000 SF. This changes everything about 
-          site requirements.
+          KYS comes after KYM because site assessment needs both the validated program (from MVP) 
+          AND market context (from KYM). A client might start thinking 10,000 SF but after FYI 
+          and MVP validation, realize they need 15,000 SF. KYM then establishes what the market 
+          will bear for that program. Only then can we properly assess if a specific site works.
         </p>
         <div className="doc-workflow-phases">
           <div className="doc-phase">
@@ -206,18 +206,18 @@ function WorkflowTab() {
               <p>Validate adjacencies and lock final program tier</p>
             </div>
           </div>
-          <div className="doc-phase doc-phase--active">
+          <div className="doc-phase">
             <div className="doc-phase-badge">4</div>
             <div className="doc-phase-content">
-              <h4>KYS — Know Your Site</h4>
-              <p>Evaluate if candidate sites can accommodate the validated program</p>
+              <h4>KYM — Know Your Market</h4>
+              <p>Establish market context, comps, and price positioning</p>
             </div>
           </div>
-          <div className="doc-phase">
+          <div className="doc-phase doc-phase--active">
             <div className="doc-phase-badge">5</div>
             <div className="doc-phase-content">
-              <h4>KYM — Know Your Market</h4>
-              <p>Position the selected site in the market context</p>
+              <h4>KYS — Know Your Site</h4>
+              <p>Evaluate if candidate sites can accommodate validated program in market context</p>
             </div>
           </div>
         </div>
@@ -273,12 +273,15 @@ function WorkflowTab() {
               <li><strong>From KYC:</strong> Client flexibility index, vision description, budget parameters</li>
               <li><strong>From FYI:</strong> Target SF, footprint requirements, number of levels, guest house needs</li>
               <li><strong>From MVP:</strong> Validated tier (5K/10K/15K/20K), final adjacency requirements</li>
+              <li><strong>From KYM:</strong> Market comparables, price positioning, buyer demographics, neighborhood context</li>
             </ul>
           </div>
           <div className="doc-flow-section">
-            <h4>Outputs to Subsequent Modules</h4>
+            <h4>Outputs (Site Selection Report)</h4>
             <ul>
-              <li><strong>To KYM:</strong> Site context, market positioning insights, constraint documentation</li>
+              <li><strong>Site Assessment:</strong> GO/NO-GO recommendation with supporting rationale</li>
+              <li><strong>Constraint Documentation:</strong> Site-specific constraints for design team</li>
+              <li><strong>Deal-Breaker Log:</strong> Any waived deal-breakers with client acknowledgment</li>
             </ul>
           </div>
         </div>
