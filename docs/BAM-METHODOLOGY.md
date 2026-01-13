@@ -1,22 +1,26 @@
 # Buyer Alignment Matrix (BAM) - Complete Methodology
 
-**Version:** 2.0  
+**Version:** 3.0  
 **Date:** January 13, 2026  
-**Status:** Specification Ready for Implementation
+**Status:** Enhanced Specification with Dual Scoring
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Methodology Overview](#2-methodology-overview)
-3. [Buyer Archetype Profiles](#3-buyer-archetype-profiles)
-4. [Client Avatar Extraction](#4-client-avatar-extraction)
-5. [Scoring Algorithm](#5-scoring-algorithm)
-6. [Gap Analysis & Recommendations](#6-gap-analysis--recommendations)
-7. [Report Design](#7-report-design)
-8. [Data Structures](#8-data-structures)
-9. [Implementation Guide](#9-implementation-guide)
+2. [Dual Score Framework](#2-dual-score-framework)
+3. [Client Satisfaction Score](#3-client-satisfaction-score)
+4. [Market Appeal Score](#4-market-appeal-score)
+5. [Portfolio Context](#5-portfolio-context)
+6. [Feature Classification](#6-feature-classification)
+7. [Trade-off Analysis](#7-trade-off-analysis)
+8. [Buyer Archetype Profiles](#8-buyer-archetype-profiles)
+9. [Data Mapping Reference](#9-data-mapping-reference)
+10. [Scoring Algorithm](#10-scoring-algorithm)
+11. [Report Design](#11-report-design)
+12. [Data Structures](#12-data-structures)
+13. [Implementation Guide](#13-implementation-guide)
 
 ---
 
@@ -24,1169 +28,863 @@
 
 ### Purpose
 
-The Buyer Alignment Matrix (BAM) predicts which buyer archetypes would be most attracted to a property based on the client's design decisions. This enables N4S advisors to:
+The Buyer Alignment Matrix (BAM) provides a **dual-lens analysis** of property design decisions:
 
-1. **Validate marketability** — Will the property appeal to buyers in this market?
-2. **Identify gaps** — What changes would broaden buyer appeal?
-3. **Guide decisions** — Inform design choices that maintain/improve alignment
-4. **Support exit strategy** — Understand future resale positioning
+1. **Client Satisfaction Score** — Does this design serve the CLIENT's needs and vision?
+2. **Market Appeal Score** — Will this design appeal to BUYERS when it's time to sell?
 
-### Core Principle
+This dual approach ensures N4S advisors can:
+- Validate that the design fulfills the client's lifestyle requirements
+- Confirm the design will appeal to the buyer pool in the target market
+- Identify trade-offs between personal satisfaction and market value
+- Guide decisions that optimize both dimensions appropriately
+
+### Core Principles
 
 > "You make your money on the buy, but you keep it on the sell."
 
-BAM ensures that design decisions align with the buyer pool most likely to purchase in the target market, protecting the client's investment.
+> "A home that doesn't serve you isn't worth building. A home that won't sell isn't a sound investment."
 
-### Pass/Fail Threshold
+BAM balances these truths by measuring BOTH dimensions and weighting them according to the client's portfolio context.
 
-| Score | Status | Meaning |
-|-------|--------|---------|
-| ≥80% | **PASS** | Strong alignment with buyer archetype |
-| 65-79% | **CAUTION** | Moderate alignment, consider improvements |
-| <65% | **FAIL** | Poor alignment, significant changes needed |
+### Pass/Fail Thresholds
+
+| Score Type | ≥80% | 65-79% | <65% |
+|------------|------|--------|------|
+| **Client Satisfaction** | ✅ Strong Fit | ⚠️ Compromises Exist | ❌ Misaligned |
+| **Market Appeal** | ✅ Strong Appeal | ⚠️ Limited Pool | ❌ Hard to Sell |
+| **Combined** | ✅ PASS | ⚠️ CAUTION | ❌ FAIL |
 
 ---
 
-## 2. Methodology Overview
+## 2. Dual Score Framework
 
-### 2.1 Three-Step Process
+### 2.1 The Two Dimensions
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  STEP 1: IDENTIFY MARKET BUYER POOL                            │
-│  ─────────────────────────────────────                          │
-│  From KYM location data, identify the dominant buyer           │
-│  archetypes for this specific market (e.g., Malibu, Aspen)     │
-│                                                                 │
-│                           ↓                                     │
-│                                                                 │
-│  STEP 2: BUILD CLIENT AVATAR                                    │
-│  ─────────────────────────────                                  │
-│  Extract design decisions from KYC, FYI, and MVP modules       │
-│  to create a complete picture of what the client is building   │
-│                                                                 │
-│                           ↓                                     │
-│                                                                 │
-│  STEP 3: CALCULATE ALIGNMENT                                    │
-│  ────────────────────────────                                   │
-│  Compare Client Avatar against each buyer archetype's          │
-│  Must Have / Nice to Have / Avoid preferences                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                        BAM DUAL SCORE FRAMEWORK                             │
+│                                                                             │
+├─────────────────────────────────┬───────────────────────────────────────────┤
+│                                 │                                           │
+│   CLIENT SATISFACTION SCORE     │      MARKET APPEAL SCORE                  │
+│   ─────────────────────────     │      ────────────────────                 │
+│                                 │                                           │
+│   "Does this design serve       │      "Will buyers want this               │
+│    YOUR needs and vision?"      │       when you sell?"                     │
+│                                 │                                           │
+│   Measures:                     │      Measures:                            │
+│   • Spatial requirements met    │      • Buyer archetype alignment          │
+│   • Lifestyle needs fulfilled   │      • Must Have / Nice to Have / Avoid   │
+│   • Design aesthetic match      │      • Market-specific preferences        │
+│   • Location context fit        │      • Resale positioning                 │
+│   • Future-proofing             │      • Competitive differentiation        │
+│                                 │                                           │
+│   Source: KYC + FYI + MVP       │      Source: KYM + Archetype Profiles     │
+│                                 │                                           │
+└─────────────────────────────────┴───────────────────────────────────────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │      COMBINED SCORE         │
+                    │   (Weighted by Portfolio    │
+                    │        Context)             │
+                    └─────────────────────────────┘
 ```
 
-### 2.2 Scoring Categories
-
-| Category | Weight | Source |
-|----------|--------|--------|
-| **Must Haves** | 50% | Dealbreakers if missing |
-| **Nice to Haves** | 35% | Add value, not essential |
-| **Avoids** | 15% | Penalties for misalignments |
-
-### 2.3 Market-Specific Buyer Pools
-
-Each luxury market has a different distribution of buyer archetypes:
-
-| Market | #1 Archetype | #2 Archetype | #3 Archetype |
-|--------|--------------|--------------|--------------|
-| **Malibu, CA** | Entertainment (35%) | Tech Executive (28%) | Sports Pro (18%) |
-| **Aspen, CO** | Generational (30%) | Finance (25%) | Sports Pro (20%) |
-| **Greenwich, CT** | Finance (40%) | Family Office (25%) | Generational (20%) |
-| **Palm Beach, FL** | International (35%) | Finance (30%) | Generational (25%) |
-| **Beverly Hills, CA** | Entertainment (30%) | Tech Executive (25%) | International (20%) |
-| **Hamptons, NY** | Finance (35%) | Entertainment (25%) | Tech Executive (20%) |
-| **Miami Beach, FL** | International (40%) | Entertainment (25%) | Sports Pro (20%) |
-| **Scottsdale, AZ** | Sports Pro (30%) | Tech Executive (25%) | Wellness (20%) |
-
----
-
-## 3. Buyer Archetype Profiles
-
-### 3.1 Tech Executive
-
-**Profile:**
-- **Description:** Successful technology industry leaders, startup founders, and C-suite executives who value innovation, privacy, and modern design.
-- **Age Range:** 35-55
-- **Net Worth:** $20M - $200M
-- **Occupation:** Tech CEO / Founder / CTO / VP Engineering
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Smart Home Infrastructure | 10 | `fyi.spaces` includes home automation OR `mvp.features.smartHome` |
-| Dedicated Home Office | 10 | `fyi.spaces` includes office with video conferencing capability |
-| Contemporary/Modern Aesthetic | 10 | `fyi.tasteResults.dominant` in ['Contemporary', 'Modern', 'Minimalist'] |
-| Privacy from Neighbors | 10 | `kyc.siteRequirements.privacy` ≥ 'High' OR gated/setback property |
-| EV Charging + Tech Garage | 10 | `fyi.spaces` includes EV garage OR car gallery with EV provisions |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Wellness Suite | 7 | `fyi.spaces` includes gym + spa/steam/sauna |
-| Indoor-Outdoor Living | 7 | `mvp.adjacencies` shows living → terrace connection |
-| Guest Autonomy | 7 | `mvp.rooms` includes guest suite with private entry |
-| Home Theater | 7 | `fyi.spaces` includes dedicated theater/media room |
-| Wine Storage | 7 | `fyi.spaces` includes wine cellar/room |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Traditional/Ornate Styling | -15 | `fyi.tasteResults.dominant` in ['Traditional', 'Colonial', 'Mediterranean'] |
-| High-Maintenance Grounds | -10 | `kyc.site.acreage` > 2 AND no estate staff |
-| Visible from Street | -10 | `kyc.siteRequirements.visibility` = 'High' |
-| HOA Restrictions | -10 | `kyc.site.hoa` = true with modification limits |
-
----
-
-### 3.2 Entertainment Executive
-
-**Profile:**
-- **Description:** Film producers, studio executives, talent agents, and content creators who require prestigious addresses and exceptional privacy.
-- **Age Range:** 40-65
-- **Net Worth:** $30M - $500M
-- **Occupation:** Producer / Studio Executive / Talent Agent
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Screening Room/Theater | 10 | `fyi.spaces` includes theater ≥400 SF |
-| Exceptional Privacy | 10 | `kyc.siteRequirements.privacy` = 'Maximum' OR gated compound |
-| Chef's Kitchen | 10 | `fyi.spaces.kitchen.tier` = 'Show Kitchen' with catering prep |
-| Prestigious Address | 10 | Location in recognized luxury enclave |
-| Entertainment Terrace | 10 | `fyi.spaces` includes covered terrace ≥800 SF |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Multiple Guest Suites | 7 | `fyi.rooms.guestSuites` ≥ 3 |
-| Wine Cellar | 7 | `fyi.spaces` includes wine cellar ≥500 bottles |
-| Pool + Pool House | 7 | `kyc.site.hasPool` AND `hasPoolHouse` |
-| Staff Quarters | 7 | `fyi.spaces` includes staff suite |
-| Car Gallery | 7 | `fyi.spaces` includes car gallery ≥4 vehicles |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Minimalist/Industrial | -15 | `fyi.tasteResults.dominant` in ['Minimalist', 'Industrial'] |
-| Compact Footprint | -10 | `fyi.totalSqFt` < 10,000 |
-| Limited Parking | -10 | `kyc.site.garageCapacity` < 4 |
-| Street-Visible Entry | -10 | No gated/private approach |
-
----
-
-### 3.3 Finance Executive
-
-**Profile:**
-- **Description:** Investment bankers, hedge fund managers, and private equity principals who appreciate traditional elegance and quality construction.
-- **Age Range:** 45-65
-- **Net Worth:** $50M - $500M
-- **Occupation:** Managing Director / Partner / Fund Manager
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Traditional/Transitional Design | 10 | `fyi.tasteResults.dominant` in ['Traditional', 'Georgian', 'Colonial', 'Transitional'] |
-| Library/Study | 10 | `fyi.spaces` includes library OR formal study |
-| Formal Dining | 10 | `fyi.spaces` includes formal dining room ≥ 16 seats |
-| Quality Construction | 10 | `kyc.qualityTier` = 'Exceptional' or 'Ultra-Premium' |
-| Proximity to Financial Center | 10 | Location within 90min of NYC, Boston, Chicago, SF |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Wine Cellar | 7 | `fyi.spaces` includes wine cellar ≥1000 bottles |
-| Home Office Suite | 7 | `fyi.spaces` includes office with conference capability |
-| Pool | 7 | `kyc.site.hasPool` |
-| Tennis Court | 7 | `kyc.site.hasTennis` |
-| Guest Wing | 7 | `fyi.rooms.guestSuites` ≥ 2 with separate access |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Modern/Contemporary | -15 | `fyi.tasteResults.dominant` in ['Modern', 'Minimalist', 'Industrial'] |
-| Tech-Forward Aesthetic | -10 | Exposed smart home infrastructure |
-| Overly Casual Design | -10 | No formal living/dining spaces |
-| Remote Location | -10 | >2 hours from financial center |
-
----
-
-### 3.4 International Investor
-
-**Profile:**
-- **Description:** International UHNW individuals seeking trophy properties for investment diversification and family use.
-- **Age Range:** 45-70
-- **Net Worth:** $100M+
-- **Occupation:** International Business / Investment / Family Office
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Security Infrastructure | 10 | `fyi.spaces` includes security room + perimeter systems |
-| Staff Quarters | 10 | `fyi.spaces` includes staff suite with separate entry |
-| Turnkey Condition | 10 | FF&E included, move-in ready |
-| Multiple Guest Suites | 10 | `fyi.rooms.guestSuites` ≥ 4 |
-| Prestigious Location | 10 | Recognized international luxury market |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Spa/Wellness | 7 | `fyi.spaces` includes spa, sauna, steam |
-| Wine Cellar | 7 | `fyi.spaces` includes wine cellar |
-| Car Gallery | 7 | `fyi.spaces` includes car gallery ≥6 vehicles |
-| Pool + Pool House | 7 | `kyc.site.hasPool` AND `hasPoolHouse` |
-| Home Theater | 7 | `fyi.spaces` includes theater |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Compact Size | -15 | `fyi.totalSqFt` < 12,000 |
-| Remote Location | -10 | Not in primary international market |
-| Limited Privacy | -10 | `kyc.siteRequirements.privacy` < 'High' |
-| High Maintenance Required | -10 | Extensive grounds without staff provisions |
-
----
-
-### 3.5 Sports Professional
-
-**Profile:**
-- **Description:** Professional athletes, team owners, and sports executives who prioritize fitness facilities and entertainment spaces.
-- **Age Range:** 30-55
-- **Net Worth:** $20M - $300M
-- **Occupation:** Professional Athlete / Team Owner / Sports Executive
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Professional Gym | 10 | `fyi.spaces` includes gym ≥1,000 SF |
-| Recovery Suite | 10 | `fyi.spaces` includes spa/steam/sauna/cold plunge |
-| Privacy | 10 | `kyc.siteRequirements.privacy` ≥ 'High' |
-| Entertainment Space | 10 | `fyi.spaces` includes game room/sports bar |
-| Large Property | 10 | `kyc.site.acreage` ≥ 1 OR sports court |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Basketball Court | 7 | `kyc.site.hasSportsCourt` (basketball) |
-| Pool (Lap) | 7 | `kyc.site.hasPool` with lap capability |
-| Home Theater | 7 | `fyi.spaces` includes theater |
-| Car Gallery | 7 | `fyi.spaces` includes car gallery ≥4 |
-| Guest Suites | 7 | `fyi.rooms.guestSuites` ≥ 3 |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Small Gym | -15 | Gym < 500 SF or no gym |
-| Traditional/Formal | -10 | `fyi.tasteResults.dominant` in ['Traditional', 'Georgian', 'Colonial'] |
-| High-Maintenance Design | -10 | Materials requiring special care |
-| Limited Parking | -10 | `kyc.site.garageCapacity` < 4 |
-
----
-
-### 3.6 Generational Wealth / Legacy
-
-**Profile:**
-- **Description:** Multi-generational families seeking compound-style estates for extended family use across generations.
-- **Age Range:** 55-75
-- **Net Worth:** $200M+
-- **Occupation:** Family Office / Inherited Wealth / Trust Beneficiary
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Guest House | 10 | `kyc.hasGuestHouse` = true |
-| Multiple Bedrooms | 10 | `fyi.rooms.totalBedrooms` ≥ 6 |
-| Staff Quarters | 10 | `fyi.spaces` includes staff suite |
-| Traditional/Timeless Design | 10 | `fyi.tasteResults.dominant` in ['Traditional', 'Georgian', 'Transitional'] |
-| Estate Property | 10 | `kyc.site.acreage` ≥ 2 |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Pool House | 7 | `kyc.hasPoolHouse` = true |
-| Tennis Court | 7 | `kyc.site.hasTennis` = true |
-| Wine Cellar | 7 | `fyi.spaces` includes wine cellar ≥1000 bottles |
-| Kids' Spaces | 7 | `fyi.spaces` includes bunk room/playroom |
-| Library | 7 | `fyi.spaces` includes library |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Modern/Minimalist | -15 | `fyi.tasteResults.dominant` in ['Modern', 'Minimalist', 'Industrial'] |
-| Compact Property | -10 | `kyc.site.acreage` < 1 |
-| Single Structure | -10 | No guest house or secondary structures |
-| Limited Bedrooms | -10 | `fyi.rooms.totalBedrooms` < 5 |
-
----
-
-### 3.7 Wellness Pioneer
-
-**Profile:**
-- **Description:** Health-focused entrepreneurs and executives who prioritize wellness facilities and natural living.
-- **Age Range:** 40-60
-- **Net Worth:** $30M - $200M
-- **Occupation:** Wellness Industry / Health Tech / Biohacking Advocate
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Wellness Suite | 10 | `fyi.spaces` includes gym + spa + sauna + steam |
-| Natural Materials | 10 | `fyi.tasteResults` emphasizes organic/natural materials |
-| Indoor-Outdoor Connection | 10 | `mvp.adjacencies` shows strong indoor-outdoor flow |
-| Clean Air/Water Systems | 10 | `fyi.features` includes air filtration + water purification |
-| Privacy for Retreat | 10 | `kyc.siteRequirements.privacy` ≥ 'High' |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Lap Pool | 7 | Pool suitable for exercise swimming |
-| Meditation Space | 7 | `fyi.spaces` includes meditation room/yoga studio |
-| Chef's Kitchen | 7 | Kitchen designed for healthy food preparation |
-| Guest Suite | 7 | For wellness retreat guests |
-| Gardens | 7 | `kyc.site` includes kitchen garden/grounds |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Urban Location | -15 | Dense urban environment |
-| Limited Outdoor Space | -10 | `kyc.site.acreage` < 0.5 |
-| Traditional Heavy Design | -10 | `fyi.tasteResults.dominant` in ['Colonial', 'Georgian'] |
-| Artificial Materials | -10 | Emphasis on synthetic/industrial materials |
-
----
-
-### 3.8 Real Estate Developer
-
-**Profile:**
-- **Description:** Successful commercial and residential developers seeking personal residences that showcase design innovation.
-- **Age Range:** 45-65
-- **Net Worth:** $50M - $300M
-- **Occupation:** Developer / Builder / Real Estate Investor
-
-#### Must Haves (50 points max)
-
-| Requirement | Points | Match Criteria |
-|-------------|--------|----------------|
-| Quality Construction | 10 | `kyc.qualityTier` = 'Exceptional' or higher |
-| Innovative Design | 10 | Unique architectural features or notable architect |
-| Resale Positioning | 10 | Design decisions support future marketability |
-| Efficient Layout | 10 | `mvp.scores.circulation` ≥ 80 |
-| Prime Location | 10 | Established luxury market with appreciation history |
-
-#### Nice to Haves (35 points max)
-
-| Feature | Points | Match Criteria |
-|---------|--------|----------------|
-| Smart Home Tech | 7 | Modern infrastructure for future buyers |
-| Flexible Spaces | 7 | Rooms that can serve multiple purposes |
-| Outdoor Living | 7 | Strong indoor-outdoor connection |
-| Guest Accommodations | 7 | At least 2 guest suites |
-| Pool | 7 | Pool is expected in luxury markets |
-
-#### Avoids (Penalties)
-
-| Anti-Pattern | Penalty | Match Criteria |
-|--------------|---------|----------------|
-| Over-Personalization | -15 | Unusual design choices that limit buyer pool |
-| Poor Flow | -10 | `mvp.scores.circulation` < 70 |
-| Dated Design | -10 | Style trending out of favor |
-| Over-Improved | -10 | Cost significantly exceeds market ceiling |
-
----
-
-## 4. Client Avatar Extraction
-
-### 4.1 Data Sources
-
-The Client Avatar is built from data captured across three modules:
+### 2.2 Why Both Scores Matter
+
+| Scenario | Client Score | Market Score | Implication |
+|----------|--------------|--------------|-------------|
+| **Ideal** | 85% | 82% | Design serves client AND sells well |
+| **Personal Focus** | 90% | 55% | Client happy, but limited buyer pool |
+| **Market Driven** | 60% | 88% | Will sell easily, but client compromised |
+| **Problematic** | 55% | 50% | Neither client nor market well served |
+
+### 2.3 Visual Summary Display
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  CLIENT AVATAR                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  FROM KYC (Know Your Client)                                   │
-│  ─────────────────────────────                                  │
-│  • Budget range                                                 │
-│  • Location/market                                              │
-│  • Family composition                                           │
-│  • Staff requirements                                           │
-│  • Site characteristics                                         │
-│  • Privacy requirements                                         │
-│  • Quality tier                                                 │
-│                                                                 │
-│  FROM FYI (Find Your Inspiration)                              │
-│  ─────────────────────────────────                              │
-│  • Design style (from Taste Exploration)                       │
-│  • Space selections and SF allocations                         │
-│  • Feature selections                                          │
-│  • Room counts                                                  │
-│  • Total square footage                                         │
-│                                                                 │
-│  FROM MVP (Mansion Validation Program)                         │
-│  ─────────────────────────────────────                          │
-│  • Adjacency decisions                                         │
-│  • Room configurations                                          │
-│  • Zone assignments                                            │
-│  • Red flags / bridges                                         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  THORNWOOD ESTATE — MALIBU, CA                                              │
+│  BAM ALIGNMENT SUMMARY                                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│     CLIENT SATISFACTION              MARKET APPEAL                          │
+│     ───────────────────              ─────────────                          │
+│                                                                             │
+│           82%                             65%                               │
+│     ████████████░░░░               █████████░░░░░░░                        │
+│       ✅ PASS                        ⚠️ CAUTION                             │
+│                                                                             │
+│     Your design strongly           Tech Executive buyers                    │
+│     reflects your vision           are 65% aligned                          │
+│     and lifestyle needs.           (need 80% for PASS)                      │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│     PORTFOLIO CONTEXT: Primary Residence, 10+ Year Hold                     │
+│     ───────────────────────────────────────────────────                     │
+│                                                                             │
+│     Forever Home ◄────────●─────────────► Investment Property               │
+│                                                                             │
+│     Weighting: 60% Client / 40% Market                                      │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│     COMBINED SCORE: 75%  ⚠️ CAUTION                                         │
+│     ██████████████████████████████░░░░░░░░░░                               │
+│                                                                             │
+│     (82% × 0.60) + (65% × 0.40) = 49.2 + 26.0 = 75.2%                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Field Mapping Reference
+---
 
-#### KYC Fields
+## 3. Client Satisfaction Score
+
+### 3.1 Overview
+
+The Client Satisfaction Score measures how well the planned property serves the client's stated needs, preferences, and lifestyle requirements. This score answers: **"Will YOU be happy living here?"**
+
+### 3.2 Scoring Categories (100 Points Total)
+
+```
+CLIENT SATISFACTION SCORE (0-100)
+│
+├── SPATIAL REQUIREMENTS (25 points)
+│   ├── Room count matches family composition (0-5)
+│   ├── Square footage meets lifestyle needs (0-5)
+│   ├── Flow and adjacencies support daily routines (0-5)
+│   ├── Indoor-outdoor connection as desired (0-5)
+│   └── Storage and organization adequate (0-5)
+│
+├── LIFESTYLE ALIGNMENT (25 points)
+│   ├── Entertainment spaces for hosting style (0-5)
+│   ├── Work-from-home functionality (0-5)
+│   ├── Hobby and interest spaces included (0-5)
+│   ├── Privacy and acoustics appropriate (0-5)
+│   └── Wellness and fitness provisions (0-5)
+│
+├── DESIGN AESTHETIC (20 points)
+│   ├── Architectural style matches taste (0-5)
+│   ├── Interior design aesthetic aligned (0-5)
+│   ├── Material and finish quality as desired (0-5)
+│   └── Natural light and views prioritized (0-5)
+│
+├── LOCATION CONTEXT (15 points)
+│   ├── Commute and accessibility acceptable (0-5)
+│   ├── School/amenity proximity (if applicable) (0-5)
+│   └── Neighborhood character fit (0-5)
+│
+└── FUTURE-PROOFING (15 points)
+    ├── Adaptability for life changes (0-5)
+    ├── Technology infrastructure (0-5)
+    └── Sustainability features (0-5)
+```
+
+### 3.3 Data Sources for Client Satisfaction
+
+| Category | KYC Source | FYI Source | MVP Source |
+|----------|------------|------------|------------|
+| Spatial | familyComposition, staff | totalSqFt, roomCounts | adjacencies, roomList |
+| Lifestyle | entertainingStyle, workStyle | spaces selected | zone assignments |
+| Design | tasteResults, stylePreferences | Taste Exploration scores | — |
+| Location | locationPreferences, commute | — | — |
+| Future | planningHorizon, flexibility | techRequirements | — |
+
+### 3.4 Client Satisfaction Evaluation Criteria
+
+#### Spatial Requirements
+
+| Factor | 5 Points | 3 Points | 1 Point | 0 Points |
+|--------|----------|----------|---------|----------|
+| Room Count | Exact match | ±1 room | ±2 rooms | ±3+ rooms |
+| Square Footage | Within 10% | Within 20% | Within 30% | >30% variance |
+| Flow/Adjacencies | All priorities met | Most met | Some met | Few met |
+| Indoor-Outdoor | Matches preference exactly | Good connection | Limited | Poor/none |
+| Storage | Exceeds needs | Meets needs | Adequate | Insufficient |
+
+#### Lifestyle Alignment
+
+| Factor | 5 Points | 3 Points | 1 Point | 0 Points |
+|--------|----------|----------|---------|----------|
+| Entertainment | Dedicated spaces match style | Adequate | Limited | Incompatible |
+| Work-from-Home | Professional-grade office | Good office | Basic space | No provision |
+| Hobbies | Dedicated spaces included | Some accommodation | Limited | None |
+| Privacy/Acoustics | Exceeds requirements | Meets requirements | Adequate | Problematic |
+| Wellness | Full suite as desired | Partial | Basic | Missing |
+
+#### Design Aesthetic
+
+| Factor | 5 Points | 3 Points | 1 Point | 0 Points |
+|--------|----------|----------|---------|----------|
+| Architectural Style | Strong match (>80% taste) | Good match (60-80%) | Moderate (40-60%) | Poor (<40%) |
+| Interior Design | Cohesive, aligned | Mostly aligned | Mixed signals | Conflicting |
+| Material Quality | Matches tier expectation | Close | Below expectation | Far below |
+| Light/Views | Exceptional | Good | Adequate | Poor |
+
+---
+
+## 4. Market Appeal Score
+
+### 4.1 Overview
+
+The Market Appeal Score measures how well the planned property will appeal to likely buyers in the target market. This score answers: **"Will this SELL when the time comes?"**
+
+### 4.2 Methodology
+
+```
+MARKET APPEAL SCORE (0-100)
+│
+├── STEP 1: Identify Market Buyer Pool
+│   └── Top 3 archetypes for location (e.g., Malibu: Entertainment, Tech, Sports)
+│
+├── STEP 2: Score Against Each Archetype
+│   ├── Must Haves (50 points per archetype)
+│   ├── Nice to Haves (35 points per archetype)
+│   └── Avoid Penalties (up to -15 points per archetype)
+│
+├── STEP 3: Weight by Market Share
+│   └── Archetype score × market share percentage
+│
+└── FINAL: Weighted Average = Market Appeal Score
+```
+
+### 4.3 Market-Specific Buyer Pools
+
+| Market | #1 Archetype | #2 Archetype | #3 Archetype | Other |
+|--------|--------------|--------------|--------------|-------|
+| **Malibu, CA** | Entertainment (35%) | Tech Executive (28%) | Sports Pro (18%) | 19% |
+| **Aspen, CO** | Generational (30%) | Finance (25%) | Sports Pro (20%) | 25% |
+| **Greenwich, CT** | Finance (40%) | Family Office (25%) | Generational (20%) | 15% |
+| **Palm Beach, FL** | International (35%) | Finance (30%) | Generational (25%) | 10% |
+| **Beverly Hills, CA** | Entertainment (30%) | Tech Executive (25%) | International (20%) | 25% |
+| **Hamptons, NY** | Finance (35%) | Entertainment (25%) | Tech Executive (20%) | 20% |
+| **Miami Beach, FL** | International (40%) | Entertainment (25%) | Sports Pro (20%) | 15% |
+| **Scottsdale, AZ** | Sports Pro (30%) | Tech Executive (25%) | Wellness (20%) | 25% |
+
+### 4.4 Weighted Calculation Example
+
+```
+MALIBU MARKET APPEAL CALCULATION
+
+Archetype Scores:
+├── Entertainment Executive: 72% × 35% weight = 25.2
+├── Tech Executive: 65% × 28% weight = 18.2
+├── Sports Professional: 60% × 18% weight = 10.8
+└── Other: (avg 55%) × 19% weight = 10.5
+
+MARKET APPEAL SCORE = 25.2 + 18.2 + 10.8 + 10.5 = 64.7% ≈ 65%
+```
+
+### 4.5 Archetype Scoring Structure
+
+Each archetype is scored using the Must Have / Nice to Have / Avoid framework:
+
+```
+ARCHETYPE SCORE (0-100 per archetype)
+│
+├── MUST HAVES (50 points max, 50% weight)
+│   └── 5 requirements × 10 points each
+│   └── Full match = 10, Partial = 5, None = 0
+│
+├── NICE TO HAVES (35 points max, 35% weight)
+│   └── 5 features × 7 points each
+│   └── Full match = 7, Partial = 3.5, None = 0
+│
+└── AVOIDS (Penalties, 15% weight)
+    └── Each triggered avoid = -5 to -15 points
+    └── Applied AFTER calculating earned points
+```
+
+---
+
+## 5. Portfolio Context
+
+### 5.1 Overview
+
+Not all clients have the same investment horizon or priorities. A "forever home" buyer should prioritize personal satisfaction, while a "5-year flip" buyer should prioritize market appeal. Portfolio Context adjusts the weighting between the two scores.
+
+### 5.2 Portfolio Types
+
+| Type | Definition | Client Weight | Market Weight |
+|------|------------|---------------|---------------|
+| **Forever Home** | 15+ year hold, legacy property | 70% | 30% |
+| **Primary Residence** | 10-15 year hold | 60% | 40% |
+| **Medium-Term** | 5-10 year hold | 50% | 50% |
+| **Investment** | <5 year hold or rental | 30% | 70% |
+| **Spec Development** | Build to sell | 10% | 90% |
+
+### 5.3 UI: Portfolio Context Slider
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PORTFOLIO CONTEXT                                                          │
+│                                                                             │
+│  How long do you plan to own this property?                                 │
+│                                                                             │
+│  Forever     Primary      Medium       Investment    Spec                   │
+│  Home        Residence    Term         Property      Build                  │
+│    │            │           │             │            │                    │
+│    ▼            ▼           ▼             ▼            ▼                    │
+│  ──●────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│  Current Selection: PRIMARY RESIDENCE (10-15 year hold)                     │
+│                                                                             │
+│  Score Weighting:                                                           │
+│  ├── Client Satisfaction: 60%                                               │
+│  └── Market Appeal: 40%                                                     │
+│                                                                             │
+│  This means your COMBINED SCORE prioritizes personal satisfaction           │
+│  while still ensuring reasonable resale appeal.                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.4 Combined Score Calculation
+
+```javascript
+function calculateCombinedScore(clientScore, marketScore, portfolioContext) {
+  const weights = {
+    'forever-home': { client: 0.70, market: 0.30 },
+    'primary-residence': { client: 0.60, market: 0.40 },
+    'medium-term': { client: 0.50, market: 0.50 },
+    'investment': { client: 0.30, market: 0.70 },
+    'spec-build': { client: 0.10, market: 0.90 },
+  };
+
+  const w = weights[portfolioContext];
+  const combined = (clientScore * w.client) + (marketScore * w.market);
+
+  return {
+    score: Math.round(combined),
+    clientContribution: Math.round(clientScore * w.client),
+    marketContribution: Math.round(marketScore * w.market),
+    status: combined >= 80 ? 'PASS' : combined >= 65 ? 'CAUTION' : 'FAIL',
+  };
+}
+
+// Example:
+// Client Score: 82%, Market Score: 65%, Context: Primary Residence
+// Combined = (82 × 0.60) + (65 × 0.40) = 49.2 + 26.0 = 75.2% → CAUTION
+```
+
+---
+
+## 6. Feature Classification
+
+### 6.1 Overview
+
+Every design feature falls into one of four categories based on its value to the client versus its value to the market. This classification helps advisors guide trade-off discussions.
+
+### 6.2 The Four Categories
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                    FEATURE CLASSIFICATION MATRIX                            │
+│                                                                             │
+│                          HIGH MARKET VALUE                                  │
+│                                 │                                           │
+│         ESSENTIAL               │           DIFFERENTIATING                 │
+│    ─────────────────────        │      ─────────────────────                │
+│    Required by most buyers      │      Premium features that                │
+│    AND serves client well       │      command higher prices                │
+│                                 │                                           │
+│    Action: MUST INCLUDE         │      Action: INCLUDE IF BUDGET            │
+│                                 │               ALLOWS                       │
+│                                 │                                           │
+│    Examples:                    │      Examples:                            │
+│    • Quality construction       │      • Home theater                       │
+│    • Smart home basics          │      • Wine cellar                        │
+│    • Modern kitchen             │      • Pool house                         │
+│    • Primary suite quality      │      • Guest house                        │
+│                                 │                                           │
+│  ───────────────────────────────┼───────────────────────────────────────── │
+│                                 │                                           │
+│         PERSONAL                │              RISKY                        │
+│    ─────────────────────        │      ─────────────────────                │
+│    High value to client,        │      Low value to both OR                 │
+│    limited market appeal        │      actively limits buyers               │
+│                                 │                                           │
+│    Action: INCLUDE WITH         │      Action: AVOID OR                     │
+│            AWARENESS            │              RECONSIDER                   │
+│                                 │                                           │
+│    Examples:                    │      Examples:                            │
+│    • Hobby-specific rooms       │      • Highly unusual style               │
+│    • Religious spaces           │      • Over-personalization               │
+│    • Pet facilities             │      • Excessive scale                    │
+│    • Collection display         │      • Dated design choices               │
+│                                 │                                           │
+│             LOW MARKET VALUE                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.3 Classification Criteria
+
+| Category | Client Value | Market Value | Recommendation |
+|----------|--------------|--------------|----------------|
+| **Essential** | High | High | Must include — validates both scores |
+| **Differentiating** | Medium-High | High | Include if budget allows — commands premium |
+| **Personal** | High | Low | Include with awareness — may limit buyers |
+| **Risky** | Low-Medium | Low-Negative | Avoid or reconsider — hurts resale |
+
+### 6.4 Feature Classification Report Section
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FEATURE CLASSIFICATION ANALYSIS                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ESSENTIAL (Must Include — High Value Both)                         ✓ 8/10 │
+│  ─────────────────────────────────────────                                  │
+│  ✓ Smart Home Infrastructure          ✓ Contemporary Design                │
+│  ✓ Quality Construction               ✓ Privacy/Gating                     │
+│  ✓ Modern Kitchen                     ✓ Indoor-Outdoor Flow                │
+│  ✓ Primary Suite Excellence           ✓ Natural Light Optimization         │
+│  ✗ EV Charging Provisions             ✗ Guest Autonomy Node                │
+│                                                                             │
+│  Gap: Add EV charging (+5 pts) and guest autonomy (+7 pts)                 │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  DIFFERENTIATING (Premium Value-Add)                                ◐ 3/5  │
+│  ─────────────────────────────────────                                      │
+│  ✓ Home Theater                       ✓ Wellness Suite                     │
+│  ✓ Pool + Outdoor Kitchen                                                  │
+│  ◐ Wine Cellar (undersized)           ✗ Screening Room                     │
+│                                                                             │
+│  Opportunity: Expand wine cellar or add dedicated screening                │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  PERSONAL (Client Value, Limited Market)                            ! 2    │
+│  ─────────────────────────────────────────                                  │
+│  ! 2-acre grounds (high maintenance — limits buyer pool)                   │
+│  ! Extensive art display walls (specific taste)                            │
+│                                                                             │
+│  Advisory: These features serve you well but may require marketing         │
+│  to a narrower buyer pool. Consider grounds maintenance plan.              │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  RISKY (Reconsider — May Hurt Resale)                               ⚠ 1    │
+│  ──────────────────────────────────────                                     │
+│  ⚠ Mixed style signals (Contemporary + Mediterranean elements)             │
+│                                                                             │
+│  Warning: Design inconsistency confuses buyers. Recommend                  │
+│  committing to a cohesive contemporary aesthetic throughout.               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Trade-off Analysis
+
+### 7.1 Overview
+
+The Trade-off Analysis visualizes the tension between personal satisfaction and market appeal, helping clients make informed decisions about design choices.
+
+### 7.2 Trade-off Matrix Visualization
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FEATURE TRADE-OFF MATRIX                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  HIGH                                                                       │
+│  MARKET     │                                                               │
+│  VALUE      │    ★ Smart Home        ★ Privacy                              │
+│             │              ★ Quality Construction                           │
+│     80 ─────┼───────────────────────────────────                            │
+│             │         ★ Contemporary                                        │
+│             │              Design          ★ EV Charging                    │
+│             │                                                               │
+│     60 ─────┼──────────────────◆─Home Theater                               │
+│             │                  ◆ Wellness Suite                             │
+│             │                                                               │
+│             │                                                               │
+│     40 ─────┼───────────────────────────────▲ Wine Focus                    │
+│             │                                                               │
+│             │     ⚠ Mixed                    ▲ 2-Acre Grounds               │
+│             │       Style                                                   │
+│     20 ─────┼─────────────────────────────────────────────                  │
+│             │                                                               │
+│  LOW        │                                                               │
+│             └────────┬─────────┬─────────┬─────────┬──────► HIGH            │
+│                     20        40        60        80     PERSONAL           │
+│                                                           VALUE             │
+│                                                                             │
+│  Legend:                                                                    │
+│  ★ = Essential (keep)                                                       │
+│  ◆ = Differentiating (enhance)                                              │
+│  ▲ = Personal (aware of trade-off)                                          │
+│  ⚠ = Risky (reconsider)                                                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.3 Trade-off Recommendations
+
+Based on the matrix position, generate specific recommendations:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  TRADE-OFF RECOMMENDATIONS                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  OPTIMIZE (High Market, Lower Personal)                                     │
+│  ──────────────────────────────────────                                     │
+│  → EV Charging: You rated this low, but 82% of Tech Executive buyers        │
+│    expect it. Consider adding for +10 market points at minimal cost.        │
+│                                                                             │
+│  PRESERVE (High Personal, Lower Market)                                     │
+│  ──────────────────────────────────────                                     │
+│  → 2-Acre Grounds: This serves your lifestyle well but adds maintenance     │
+│    concerns for buyers. Recommendation: Include staff quarters OR           │
+│    create low-maintenance landscape zones. Impact: Removes -5 penalty.      │
+│                                                                             │
+│  RESOLVE (Low Both)                                                         │
+│  ──────────────────                                                         │
+│  → Mixed Style Signals: Current design mixes Contemporary and               │
+│    Mediterranean elements. This confuses both you and buyers.               │
+│    Recommendation: Commit to cohesive Contemporary throughout.              │
+│    Impact: +5 client satisfaction, +5 market appeal.                        │
+│                                                                             │
+│  ENHANCE (Medium Both)                                                      │
+│  ─────────────────────                                                      │
+│  → Wine Cellar: Currently 300 SF / 500 bottles. Expanding to 600+           │
+│    bottles would move this to "Differentiating" quadrant.                   │
+│    Impact: +4 client, +5 market. Cost: ~$45K.                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 8. Buyer Archetype Profiles
+
+### 8.1 Archetype Summary Table
+
+| ID | Name | Key Must Haves | Key Avoids |
+|----|------|----------------|------------|
+| `tech-executive` | Tech Executive | Smart Home, Office, Contemporary | Traditional, HOA |
+| `entertainment` | Entertainment Executive | Screening Room, Privacy, Chef's Kitchen | Minimalist, Small |
+| `finance` | Finance Executive | Library, Traditional, Formal Dining | Modern, Remote |
+| `international` | International Investor | Security, Staff, Guest Suites | Compact, Limited Privacy |
+| `sports-pro` | Sports Professional | Gym 1000+ SF, Recovery Suite | Traditional, Small Gym |
+| `generational` | Generational Wealth | Guest House, Estate, 6+ Bedrooms | Modern, Single Structure |
+| `wellness` | Wellness Pioneer | Spa Suite, Natural Materials | Urban, Artificial |
+| `developer` | Real Estate Developer | Quality Construction, Resale Position | Over-Personalization |
+
+### 8.2 Complete Archetype Profile: Tech Executive
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  TECH EXECUTIVE                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Profile:                                                                   │
+│  Successful technology industry leaders, startup founders, and C-suite      │
+│  executives who value innovation, privacy, and modern design. They          │
+│  prioritize smart home integration and functional spaces over traditional   │
+│  opulence.                                                                  │
+│                                                                             │
+│  Demographics:                                                              │
+│  • Age Range: 35-55                                                         │
+│  • Net Worth: $20M - $200M                                                  │
+│  • Occupation: Tech CEO / Founder / CTO / VP Engineering                    │
+│                                                                             │
+│  Market Share:                                                              │
+│  • Malibu: 28%    • Beverly Hills: 25%    • Hamptons: 20%                  │
+│  • Scottsdale: 25%    • Aspen: 10%    • Greenwich: 10%                     │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MUST HAVES (50 points)                                                     │
+│                                                                             │
+│  │ Requirement                  │ Points │ Match Criteria                  │
+│  ├─────────────────────────────┼────────┼─────────────────────────────────┤
+│  │ Smart Home Infrastructure    │ 10     │ Whole-home automation system   │
+│  │ Dedicated Home Office        │ 10     │ Office with video conferencing │
+│  │ Contemporary/Modern Design   │ 10     │ Taste results in modern family │
+│  │ Privacy from Neighbors       │ 10     │ Gated/setback/screened        │
+│  │ EV Charging + Tech Garage    │ 10     │ EV provisions + tech storage   │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  NICE TO HAVES (35 points)                                                  │
+│                                                                             │
+│  │ Feature                      │ Points │ Match Criteria                  │
+│  ├─────────────────────────────┼────────┼─────────────────────────────────┤
+│  │ Wellness Suite               │ 7      │ Gym + spa/steam/sauna          │
+│  │ Indoor-Outdoor Living        │ 7      │ Living → terrace adjacency     │
+│  │ Guest Autonomy               │ 7      │ Guest suite with private entry │
+│  │ Home Theater                 │ 7      │ Dedicated theater room         │
+│  │ Wine Storage                 │ 7      │ Wine cellar/room               │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  AVOIDS (Penalties)                                                         │
+│                                                                             │
+│  │ Anti-Pattern                 │ Penalty │ Trigger Criteria               │
+│  ├─────────────────────────────┼─────────┼────────────────────────────────┤
+│  │ Traditional/Ornate Styling   │ -15     │ Taste results in traditional  │
+│  │ High-Maintenance Grounds     │ -10     │ >2 acres without staff        │
+│  │ Visible from Street          │ -10     │ High street visibility         │
+│  │ HOA Restrictions             │ -10     │ HOA limits modifications       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 Additional Archetype Profiles (Summary)
+
+#### Entertainment Executive
+- **Must Haves:** Screening Room (≥400 SF), Exceptional Privacy, Chef's Kitchen with Catering, Prestigious Address, Entertainment Terrace (≥800 SF)
+- **Nice to Haves:** Multiple Guest Suites (≥3), Wine Cellar (≥500 bottles), Pool + Pool House, Staff Quarters, Car Gallery (≥4)
+- **Avoids:** Minimalist/Industrial Design (-15), Compact Footprint <10K SF (-10), Limited Parking (-10)
+
+#### Finance Executive
+- **Must Haves:** Traditional/Transitional Design, Library/Study, Formal Dining (≥16 seats), Quality Construction, Proximity to Financial Center
+- **Nice to Haves:** Wine Cellar (≥1000 bottles), Home Office with Conference, Pool, Tennis Court, Guest Wing
+- **Avoids:** Modern/Minimalist Design (-15), Tech-Forward Aesthetic (-10), Remote Location (-10)
+
+#### International Investor
+- **Must Haves:** Security Infrastructure, Staff Quarters (separate entry), Turnkey Condition, Multiple Guest Suites (≥4), Prestigious International Market
+- **Nice to Haves:** Spa/Wellness Suite, Wine Cellar, Car Gallery (≥6), Pool + Pool House, Home Theater
+- **Avoids:** Compact Size <12K SF (-15), Non-Primary Market (-10), Limited Privacy (-10)
+
+#### Sports Professional
+- **Must Haves:** Professional Gym (≥1,000 SF), Recovery Suite (spa/steam/plunge), Privacy, Entertainment/Game Room, Large Property (≥1 acre or court)
+- **Nice to Haves:** Basketball/Sport Court, Lap Pool, Home Theater, Car Gallery (≥4), Guest Suites (≥3)
+- **Avoids:** Small/No Gym <500 SF (-15), Traditional/Formal Design (-10), High-Maintenance Materials (-10)
+
+#### Generational Wealth
+- **Must Haves:** Guest House, Multiple Bedrooms (≥6), Staff Quarters, Traditional/Timeless Design, Estate Property (≥2 acres)
+- **Nice to Haves:** Pool House, Tennis Court, Wine Cellar (≥1000 bottles), Kids' Spaces, Library
+- **Avoids:** Modern/Minimalist Design (-15), Compact Property <1 acre (-10), Single Structure Only (-10)
+
+#### Wellness Pioneer
+- **Must Haves:** Wellness Suite (gym+spa+sauna+steam), Natural/Organic Materials, Indoor-Outdoor Connection, Clean Air/Water Systems, Privacy for Retreat
+- **Nice to Haves:** Lap Pool, Meditation/Yoga Space, Chef's Kitchen (healthy prep), Guest Suite, Gardens
+- **Avoids:** Urban/Dense Location (-15), Limited Outdoor Space <0.5 acre (-10), Artificial Materials (-10)
+
+#### Real Estate Developer
+- **Must Haves:** Quality Construction, Innovative/Notable Design, Resale Positioning, Efficient Layout, Prime Appreciation Location
+- **Nice to Haves:** Smart Home Technology, Flexible/Multi-Purpose Spaces, Strong Indoor-Outdoor, Guest Accommodations (≥2), Pool
+- **Avoids:** Over-Personalization (-15), Poor Circulation score <70 (-10), Dated/Trending-Out Design (-10)
+
+---
+
+## 9. Data Mapping Reference
+
+### 9.1 KYC → BAM Field Mapping
 
 | KYC Field | Path | BAM Use |
 |-----------|------|---------|
 | Budget | `kycData.principal.portfolioContext.budget` | Market positioning |
 | Location | `kycData.principal.portfolioContext.location` | Buyer pool selection |
-| Family Type | `kycData.principal.portfolioContext.familyComposition` | Bedroom/space needs |
+| Family Type | `kycData.principal.portfolioContext.familyComposition` | Client satisfaction |
 | Staff Count | `kycData.principal.operatingModel.staffCount` | Staff quarters need |
 | Privacy Level | `kycData.principal.siteRequirements.privacy` | Privacy matching |
 | Quality Tier | `kycData.principal.portfolioContext.qualityTier` | Construction quality |
-| Acreage | `kycData.principal.siteRequirements.acreage` | Property size |
-| Has Guest House | `kycData.principal.siteRequirements.hasGuestHouse` | Structure count |
-| Has Pool | `kycData.principal.siteRequirements.hasPool` | Amenity matching |
+| Planning Horizon | `kycData.principal.portfolioContext.planningHorizon` | Portfolio context |
+| Entertaining Style | `kycData.principal.lifestyle.entertainingStyle` | Lifestyle alignment |
+| Work Style | `kycData.principal.lifestyle.workStyle` | Office requirements |
 
-#### FYI Fields
+### 9.2 FYI → BAM Field Mapping
 
 | FYI Field | Path | BAM Use |
 |-----------|------|---------|
 | Taste Results | `kycData.principal.designIdentity.tasteResults` | Style matching |
-| Dominant Style | `fyiData.styleProfile.dominant` | Primary style |
+| Dominant Style | `fyiData.styleProfile.dominant` | Primary aesthetic |
 | Spaces Selected | `fyiData.spaces[]` | Space matching |
-| Total SF | `fyiData.totalSquareFootage` | Size tier |
-| Bedroom Count | `fyiData.rooms.bedrooms.count` | Bedroom matching |
-| Has Theater | `fyiData.spaces.includes('theater')` | Feature matching |
-| Has Wine Cellar | `fyiData.spaces.includes('wineCellar')` | Feature matching |
-| Has Gym | `fyiData.spaces.includes('gym')` | Wellness matching |
+| Total SF | `fyiData.totalSquareFootage` | Size alignment |
+| Bedroom Count | `fyiData.rooms.bedrooms.count` | Room matching |
+| Features | `fyiData.features[]` | Feature classification |
 
-#### MVP Fields
+### 9.3 MVP → BAM Field Mapping
 
 | MVP Field | Path | BAM Use |
 |-----------|------|---------|
 | Adjacency Decisions | `mvpData.adjacencies[]` | Flow analysis |
 | Room List | `mvpData.rooms[]` | Space verification |
-| Red Flags | `mvpData.validation.redFlags` | Quality concerns |
 | Module Scores | `mvpData.validation.moduleScores` | Layout quality |
 | Guest Autonomy | `mvpData.features.guestAutonomy` | Independence |
 | Indoor-Outdoor | `mvpData.adjacencies.filter(a => a.outdoor)` | Connection quality |
 
-### 4.3 Client Avatar Structure
-
-```javascript
-const ClientAvatar = {
-  // Identity
-  market: 'Malibu, CA',
-  budget: '$25M - $35M',
-  
-  // Design
-  dominantStyle: 'Contemporary',
-  secondaryStyles: ['Modern', 'Coastal'],
-  totalSqFt: 14500,
-  
-  // Spaces (with SF)
-  spaces: [
-    { name: 'Home Office', sqft: 450, priority: 'Must' },
-    { name: 'Home Theater', sqft: 650, priority: 'Want' },
-    { name: 'Gym', sqft: 800, priority: 'Must' },
-    { name: 'Wine Cellar', sqft: 300, priority: 'Want' },
-    { name: 'Pool House', sqft: 900, priority: 'Want' },
-  ],
-  
-  // Rooms
-  bedrooms: 5,
-  guestSuites: 2,
-  hasGuestHouse: false,
-  
-  // Site
-  acreage: 1.2,
-  hasPool: true,
-  hasTennis: false,
-  privacy: 'High',
-  gated: true,
-  
-  // Features
-  smartHome: true,
-  evCharging: true,
-  staffQuarters: false,
-  securityRoom: false,
-  
-  // Quality
-  qualityTier: 'Ultra-Premium',
-  
-  // MVP Indicators
-  guestAutonomy: 'Partial', // None, Partial, Full
-  indoorOutdoorFlow: 'Strong', // Weak, Moderate, Strong
-  circulationScore: 85,
-};
-```
-
 ---
 
-## 5. Scoring Algorithm
+## 10. Scoring Algorithm
 
-### 5.1 Score Calculation
+### 10.1 Complete BAM Calculation
 
 ```javascript
-function calculateBAMScore(clientAvatar, buyerArchetype) {
-  const results = {
-    mustHaves: { earned: 0, max: 50, items: [] },
-    niceToHaves: { earned: 0, max: 35, items: [] },
-    avoids: { penalty: 0, items: [] },
+function calculateBAMScores(clientData, marketLocation, portfolioContext) {
+  
+  // 1. Calculate Client Satisfaction Score
+  const clientScore = calculateClientSatisfaction(clientData);
+  
+  // 2. Get market buyer pool
+  const buyerPool = MARKET_BUYER_POOLS[marketLocation];
+  
+  // 3. Calculate score for each archetype
+  const archetypeScores = buyerPool.archetypes.map(archetype => {
+    const score = calculateArchetypeScore(archetype, clientData);
+    return {
+      ...archetype,
+      score,
+      weightedContribution: score.percentage * archetype.share,
+    };
+  });
+  
+  // 4. Calculate weighted Market Appeal Score
+  const marketScore = {
+    percentage: Math.round(archetypeScores.reduce(
+      (sum, a) => sum + a.weightedContribution, 0
+    )),
+    archetypeBreakdown: archetypeScores,
   };
   
-  // 1. Score Must Haves (50 points max)
-  buyerArchetype.mustHaves.forEach(requirement => {
-    const match = evaluateMatch(clientAvatar, requirement.matchCriteria);
-    const points = match === 'full' ? requirement.points 
-                 : match === 'partial' ? requirement.points * 0.5 
-                 : 0;
-    
-    results.mustHaves.earned += points;
-    results.mustHaves.items.push({
-      ...requirement,
-      match,
-      pointsEarned: points,
-    });
-  });
-  
-  // 2. Score Nice to Haves (35 points max)
-  buyerArchetype.niceToHaves.forEach(feature => {
-    const match = evaluateMatch(clientAvatar, feature.matchCriteria);
-    const points = match === 'full' ? feature.points 
-                 : match === 'partial' ? feature.points * 0.5 
-                 : 0;
-    
-    results.niceToHaves.earned += points;
-    results.niceToHaves.items.push({
-      ...feature,
-      match,
-      pointsEarned: points,
-    });
-  });
-  
-  // 3. Apply Avoid Penalties
-  buyerArchetype.avoids.forEach(antiPattern => {
-    const hasAntiPattern = evaluateAntiPattern(clientAvatar, antiPattern.matchCriteria);
-    if (hasAntiPattern) {
-      results.avoids.penalty += antiPattern.penalty;
-      results.avoids.items.push({
-        ...antiPattern,
-        triggered: true,
-      });
-    }
-  });
-  
-  // 4. Calculate Final Score
-  const totalEarned = results.mustHaves.earned + results.niceToHaves.earned;
-  const totalPenalty = results.avoids.penalty;
-  const totalMax = results.mustHaves.max + results.niceToHaves.max;
-  
-  const rawScore = totalEarned - totalPenalty;
-  const percentage = Math.max(0, Math.min(100, Math.round((rawScore / totalMax) * 100)));
-  
-  return {
-    archetype: buyerArchetype.name,
-    percentage,
-    status: percentage >= 80 ? 'PASS' : percentage >= 65 ? 'CAUTION' : 'FAIL',
-    breakdown: results,
-    gaps: identifyGaps(results),
-    recommendations: generateRecommendations(results, clientAvatar),
-  };
-}
-```
-
-### 5.2 Match Evaluation
-
-```javascript
-function evaluateMatch(clientAvatar, criteria) {
-  // Example criteria: "fyi.spaces includes gym >= 800 SF"
-  
-  // Parse the criteria
-  const { field, operator, value, threshold } = parseCriteria(criteria);
-  
-  // Get the client's value
-  const clientValue = getNestedValue(clientAvatar, field);
-  
-  // Evaluate
-  switch (operator) {
-    case 'includes':
-      if (!clientValue) return 'none';
-      if (threshold && clientValue.sqft < threshold) return 'partial';
-      return 'full';
-      
-    case 'equals':
-      return clientValue === value ? 'full' : 'none';
-      
-    case 'in':
-      return value.includes(clientValue) ? 'full' : 'none';
-      
-    case '>=':
-      if (clientValue >= value) return 'full';
-      if (clientValue >= value * 0.7) return 'partial';
-      return 'none';
-      
-    default:
-      return 'none';
-  }
-}
-```
-
-### 5.3 Gap Identification
-
-```javascript
-function identifyGaps(results) {
-  const gaps = [];
-  
-  // Find missing Must Haves
-  results.mustHaves.items
-    .filter(item => item.match !== 'full')
-    .forEach(item => {
-      gaps.push({
-        category: 'Must Have',
-        item: item.label,
-        currentStatus: item.match,
-        pointsAvailable: item.points - item.pointsEarned,
-        priority: 'High',
-        suggestion: item.suggestion,
-      });
-    });
-  
-  // Find missing Nice to Haves
-  results.niceToHaves.items
-    .filter(item => item.match !== 'full')
-    .forEach(item => {
-      gaps.push({
-        category: 'Nice to Have',
-        item: item.label,
-        currentStatus: item.match,
-        pointsAvailable: item.points - item.pointsEarned,
-        priority: 'Medium',
-        suggestion: item.suggestion,
-      });
-    });
-  
-  // Add triggered Avoids
-  results.avoids.items
-    .filter(item => item.triggered)
-    .forEach(item => {
-      gaps.push({
-        category: 'Avoid',
-        item: item.label,
-        penaltyApplied: item.penalty,
-        priority: 'High',
-        suggestion: item.remediation,
-      });
-    });
-  
-  // Sort by potential point impact
-  return gaps.sort((a, b) => 
-    (b.pointsAvailable || b.penaltyApplied || 0) - 
-    (a.pointsAvailable || a.penaltyApplied || 0)
+  // 5. Calculate Combined Score
+  const weights = PORTFOLIO_WEIGHTS[portfolioContext];
+  const combinedScore = Math.round(
+    (clientScore.percentage * weights.client) +
+    (marketScore.percentage * weights.market)
   );
-}
-```
-
----
-
-## 6. Gap Analysis & Recommendations
-
-### 6.1 Recommendation Generation
-
-For each gap, generate a specific, actionable recommendation:
-
-```javascript
-const RECOMMENDATION_TEMPLATES = {
-  // Must Haves
-  'Smart Home Infrastructure': {
-    none: 'Add whole-home automation system with centralized control',
-    partial: 'Expand smart home to include lighting, HVAC, and security integration',
-  },
-  'Dedicated Home Office': {
-    none: 'Include dedicated home office with video conferencing capability (min 350 SF)',
-    partial: 'Upgrade office with better acoustics and professional backdrop',
-  },
-  'Privacy from Neighbors': {
-    none: 'Consider gated entry, perimeter landscaping, or setback adjustments',
-    partial: 'Enhance screening with mature plantings or privacy structures',
-  },
   
-  // Avoids
-  'Traditional/Ornate Styling': {
-    remediation: 'Consider transitional design that bridges traditional and contemporary elements',
-  },
-  'High-Maintenance Grounds': {
-    remediation: 'Include estate manager quarters or reduce landscape complexity',
-  },
-};
-```
-
-### 6.2 Path to 80%
-
-Always show the user exactly what changes would achieve a passing score:
-
-```javascript
-function calculatePathTo80(score, gaps) {
-  const pointsNeeded = 80 - score.percentage;
+  // 6. Classify features
+  const featureClassification = classifyAllFeatures(clientData, archetypeScores);
   
-  if (pointsNeeded <= 0) {
-    return { achieved: true, message: 'Score meets threshold' };
-  }
+  // 7. Generate trade-off analysis
+  const tradeOffAnalysis = generateTradeOffAnalysis(
+    featureClassification, clientScore, marketScore
+  );
   
-  // Find the minimum changes to reach 80%
-  const recommendations = [];
-  let pointsAccumulated = 0;
-  
-  // Prioritize: Avoids (remove penalties), then Must Haves, then Nice to Haves
-  const sortedGaps = [...gaps].sort((a, b) => {
-    if (a.category === 'Avoid' && b.category !== 'Avoid') return -1;
-    if (a.category !== 'Avoid' && b.category === 'Avoid') return 1;
-    if (a.category === 'Must Have' && b.category === 'Nice to Have') return -1;
-    if (a.category === 'Nice to Have' && b.category === 'Must Have') return 1;
-    return (b.pointsAvailable || 0) - (a.pointsAvailable || 0);
-  });
-  
-  for (const gap of sortedGaps) {
-    if (pointsAccumulated >= pointsNeeded) break;
-    
-    const points = gap.pointsAvailable || gap.penaltyApplied || 0;
-    recommendations.push({
-      action: gap.suggestion,
-      impact: `+${points} pts`,
-      difficulty: gap.difficulty || 'Moderate',
-    });
-    pointsAccumulated += points;
-  }
+  // 8. Generate gap analysis
+  const gapAnalysis = generateGapAnalysis(archetypeScores);
   
   return {
-    achieved: false,
-    pointsNeeded,
-    recommendations,
-    message: `Add ${recommendations.length} changes to reach 80%`,
+    clientSatisfaction: {
+      score: clientScore.percentage,
+      status: getStatus(clientScore.percentage),
+      breakdown: clientScore.breakdown,
+    },
+    marketAppeal: {
+      score: marketScore.percentage,
+      status: getStatus(marketScore.percentage),
+      archetypes: archetypeScores,
+    },
+    combined: {
+      score: combinedScore,
+      status: getStatus(combinedScore),
+      weights,
+    },
+    portfolioContext,
+    featureClassification,
+    tradeOffAnalysis,
+    gapAnalysis,
   };
 }
 ```
 
 ---
 
-## 7. Report Design
+## 11. Report Design
 
-### 7.1 BAM Report Page Layout
+### 11.1 Full BAM Report Structure
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  N4S ADVISORY                           Assessment Date: January 15, 2026   │
-│  BUYER ALIGNMENT ANALYSIS                      Market: Malibu, CA           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  CLIENT: [Confidential] — Thornwood Estate                                  │
-│  ASSESSOR: N4S Advisory                                                     │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│                    MARKET BUYER POOL - MALIBU                               │
-│                                                                             │
-│    ┌─────────────────────────────────────────────────────────────────┐     │
-│    │  Entertainment (35%)  Tech Executive (28%)  Sports Pro (18%)   │     │
-│    │  ████████████████████  ███████████████       █████████          │     │
-│    └─────────────────────────────────────────────────────────────────┘     │
-│                                                                             │
-│                    TOP 3 BUYER ARCHETYPE ALIGNMENTS                         │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  1. TECH EXECUTIVE                                                  │   │
-│  │                                                                     │   │
-│  │  SCORE: 65%           STATUS: ⚠️ CAUTION          TARGET: 80%      │   │
-│  │  ███████████████████████████░░░░░░░░░░░░                           │   │
-│  │                                                                     │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
-│  │  │ MUST HAVES (35/50)                              70%         │   │   │
-│  │  ├─────────────────────┬────────┬────────┬─────────────────────┤   │   │
-│  │  │ Requirement         │ Status │ Points │ Notes               │   │   │
-│  │  ├─────────────────────┼────────┼────────┼─────────────────────┤   │   │
-│  │  │ Smart Home          │   ✓    │ +10    │ Full automation     │   │   │
-│  │  │ Home Office         │   ✓    │ +10    │ Video ready         │   │   │
-│  │  │ Contemporary Style  │   ◐    │ +5     │ Mixed signals       │   │   │
-│  │  │ Privacy             │   ✓    │ +10    │ Gated, setback      │   │   │
-│  │  │ EV/Tech Garage      │   ✗    │ +0     │ NOT SPECIFIED       │   │   │
-│  │  └─────────────────────┴────────┴────────┴─────────────────────┘   │   │
-│  │                                                                     │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
-│  │  │ NICE TO HAVES (24/35)                           69%         │   │   │
-│  │  ├─────────────────────┬────────┬────────┬─────────────────────┤   │   │
-│  │  │ Feature             │ Status │ Points │ Notes               │   │   │
-│  │  ├─────────────────────┼────────┼────────┼─────────────────────┤   │   │
-│  │  │ Wellness Suite      │   ✓    │ +7     │ Gym + spa           │   │   │
-│  │  │ Indoor-Outdoor      │   ✓    │ +7     │ Great room flow     │   │   │
-│  │  │ Guest Autonomy      │   ✗    │ +0     │ Shared entry        │   │   │
-│  │  │ Home Theater        │   ✓    │ +7     │ Dedicated room      │   │   │
-│  │  │ Wine Storage        │   ◐    │ +3     │ Small cellar        │   │   │
-│  │  └─────────────────────┴────────┴────────┴─────────────────────┘   │   │
-│  │                                                                     │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
-│  │  │ AVOIDS (Penalty: -5)                                        │   │   │
-│  │  ├─────────────────────┬────────┬────────┬─────────────────────┤   │   │
-│  │  │ Anti-Pattern        │ Status │ Penalty│ Notes               │   │   │
-│  │  ├─────────────────────┼────────┼────────┼─────────────────────┤   │   │
-│  │  │ Traditional Style   │   ✗    │ +0     │ OK - Contemporary   │   │   │
-│  │  │ High-Maint Grounds  │   !    │ -5     │ 2-acre grounds      │   │   │
-│  │  │ Street Visible      │   ✗    │ +0     │ OK - Setback        │   │   │
-│  │  │ HOA Restrictions    │   ✗    │ +0     │ OK - None           │   │   │
-│  │  └─────────────────────┴────────┴────────┴─────────────────────┘   │   │
-│  │                                                                     │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
-│  │  │  PATH TO 80%                                   Gap: 15 pts  │   │   │
-│  │  │                                                             │   │   │
-│  │  │  1. Add EV charging provision        +10 pts   ★ Easiest   │   │   │
-│  │  │  2. Create guest autonomy node        +7 pts               │   │   │
-│  │  │  3. Resolve style consistency         +5 pts               │   │   │
-│  │  │  4. Add landscape maintenance plan    +5 pts (removes -5)  │   │   │
-│  │  │                                                             │   │   │
-│  │  └─────────────────────────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  2. ENTERTAINMENT EXECUTIVE                                         │   │
-│  │                                                                     │   │
-│  │  SCORE: 72%           STATUS: ⚠️ CAUTION          TARGET: 80%      │   │
-│  │  █████████████████████████████████░░░░░░░░                         │   │
-│  │                                                                     │   │
-│  │  [Collapsed detail - click to expand]                              │   │
-│  │                                                                     │   │
-│  │  PATH TO 80%: Add screening room (+10), Expand guest wing (+7)     │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  3. SPORTS PROFESSIONAL                                             │   │
-│  │                                                                     │   │
-│  │  SCORE: 60%           STATUS: ❌ FAIL              TARGET: 80%      │   │
-│  │  ████████████████████████░░░░░░░░░░░░░░░░                          │   │
-│  │                                                                     │   │
-│  │  [Collapsed detail - click to expand]                              │   │
-│  │                                                                     │   │
-│  │  PATH TO 80%: Add professional gym (+10), Recovery suite (+10)     │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  SUMMARY & RECOMMENDATIONS                                                  │
-│                                                                             │
-│  Current design achieves MODERATE alignment with the Malibu buyer pool.    │
-│  Primary alignment is with Tech Executives (65%) and Entertainment         │
-│  buyers (72%), which represent 63% of likely purchasers.                   │
-│                                                                             │
-│  Key opportunities to improve marketability:                               │
-│                                                                             │
-│  1. EV INFRASTRUCTURE — Strong signal for Tech buyers, expected by all    │
-│  2. GUEST AUTONOMY — Benefits both Tech and Entertainment profiles        │
-│  3. SCREENING ROOM — High value for Entertainment, differentiator         │
-│  4. GROUNDS MANAGEMENT — Staff quarters or simplified landscape           │
-│                                                                             │
-│  OVERALL MARKET ALIGNMENT: 66% (Weighted by buyer pool share)              │
-│                                                                             │
-│  ██████████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░       │
-│  0%                           66%                                    100%  │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  © 2026 N4S Luxury Residential Advisory                             Page 5 │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+**Page 1: Alignment Summary**
+- Dual score gauges (Client Satisfaction + Market Appeal)
+- Portfolio context and weighting
+- Combined score with status
 
-### 7.2 Visual Elements
+**Page 2: Top Archetype Analysis**
+- Archetype #1 detailed breakdown
+- Must Have / Nice to Have / Avoid tables
+- Path to 80% recommendations
 
-#### Score Bar
+**Page 3: Feature Classification**
+- Essential / Differentiating / Personal / Risky categories
+- Feature-by-feature status
+- Gap identification
 
-```
-PASS (≥80%):    ████████████████████████████████████████████████  85%
-                [Green bar]
+**Page 4: Trade-off Matrix**
+- Visual quadrant chart
+- Optimization recommendations
+- Action items prioritized
 
-CAUTION (65-79): ███████████████████████████████░░░░░░░░░░░░░░░░░  65%
-                 [Amber bar]
-
-FAIL (<65%):    ████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░  55%
-                [Red bar]
-```
-
-#### Status Icons
-
-| Status | Icon | Color |
-|--------|------|-------|
-| Full Match | ✓ | Green |
-| Partial Match | ◐ | Amber |
-| No Match | ✗ | Gray |
-| Triggered Penalty | ! | Red |
-
-#### Market Pool Visualization
-
-```
-Malibu Buyer Pool
-┌────────────────────────────────────────────────────────────────┐
-│ Entertainment ████████████████████ 35%                         │
-│ Tech Executive ██████████████ 28%                              │
-│ Sports Pro ██████████ 18%                                      │
-│ Other ██████████ 19%                                           │
-└────────────────────────────────────────────────────────────────┘
-```
+**Page 5: Summary & Recommendations**
+- Key findings
+- Priority actions
+- Combined score projection after changes
 
 ---
 
-## 8. Data Structures
+## 12. Data Structures
 
-### 8.1 Buyer Archetype Definition
-
-```typescript
-interface BuyerArchetype {
-  id: string;
-  name: string;
-  shortDesc: string;
-  fullDesc: string;
-  
-  demographics: {
-    ageRange: string;
-    netWorth: string;
-    occupation: string;
-  };
-  
-  icon: string; // Lucide icon name
-  
-  // Market distribution (percentage of buyers in each market)
-  marketShare: {
-    [market: string]: number; // e.g., { 'malibu': 0.35, 'aspen': 0.15 }
-  };
-  
-  mustHaves: Requirement[];
-  niceToHaves: Feature[];
-  avoids: AntiPattern[];
-}
-
-interface Requirement {
-  id: string;
-  label: string;
-  points: number; // Max 10 each, total 50
-  matchCriteria: string; // Evaluation expression
-  suggestion: string; // What to add if missing
-}
-
-interface Feature {
-  id: string;
-  label: string;
-  points: number; // Max 7 each, total 35
-  matchCriteria: string;
-  suggestion: string;
-}
-
-interface AntiPattern {
-  id: string;
-  label: string;
-  penalty: number; // Negative value
-  matchCriteria: string;
-  remediation: string; // How to address
-}
-```
-
-### 8.2 BAM Score Result
+### 12.1 Portfolio Weight Configuration
 
 ```typescript
-interface BAMScoreResult {
-  archetype: string;
-  archetypeId: string;
-  
-  percentage: number;
-  status: 'PASS' | 'CAUTION' | 'FAIL';
-  
-  breakdown: {
-    mustHaves: {
-      earned: number;
-      max: number;
-      percentage: number;
-      items: ScoredItem[];
-    };
-    niceToHaves: {
-      earned: number;
-      max: number;
-      percentage: number;
-      items: ScoredItem[];
-    };
-    avoids: {
-      penalty: number;
-      items: TriggeredAntiPattern[];
-    };
-  };
-  
-  gaps: Gap[];
-  
-  pathTo80: {
-    pointsNeeded: number;
-    recommendations: Recommendation[];
-  };
-}
-
-interface ScoredItem {
-  id: string;
-  label: string;
-  match: 'full' | 'partial' | 'none';
-  pointsAvailable: number;
-  pointsEarned: number;
-  notes: string;
-}
-
-interface Gap {
-  category: 'Must Have' | 'Nice to Have' | 'Avoid';
-  item: string;
-  pointsAvailable: number;
-  priority: 'High' | 'Medium' | 'Low';
-  suggestion: string;
-}
-
-interface Recommendation {
-  action: string;
-  impact: string;
-  difficulty: 'Easy' | 'Moderate' | 'Significant';
-}
-```
-
-### 8.3 Market Configuration
-
-```typescript
-const MARKET_BUYER_POOLS: Record<string, BuyerPoolConfig> = {
-  'malibu': {
-    name: 'Malibu, CA',
-    state: 'CA',
-    archetypes: [
-      { id: 'entertainment', share: 0.35 },
-      { id: 'techExecutive', share: 0.28 },
-      { id: 'sportsPro', share: 0.18 },
-      { id: 'international', share: 0.12 },
-      { id: 'other', share: 0.07 },
-    ],
-    priceRange: '$8M - $80M',
-    typicalSize: '8,000 - 18,000 SF',
-  },
-  'greenwich': {
-    name: 'Greenwich, CT',
-    state: 'CT',
-    archetypes: [
-      { id: 'finance', share: 0.40 },
-      { id: 'familyOffice', share: 0.25 },
-      { id: 'generational', share: 0.20 },
-      { id: 'techExecutive', share: 0.10 },
-      { id: 'other', share: 0.05 },
-    ],
-    priceRange: '$5M - $50M',
-    typicalSize: '8,000 - 20,000 SF',
-  },
-  // ... other markets
+const PORTFOLIO_WEIGHTS = {
+  'forever-home': { client: 0.70, market: 0.30 },
+  'primary-residence': { client: 0.60, market: 0.40 },
+  'medium-term': { client: 0.50, market: 0.50 },
+  'investment': { client: 0.30, market: 0.70 },
+  'spec-build': { client: 0.10, market: 0.90 },
 };
 ```
 
 ---
 
-## 9. Implementation Guide
+## 13. Implementation Guide
 
-### 9.1 File Changes Required
+### 13.1 Implementation Phases
 
-| File | Changes |
-|------|---------|
-| `BAMScoring.js` | Replace with new Must Have/Nice to Have/Avoid structure |
-| `BAMComponents.jsx` | Update to show gap analysis report format |
-| `KYMModule.jsx` | Update BAM tab to use new scoring and display |
-| `KYMReportGenerator.js` | Add BAM report page generation |
+**Phase 1: Core Scoring**
+- [ ] Implement `calculateClientSatisfactionScore()`
+- [ ] Implement `calculateMarketAppealScore()` with archetype weighting
+- [ ] Implement `calculateCombinedScore()` with portfolio weights
+- [ ] Add Portfolio Context selector to KYC module
 
-### 9.2 Implementation Steps
+**Phase 2: Feature Analysis**
+- [ ] Implement `classifyFeature()` for all design features
+- [ ] Build Feature Classification report section
+- [ ] Create Trade-off Matrix visualization
 
-1. **Update Archetype Definitions**
-   - Convert current point-based scoring to Must Have/Nice to Have/Avoid
-   - Add market share data for each archetype
-   - Define all match criteria expressions
+**Phase 3: Report Generation**
+- [ ] Design BAM Summary panel
+- [ ] Create Archetype Detail cards
+- [ ] Build Path to 80% recommendations
+- [ ] Add BAM pages to PDF report
 
-2. **Implement New Scoring Engine**
-   - Create `evaluateMatch()` function
-   - Create `identifyGaps()` function
-   - Create `generatePathTo80()` function
-
-3. **Build Client Avatar Extractor**
-   - Map all KYC fields
-   - Map all FYI fields
-   - Map all MVP fields
-
-4. **Design Report Components**
-   - `BAMScoreCard` — Individual archetype score display
-   - `BAMGapTable` — Must Have/Nice to Have/Avoid breakdown
-   - `BAMPathTo80` — Recommendations panel
-   - `BAMMarketPool` — Buyer distribution chart
-   - `BAMSummary` — Overall market alignment
-
-5. **Update PDF Report**
-   - Add BAM page to report generator
-   - Match KYS report visual style
-   - Include gap analysis tables
-
-### 9.3 Testing Checklist
-
-- [ ] Score calculation matches expected results
-- [ ] Gap identification finds all missing items
-- [ ] Path to 80% shows minimum changes needed
-- [ ] Market-specific buyer pools load correctly
-- [ ] Report displays all archetypes ranked by alignment
-- [ ] PDF export includes full BAM analysis
-- [ ] UI collapses/expands archetype details
-- [ ] Status icons render correctly
+**Phase 4: UI Polish**
+- [ ] Dual score gauge visualization
+- [ ] Portfolio context slider
+- [ ] Interactive trade-off matrix
+- [ ] Collapsible archetype details
 
 ---
 
-## Appendix A: Complete Archetype Reference
+## Appendix: Market Buyer Pool Reference
 
-| Archetype | Key Must Haves | Key Avoids |
-|-----------|----------------|------------|
-| Tech Executive | Smart Home, Office, Contemporary | Traditional, HOA Limits |
-| Entertainment | Screening Room, Privacy, Chef's Kitchen | Minimalist, Small |
-| Finance | Library, Traditional, Formal Dining | Modern, Remote |
-| International | Security, Staff, Guest Suites | Compact, Remote |
-| Sports Pro | Gym, Recovery, Entertainment | Traditional, Small Gym |
-| Generational | Guest House, Estate, Multi-Bedroom | Modern, Compact |
-| Wellness | Spa Suite, Natural Materials, Privacy | Urban, Artificial |
-| Developer | Quality Construction, Resale Position | Over-Personalization |
-
----
-
-## Appendix B: Market Pool Quick Reference
-
-| Market | #1 | #2 | #3 |
-|--------|----|----|----| 
-| Malibu | Entertainment 35% | Tech 28% | Sports 18% |
-| Aspen | Generational 30% | Finance 25% | Sports 20% |
-| Greenwich | Finance 40% | Family Office 25% | Generational 20% |
-| Palm Beach | International 35% | Finance 30% | Generational 25% |
-| Beverly Hills | Entertainment 30% | Tech 25% | International 20% |
-| Hamptons | Finance 35% | Entertainment 25% | Tech 20% |
-| Miami Beach | International 40% | Entertainment 25% | Sports 20% |
-| Scottsdale | Sports 30% | Tech 25% | Wellness 20% |
+| Market | Archetype 1 | Archetype 2 | Archetype 3 | Other |
+|--------|-------------|-------------|-------------|-------|
+| Malibu, CA | Entertainment 35% | Tech 28% | Sports 18% | 19% |
+| Beverly Hills, CA | Entertainment 30% | Tech 25% | International 20% | 25% |
+| Aspen, CO | Generational 30% | Finance 25% | Sports 20% | 25% |
+| Greenwich, CT | Finance 40% | Family Office 25% | Generational 20% | 15% |
+| Palm Beach, FL | International 35% | Finance 30% | Generational 25% | 10% |
+| Miami Beach, FL | International 40% | Entertainment 25% | Sports 20% | 15% |
+| Hamptons, NY | Finance 35% | Entertainment 25% | Tech 20% | 20% |
+| Scottsdale, AZ | Sports 30% | Tech 25% | Wellness 20% | 25% |
+| Montecito, CA | Entertainment 30% | Generational 25% | Wellness 20% | 25% |
+| Jackson Hole, WY | Generational 35% | Tech 25% | Wellness 20% | 20% |
 
 ---
 
-*End of BAM Methodology Specification*
+*End of BAM Methodology Specification v3.0*
