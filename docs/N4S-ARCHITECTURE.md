@@ -1,8 +1,8 @@
 # N4S Architecture Reference
 
 > **Purpose**: Persistent technical reference for Claude across all N4S development sessions.  
-> **Last Updated**: 2026-01-03  
-> **Current Phase**: Mansion Program Validation (85% Complete)
+> **Last Updated**: 2026-01-13  
+> **Current Phase**: Module Integration & Market Intelligence
 
 ---
 
@@ -10,13 +10,23 @@
 
 **N4S (Not4Sale)** is a luxury residential advisory platform for ultra-high-net-worth families and family offices. The platform provides:
 
-1. **Taste Exploration** — Visual preference assessment (110 quads, 440 images) ✅ COMPLETE
-2. **KYC Module** — Know Your Client intake ✅ COMPLETE (kyc-integration.ts)
-3. **MVP Module** — Mansion Validation Program ✅ CORE COMPLETE
-4. **Partner Alignment** — Couples preference analysis
+| # | Module | Description | Status |
+|---|--------|-------------|--------|
+| 1 | **KYC** | Know Your Client — Client intake questionnaire | ✅ COMPLETE |
+| 2 | **FYI** | Find Your Inspiration — Taste Exploration (110 quads) | ✅ COMPLETE |
+| 3 | **MVP** | Mansion Validation Program — Space planning | ✅ CORE COMPLETE |
+| 4 | **KYM** | Know Your Market — Market intelligence & land acquisition | ✅ COMPLETE |
+| 5 | **KYS** | Know Your Site — Site assessment & scoring | ✅ COMPLETE |
+| 6 | **VMX** | Vision Matrix — Partner alignment analysis | 🔄 PLANNED |
 
 **Target Properties**: 10,000–20,000 SF luxury residences  
 **Deployment**: IONOS (React frontend, PHP backend tier planned, PostgreSQL)
+
+**Documentation**: See individual module specs in `/docs/`:
+- `KYC-REVISION-TRACKER.md` — KYC schema and revisions
+- `FYI-REVISION-ARCHITECTURE.md` — FYI module architecture
+- `KYM-SPECIFICATION.md` — KYM module (market, land, BAM)
+- `KYS-SPECIFICATION.md` — KYS site assessment
 
 ---
 
