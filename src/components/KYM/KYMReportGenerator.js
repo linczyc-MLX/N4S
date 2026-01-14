@@ -525,8 +525,8 @@ export const generateKYMReport = async (data) => {
   // ==========================================================================
 
   if (bamResults) {
-    const clientScore = bamResults.clientSatisfaction?.score || 0;
-    const marketScore = bamResults.marketAppeal?.score || 0;
+    const clientScore = bamResults.clientSatisfaction?.percentage || 0;
+    const marketScore = bamResults.marketAppeal?.percentage || 0;
     const combinedScore = bamResults.combined?.score || 0;
 
     const clientStatus = getScoreStatus(clientScore);
@@ -897,8 +897,8 @@ export const generateKYMReport = async (data) => {
     // ==========================================================================
 
     if (bamResults) {
-      const clientScore = bamResults.clientSatisfaction?.score || 0;
-      const marketScore = bamResults.marketAppeal?.score || 0;
+      const clientScore = bamResults.clientSatisfaction?.percentage || 0;
+      const marketScore = bamResults.marketAppeal?.percentage || 0;
       const combinedScore = bamResults.combined?.score || 0;
 
       // Dual Score Bars
@@ -958,27 +958,27 @@ export const generateKYMReport = async (data) => {
       const categoryWidth = contentWidth - 20;
 
       // Spatial Requirements (XX/25)
-      const spatialScore = clientBreakdown.spatial?.score || 0;
+      const spatialScore = clientBreakdown.spatial || 0;
       currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Spatial Requirements', spatialScore, 25);
       currentY += 3;
 
       // Lifestyle Alignment (XX/25)
-      const lifestyleScore = clientBreakdown.lifestyle?.score || 0;
+      const lifestyleScore = clientBreakdown.lifestyle || 0;
       currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Lifestyle Alignment', lifestyleScore, 25);
       currentY += 3;
 
       // Design Aesthetic (XX/20)
-      const designScore = clientBreakdown.design?.score || 0;
+      const designScore = clientBreakdown.design || 0;
       currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Design Aesthetic', designScore, 20);
       currentY += 3;
 
       // Location Context (XX/15)
-      const locationScore = clientBreakdown.location?.score || 0;
+      const locationScore = clientBreakdown.location || 0;
       currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Location Context', locationScore, 15);
       currentY += 3;
 
       // Future-Proofing (XX/15)
-      const futureScore = clientBreakdown.future?.score || 0;
+      const futureScore = clientBreakdown.futureProofing || 0;
       currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Future-Proofing', futureScore, 15);
       currentY += 15;
 
@@ -1025,20 +1025,26 @@ export const generateKYMReport = async (data) => {
         currentY += 20;
 
         // Must Have / Nice to Have / Avoid Tables
-        if (archetype.mustHaves?.length > 0 || archetype.niceToHaves?.length > 0 || archetype.avoids?.length > 0) {
+        // Data comes from score.breakdown, not the raw persona definitions
+        const breakdown = archetype.score?.breakdown || {};
+        const mustHaveItems = breakdown.mustHaves?.items || [];
+        const niceToHaveItems = breakdown.niceToHaves?.items || [];
+        const avoidItems = breakdown.avoids?.items || [];
+
+        if (mustHaveItems.length > 0 || niceToHaveItems.length > 0 || avoidItems.length > 0) {
 
           // Must Haves Table
-          if (archetype.mustHaves?.length > 0) {
+          if (mustHaveItems.length > 0) {
             doc.setFont(FONTS.body, 'bold');
             doc.setFontSize(9);
             doc.setTextColor(...COLORS.text);
             doc.text('MUST HAVES (50 points)', margin, currentY);
             currentY += 4;
 
-            const mustHaveData = archetype.mustHaves.slice(0, 5).map(item => [
-              getMatchSymbol(item.status),
-              item.requirement || item.name,
-              item.status === 'full' ? `+${item.points || 10}` : item.status === 'partial' ? `+${Math.round((item.points || 10) / 2)}` : '0',
+            const mustHaveData = mustHaveItems.slice(0, 5).map(item => [
+              getMatchSymbol(item.match),
+              item.label || item.requirement || item.name || '-',
+              item.match === 'full' ? `+${item.pointsEarned || item.points || 10}` : item.match === 'partial' ? `+${item.pointsEarned || Math.round((item.points || 10) / 2)}` : '0',
             ]);
 
             autoTable(doc, {
@@ -1060,17 +1066,17 @@ export const generateKYMReport = async (data) => {
           }
 
           // Nice to Haves Table
-          if (archetype.niceToHaves?.length > 0) {
+          if (niceToHaveItems.length > 0) {
             doc.setFont(FONTS.body, 'bold');
             doc.setFontSize(9);
             doc.setTextColor(...COLORS.text);
             doc.text('NICE TO HAVES (35 points)', margin, currentY);
             currentY += 4;
 
-            const niceToHaveData = archetype.niceToHaves.slice(0, 5).map(item => [
-              getMatchSymbol(item.status),
-              item.feature || item.name,
-              item.status === 'full' ? `+${item.points || 7}` : item.status === 'partial' ? `+${Math.round((item.points || 7) / 2)}` : '0',
+            const niceToHaveData = niceToHaveItems.slice(0, 5).map(item => [
+              getMatchSymbol(item.match),
+              item.label || item.feature || item.name || '-',
+              item.match === 'full' ? `+${item.pointsEarned || item.points || 7}` : item.match === 'partial' ? `+${item.pointsEarned || Math.round((item.points || 7) / 2)}` : '0',
             ]);
 
             autoTable(doc, {
@@ -1092,8 +1098,8 @@ export const generateKYMReport = async (data) => {
           }
 
           // Avoids Table (Penalties)
-          if (archetype.avoids?.length > 0) {
-            const triggeredAvoids = archetype.avoids.filter(a => a.triggered || a.status === 'penalty');
+          if (avoidItems.length > 0) {
+            const triggeredAvoids = avoidItems.filter(a => a.triggered);
             if (triggeredAvoids.length > 0) {
               doc.setFont(FONTS.body, 'bold');
               doc.setFontSize(9);
