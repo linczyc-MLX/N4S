@@ -1,8 +1,12 @@
 /**
  * KYMReportGenerator.js
- * 
+ *
  * Generates Market Intelligence PDF reports following N4S brand standards.
  * Uses jspdf for PDF generation with consistent styling.
+ *
+ * Updated for BAM v3.0 Dual Scoring System
+ * - Client Satisfaction Score (does design serve client needs?)
+ * - Market Appeal Score (will design appeal to buyers?)
  */
 
 import jsPDF from 'jspdf';
@@ -20,9 +24,9 @@ const COLORS = {
   background: [250, 250, 248], // #fafaf8
   border: [229, 229, 224],   // #e5e5e0
   accentLight: [245, 240, 232], // #f5f0e8
-  success: [46, 125, 50],    // #2e7d32
-  warning: [245, 124, 0],    // #f57c00
-  error: [211, 47, 47],      // #d32f2f
+  success: [46, 125, 50],    // #2e7d32 - PASS
+  warning: [245, 124, 0],    // #f57c00 - CAUTION
+  error: [211, 47, 47],      // #d32f2f - FAIL
   white: [255, 255, 255],
 };
 
@@ -31,6 +35,18 @@ const FONTS = {
   // For production, would register Inter and Playfair Display
   heading: 'helvetica',
   body: 'helvetica',
+};
+
+// =============================================================================
+// PORTFOLIO CONTEXT WEIGHTS
+// =============================================================================
+
+const PORTFOLIO_WEIGHTS = {
+  'forever-home': { client: 0.70, market: 0.30, label: 'Forever Home (15+ years)' },
+  'primary-residence': { client: 0.60, market: 0.40, label: 'Primary Residence (10-15 years)' },
+  'medium-term': { client: 0.50, market: 0.50, label: 'Medium-Term (5-10 years)' },
+  'investment': { client: 0.30, market: 0.70, label: 'Investment Property (<5 years)' },
+  'spec-build': { client: 0.10, market: 0.90, label: 'Spec Development (Build to Sell)' },
 };
 
 // =============================================================================
@@ -66,11 +82,184 @@ const formatDate = (date) => {
 };
 
 // =============================================================================
+// BAM v3.0 HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Returns RGB color array based on status
+ * @param {string} status - 'PASS', 'CAUTION', or 'FAIL'
+ * @returns {number[]} RGB array
+ */
+const getStatusColor = (status) => {
+  switch (status?.toUpperCase()) {
+    case 'PASS':
+      return COLORS.success;
+    case 'CAUTION':
+      return COLORS.warning;
+    case 'FAIL':
+      return COLORS.error;
+    default:
+      return COLORS.textMuted;
+  }
+};
+
+/**
+ * Returns the status based on score percentage
+ * @param {number} score - Score percentage (0-100)
+ * @returns {string} Status string
+ */
+const getScoreStatus = (score) => {
+  if (score >= 80) return 'PASS';
+  if (score >= 65) return 'CAUTION';
+  return 'FAIL';
+};
+
+/**
+ * Returns formatted label with weights for portfolio context
+ * @param {string} context - Portfolio context key
+ * @returns {object} Object with label, clientWeight, marketWeight
+ */
+const getPortfolioContextLabel = (context) => {
+  const config = PORTFOLIO_WEIGHTS[context] || PORTFOLIO_WEIGHTS['primary-residence'];
+  return {
+    label: config.label,
+    clientWeight: Math.round(config.client * 100),
+    marketWeight: Math.round(config.market * 100),
+  };
+};
+
+/**
+ * Draws a horizontal score bar with label
+ * @param {jsPDF} doc - PDF document instance
+ * @param {number} x - X position
+ * @param {number} y - Y position
+ * @param {number} width - Bar width
+ * @param {string} label - Label text
+ * @param {number} score - Current score
+ * @param {number} max - Maximum score
+ * @returns {number} Height consumed by this element
+ */
+const drawScoreBar = (doc, x, y, width, label, score, max) => {
+  const barHeight = 6;
+  const labelHeight = 10;
+  const fillPercent = Math.min(score / max, 1);
+
+  // Draw label
+  doc.setFont(FONTS.body, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.text);
+  doc.text(label, x, y);
+
+  // Draw score text right-aligned
+  doc.setFont(FONTS.body, 'bold');
+  doc.text(`${score}/${max}`, x + width, y, { align: 'right' });
+
+  // Draw track background
+  doc.setFillColor(...COLORS.border);
+  doc.roundedRect(x, y + 3, width, barHeight, 2, 2, 'F');
+
+  // Draw filled portion
+  const fillWidth = width * fillPercent;
+  if (fillWidth > 0) {
+    // Color based on percentage
+    const percent = (score / max) * 100;
+    const color = percent >= 80 ? COLORS.success : percent >= 65 ? COLORS.warning : COLORS.error;
+    doc.setFillColor(...color);
+    doc.roundedRect(x, y + 3, fillWidth, barHeight, 2, 2, 'F');
+  }
+
+  return labelHeight + barHeight;
+};
+
+/**
+ * Draws a circular gauge for score display
+ * @param {jsPDF} doc - PDF document
+ * @param {number} x - Center X
+ * @param {number} y - Center Y
+ * @param {number} radius - Circle radius
+ * @param {number} score - Score percentage
+ * @param {string} label - Label below gauge
+ */
+const drawScoreGauge = (doc, x, y, radius, score, label) => {
+  const status = getScoreStatus(score);
+  const color = getStatusColor(status);
+
+  // Draw outer circle (track)
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(3);
+  doc.circle(x, y, radius, 'S');
+
+  // Draw filled arc (simplified as colored circle for PDF)
+  doc.setDrawColor(...color);
+  doc.setLineWidth(3);
+  // Draw partial arc based on score (approximated)
+  const endAngle = (score / 100) * 360 - 90;
+  // For simplicity, draw full colored border if high score
+  if (score > 0) {
+    doc.setFillColor(...COLORS.white);
+    doc.circle(x, y, radius - 2, 'F');
+  }
+
+  // Draw score text in center
+  doc.setFont(FONTS.heading, 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...color);
+  doc.text(`${score}%`, x, y + 2, { align: 'center' });
+
+  // Draw status below
+  doc.setFont(FONTS.body, 'bold');
+  doc.setFontSize(8);
+  doc.text(status, x, y + radius + 5, { align: 'center' });
+
+  // Draw label
+  doc.setFont(FONTS.body, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.text);
+  doc.text(label, x, y + radius + 12, { align: 'center' });
+};
+
+/**
+ * Gets the match status symbol
+ * @param {string} status - 'full', 'partial', 'none', 'penalty'
+ * @returns {string} Symbol character
+ */
+const getMatchSymbol = (status) => {
+  switch (status?.toLowerCase()) {
+    case 'full':
+      return '✓';
+    case 'partial':
+      return '◐';
+    case 'none':
+      return '✗';
+    case 'penalty':
+      return '!';
+    default:
+      return '-';
+  }
+};
+
+// =============================================================================
 // PDF GENERATION
 // =============================================================================
 
 /**
  * Generate KYM Market Intelligence Report
+ *
+ * BAM v3.0 Dual Scoring System:
+ * - Client Satisfaction: Does this design serve the client's needs?
+ * - Market Appeal: Will this design appeal to buyers when it's time to sell?
+ *
+ * @param {object} data - Report data
+ * @param {object} data.kycData - Client profile and preferences
+ * @param {object} data.locationData - Location information
+ * @param {object} data.marketData - Market statistics
+ * @param {array} data.properties - Comparable properties
+ * @param {object} data.demographics - Demographic data
+ * @param {array} data.personaResults - Legacy persona results (deprecated)
+ * @param {object} data.fyiData - Space programming data
+ * @param {object} data.mvpData - Adjacency and layout data
+ * @param {object} data.bamResults - BAM v3.0 dual scoring results
+ * @param {string} data.portfolioContext - Portfolio context for weighting
  */
 export const generateKYMReport = async (data) => {
   const {
@@ -82,6 +271,8 @@ export const generateKYMReport = async (data) => {
     personaResults,
     fyiData,
     mvpData,
+    bamResults,
+    portfolioContext = 'primary-residence',
   } = data;
 
   const doc = new jsPDF({
@@ -329,8 +520,130 @@ export const generateKYMReport = async (data) => {
 
   currentY = doc.lastAutoTable.finalY + 15;
 
-  // Top Buyer Personas
-  if (personaResults && personaResults.length > 0) {
+  // ==========================================================================
+  // BAM SUMMARY BOX (BAM v3.0)
+  // ==========================================================================
+
+  if (bamResults) {
+    const clientScore = bamResults.clientSatisfaction?.score || 0;
+    const marketScore = bamResults.marketAppeal?.score || 0;
+    const combinedScore = bamResults.combined?.score || 0;
+
+    const clientStatus = getScoreStatus(clientScore);
+    const marketStatus = getScoreStatus(marketScore);
+    const combinedStatus = getScoreStatus(combinedScore);
+
+    const portfolioInfo = getPortfolioContextLabel(portfolioContext);
+
+    // BAM Summary Box background
+    doc.setFillColor(...COLORS.accentLight);
+    doc.roundedRect(margin, currentY, contentWidth, 55, 3, 3, 'F');
+
+    // Title
+    doc.setFont(FONTS.body, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.navy);
+    doc.text('BAM Alignment Summary', margin + 5, currentY + 8);
+
+    // Three score columns
+    const colWidth = (contentWidth - 20) / 3;
+    const scoreY = currentY + 20;
+
+    // Client Satisfaction Score
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Client Satisfaction', margin + 5 + colWidth / 2, scoreY, { align: 'center' });
+
+    doc.setFont(FONTS.heading, 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(...getStatusColor(clientStatus));
+    doc.text(`${clientScore}%`, margin + 5 + colWidth / 2, scoreY + 10, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.text(clientStatus, margin + 5 + colWidth / 2, scoreY + 17, { align: 'center' });
+
+    // Market Appeal Score
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Market Appeal', margin + 5 + colWidth * 1.5, scoreY, { align: 'center' });
+
+    doc.setFont(FONTS.heading, 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(...getStatusColor(marketStatus));
+    doc.text(`${marketScore}%`, margin + 5 + colWidth * 1.5, scoreY + 10, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.text(marketStatus, margin + 5 + colWidth * 1.5, scoreY + 17, { align: 'center' });
+
+    // Combined Score
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Combined Score', margin + 5 + colWidth * 2.5, scoreY, { align: 'center' });
+
+    doc.setFont(FONTS.heading, 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(...getStatusColor(combinedStatus));
+    doc.text(`${combinedScore}%`, margin + 5 + colWidth * 2.5, scoreY + 10, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.text(combinedStatus, margin + 5 + colWidth * 2.5, scoreY + 17, { align: 'center' });
+
+    // Portfolio Context line
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(
+      `Portfolio: ${portfolioInfo.label} • Weighting: ${portfolioInfo.clientWeight}% Client / ${portfolioInfo.marketWeight}% Market`,
+      margin + 5,
+      currentY + 50
+    );
+
+    currentY += 65;
+  }
+
+  // Top Buyer Archetypes (BAM v3.0) or Legacy Personas
+  if (bamResults?.marketAppeal?.archetypes?.length > 0) {
+    doc.setFont(FONTS.body, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.text);
+    doc.text('Top Buyer Archetypes', margin, currentY);
+    currentY += 5;
+
+    const topArchetypes = bamResults.marketAppeal.archetypes.slice(0, 3).map((a, i) => [
+      `${i + 1}. ${a.name}`,
+      `${a.score?.percentage || a.score || 0}%`,
+      `${Math.round(a.share * 100)}% share`,
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Archetype', 'Match', 'Market Share']],
+      body: topArchetypes,
+      theme: 'striped',
+      headStyles: {
+        fillColor: COLORS.navy,
+        textColor: COLORS.white,
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+      },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { halign: 'center', cellWidth: 30 },
+        2: { halign: 'center' },
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    currentY = doc.lastAutoTable.finalY + 15;
+  } else if (personaResults && personaResults.length > 0) {
+    // Legacy persona support
     doc.setFont(FONTS.body, 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...COLORS.text);
@@ -556,10 +869,10 @@ export const generateKYMReport = async (data) => {
   }
 
   // ==========================================================================
-  // BUYER ALIGNMENT ANALYSIS (BAM)
+  // BUYER ALIGNMENT ANALYSIS (BAM v3.0 - Dual Scoring System)
   // ==========================================================================
 
-  if (personaResults && personaResults.length > 0) {
+  if (bamResults || (personaResults && personaResults.length > 0)) {
     currentY = addNewPage();
 
     doc.setFont(FONTS.heading, 'bold');
@@ -572,139 +885,473 @@ export const generateKYMReport = async (data) => {
     doc.setFont(FONTS.body, 'italic');
     doc.setFontSize(9);
     doc.setTextColor(...COLORS.textMuted);
-    const methodNote = 'Analysis based on design decisions captured in KYC, FYI, and MVP modules. Scores reflect alignment between the planned property program and typical buyer persona preferences.';
+    const methodNote = bamResults
+      ? 'BAM v3.0 Dual Scoring: Client Satisfaction measures how well this design serves YOUR needs. Market Appeal measures how well it will appeal to BUYERS when you sell.'
+      : 'Analysis based on design decisions captured in KYC, FYI, and MVP modules. Scores reflect alignment between the planned property program and typical buyer persona preferences.';
     const splitMethod = doc.splitTextToSize(methodNote, contentWidth);
     doc.text(splitMethod, margin, currentY);
     currentY += splitMethod.length * 4 + 10;
 
-    // Top 3 Personas - Detailed
-    const topThree = personaResults.slice(0, 3);
-    
-    for (let i = 0; i < topThree.length; i++) {
-      const persona = topThree[i];
-      
-      currentY = checkPageBreak(70);
-      
-      // Persona header
-      doc.setFillColor(...COLORS.accentLight);
-      doc.roundedRect(margin, currentY, contentWidth, 12, 2, 2, 'F');
-      
+    // ==========================================================================
+    // BAM v3.0 DUAL SCORE DISPLAY
+    // ==========================================================================
+
+    if (bamResults) {
+      const clientScore = bamResults.clientSatisfaction?.score || 0;
+      const marketScore = bamResults.marketAppeal?.score || 0;
+      const combinedScore = bamResults.combined?.score || 0;
+
+      // Dual Score Bars
+      const barWidth = (contentWidth - 20) / 2;
+
+      // Client Satisfaction Score Bar
       doc.setFont(FONTS.body, 'bold');
-      doc.setFontSize(12);
+      doc.setFontSize(11);
+      doc.setTextColor(...COLORS.text);
+      doc.text('Client Satisfaction', margin, currentY);
+
+      const clientStatus = getScoreStatus(clientScore);
+      doc.setTextColor(...getStatusColor(clientStatus));
+      doc.text(`${clientScore}% - ${clientStatus}`, margin + barWidth - 5, currentY, { align: 'right' });
+      currentY += 5;
+
+      // Draw client score bar
+      doc.setFillColor(...COLORS.border);
+      doc.roundedRect(margin, currentY, barWidth - 10, 8, 2, 2, 'F');
+      if (clientScore > 0) {
+        doc.setFillColor(...getStatusColor(clientStatus));
+        doc.roundedRect(margin, currentY, (barWidth - 10) * (clientScore / 100), 8, 2, 2, 'F');
+      }
+      currentY += 12;
+
+      // Market Appeal Score Bar
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...COLORS.text);
+      doc.text('Market Appeal', margin, currentY);
+
+      const marketStatus = getScoreStatus(marketScore);
+      doc.setTextColor(...getStatusColor(marketStatus));
+      doc.text(`${marketScore}% - ${marketStatus}`, margin + barWidth - 5, currentY, { align: 'right' });
+      currentY += 5;
+
+      // Draw market score bar
+      doc.setFillColor(...COLORS.border);
+      doc.roundedRect(margin, currentY, barWidth - 10, 8, 2, 2, 'F');
+      if (marketScore > 0) {
+        doc.setFillColor(...getStatusColor(marketStatus));
+        doc.roundedRect(margin, currentY, (barWidth - 10) * (marketScore / 100), 8, 2, 2, 'F');
+      }
+      currentY += 15;
+
+      // ==========================================================================
+      // CLIENT SATISFACTION BREAKDOWN (5 Categories)
+      // ==========================================================================
+
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(11);
       doc.setTextColor(...COLORS.navy);
-      doc.text(`${i + 1}. ${persona.name}`, margin + 5, currentY + 8);
-      
-      // Score badge
-      const scoreColor = persona.scoring.matchLevel === 'Strong' ? COLORS.success 
-        : persona.scoring.matchLevel === 'Moderate' ? COLORS.warning 
-        : COLORS.textMuted;
-      doc.setTextColor(...scoreColor);
-      doc.text(`${persona.scoring.score}% - ${persona.scoring.matchLevel} Match`, pageWidth - margin - 5, currentY + 8, { align: 'right' });
-      
-      currentY += 18;
-      
-      // Description
-      doc.setFont(FONTS.body, 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(...COLORS.text);
-      const descSplit = doc.splitTextToSize(persona.fullDesc || persona.shortDesc, contentWidth);
-      doc.text(descSplit, margin, currentY);
-      currentY += descSplit.length * 4 + 5;
-      
-      // Demographics
-      doc.setFont(FONTS.body, 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(...COLORS.textMuted);
-      doc.text('TYPICAL DEMOGRAPHICS', margin, currentY);
-      currentY += 4;
-      
-      doc.setFont(FONTS.body, 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(...COLORS.text);
-      doc.text(`Age: ${persona.demographics?.ageRange || 'N/A'}  |  Net Worth: ${persona.demographics?.netWorth || 'N/A'}`, margin, currentY);
+      doc.text('Client Satisfaction Breakdown', margin, currentY);
       currentY += 8;
 
-      // Alignment Factors
-      if (persona.scoring.positiveFactors?.length > 0) {
-        doc.setFont(FONTS.body, 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(...COLORS.success);
-        doc.text('ALIGNMENT FACTORS', margin, currentY);
-        currentY += 4;
-        
-        doc.setFont(FONTS.body, 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...COLORS.text);
-        
-        persona.scoring.positiveFactors.slice(0, 4).forEach(factor => {
-          doc.text(`✓ ${factor.factor} (+${factor.impact})`, margin + 3, currentY);
-          currentY += 4;
-        });
-        currentY += 3;
-      }
+      const clientBreakdown = bamResults.clientSatisfaction?.breakdown || {};
+      const categoryWidth = contentWidth - 20;
 
-      // Potential Concerns
-      if (persona.scoring.negativeFactors?.length > 0) {
-        doc.setFont(FONTS.body, 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(...COLORS.warning);
-        doc.text('POTENTIAL CONCERNS', margin, currentY);
-        currentY += 4;
-        
-        doc.setFont(FONTS.body, 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...COLORS.text);
-        
-        persona.scoring.negativeFactors.slice(0, 3).forEach(factor => {
-          doc.text(`⚠ ${factor.factor} (${factor.impact})`, margin + 3, currentY);
-          currentY += 4;
-        });
-        currentY += 3;
-      }
+      // Spatial Requirements (XX/25)
+      const spatialScore = clientBreakdown.spatial?.score || 0;
+      currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Spatial Requirements', spatialScore, 25);
+      currentY += 3;
 
+      // Lifestyle Alignment (XX/25)
+      const lifestyleScore = clientBreakdown.lifestyle?.score || 0;
+      currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Lifestyle Alignment', lifestyleScore, 25);
+      currentY += 3;
+
+      // Design Aesthetic (XX/20)
+      const designScore = clientBreakdown.design?.score || 0;
+      currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Design Aesthetic', designScore, 20);
+      currentY += 3;
+
+      // Location Context (XX/15)
+      const locationScore = clientBreakdown.location?.score || 0;
+      currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Location Context', locationScore, 15);
+      currentY += 3;
+
+      // Future-Proofing (XX/15)
+      const futureScore = clientBreakdown.future?.score || 0;
+      currentY += drawScoreBar(doc, margin, currentY, categoryWidth, 'Future-Proofing', futureScore, 15);
+      currentY += 15;
+
+      // ==========================================================================
+      // MARKET APPEAL - TOP 3 ARCHETYPES
+      // ==========================================================================
+
+      currentY = checkPageBreak(120);
+
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...COLORS.navy);
+      doc.text('Market Appeal - Buyer Archetype Analysis', margin, currentY);
       currentY += 10;
+
+      const archetypes = bamResults.marketAppeal?.archetypes || [];
+      const topArchetypes = archetypes.slice(0, 3);
+
+      for (let i = 0; i < topArchetypes.length; i++) {
+        const archetype = topArchetypes[i];
+
+        currentY = checkPageBreak(80);
+
+        // Archetype header
+        doc.setFillColor(...COLORS.accentLight);
+        doc.roundedRect(margin, currentY, contentWidth, 14, 2, 2, 'F');
+
+        doc.setFont(FONTS.body, 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...COLORS.navy);
+        doc.text(`${i + 1}. ${archetype.name}`, margin + 5, currentY + 9);
+
+        // Score and market share
+        const archetypeScore = archetype.score?.percentage || archetype.score || 0;
+        const archetypeStatus = getScoreStatus(archetypeScore);
+        doc.setTextColor(...getStatusColor(archetypeStatus));
+        doc.text(
+          `${archetypeScore}% Match | ${Math.round((archetype.share || 0) * 100)}% Market Share`,
+          pageWidth - margin - 5,
+          currentY + 9,
+          { align: 'right' }
+        );
+
+        currentY += 20;
+
+        // Must Have / Nice to Have / Avoid Tables
+        if (archetype.mustHaves?.length > 0 || archetype.niceToHaves?.length > 0 || archetype.avoids?.length > 0) {
+
+          // Must Haves Table
+          if (archetype.mustHaves?.length > 0) {
+            doc.setFont(FONTS.body, 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(...COLORS.text);
+            doc.text('MUST HAVES (50 points)', margin, currentY);
+            currentY += 4;
+
+            const mustHaveData = archetype.mustHaves.slice(0, 5).map(item => [
+              getMatchSymbol(item.status),
+              item.requirement || item.name,
+              item.status === 'full' ? `+${item.points || 10}` : item.status === 'partial' ? `+${Math.round((item.points || 10) / 2)}` : '0',
+            ]);
+
+            autoTable(doc, {
+              startY: currentY,
+              head: [],
+              body: mustHaveData,
+              theme: 'plain',
+              styles: { fontSize: 8, cellPadding: 2 },
+              columnStyles: {
+                0: { cellWidth: 10, halign: 'center' },
+                1: { cellWidth: 90 },
+                2: { cellWidth: 20, halign: 'right' },
+              },
+              margin: { left: margin },
+              tableWidth: contentWidth * 0.7,
+            });
+
+            currentY = doc.lastAutoTable.finalY + 5;
+          }
+
+          // Nice to Haves Table
+          if (archetype.niceToHaves?.length > 0) {
+            doc.setFont(FONTS.body, 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(...COLORS.text);
+            doc.text('NICE TO HAVES (35 points)', margin, currentY);
+            currentY += 4;
+
+            const niceToHaveData = archetype.niceToHaves.slice(0, 5).map(item => [
+              getMatchSymbol(item.status),
+              item.feature || item.name,
+              item.status === 'full' ? `+${item.points || 7}` : item.status === 'partial' ? `+${Math.round((item.points || 7) / 2)}` : '0',
+            ]);
+
+            autoTable(doc, {
+              startY: currentY,
+              head: [],
+              body: niceToHaveData,
+              theme: 'plain',
+              styles: { fontSize: 8, cellPadding: 2 },
+              columnStyles: {
+                0: { cellWidth: 10, halign: 'center' },
+                1: { cellWidth: 90 },
+                2: { cellWidth: 20, halign: 'right' },
+              },
+              margin: { left: margin },
+              tableWidth: contentWidth * 0.7,
+            });
+
+            currentY = doc.lastAutoTable.finalY + 5;
+          }
+
+          // Avoids Table (Penalties)
+          if (archetype.avoids?.length > 0) {
+            const triggeredAvoids = archetype.avoids.filter(a => a.triggered || a.status === 'penalty');
+            if (triggeredAvoids.length > 0) {
+              doc.setFont(FONTS.body, 'bold');
+              doc.setFontSize(9);
+              doc.setTextColor(...COLORS.error);
+              doc.text('PENALTIES', margin, currentY);
+              currentY += 4;
+
+              const avoidData = triggeredAvoids.slice(0, 3).map(item => [
+                '!',
+                item.antiPattern || item.name,
+                `${item.penalty || -10}`,
+              ]);
+
+              autoTable(doc, {
+                startY: currentY,
+                head: [],
+                body: avoidData,
+                theme: 'plain',
+                styles: { fontSize: 8, cellPadding: 2, textColor: COLORS.error },
+                columnStyles: {
+                  0: { cellWidth: 10, halign: 'center' },
+                  1: { cellWidth: 90 },
+                  2: { cellWidth: 20, halign: 'right' },
+                },
+                margin: { left: margin },
+                tableWidth: contentWidth * 0.7,
+              });
+
+              currentY = doc.lastAutoTable.finalY + 5;
+            }
+          }
+        }
+
+        // Path to 80% Recommendations (if below threshold)
+        if (archetypeScore < 80 && archetype.recommendations?.length > 0) {
+          doc.setFont(FONTS.body, 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(...COLORS.gold);
+          doc.text(`PATH TO 80% (+${80 - archetypeScore} points needed)`, margin, currentY);
+          currentY += 4;
+
+          doc.setFont(FONTS.body, 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...COLORS.text);
+
+          archetype.recommendations.slice(0, 3).forEach((rec, idx) => {
+            const recText = `${idx + 1}. ${rec.action || rec} (+${rec.impact || '?'} pts)`;
+            doc.text(recText, margin + 3, currentY);
+            currentY += 4;
+          });
+          currentY += 5;
+        }
+
+        currentY += 8;
+      }
+
+    } else if (personaResults && personaResults.length > 0) {
+      // ==========================================================================
+      // LEGACY PERSONA SUPPORT (for backward compatibility)
+      // ==========================================================================
+
+      const topThree = personaResults.slice(0, 3);
+
+      for (let i = 0; i < topThree.length; i++) {
+        const persona = topThree[i];
+
+        currentY = checkPageBreak(70);
+
+        // Persona header
+        doc.setFillColor(...COLORS.accentLight);
+        doc.roundedRect(margin, currentY, contentWidth, 12, 2, 2, 'F');
+
+        doc.setFont(FONTS.body, 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(...COLORS.navy);
+        doc.text(`${i + 1}. ${persona.name}`, margin + 5, currentY + 8);
+
+        // Score badge
+        const scoreColor = persona.scoring.matchLevel === 'Strong' ? COLORS.success
+          : persona.scoring.matchLevel === 'Moderate' ? COLORS.warning
+          : COLORS.textMuted;
+        doc.setTextColor(...scoreColor);
+        doc.text(`${persona.scoring.score}% - ${persona.scoring.matchLevel} Match`, pageWidth - margin - 5, currentY + 8, { align: 'right' });
+
+        currentY += 18;
+
+        // Description
+        doc.setFont(FONTS.body, 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...COLORS.text);
+        const descSplit = doc.splitTextToSize(persona.fullDesc || persona.shortDesc, contentWidth);
+        doc.text(descSplit, margin, currentY);
+        currentY += descSplit.length * 4 + 5;
+
+        // Demographics
+        doc.setFont(FONTS.body, 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...COLORS.textMuted);
+        doc.text('TYPICAL DEMOGRAPHICS', margin, currentY);
+        currentY += 4;
+
+        doc.setFont(FONTS.body, 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...COLORS.text);
+        doc.text(`Age: ${persona.demographics?.ageRange || 'N/A'}  |  Net Worth: ${persona.demographics?.netWorth || 'N/A'}`, margin, currentY);
+        currentY += 10;
+      }
+    }
+  }
+
+  // ==========================================================================
+  // FEATURE CLASSIFICATION (BAM v3.0)
+  // ==========================================================================
+
+  if (bamResults?.featureClassification) {
+    currentY = checkPageBreak(120);
+
+    doc.setFont(FONTS.heading, 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.navy);
+    doc.text('Feature Classification', margin, currentY);
+    currentY += 8;
+
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Features classified by client value vs. market value', margin, currentY);
+    currentY += 10;
+
+    const fc = bamResults.featureClassification;
+
+    // Essential Features (High Client + High Market)
+    if (fc.essential?.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.success);
+      doc.text('ESSENTIAL (High Client + High Market)', margin, currentY);
+      currentY += 5;
+
+      const essentialData = fc.essential.slice(0, 6).map(f => [
+        '✓',
+        f.name || f,
+        f.included ? 'Included' : 'Missing',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [],
+        body: essentialData,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center', textColor: COLORS.success },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: margin },
+        tableWidth: contentWidth * 0.7,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 8;
     }
 
-    // All Personas Summary Table
-    currentY = checkPageBreak(60);
-    
-    doc.setFont(FONTS.body, 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...COLORS.text);
-    doc.text('All Personas Summary', margin, currentY);
-    currentY += 5;
+    // Differentiating Features (Medium Client + High Market)
+    if (fc.differentiating?.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.navy);
+      doc.text('DIFFERENTIATING (Premium Value-Add)', margin, currentY);
+      currentY += 5;
 
-    const allPersonasData = personaResults.map((p, i) => [
-      `${i + 1}`,
-      p.name,
-      `${p.scoring.score}%`,
-      p.scoring.matchLevel,
-      p.scoring.confidence,
-    ]);
+      const diffData = fc.differentiating.slice(0, 5).map(f => [
+        '◆',
+        f.name || f,
+        f.included ? 'Included' : 'Opportunity',
+      ]);
 
-    autoTable(doc, {
-      startY: currentY,
-      head: [['Rank', 'Persona', 'Score', 'Match Level', 'Confidence']],
-      body: allPersonasData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: COLORS.navy,
-        textColor: COLORS.white,
-        fontStyle: 'bold',
-        fontSize: 9,
-      },
-      styles: { fontSize: 9, cellPadding: 2 },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 15 },
-        1: { cellWidth: 50 },
-        2: { halign: 'center', cellWidth: 20 },
-        3: { halign: 'center', cellWidth: 28 },
-        4: { halign: 'center', cellWidth: 25 },
-      },
-      margin: { left: margin, right: margin },
-    });
+      autoTable(doc, {
+        startY: currentY,
+        head: [],
+        body: diffData,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center', textColor: COLORS.navy },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: margin },
+        tableWidth: contentWidth * 0.7,
+      });
 
-    currentY = doc.lastAutoTable.finalY + 10;
+      currentY = doc.lastAutoTable.finalY + 8;
+    }
+
+    // Personal Features (High Client + Low Market)
+    if (fc.personal?.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.warning);
+      doc.text('PERSONAL (Client Value, Limited Market)', margin, currentY);
+      currentY += 5;
+
+      const personalData = fc.personal.slice(0, 4).map(f => [
+        '▲',
+        f.name || f,
+        'Aware',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [],
+        body: personalData,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center', textColor: COLORS.warning },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: margin },
+        tableWidth: contentWidth * 0.7,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 8;
+    }
+
+    // Risky Features (Low Both)
+    if (fc.risky?.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.error);
+      doc.text('RISKY (Reconsider — May Hurt Resale)', margin, currentY);
+      currentY += 5;
+
+      const riskyData = fc.risky.slice(0, 3).map(f => [
+        '⚠',
+        f.name || f,
+        'Review',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [],
+        body: riskyData,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center', textColor: COLORS.error },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: margin },
+        tableWidth: contentWidth * 0.7,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 8;
+    }
   }
 
   // ==========================================================================
@@ -828,13 +1475,13 @@ export const generateKYMReport = async (data) => {
   }
 
   // ==========================================================================
-  // STRATEGIC RECOMMENDATIONS
+  // STRATEGIC RECOMMENDATIONS (BAM v3.0 Priority System)
   // ==========================================================================
 
-  currentY = checkPageBreak(80);
+  currentY = checkPageBreak(120);
 
   doc.setFont(FONTS.heading, 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(14);
   doc.setTextColor(...COLORS.navy);
   doc.text('Strategic Recommendations', margin, currentY);
   currentY += 8;
@@ -850,82 +1497,212 @@ export const generateKYMReport = async (data) => {
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.text);
 
-  const positioningText = mvpData?.totalSquareFootage 
+  const positioningText = mvpData?.totalSquareFootage
     ? `Based on the planned ${formatNumber(mvpData.totalSquareFootage)} SF program, this property will compete in the ${
-        mvpData.totalSquareFootage > 20000 ? 'ultra-luxury estate' 
+        mvpData.totalSquareFootage > 20000 ? 'ultra-luxury estate'
         : mvpData.totalSquareFootage > 15000 ? 'large luxury residence'
         : mvpData.totalSquareFootage > 10000 ? 'substantial luxury residence'
         : 'boutique luxury residence'
       } segment of the ${projectCity} market.`
     : `This property will compete in the luxury segment of the ${projectCity} market.`;
-  
+
   const posSplit = doc.splitTextToSize(positioningText, contentWidth);
   doc.text(posSplit, margin, currentY);
-  currentY += posSplit.length * 4 + 5;
+  currentY += posSplit.length * 4 + 8;
 
-  // Target Buyer Strategy
-  if (personaResults?.length > 0) {
+  // ==========================================================================
+  // PRIORITY-BASED RECOMMENDATIONS (BAM v3.0)
+  // ==========================================================================
+
+  if (bamResults?.gapAnalysis || bamResults?.tradeOffAnalysis) {
+    // Priority 1: Quick Wins
+    const quickWins = bamResults.gapAnalysis?.quickWins || [];
+    if (quickWins.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.success);
+      doc.text('PRIORITY 1: Quick Wins', margin, currentY);
+      currentY += 4;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('High impact, low effort changes', margin, currentY);
+      currentY += 5;
+
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.text);
+
+      quickWins.slice(0, 4).forEach((item, idx) => {
+        const itemText = `${idx + 1}. ${item.action || item} ${item.impact ? `(+${item.impact} pts)` : ''}`;
+        doc.text(itemText, margin + 3, currentY);
+        currentY += 4;
+      });
+
+      currentY += 6;
+    }
+
+    // Priority 2: Strategic Enhancements
+    const strategicEnhancements = bamResults.gapAnalysis?.strategic || [];
+    if (strategicEnhancements.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.navy);
+      doc.text('PRIORITY 2: Strategic Enhancements', margin, currentY);
+      currentY += 4;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('Significant improvements requiring investment', margin, currentY);
+      currentY += 5;
+
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.text);
+
+      strategicEnhancements.slice(0, 4).forEach((item, idx) => {
+        const itemText = `${idx + 1}. ${item.action || item} ${item.impact ? `(+${item.impact} pts)` : ''}`;
+        doc.text(itemText, margin + 3, currentY);
+        currentY += 4;
+      });
+
+      currentY += 6;
+    }
+
+    // Priority 3: Risk Mitigation
+    const riskMitigation = bamResults.gapAnalysis?.riskMitigation || [];
+    if (riskMitigation.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.warning);
+      doc.text('PRIORITY 3: Risk Mitigation', margin, currentY);
+      currentY += 4;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('Address potential resale concerns', margin, currentY);
+      currentY += 5;
+
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.text);
+
+      riskMitigation.slice(0, 3).forEach((item, idx) => {
+        const itemText = `${idx + 1}. ${item.action || item} ${item.impact ? `(removes ${item.impact} penalty)` : ''}`;
+        doc.text(itemText, margin + 3, currentY);
+        currentY += 4;
+      });
+
+      currentY += 6;
+    }
+  } else {
+    // Legacy recommendations (fallback when BAM results not available)
+
+    // Target Buyer Strategy
+    if (bamResults?.marketAppeal?.archetypes?.length > 0 || personaResults?.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...COLORS.text);
+      doc.text('Target Buyer Strategy', margin, currentY);
+      currentY += 5;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.text);
+
+      let strategyText = '';
+      if (bamResults?.marketAppeal?.archetypes?.length > 0) {
+        const topArchetype = bamResults.marketAppeal.archetypes[0];
+        const archetypeScore = topArchetype.score?.percentage || topArchetype.score || 0;
+        strategyText = `Primary target: ${topArchetype.name} (${archetypeScore}% alignment, ${Math.round((topArchetype.share || 0) * 100)}% market share).`;
+        if (bamResults.marketAppeal.archetypes[1]) {
+          const secondArchetype = bamResults.marketAppeal.archetypes[1];
+          const secondScore = secondArchetype.score?.percentage || secondArchetype.score || 0;
+          strategyText += ` Secondary opportunity: ${secondArchetype.name} (${secondScore}% alignment).`;
+        }
+      } else if (personaResults?.length > 0) {
+        const topPersona = personaResults[0];
+        strategyText = `Primary target: ${topPersona.name} (${topPersona.scoring.score}% alignment).`;
+        if (personaResults[1]) {
+          strategyText += ` Secondary opportunity: ${personaResults[1].name} (${personaResults[1].scoring.score}% alignment).`;
+        }
+      }
+
+      const stratSplit = doc.splitTextToSize(strategyText, contentWidth);
+      doc.text(stratSplit, margin, currentY);
+      currentY += stratSplit.length * 4 + 8;
+    }
+
+    // Generate contextual recommendations
     doc.setFont(FONTS.body, 'bold');
     doc.setFontSize(10);
     doc.setTextColor(...COLORS.text);
-    doc.text('Target Buyer Strategy', margin, currentY);
+    doc.text('Key Recommendations', margin, currentY);
     currentY += 5;
+
+    const recommendations = [];
+
+    if (bamResults?.featureClassification?.risky?.length > 0) {
+      const riskyFeature = bamResults.featureClassification.risky[0];
+      recommendations.push(`Review "${riskyFeature.name || riskyFeature}" - may limit buyer pool`);
+    }
+
+    if (bamResults?.featureClassification?.essential) {
+      const missingEssentials = bamResults.featureClassification.essential.filter(f => !f.included);
+      if (missingEssentials.length > 0) {
+        recommendations.push(`Add essential features: ${missingEssentials.slice(0, 2).map(f => f.name || f).join(', ')}`);
+      }
+    }
+
+    if (personaResults?.[0]?.scoring?.negativeFactors?.length > 0) {
+      const topConcern = personaResults[0].scoring.negativeFactors[0];
+      recommendations.push(`Consider adjusting ${topConcern.factor.toLowerCase()} to improve buyer alignment`);
+    }
+
+    if (properties?.length > 0) {
+      const featureCounts = {};
+      properties.forEach(p => (p.features || []).forEach(f => featureCounts[f] = (featureCounts[f] || 0) + 1));
+      const topFeature = Object.entries(featureCounts).sort((a, b) => b[1] - a[1])[0];
+      if (topFeature) {
+        recommendations.push(`${topFeature[0]} appears in ${Math.round(topFeature[1] / properties.length * 100)}% of comparable listings`);
+      }
+    }
+
+    recommendations.push('Review buyer archetype alignment before finalizing architectural program');
+    recommendations.push('Consider market velocity when determining project timeline and pricing');
 
     doc.setFont(FONTS.body, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...COLORS.text);
 
-    const topPersona = personaResults[0];
-    const strategyText = `Primary target: ${topPersona.name} (${topPersona.scoring.score}% alignment). ${
-      topPersona.scoring.positiveFactors?.length > 0 
-        ? `Key selling points include ${topPersona.scoring.positiveFactors.slice(0, 2).map(f => f.factor).join(' and ')}.`
-        : ''
-    } ${
-      personaResults[1] 
-        ? `Secondary opportunity: ${personaResults[1].name} (${personaResults[1].scoring.score}% alignment).`
-        : ''
-    }`;
-
-    const stratSplit = doc.splitTextToSize(strategyText, contentWidth);
-    doc.text(stratSplit, margin, currentY);
-    currentY += stratSplit.length * 4 + 5;
+    recommendations.slice(0, 6).forEach((rec, i) => {
+      doc.text(`${i + 1}. ${rec}`, margin + 3, currentY);
+      currentY += 5;
+    });
   }
 
-  // Recommendations
-  doc.setFont(FONTS.body, 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...COLORS.text);
-  doc.text('Key Recommendations', margin, currentY);
-  currentY += 5;
+  // Combined Score Projection (if changes implemented)
+  if (bamResults?.gapAnalysis?.projectedScore) {
+    currentY = checkPageBreak(40);
 
-  const recommendations = [];
-  
-  // Generate contextual recommendations
-  if (personaResults?.[0]?.scoring?.negativeFactors?.length > 0) {
-    const topConcern = personaResults[0].scoring.negativeFactors[0];
-    recommendations.push(`Consider adjusting ${topConcern.factor.toLowerCase()} to better align with ${personaResults[0].name} preferences.`);
-  }
-  
-  if (properties?.length > 0) {
-    const featureCounts = {};
-    properties.forEach(p => (p.features || []).forEach(f => featureCounts[f] = (featureCounts[f] || 0) + 1));
-    const topFeature = Object.entries(featureCounts).sort((a, b) => b[1] - a[1])[0];
-    if (topFeature) {
-      recommendations.push(`${topFeature[0]} appears in ${Math.round(topFeature[1] / properties.length * 100)}% of comparable listings - ensure competitive offering.`);
-    }
-  }
-  
-  recommendations.push('Review buyer persona alignment before finalizing architectural program.');
-  recommendations.push('Consider market velocity when determining project timeline and pricing strategy.');
+    doc.setFillColor(...COLORS.accentLight);
+    doc.roundedRect(margin, currentY, contentWidth, 25, 3, 3, 'F');
 
-  doc.setFont(FONTS.body, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...COLORS.text);
-  
-  recommendations.forEach((rec, i) => {
-    doc.text(`${i + 1}. ${rec}`, margin + 3, currentY);
-    currentY += 4;
-  });
+    doc.setFont(FONTS.body, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.navy);
+    doc.text('Score Projection (If All Recommendations Implemented)', margin + 5, currentY + 8);
+
+    const currentCombined = bamResults.combined?.score || 0;
+    const projectedScore = bamResults.gapAnalysis.projectedScore;
+
+    doc.setFont(FONTS.body, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.text);
+    doc.text(`Current Combined: ${currentCombined}% → Projected: ${projectedScore}% (+${projectedScore - currentCombined} pts)`, margin + 5, currentY + 18);
+
+    currentY += 30;
+  }
 
   // ==========================================================================
   // SAVE PDF

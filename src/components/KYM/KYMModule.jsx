@@ -1350,6 +1350,8 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         personaResults: fullPersonaResults,
         fyiData,
         mvpData,
+        bamResults: bamScores,      // BAM v3.0 dual scoring results
+        portfolioContext,           // Portfolio context for weighting
       });
       
       console.log('[KYM] Report exported successfully');
