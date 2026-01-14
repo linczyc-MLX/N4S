@@ -21,8 +21,8 @@ import {
 import { useAppContext } from '../../contexts/AppContext';
 import KYMDocumentation from './KYMDocumentation';
 import * as kymApi from './kymApiService';
-import { calculateAllPersonaScores, extractClientData, PERSONAS } from './BAMScoring';
-import { BAMView } from './BAMComponents';
+import { calculateAllPersonaScores, calculateBAMScores, extractClientData, PERSONAS } from './BAMScoring';
+import { BAMView, BAMPanel } from './BAMComponents';
 import { generateKYMReport } from './KYMReportGenerator';
 import './KYMModule.css';
 
@@ -946,6 +946,9 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const [showLandFilters, setShowLandFilters] = useState(true);
   const [selectedParcel, setSelectedParcel] = useState(null);
 
+  // BAM v3.0: Portfolio context for dual scoring
+  const [portfolioContext, setPortfolioContext] = useState('primary-residence');
+
   // Refs to avoid stale closure issues in URL paste callback
   const landDataRef = useRef(landData);
   const locationDataRef = useRef(locationData);
@@ -977,16 +980,27 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     { value: 100, label: '100+ acres' },
   ];
 
-  // BAM: Calculate buyer persona scores
+  // BAM: Calculate buyer persona scores (legacy)
   const personaResults = useMemo(() => {
     const clientData = extractClientData(
-      kycData, 
-      fyiData, 
-      mvpData, 
+      kycData,
+      fyiData,
+      mvpData,
       locationData?.location
     );
     return calculateAllPersonaScores(clientData);
   }, [kycData, fyiData, mvpData, locationData?.location]);
+
+  // BAM v3.0: Calculate dual scores (Client Satisfaction + Market Appeal)
+  const bamScores = useMemo(() => {
+    const clientData = extractClientData(
+      kycData,
+      fyiData,
+      mvpData,
+      locationData?.location
+    );
+    return calculateBAMScores(clientData, locationData?.location, portfolioContext);
+  }, [kycData, fyiData, mvpData, locationData?.location, portfolioContext]);
 
   // Get client location from KYC if available
   const clientLocation = kycData?.principal?.projectParameters?.projectCity ? {
@@ -2172,12 +2186,23 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
           </div>
         )}
 
-        {/* Buyer Alignment Tab (BAM) */}
+        {/* Buyer Alignment Tab (BAM v3.0 Dual Scoring) */}
         {activeTab === 'buyers' && (
-          <BAMView 
-            personaResults={personaResults}
-            marketData={locationData}
-          />
+          <div className="kym-buyers-tab">
+            <BAMPanel
+              bamScores={bamScores}
+              onPortfolioChange={setPortfolioContext}
+              showDetails={true}
+            />
+            {/* Legacy persona view - available below dual scores */}
+            <div className="kym-legacy-bam">
+              <h4 className="kym-legacy-bam-title">Detailed Persona Analysis</h4>
+              <BAMView
+                personaResults={personaResults}
+                marketData={locationData}
+              />
+            </div>
+          </div>
         )}
       </div>
 
