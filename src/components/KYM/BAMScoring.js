@@ -1110,7 +1110,7 @@ export const classifyFeatures = (clientData, archetypeScores) => {
   // Get top 3 archetypes by score
   const topArchetypes = archetypeScores.slice(0, 3);
 
-  // Features we're tracking
+  // Features we're tracking - comprehensive list
   const featureChecks = [
     { id: 'smart-home', label: 'Smart Home', field: 'hasSmartHome' },
     { id: 'home-office', label: 'Home Office', field: 'hasHomeOffice' },
@@ -1121,10 +1121,24 @@ export const classifyFeatures = (clientData, archetypeScores) => {
     { id: 'pool-house', label: 'Pool House', field: 'hasPoolHouse' },
     { id: 'staff-quarters', label: 'Staff Quarters', field: 'hasStaffQuarters' },
     { id: 'guest-suite', label: 'Guest Suite', field: 'hasGuestSuite' },
+    { id: 'multiple-guest-suites', label: 'Multiple Guest Suites', field: 'hasMultipleGuestSuites' },
     { id: 'car-gallery', label: 'Car Gallery', field: 'hasCarGallery' },
     { id: 'sports-court', label: 'Sports Court', field: 'hasSportsCourt' },
     { id: 'spa', label: 'Spa/Wellness', field: 'hasWellnessSuite' },
+    { id: 'spa-only', label: 'Spa (Steam/Sauna)', field: 'hasSpa' },
+    { id: 'library', label: 'Library', field: 'hasLibrary' },
+    { id: 'formal-dining', label: 'Formal Dining', field: 'hasFormalDining' },
+    { id: 'chefs-kitchen', label: "Chef's Kitchen", field: 'hasChefsKitchen' },
+    { id: 'security-room', label: 'Security Room', field: 'hasSecurityRoom' },
+    { id: 'game-room', label: 'Game Room', field: 'hasGameRoom' },
+    { id: 'entertainment-terrace', label: 'Entertainment Terrace', field: 'hasEntertainmentTerrace' },
+    { id: 'guest-house', label: 'Guest House', field: 'hasGuestHouse' },
+    { id: 'ev-charging', label: 'EV Charging', field: 'hasEvCharging' },
   ];
+
+  console.log('[BAM classifyFeatures] Client features:',
+    featureChecks.filter(f => clientData[f.field]).map(f => f.label)
+  );
 
   featureChecks.forEach(feature => {
     if (!clientData[feature.field]) return; // Skip if client doesn't have this feature
@@ -1239,8 +1253,26 @@ export const calculateBAMScores = (clientData, marketLocation, portfolioContext 
 /**
  * Extract client data from KYC, FYI, MVP modules
  * Enhanced for v3.0 Must Have/Nice to Have/Avoid evaluation
+ *
+ * IMPORTANT DATA PATHS:
+ * - FYI spaces: fyiData.brief.spaces (array) OR fyiData.selections (object keyed by space code)
+ * - Privacy: kycData.principal.lifestyleLiving.privacyLevelRequired (1-5 scale)
+ * - Taste: kycData.principal.designIdentity.principalTasteResults.dominant
  */
 export const extractClientData = (kycData, fyiData, mvpData, kymLocation) => {
+  // Debug logging to help identify data issues
+  console.log('[BAM extractClientData] Input data:', {
+    hasKycData: !!kycData,
+    hasFyiData: !!fyiData,
+    hasMvpData: !!mvpData,
+    hasKymLocation: !!kymLocation,
+    fyiDataKeys: fyiData ? Object.keys(fyiData) : [],
+    fyiBriefSpaces: fyiData?.brief?.spaces?.length || 0,
+    fyiSelectionsCount: fyiData?.selections ? Object.keys(fyiData.selections).length : 0,
+    kycPrivacyLevel: kycData?.principal?.lifestyleLiving?.privacyLevelRequired,
+    kycTasteResults: kycData?.principal?.designIdentity?.principalTasteResults?.dominant,
+  });
+
   const data = {
     // Basic info
     spaces: [],
@@ -1303,48 +1335,139 @@ export const extractClientData = (kycData, fyiData, mvpData, kymLocation) => {
     qualityTier: null,
   };
 
+  // ==========================================================================
   // From FYI: Selected spaces
-  if (fyiData?.selectedSpaces) {
-    data.spaces = fyiData.selectedSpaces.map(s => s.name || s);
+  // Data can come from:
+  //   1. fyiData.brief.spaces - Array of { code, name, zone, targetSF, level, size, notes }
+  //   2. fyiData.selections - Object { [spaceCode]: { included, size, level, customSF, ... } }
+  // ==========================================================================
+  let selectedSpaces = [];
+
+  // Option 1: Use brief.spaces if available (preferred - has processed space info)
+  if (fyiData?.brief?.spaces && Array.isArray(fyiData.brief.spaces)) {
+    selectedSpaces = fyiData.brief.spaces;
+    console.log('[BAM] Using fyiData.brief.spaces:', selectedSpaces.length, 'spaces');
+  }
+  // Option 2: Convert selections object to array (fallback)
+  else if (fyiData?.selections && typeof fyiData.selections === 'object') {
+    // Comprehensive space code to name mapping (from space-registry.js)
+    const spaceCodeToName = {
+      // Zone 1: Arrival + Public
+      'FOY': 'Foyer / Gallery', 'PWD': 'Powder Room', 'OFF': 'Private Office',
+      'GR': 'Great Room', 'DR': 'Formal Dining', 'WINE': 'Wine Room', 'LIB': 'Library',
+      // Zone 2: Family + Kitchen
+      'FR': 'Family Room', 'KIT': 'Kitchen (Show)', 'BKF': 'Breakfast Area',
+      'SCUL': 'Scullery', 'CHEF': "Chef's Kitchen",
+      // Zone 3: Entertainment
+      'MEDIA': 'Media Room', 'BAR': 'Bar', 'GAME': 'Game Room',
+      'THR': 'Theater', 'MUS': 'Music Room', 'ART': 'Art Studio',
+      // Zone 4: Wellness
+      'GYM': 'Gym', 'SPA': 'Spa', 'MAS': 'Massage Room',
+      'PLH': 'Pool House', 'POOLSUP': 'Pool Support',
+      // Zone 5: Primary Suite
+      'PRI': 'Primary Suite', 'PRIBATH': 'Primary Bath',
+      'PRICL_HIS': 'His Closet', 'PRICL_HER': 'Her Closet',
+      'PRILNG': 'Primary Lounge', 'POF': 'Private Office (Primary)',
+      // Zone 6: Guest + Secondary
+      'JRPRI': 'Jr Primary Suite', 'JRPRIBATH': 'Jr Primary Bath', 'JRPRICL': 'Jr Primary Closet',
+      'GST1': 'Guest Suite 1', 'GST2': 'Guest Suite 2',
+      'GST3': 'Guest Suite 3', 'GST4': 'Guest Suite 4',
+      'BNK': 'Bunk Room', 'PLY': 'Playroom', 'HWK': 'Homework Room',
+      'NNY': 'Nanny Suite', 'STF': 'Staff Suite',
+      // Zone 7: Service + BOH
+      'MUD': 'Mudroom', 'LND': 'Laundry', 'MEP': 'Mechanical',
+      'STR': 'Storage', 'GAR': 'Garage', 'WRK': 'Workshop',
+      'SKT': 'Staff Kitchen', 'SLG': 'Staff Lounge', 'COR': 'Corridor',
+      // Zone 8: Outdoor
+      'TERR': 'Covered Terrace', 'POOL': 'Pool + Deck', 'OKT': 'Outdoor Kitchen',
+      'FPT': 'Fire Pit', 'ODN': 'Outdoor Dining', 'CTY': 'Courtyard', 'POOL_BATH': 'Pool Bathroom',
+      // Zone 9: Guest House
+      'GH_PWD': 'Guest House Powder', 'GH_LIV': 'Guest House Living',
+      'GH_KIT': 'Guest House Kitchen', 'GH_DIN': 'Guest House Dining',
+      'GH_GST1': 'Guest House Suite 1', 'GH_GST2': 'Guest House Suite 2', 'GH_GST3': 'Guest House Suite 3',
+      // Zone 10: Pool House
+      'PH_SHW': 'Pool House Shower', 'PH_CHG': 'Pool House Changing',
+      'PH_BATH': 'Pool House Bath', 'PH_ENT': 'Pool House Entertainment',
+      'PH_KIT': 'Pool House Kitchen', 'PH_DIN': 'Pool House Dining',
+    };
+
+    Object.entries(fyiData.selections).forEach(([code, selection]) => {
+      if (selection.included) {
+        selectedSpaces.push({
+          code,
+          name: spaceCodeToName[code] || code,
+          targetSF: selection.customSF || 0,
+          level: selection.level,
+          size: selection.size,
+        });
+      }
+    });
+    console.log('[BAM] Converted fyiData.selections to', selectedSpaces.length, 'spaces');
+  }
+
+  // Process selected spaces to set feature flags
+  if (selectedSpaces.length > 0) {
+    data.spaces = selectedSpaces.map(s => s.name || s.code || s);
 
     // Set feature flags based on spaces
     const spaceNames = data.spaces.map(s => (s || '').toLowerCase());
+    console.log('[BAM] Space names for matching:', spaceNames);
 
     data.hasHomeOffice = spaceNames.some(s => s.includes('office'));
     data.hasTheater = spaceNames.some(s => s.includes('theater') || s.includes('screening'));
     data.hasGym = spaceNames.some(s => s.includes('gym') || s.includes('fitness'));
-    data.hasLargeGym = fyiData.selectedSpaces.some(s => s.name?.toLowerCase().includes('gym') && (s.sqft || 0) >= 1000);
+    data.hasLargeGym = selectedSpaces.some(s => {
+      const name = (s.name || s.code || '').toLowerCase();
+      return name.includes('gym') && (s.targetSF || 0) >= 1000;
+    });
     data.hasWineCellar = spaceNames.some(s => s.includes('wine'));
     data.hasPool = spaceNames.some(s => s.includes('pool') && !s.includes('pool house'));
     data.hasPoolHouse = spaceNames.some(s => s.includes('pool house'));
     data.hasStaffQuarters = spaceNames.some(s => s.includes('staff'));
-    data.hasGuestSuite = spaceNames.some(s => s.includes('guest'));
+    data.hasGuestSuite = spaceNames.some(s => s.includes('guest suite'));
     data.hasCarGallery = spaceNames.some(s => s.includes('car gallery') || s.includes('garage'));
     data.hasSportsCourt = spaceNames.some(s => s.includes('sport') || s.includes('basketball') || s.includes('tennis'));
     data.hasSpa = spaceNames.some(s => s.includes('spa') || s.includes('steam') || s.includes('sauna'));
     data.hasWellnessSuite = data.hasGym && data.hasSpa;
     data.hasRecoverySuite = data.hasSpa;
     data.hasLibrary = spaceNames.some(s => s.includes('library') || s.includes('study'));
-    data.hasFormalDining = spaceNames.some(s => s.includes('formal dining'));
+    data.hasFormalDining = spaceNames.some(s => s.includes('formal dining') || s.includes('dining'));
     data.hasSecurityRoom = spaceNames.some(s => s.includes('security'));
-    data.hasChefsKitchen = spaceNames.some(s => s.includes('chef') || s.includes('show kitchen'));
+    data.hasChefsKitchen = spaceNames.some(s => s.includes('chef') || s.includes('prep kitchen'));
     data.hasStudio = spaceNames.some(s => s.includes('studio') || s.includes('art'));
-    data.hasGallery = spaceNames.some(s => s.includes('gallery'));
+    data.hasGallery = spaceNames.some(s => s.includes('gallery') && !s.includes('car'));
     data.hasMeditationSpace = spaceNames.some(s => s.includes('meditation') || s.includes('yoga'));
     data.hasGameRoom = spaceNames.some(s => s.includes('game') || s.includes('billiard') || s.includes('rec'));
     data.hasKidsSpaces = spaceNames.some(s => s.includes('kid') || s.includes('bunk') || s.includes('playroom'));
-    data.hasEntertainmentTerrace = spaceNames.some(s => s.includes('terrace') || s.includes('covered outdoor'));
+    data.hasEntertainmentTerrace = spaceNames.some(s => s.includes('terrace') || s.includes('covered outdoor') || s.includes('outdoor kitchen'));
     data.hasEntertainingSpaces = data.hasTheater || data.hasGameRoom || data.hasEntertainmentTerrace;
 
     // Count guest suites
-    const guestSuiteCount = data.spaces.filter(s => (s || '').toLowerCase().includes('guest')).length;
+    const guestSuiteCount = spaceNames.filter(s => s.includes('guest suite')).length;
     data.hasMultipleGuestSuites = guestSuiteCount >= 3;
+
+    console.log('[BAM] Feature flags set:', {
+      hasTheater: data.hasTheater,
+      hasWineCellar: data.hasWineCellar,
+      hasPool: data.hasPool,
+      hasPoolHouse: data.hasPoolHouse,
+      hasChefsKitchen: data.hasChefsKitchen,
+      hasStaffQuarters: data.hasStaffQuarters,
+      guestSuiteCount,
+    });
   }
 
+  // ==========================================================================
   // From KYC: Taste/Design style
+  // Check multiple possible locations for taste data
+  // ==========================================================================
   if (kycData?.principal?.designIdentity?.primaryStyle) {
     data.tasteStyle = kycData.principal.designIdentity.primaryStyle;
+  } else if (kycData?.principal?.designIdentity?.principalTasteResults?.dominant) {
+    // New path: principalTasteResults from Taste Exploration
+    data.tasteStyle = kycData.principal.designIdentity.principalTasteResults.dominant;
   } else if (kycData?.principal?.designIdentity?.tasteResults?.dominant) {
+    // Legacy path
     data.tasteStyle = kycData.principal.designIdentity.tasteResults.dominant;
   }
 
@@ -1393,12 +1516,18 @@ export const extractClientData = (kycData, fyiData, mvpData, kymLocation) => {
     }
   }
 
+  // ==========================================================================
   // From FYI or KYC: Bedroom count
+  // ==========================================================================
   if (fyiData?.rooms?.bedrooms?.count) {
     data.bedroomCount = fyiData.rooms.bedrooms.count;
-  } else if (fyiData?.selectedSpaces) {
-    const bedrooms = fyiData.selectedSpaces.filter(s => {
-      const name = (s.name || s || '').toLowerCase();
+  } else if (kycData?.principal?.projectParameters?.bedroomCount) {
+    // From KYC project parameters
+    data.bedroomCount = kycData.principal.projectParameters.bedroomCount;
+  } else if (selectedSpaces.length > 0) {
+    // Count bedrooms from selected FYI spaces
+    const bedrooms = selectedSpaces.filter(s => {
+      const name = (s.name || s.code || '').toLowerCase();
       return name.includes('primary') || name.includes('guest suite') ||
              name.includes('jr primary') || name.includes('bedroom');
     });
@@ -1406,16 +1535,39 @@ export const extractClientData = (kycData, fyiData, mvpData, kymLocation) => {
   }
   data.hasMultipleBedrooms = data.bedroomCount >= 6;
 
-  // From KYC: Site requirements
+  // ==========================================================================
+  // From KYC: Privacy level
+  // Check lifestyleLiving.privacyLevelRequired (1-5 scale) AND siteRequirements
+  // ==========================================================================
+  // First check lifestyleLiving (primary source for privacy preference)
+  if (kycData?.principal?.lifestyleLiving?.privacyLevelRequired) {
+    const privacyLevel = kycData.principal.lifestyleLiving.privacyLevelRequired;
+    // Scale: 1 = Low, 3 = Moderate, 5 = Maximum
+    data.hasPrivacy = privacyLevel >= 4;
+    data.hasMaximumPrivacy = privacyLevel >= 5;
+    console.log('[BAM] Privacy from lifestyleLiving:', privacyLevel, '-> hasPrivacy:', data.hasPrivacy);
+  }
+
+  // Also check siteRequirements for additional property info
   if (kycData?.principal?.siteRequirements) {
     const site = kycData.principal.siteRequirements;
-    data.hasPrivacy = site.privacy === 'High' || site.privacy === 'Maximum';
-    data.hasMaximumPrivacy = site.privacy === 'Maximum';
+    // Only override if not already set from lifestyleLiving
+    if (!data.hasPrivacy && site.privacy) {
+      data.hasPrivacy = site.privacy === 'High' || site.privacy === 'Maximum';
+      data.hasMaximumPrivacy = site.privacy === 'Maximum';
+    }
     data.hasGuestHouse = site.hasGuestHouse;
     data.hasPool = data.hasPool || site.hasPool;
     data.hasTennis = site.hasTennis;
     data.hasLargeProperty = site.acreage && site.acreage >= 1;
     data.isEstateProperty = site.acreage && site.acreage >= 2;
+  }
+
+  // Also check projectParameters for guest house / pool house
+  if (kycData?.principal?.projectParameters) {
+    const params = kycData.principal.projectParameters;
+    data.hasGuestHouse = data.hasGuestHouse || params.hasGuestHouse;
+    data.hasPoolHouse = data.hasPoolHouse || params.hasPoolHouse;
   }
 
   // From KYC: Quality tier
@@ -1457,6 +1609,26 @@ export const extractClientData = (kycData, fyiData, mvpData, kymLocation) => {
   data.hasFlexibleSpaces = data.spaces.some(s => {
     const name = (s || '').toLowerCase();
     return name.includes('flex') || name.includes('bonus') || name.includes('multi');
+  });
+
+  // Final summary log for debugging
+  console.log('[BAM extractClientData] Final extracted data summary:', {
+    spacesCount: data.spaces.length,
+    bedroomCount: data.bedroomCount,
+    totalSqFt: data.totalSqFt,
+    tasteStyle: data.tasteStyle,
+    isPremiumLocation: data.isPremiumLocation,
+    // Key features for Entertainment Executive
+    hasTheater: data.hasTheater,
+    hasWineCellar: data.hasWineCellar,
+    hasPool: data.hasPool,
+    hasPoolHouse: data.hasPoolHouse,
+    hasChefsKitchen: data.hasChefsKitchen,
+    hasPrivacy: data.hasPrivacy,
+    hasMaximumPrivacy: data.hasMaximumPrivacy,
+    hasStaffQuarters: data.hasStaffQuarters,
+    hasMultipleGuestSuites: data.hasMultipleGuestSuites,
+    hasEntertainmentTerrace: data.hasEntertainmentTerrace,
   });
 
   return data;

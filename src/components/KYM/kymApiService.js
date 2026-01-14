@@ -605,9 +605,18 @@ export const generateFallbackProperties = (zipCode, location) => {
  * Fetch all location data (market + properties + demographics)
  */
 export const fetchLocationData = async (zipCode) => {
+  console.log('[KYM API] fetchLocationData called with:', zipCode);
+
   // Validate ZIP code first
-  let locationInfo = await lookupZipCode(zipCode);
-  
+  let locationInfo = null;
+
+  try {
+    locationInfo = await lookupZipCode(zipCode);
+    console.log('[KYM API] Zippopotam lookup result:', locationInfo ? 'success' : 'null');
+  } catch (err) {
+    console.error('[KYM API] Zippopotam lookup failed:', err);
+  }
+
   // Fallback to known markets if Zippopotam fails
   if (!locationInfo) {
     const knownMarket = LUXURY_MARKETS.find(m => m.zipCode === zipCode);
@@ -623,8 +632,9 @@ export const fetchLocationData = async (zipCode) => {
       };
       console.log('[KYM API] Using known market fallback for', zipCode);
     } else {
+      console.error('[KYM API] ZIP code not found and not in known markets:', zipCode);
       return {
-        error: 'Invalid ZIP code',
+        error: `ZIP code ${zipCode} not found. Try a known market like 90210.`,
         location: null,
         marketData: null,
         properties: [],
@@ -636,21 +646,27 @@ export const fetchLocationData = async (zipCode) => {
 
   // Get market data (hardcoded or seeded)
   const marketData = getMarketData(zipCode, locationInfo);
+  console.log('[KYM API] Market data generated:', {
+    location: marketData?.location,
+    growthRate: marketData?.growthRate,
+    medianPricePerSqFt: marketData?.medianPricePerSqFt,
+    hasHistoricalData: !!marketData?.historicalData?.length,
+  });
 
   // Try to fetch real properties from API
   let properties = await fetchProperties(zipCode);
   let dataSource = 'realtor';
-  
+
   // If API returns empty, generate fallback properties
   if (properties.length === 0) {
     properties = generateFallbackProperties(zipCode, locationInfo);
-    dataSource = hasApiKey() ? 'generated' : 'generated';
+    dataSource = 'generated';
     console.log(`[KYM API] Using ${properties.length} generated fallback properties`);
   } else {
     console.log(`[KYM API] Using ${properties.length} real properties from Realtor.com`);
   }
 
-  return {
+  const result = {
     location: locationInfo,
     marketData,
     properties,
@@ -658,6 +674,15 @@ export const fetchLocationData = async (zipCode) => {
     dataSource,
     apiKeyConfigured: hasApiKey(),
   };
+
+  console.log('[KYM API] Final result:', {
+    hasLocation: !!result.location,
+    hasMarketData: !!result.marketData,
+    propertyCount: result.propertyCount,
+    dataSource: result.dataSource,
+  });
+
+  return result;
 };
 
 // ============================================================================

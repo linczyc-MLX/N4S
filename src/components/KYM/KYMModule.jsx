@@ -1030,18 +1030,27 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
       const demographics = generateDemographicsEstimate(zipCode, result.location);
       const buyerPersonas = generateBuyerPersonas(result.location);
       
-      setLocationData({
+      const locationDataToSet = {
         ...result,
         demographics,
         buyerPersonas,
+      };
+
+      console.log('[KYM] Setting locationData:', {
+        hasMarketData: !!locationDataToSet.marketData,
+        marketDataKeys: locationDataToSet.marketData ? Object.keys(locationDataToSet.marketData) : [],
+        growthRate: locationDataToSet.marketData?.growthRate,
+        dataSource: result.dataSource,
       });
+
+      setLocationData(locationDataToSet);
       setDataSource(result.dataSource);
       setApiKeyConfigured(result.apiKeyConfigured);
-      
+
       if (result.properties.length > 0) {
         console.log(`[KYM] Loaded ${result.properties.length} real properties`);
       } else if (!result.apiKeyConfigured) {
-        console.log('[KYM] No API key configured - properties unavailable');
+        console.log('[KYM] No API key configured - using generated properties');
       } else {
         console.log('[KYM] No luxury properties found in this ZIP code');
       }
@@ -1448,24 +1457,33 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
               {locationData?.propertyCount || 0} properties from Realtor.com
             </span>
           </>
-        ) : dataSource === 'estimates' ? (
+        ) : dataSource === 'generated' || dataSource === 'estimates' ? (
           <>
             <span className="kym-data-badge kym-data-badge--estimates">
               <Activity size={14} /> Market Estimates
             </span>
             <span className="kym-data-note">
-              {apiKeyConfigured 
+              {apiKeyConfigured
                 ? 'No luxury listings ($3M+) in this area. Showing market estimates.'
                 : 'Add REACT_APP_RAPIDAPI_KEY for live property listings.'}
             </span>
           </>
-        ) : (
+        ) : error ? (
           <>
             <span className="kym-data-badge kym-data-badge--error">
               <AlertCircle size={14} /> Loading Error
             </span>
             <span className="kym-data-note">
-              {error || 'Unable to load market data'}
+              {error}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="kym-data-badge kym-data-badge--loading">
+              <RefreshCw size={14} className="spinning" /> Loading...
+            </span>
+            <span className="kym-data-note">
+              Fetching market data...
             </span>
           </>
         )}
