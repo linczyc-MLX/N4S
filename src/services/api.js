@@ -2,8 +2,7 @@
 // Connects to the PHP backend on IONOS
 // Both sites (website.not-4.sale and home-5019238456.app-ionos.space) use this same API
 
-const API_BASE_URL = 'https://website.not-4.sale/api';
-
+const API_BASE_URL = '/api';
 class ApiService {
   constructor() {
     this.baseUrl = API_BASE_URL;
