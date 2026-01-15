@@ -2,10 +2,14 @@
 // Connects to the PHP backend on IONOS
 // Both sites (website.not-4.sale and home-5019238456.app-ionos.space) use this same API
 
-const API_BASE_URL = '/api';
+// Detect environment and use appropriate API URL
+// FTP site (website.not-4.sale) has PHP backend, IONOS site needs to call FTP API
+const API_BASE_URL = window.location.hostname.includes('ionos.space') 
+    ? 'https://website.not-4.sale/api' 
+  : '/api';
 class ApiService {
   constructor() {
-    this.baseUrl = API_BASE_URL;
+        this.baseUrl = API_BASE_URL;
   }
 
   async request(endpoint, options = {}) {
