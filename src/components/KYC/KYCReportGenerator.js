@@ -271,17 +271,79 @@ export const generateKYCReport = async (kycData) => {
   // P1.A.5 - Design Identity
   const designIdentity = principal.designIdentity || {};
 
-  // FIX 4: Extract taste results with all the actual data
+  // Extract taste results - data comes from DesignIdentitySection
+  // Structure: { clientId, selections, profile: { scores: {...} }, completedAt }
   const principalTasteResults = designIdentity.principalTasteResults || null;
   const secondaryTasteResults = designIdentity.secondaryTasteResults || null;
-  const alignmentScore = designIdentity.alignmentScore || null;
-  const combinedDNA = designIdentity.combinedDNA || null;
-  const hasTasteData = !!(principalTasteResults || secondaryTasteResults);
+
+  // Check if we have actual completed taste data
+  const hasPrincipalTaste = !!(principalTasteResults?.completedAt);
+  const hasSecondaryTaste = !!(secondaryTasteResults?.completedAt);
+  const hasTasteData = hasPrincipalTaste || hasSecondaryTaste;
+
+  // Get style label from tradition score (1-10 scale)
+  // Low tradition = Contemporary, High tradition = Traditional
+  const getStyleLabelFromTradition = (tradition) => {
+    if (!tradition) return null;
+    if (tradition < 4) return 'Contemporary';
+    if (tradition > 6) return 'Traditional';
+    return 'Transitional';
+  };
+
+  // Get profile scores (6 FYI dimensions, 1-10 scale)
+  const getProfileScores = (tasteResults) => {
+    if (!tasteResults?.profile?.scores) return null;
+    return tasteResults.profile.scores;
+  };
+
+  const principalScores = hasPrincipalTaste ? getProfileScores(principalTasteResults) : null;
+  const secondaryScores = hasSecondaryTaste ? getProfileScores(secondaryTasteResults) : null;
+
+  // Calculate alignment percentage from all 6 dimensions
+  const calculateAlignment = () => {
+    if (!principalScores || !secondaryScores) return null;
+    const dimensions = ['tradition', 'formality', 'warmth', 'drama', 'openness', 'art_focus'];
+    let totalDiff = 0;
+
+    dimensions.forEach(dim => {
+      const p = principalScores[dim] || 5;
+      const s = secondaryScores[dim] || 5;
+      totalDiff += Math.abs(p - s);
+    });
+
+    const avgDiff = totalDiff / dimensions.length;
+    // Max diff is 9 (1 to 10 scale), convert to percentage
+    return Math.max(0, Math.round(100 - (avgDiff / 9 * 100)));
+  };
+  const alignmentScore = (hasPrincipalTaste && hasSecondaryTaste) ? calculateAlignment() : null;
+
+  // Get combined DNA scores from profile.scores (1-10 scale, averaged)
+  const getCombinedDNA = () => {
+    if (!hasPrincipalTaste || !hasSecondaryTaste) return null;
+    const pScores = principalScores || {};
+    const sScores = secondaryScores || {};
+
+    const getCombined = (attr) => {
+      const p = pScores[attr] || 5;
+      const s = sScores[attr] || 5;
+      return Math.round(((p + s) / 2) * 10) / 10;
+    };
+
+    return {
+      tradition: getCombined('tradition'),
+      formality: getCombined('formality'),
+      warmth: getCombined('warmth'),
+      drama: getCombined('drama'),
+      openness: getCombined('openness'),
+      artFocus: getCombined('art_focus')
+    };
+  };
+  const combinedDNA = getCombinedDNA();
 
   // Log extracted values for debugging
   console.log('[KYC Report] Extracted values:', {
     clientName,
-    secondaryName,
+    secondaryName: secondaryName,
     projectName,
     thisPropertyRole,
     investmentHorizon,
@@ -300,11 +362,17 @@ export const generateKYCReport = async (kycData) => {
     bedroomCount,
     mustHaveSpaces,
     niceToHaveSpaces,
+  });
+  console.log('[KYC Report] Design Identity:', {
+    hasPrincipalTaste,
+    hasSecondaryTaste,
+    hasTasteData,
     principalTasteResults,
     secondaryTasteResults,
+    principalScores,
+    secondaryScores,
     alignmentScore,
     combinedDNA,
-    hasTasteData,
   });
 
   // ==========================================================================
@@ -659,7 +727,7 @@ export const generateKYCReport = async (kycData) => {
 
   addSectionTitle('Design Identity');
 
-  // FIX 4: Always show Design Identity section with actual data
+  // Design Identity section - display 6-dimension DNA scores
   if (!hasTasteData) {
     // No taste data - show message
     currentY = checkPageBreak(20);
@@ -675,59 +743,69 @@ export const generateKYCReport = async (kycData) => {
     currentY += 35;
   } else {
     // Principal Design Profile
-    if (principalTasteResults) {
-      addSubsectionTitle(`Principal Design Profile${clientName !== 'Client' ? ` (${principalFirstName || 'Principal'})` : ''}`);
+    if (hasPrincipalTaste && principalScores) {
+      addSubsectionTitle(`Principal Design Profile${principalFirstName ? ` (${principalFirstName})` : ''}`);
 
-      // Style Label
-      const principalStyleLabel = principalTasteResults.styleLabel || principalTasteResults.dominant || null;
+      // Style Label (derived from tradition score)
+      const principalStyleLabel = getStyleLabelFromTradition(principalScores.tradition);
       if (principalStyleLabel) {
         addLabelValue('Style', principalStyleLabel);
       }
 
-      // DNA Scores - check for dnaScores object or direct properties
-      const pDNA = principalTasteResults.dnaScores || principalTasteResults;
-
       currentY += 3;
 
-      if (pDNA.styleEra !== undefined) {
-        addDNAScoreBar('Style Era', pDNA.styleEra, 'Contemporary', 'Traditional', 10);
+      // 6-Dimension DNA Score Bars (1-10 scale)
+      if (principalScores.tradition !== undefined) {
+        addDNAScoreBar('Tradition', principalScores.tradition, 'Contemporary', 'Traditional', 10);
       }
-
-      if (pDNA.materialComplexity !== undefined || pDNA.visualDensity !== undefined) {
-        const matScore = pDNA.materialComplexity !== undefined ? pDNA.materialComplexity : pDNA.visualDensity;
-        addDNAScoreBar('Material Complexity', matScore, 'Minimal', 'Layered', 10);
+      if (principalScores.formality !== undefined) {
+        addDNAScoreBar('Formality', principalScores.formality, 'Casual', 'Formal', 10);
       }
-
-      if (pDNA.moodPalette !== undefined) {
-        addDNAScoreBar('Mood Palette', pDNA.moodPalette, 'Warm', 'Cool', 10);
+      if (principalScores.warmth !== undefined) {
+        addDNAScoreBar('Warmth', principalScores.warmth, 'Cool', 'Warm', 10);
+      }
+      if (principalScores.drama !== undefined) {
+        addDNAScoreBar('Drama', principalScores.drama, 'Subtle', 'Bold', 10);
+      }
+      if (principalScores.openness !== undefined) {
+        addDNAScoreBar('Openness', principalScores.openness, 'Enclosed', 'Open', 10);
+      }
+      if (principalScores.art_focus !== undefined) {
+        addDNAScoreBar('Art Focus', principalScores.art_focus, 'Understated', 'Gallery-like', 10);
       }
     }
 
     // Partner Design Profile (Secondary)
-    if (secondaryTasteResults) {
+    if (hasSecondaryTaste && secondaryScores) {
       currentY += 8;
-      addSubsectionTitle(`Partner Design Profile${secondaryName ? ` (${secondaryFirstName || 'Partner'})` : ''}`);
+      addSubsectionTitle(`Partner Design Profile${secondaryFirstName ? ` (${secondaryFirstName})` : ''}`);
 
-      const secondaryStyleLabel = secondaryTasteResults.styleLabel || secondaryTasteResults.dominant || null;
+      // Style Label
+      const secondaryStyleLabel = getStyleLabelFromTradition(secondaryScores.tradition);
       if (secondaryStyleLabel) {
         addLabelValue('Style', secondaryStyleLabel);
       }
 
-      const sDNA = secondaryTasteResults.dnaScores || secondaryTasteResults;
-
       currentY += 3;
 
-      if (sDNA.styleEra !== undefined) {
-        addDNAScoreBar('Style Era', sDNA.styleEra, 'Contemporary', 'Traditional', 10);
+      // 6-Dimension DNA Score Bars
+      if (secondaryScores.tradition !== undefined) {
+        addDNAScoreBar('Tradition', secondaryScores.tradition, 'Contemporary', 'Traditional', 10);
       }
-
-      if (sDNA.materialComplexity !== undefined || sDNA.visualDensity !== undefined) {
-        const matScore = sDNA.materialComplexity !== undefined ? sDNA.materialComplexity : sDNA.visualDensity;
-        addDNAScoreBar('Material Complexity', matScore, 'Minimal', 'Layered', 10);
+      if (secondaryScores.formality !== undefined) {
+        addDNAScoreBar('Formality', secondaryScores.formality, 'Casual', 'Formal', 10);
       }
-
-      if (sDNA.moodPalette !== undefined) {
-        addDNAScoreBar('Mood Palette', sDNA.moodPalette, 'Warm', 'Cool', 10);
+      if (secondaryScores.warmth !== undefined) {
+        addDNAScoreBar('Warmth', secondaryScores.warmth, 'Cool', 'Warm', 10);
+      }
+      if (secondaryScores.drama !== undefined) {
+        addDNAScoreBar('Drama', secondaryScores.drama, 'Subtle', 'Bold', 10);
+      }
+      if (secondaryScores.openness !== undefined) {
+        addDNAScoreBar('Openness', secondaryScores.openness, 'Enclosed', 'Open', 10);
+      }
+      if (secondaryScores.art_focus !== undefined) {
+        addDNAScoreBar('Art Focus', secondaryScores.art_focus, 'Understated', 'Gallery-like', 10);
       }
     }
 
@@ -737,7 +815,7 @@ export const generateKYCReport = async (kycData) => {
       addAlignmentBadge(alignmentScore);
     }
 
-    // Combined Design DNA
+    // Combined Design DNA (6 dimensions averaged)
     if (combinedDNA) {
       addCombinedDNAGrid(combinedDNA);
     }
