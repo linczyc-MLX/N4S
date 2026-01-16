@@ -1109,7 +1109,7 @@ export const generateKYMReport = async (data) => {
 
               const avoidData = triggeredAvoids.slice(0, 3).map(item => [
                 '!',
-                item.antiPattern || item.name,
+                item.label || item.antiPattern || item.name,
                 `${item.penalty || -10}`,
               ]);
 
@@ -1146,7 +1146,7 @@ export const generateKYMReport = async (data) => {
           doc.setTextColor(...COLORS.text);
 
           archetype.recommendations.slice(0, 3).forEach((rec, idx) => {
-            const recText = `${idx + 1}. ${rec.action || rec} (+${rec.impact || '?'} pts)`;
+            const recText = `${idx + 1}. ${rec.action || rec} (+${rec.points || rec.impact || '?'} pts)`;
             doc.text(recText, margin + 3, currentY);
             currentY += 4;
           });
