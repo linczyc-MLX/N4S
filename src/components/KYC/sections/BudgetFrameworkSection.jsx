@@ -76,6 +76,18 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
     ? Math.round(data.interiorBudget / projectParams.targetGSF)
     : null;
 
+  // Get quality tier label and color
+  const getQualityTierInfo = (perSF) => {
+    if (!perSF) return null;
+    if (perSF < 300) return { label: 'Entry Luxury', color: '#6b6b6b' };
+    if (perSF < 500) return { label: 'Mid Luxury', color: '#2e7d32' };
+    if (perSF < 800) return { label: 'High Luxury', color: '#1e3a5f' };
+    if (perSF < 1200) return { label: 'Ultra Luxury', color: '#c9a227' };
+    return { label: 'Bespoke / Museum Quality', color: '#c9a227' };
+  };
+
+  const qualityTierInfo = getQualityTierInfo(calculatedPerSF);
+
   return (
     <div className="kyc-section">
       <div className="kyc-section__group">
@@ -83,14 +95,15 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
         <p className="kyc-section__group-description">
           Understanding your budget parameters helps us match you with appropriately calibrated professionals.
         </p>
-        
+
+        {/* ROW 1: Land Acquisition Cost | Total Project Budget */}
         <div className="form-grid form-grid--2col">
           <FormField
             label="Land Acquisition Cost"
             type="number"
             value={portfolioContext.landAcquisitionCost}
             onChange={(v) => handlePortfolioContextChange('landAcquisitionCost', parseInt(v) || null)}
-            placeholder="Land purchase price"
+            placeholder="Enter amount"
             helpText="USD - Cost of land/lot"
             min={0}
           />
@@ -99,26 +112,27 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             type="number"
             value={data.totalProjectBudget}
             onChange={(v) => handleChange('totalProjectBudget', parseInt(v) || null)}
-            placeholder="All-in including contingency"
+            placeholder="Enter amount"
             helpText="USD - Total construction + soft costs"
             min={0}
             required
           />
         </div>
 
+        {/* ROW 2: Interior Budget | Grand Total (display) */}
         <div className="form-grid form-grid--2col">
           <FormField
             label="Interior Budget (ID + FF&E)"
             type="number"
             value={data.interiorBudget}
             onChange={(v) => handleChange('interiorBudget', parseInt(v) || null)}
-            placeholder="Interior design + furnishings"
+            placeholder="Enter amount"
             helpText="Subset of total budget"
             min={0}
             required
           />
           <div className="budget-grand-total">
-            <span className="budget-grand-total__label">Grand Total (All-in Project Cost)</span>
+            <span className="budget-grand-total__label">Grand Total (Total Project Budget)</span>
             <span className="budget-grand-total__value">
               ${grandTotal.toLocaleString()}
             </span>
@@ -126,31 +140,42 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
           </div>
         </div>
 
-        {calculatedPerSF && (
-          <div className="budget-insight">
-            <span className="budget-insight__label">Calculated Interior Budget per SF:</span>
-            <span className="budget-insight__value">${calculatedPerSF}/SF</span>
-            <span className="budget-insight__context">
-              {calculatedPerSF < 300 && '(Entry Luxury)'}
-              {calculatedPerSF >= 300 && calculatedPerSF < 500 && '(Mid Luxury)'}
-              {calculatedPerSF >= 500 && calculatedPerSF < 800 && '(High Luxury)'}
-              {calculatedPerSF >= 800 && calculatedPerSF < 1200 && '(Ultra Luxury)'}
-              {calculatedPerSF >= 1200 && '(Bespoke / Museum Quality)'}
+        {/* ROW 3: Calculated per-SF with quality tier badge (full width) */}
+        <div className="budget-insight-box">
+          <div className="budget-insight-box__content">
+            <span className="budget-insight-box__label">Calculated Interior Budget per SF:</span>
+            <span className="budget-insight-box__value">
+              {calculatedPerSF ? `$${calculatedPerSF}/SF` : '—'}
             </span>
+            {qualityTierInfo && (
+              <span
+                className="budget-insight-box__badge"
+                style={{
+                  backgroundColor: qualityTierInfo.color,
+                  color: qualityTierInfo.color === '#c9a227' ? '#1a1a1a' : '#ffffff'
+                }}
+              >
+                {qualityTierInfo.label}
+              </span>
+            )}
           </div>
-        )}
+          {!calculatedPerSF && (
+            <span className="budget-insight-box__hint">
+              Enter Interior Budget and Target SF to calculate
+            </span>
+          )}
+        </div>
 
-        {tier !== 'mvp' && (
-          <FormField
-            label="Per-SF Expectation (Override)"
-            type="number"
-            value={data.perSFExpectation}
-            onChange={(v) => handleChange('perSFExpectation', parseInt(v) || null)}
-            placeholder="If different from calculated"
-            helpText="Leave blank to use calculated value"
-            min={0}
-          />
-        )}
+        {/* ROW 4: Per-SF Override */}
+        <FormField
+          label="Per-SF Expectation (Override)"
+          type="number"
+          value={data.perSFExpectation}
+          onChange={(v) => handleChange('perSFExpectation', parseInt(v) || null)}
+          placeholder="Optional override"
+          helpText="Leave blank to use calculated value"
+          min={0}
+        />
       </div>
 
       <div className="kyc-section__group">

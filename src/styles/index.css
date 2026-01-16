@@ -390,6 +390,24 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .kyc-save-message--error { background: var(--danger-bg); color: var(--danger); }
 .kyc-save-time { font-size: 0.75rem; color: var(--gray-500); }
 
+/* Export Button - matches KYM style */
+.kyc-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--n4s-navy, #1e3a5f);
+  border: 1px solid var(--n4s-navy, #1e3a5f);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.kyc-export-btn:hover { background: #2a4a75; border-color: #2a4a75; }
+.kyc-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.kyc-export-btn .spinning { animation: spin 1s linear infinite; }
+
 /* Respondent Tabs */
 .kyc-module__respondent-tabs { display: flex; gap: 16px; margin-bottom: 32px; }
 .respondent-tab {
@@ -761,6 +779,72 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .budget-insight__label { color: var(--gray-600); font-size: 0.9rem; }
 .budget-insight__value { font-size: 1.25rem; font-weight: 700; color: var(--navy); }
 .budget-insight__context { font-size: 0.85rem; color: var(--teal); font-weight: 500; }
+
+/* Budget Grand Total Display */
+.budget-grand-total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+}
+.budget-grand-total__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+.budget-grand-total__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.budget-grand-total__help {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* Budget Insight Box (full width with badge) */
+.budget-insight-box {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+.budget-insight-box__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.budget-insight-box__label {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+.budget-insight-box__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.budget-insight-box__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.budget-insight-box__hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  font-style: italic;
+}
 
 /* Caliber Indicator */
 .caliber-indicator__scale {
