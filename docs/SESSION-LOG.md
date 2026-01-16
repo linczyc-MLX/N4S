@@ -1,5 +1,99 @@
 # N4S Session Log
 
+## Session: January 16, 2026 - BAM v3.0 Gap Analysis & Trade-off Completion
+
+### User Request
+Complete KYM/BAM v3.0 implementation - finish report generation and add missing features.
+
+### Issue Identified
+The BAM v3.0 dual scoring system was implemented but missing:
+1. **Gap Analysis aggregation** - `bamResults.gapAnalysis` referenced in report but not computed
+2. **Recommendations path mismatch** - Report expected `archetype.recommendations` but data was at `archetype.score.pathTo80.recommendations`
+3. **Trade-off Analysis** - No analysis of client vs market tensions
+
+### Implementation
+
+#### 1. BAMScoring.js - Enhanced calculateBAMScores
+
+**Added to archetype results:**
+```javascript
+// Expose recommendations at archetype level for easier report access
+recommendations: score.pathTo80?.recommendations || [],
+```
+
+**Added Gap Analysis aggregation (new function `aggregateGapAnalysis`):**
+- Collects recommendations from top 3 archetypes
+- Categorizes into: Quick Wins, Strategic Enhancements, Risk Mitigation
+- Quick Wins: Easy difficulty or Nice to Have features
+- Strategic: Must Have features requiring significant investment
+- Risk Mitigation: Avoids and risky features to address
+- Calculates projected score if all recommendations implemented
+
+**Added Trade-off Analysis (new function `analyzeTradeOffs`):**
+- Identifies tensions between client preferences and market appeal
+- Highlights strong alignments (Essential features included)
+- Flags style mismatches from triggered avoids
+- Generates summary statement for report
+
+**Return structure now includes:**
+```javascript
+return {
+  clientSatisfaction,
+  marketAppeal,
+  combined,
+  portfolioContext,
+  featureClassification,
+  gapAnalysis,        // NEW
+  tradeOffAnalysis,   // NEW
+};
+```
+
+#### 2. KYMReportGenerator.js - Trade-off Analysis Section
+
+**Added new section after Feature Classification:**
+- "Client vs Market Trade-offs" heading
+- Summary statement (italic)
+- AREAS OF TENSION list (warning color)
+- STRONG ALIGNMENTS list (success color)
+
+### Data Flow
+
+```
+calculateBAMScores()
+    ↓
+archetypeScores.map() → adds recommendations at top level
+    ↓
+aggregateGapAnalysis() → collects and categorizes across archetypes
+    ↓
+analyzeTradeOffs() → identifies client vs market tensions
+    ↓
+bamResults = { ..., gapAnalysis, tradeOffAnalysis }
+    ↓
+KYMReportGenerator receives complete data structure
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/KYM/BAMScoring.js` | Added gapAnalysis, tradeOffAnalysis, exposed recommendations |
+| `src/components/KYM/KYMReportGenerator.js` | Added Trade-off Analysis section |
+| `docs/SESSION-LOG.md` | This entry |
+
+### Testing Checklist
+
+- [x] Build passes (CI=false npm run build)
+- [x] BAM scores still compute correctly
+- [x] Gap Analysis generates Quick Wins, Strategic, Risk Mitigation
+- [x] Archetype recommendations accessible at `archetype.recommendations`
+- [x] Trade-off Analysis generates tensions and alignments
+- [x] Report generator can access all new data fields
+
+### Build Status
+✅ Build successful - all files compile correctly
+
+---
+
 ## Session: January 11, 2026 - Program Summary + MVP Cleanup
 
 ### User Request

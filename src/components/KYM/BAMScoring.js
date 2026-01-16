@@ -1200,6 +1200,7 @@ export const calculateBAMScores = (clientData, marketLocation, portfolioContext 
         name: 'Other',
         score: { percentage: 50, status: 'CAUTION' },
         weightedContribution: 50 * arch.share,
+        recommendations: [], // Empty for unknown archetypes
       };
     }
 
@@ -1209,6 +1210,8 @@ export const calculateBAMScores = (clientData, marketLocation, portfolioContext 
       ...persona,
       score,
       weightedContribution: score.percentage * arch.share,
+      // Expose recommendations at archetype level for easier report access
+      recommendations: score.pathTo80?.recommendations || [],
     };
   });
 
@@ -1225,6 +1228,12 @@ export const calculateBAMScores = (clientData, marketLocation, portfolioContext 
 
   // 6. Feature classification
   const featureClassification = classifyFeatures(clientData, archetypeScores);
+
+  // 7. Aggregate Gap Analysis for prioritized recommendations
+  const gapAnalysis = aggregateGapAnalysis(archetypeScores, featureClassification, combinedScore);
+
+  // 8. Trade-off Analysis (client vs market tensions)
+  const tradeOffAnalysis = analyzeTradeOffs(clientScore, archetypeScores, featureClassification);
 
   return {
     clientSatisfaction: clientScore,
@@ -1243,6 +1252,187 @@ export const calculateBAMScores = (clientData, marketLocation, portfolioContext 
     },
     portfolioContext,
     featureClassification,
+    gapAnalysis,
+    tradeOffAnalysis,
+  };
+};
+
+// =============================================================================
+// GAP ANALYSIS AGGREGATION
+// =============================================================================
+
+/**
+ * Aggregate gap analysis across all archetypes into prioritized recommendations
+ * Categories: Quick Wins, Strategic Enhancements, Risk Mitigation
+ */
+const aggregateGapAnalysis = (archetypeScores, featureClassification, combinedScore) => {
+  const quickWins = [];
+  const strategic = [];
+  const riskMitigation = [];
+
+  // Collect all recommendations from top 3 archetypes (weighted by market share)
+  const topArchetypes = archetypeScores
+    .filter(a => a.score?.percentage !== undefined)
+    .slice(0, 3);
+
+  // Track seen actions to avoid duplicates
+  const seenActions = new Set();
+
+  topArchetypes.forEach(archetype => {
+    const recs = archetype.recommendations || [];
+    const shareWeight = archetype.share || 0.1;
+
+    recs.forEach(rec => {
+      if (seenActions.has(rec.action)) return;
+      seenActions.add(rec.action);
+
+      const weightedImpact = Math.round((rec.points || 5) * shareWeight * 10);
+
+      if (rec.difficulty === 'Easy' || rec.type === 'niceToHave') {
+        quickWins.push({
+          action: rec.action,
+          impact: weightedImpact,
+          difficulty: rec.difficulty || 'Easy',
+          source: archetype.name,
+        });
+      } else if (rec.type === 'avoid') {
+        riskMitigation.push({
+          action: rec.action,
+          impact: rec.points || 10,
+          difficulty: rec.difficulty || 'Moderate',
+          source: archetype.name,
+        });
+      } else {
+        strategic.push({
+          action: rec.action,
+          impact: weightedImpact,
+          difficulty: rec.difficulty || 'Significant',
+          source: archetype.name,
+        });
+      }
+    });
+  });
+
+  // Add missing essential features as strategic enhancements
+  if (featureClassification?.essential) {
+    featureClassification.essential
+      .filter(f => !f.included)
+      .slice(0, 3)
+      .forEach(feature => {
+        if (!seenActions.has(feature.name)) {
+          strategic.push({
+            action: `Add ${feature.name}`,
+            impact: 8,
+            difficulty: 'Significant',
+            source: 'Essential Features',
+          });
+        }
+      });
+  }
+
+  // Add risky features as risk mitigation
+  if (featureClassification?.risky) {
+    featureClassification.risky
+      .filter(f => f.included)
+      .slice(0, 2)
+      .forEach(feature => {
+        if (!seenActions.has(feature.name)) {
+          riskMitigation.push({
+            action: `Review or mitigate ${feature.name}`,
+            impact: 5,
+            difficulty: 'Moderate',
+            source: 'Risk Assessment',
+          });
+        }
+      });
+  }
+
+  // Sort by impact
+  quickWins.sort((a, b) => b.impact - a.impact);
+  strategic.sort((a, b) => b.impact - a.impact);
+  riskMitigation.sort((a, b) => b.impact - a.impact);
+
+  // Calculate projected score if all recommendations implemented
+  const totalPotentialGain = [
+    ...quickWins.map(r => r.impact),
+    ...strategic.map(r => r.impact),
+    ...riskMitigation.map(r => r.impact),
+  ].reduce((sum, val) => sum + val, 0);
+
+  const projectedScore = Math.min(100, combinedScore + Math.round(totalPotentialGain / 3));
+
+  return {
+    quickWins: quickWins.slice(0, 5),
+    strategic: strategic.slice(0, 5),
+    riskMitigation: riskMitigation.slice(0, 3),
+    projectedScore,
+    totalPotentialGain,
+  };
+};
+
+// =============================================================================
+// TRADE-OFF ANALYSIS
+// =============================================================================
+
+/**
+ * Analyze tensions between client satisfaction and market appeal
+ */
+const analyzeTradeOffs = (clientScore, archetypeScores, featureClassification) => {
+  const tensions = [];
+  const alignments = [];
+
+  // Identify features that help client but hurt market (Personal quadrant)
+  if (featureClassification?.personal) {
+    featureClassification.personal
+      .filter(f => f.included)
+      .forEach(feature => {
+        tensions.push({
+          feature: feature.name,
+          clientImpact: 'Positive',
+          marketImpact: 'Negative',
+          recommendation: `${feature.name} serves your needs but may limit buyer pool. Consider making it convertible.`,
+        });
+      });
+  }
+
+  // Identify features that help both (Essential quadrant)
+  if (featureClassification?.essential) {
+    featureClassification.essential
+      .filter(f => f.included)
+      .forEach(feature => {
+        alignments.push({
+          feature: feature.name,
+          clientImpact: 'Positive',
+          marketImpact: 'Positive',
+          note: 'Strong alignment - serves both your needs and market appeal.',
+        });
+      });
+  }
+
+  // Check for style mismatches
+  const topArchetype = archetypeScores[0];
+  if (topArchetype?.score?.breakdown?.avoids?.items) {
+    const triggeredStyleAvoids = topArchetype.score.breakdown.avoids.items
+      .filter(a => a.triggered && a.label?.toLowerCase().includes('style'));
+
+    triggeredStyleAvoids.forEach(avoid => {
+      tensions.push({
+        feature: avoid.label,
+        clientImpact: 'Preference',
+        marketImpact: 'Negative',
+        recommendation: avoid.remediation || 'Consider adjusting style elements for broader appeal.',
+      });
+    });
+  }
+
+  return {
+    tensions: tensions.slice(0, 5),
+    alignments: alignments.slice(0, 5),
+    summary: tensions.length > 2
+      ? 'Several design choices prioritize personal preference over market appeal. Review for balance.'
+      : tensions.length > 0
+        ? 'Minor tensions between personal preferences and market appeal exist.'
+        : 'Strong alignment between client preferences and market expectations.',
   };
 };
 

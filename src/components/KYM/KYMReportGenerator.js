@@ -1361,6 +1361,70 @@ export const generateKYMReport = async (data) => {
   }
 
   // ==========================================================================
+  // TRADE-OFF ANALYSIS (BAM v3.0)
+  // ==========================================================================
+
+  if (bamResults?.tradeOffAnalysis) {
+    currentY = checkPageBreak(80);
+
+    doc.setFont(FONTS.body, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.navy);
+    doc.text('Client vs Market Trade-offs', margin, currentY);
+    currentY += 6;
+
+    // Summary statement
+    doc.setFont(FONTS.body, 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.textMuted);
+    const summaryText = bamResults.tradeOffAnalysis.summary || 'Analysis of design decisions balancing personal preferences with market appeal.';
+    const splitSummary = doc.splitTextToSize(summaryText, contentWidth);
+    doc.text(splitSummary, margin, currentY);
+    currentY += splitSummary.length * 4 + 6;
+
+    // Tensions (if any)
+    const tensions = bamResults.tradeOffAnalysis.tensions || [];
+    if (tensions.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.warning);
+      doc.text('AREAS OF TENSION', margin, currentY);
+      currentY += 5;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.text);
+
+      tensions.slice(0, 3).forEach((tension, idx) => {
+        const tensionText = `${idx + 1}. ${tension.feature}: ${tension.recommendation}`;
+        const splitTension = doc.splitTextToSize(tensionText, contentWidth - 10);
+        doc.text(splitTension, margin + 3, currentY);
+        currentY += splitTension.length * 3.5 + 2;
+      });
+
+      currentY += 4;
+    }
+
+    // Alignments (if any)
+    const alignments = bamResults.tradeOffAnalysis.alignments || [];
+    if (alignments.length > 0) {
+      doc.setFont(FONTS.body, 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.success);
+      doc.text('STRONG ALIGNMENTS', margin, currentY);
+      currentY += 5;
+
+      doc.setFont(FONTS.body, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.text);
+
+      const alignmentList = alignments.slice(0, 4).map(a => a.feature).join(', ');
+      doc.text(alignmentList, margin + 3, currentY);
+      currentY += 8;
+    }
+  }
+
+  // ==========================================================================
   // DESIGN ALIGNMENT INSIGHTS
   // ==========================================================================
 
