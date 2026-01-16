@@ -82,15 +82,32 @@ const getStaffingLevelLabel = (level) => {
   return labels[level] || level || 'Not specified';
 };
 
-// Quality Tier labels (interiorQualityTier from BudgetFrameworkSection)
+// Quality Tier labels with FULL descriptions (interiorQualityTier from BudgetFrameworkSection)
+const QUALITY_TIERS = {
+  'select': {
+    title: 'I - Select: The Curated Standard',
+    description: 'High-quality materials, established brands, professional-grade finishes'
+  },
+  'reserve': {
+    title: 'II - Reserve: Exceptional Materials',
+    description: 'Premium natural stones, custom millwork, designer fixtures, bespoke elements'
+  },
+  'signature': {
+    title: 'III - Signature: Bespoke Design',
+    description: 'Rare materials, master artisan work, one-of-a-kind commissions'
+  },
+  'legacy': {
+    title: 'IV - Legacy: Heirloom Standard',
+    description: 'Antique integrations, heritage materials, generational craftsmanship'
+  }
+};
+
 const getQualityTierLabel = (tier) => {
-  const labels = {
-    'select': 'I - Select: The Curated Standard',
-    'reserve': 'II - Reserve: Exceptional Materials',
-    'signature': 'III - Signature: Bespoke Design',
-    'legacy': 'IV - Legacy: Enduring Heritage',
-  };
-  return labels[tier] || tier || 'Not specified';
+  return QUALITY_TIERS[tier]?.title || tier || 'Not specified';
+};
+
+const getQualityTierDescription = (tier) => {
+  return QUALITY_TIERS[tier]?.description || '';
 };
 
 // Work From Home labels (from LifestyleLivingSection)
@@ -158,6 +175,36 @@ const getSpaceLabel = (spaceCode) => {
   return labels[spaceCode] || spaceCode;
 };
 
+// DNA Score labels (0-5 scale from Taste Exploration)
+const getDNAScoreLabel = (dimension, score) => {
+  if (score === undefined || score === null) return 'Not assessed';
+
+  const labels = {
+    styleEra: {
+      low: 'Contemporary',
+      mid: 'Transitional',
+      high: 'Traditional'
+    },
+    visualDensity: {
+      low: 'Minimal',
+      mid: 'Balanced',
+      high: 'Layered'
+    },
+    moodPalette: {
+      low: 'Cool',
+      mid: 'Neutral',
+      high: 'Warm'
+    }
+  };
+
+  const dimLabels = labels[dimension] || { low: 'Low', mid: 'Mid', high: 'High' };
+
+  // Score is 0-5 scale
+  if (score <= 1.5) return `${dimLabels.low} (${score.toFixed(1)})`;
+  if (score >= 3.5) return `${dimLabels.high} (${score.toFixed(1)})`;
+  return `${dimLabels.mid} (${score.toFixed(1)})`;
+};
+
 /**
  * Generate KYC Report PDF
  * @param {object} kycData - Full KYC data from AppContext (contains principal, secondary, advisor)
@@ -193,6 +240,7 @@ export const generateKYCReport = async (kycData) => {
   // ==========================================================================
 
   const principal = kycData?.principal || {};
+  const secondary = kycData?.secondary || {};
 
   // P1.A.1 - Portfolio Context
   const portfolioContext = principal.portfolioContext || {};
@@ -203,11 +251,20 @@ export const generateKYCReport = async (kycData) => {
   const investmentHorizon = portfolioContext.investmentHorizon;
   const landAcquisitionCost = portfolioContext.landAcquisitionCost || 0;
 
+  // Check if secondary stakeholder exists
+  const secondaryFirstName = portfolioContext.secondaryFirstName || '';
+  const secondaryLastName = portfolioContext.secondaryLastName || '';
+  const hasSecondary = !!(secondaryFirstName || secondaryLastName);
+
   // P1.A.2 - Family & Household
   const familyHousehold = principal.familyHousehold || {};
   const familyMembers = familyHousehold.familyMembers || [];
-  // Count adults and children from familyMembers array
-  const adultsCount = familyMembers.filter(m => m.role === 'adult' || m.role === 'elderly').length;
+
+  // FIX 1: Adults Count - Principal always = 1, Secondary = +1 if exists, plus additional adults from familyMembers
+  const additionalAdults = familyMembers.filter(m => m.role === 'adult' || m.role === 'elderly').length;
+  const adultsCount = 1 + (hasSecondary ? 1 : 0) + additionalAdults;
+
+  // Children count from familyMembers
   const childrenCount = familyMembers.filter(m =>
     m.role === 'teenager' || m.role === 'child' || m.role === 'young-child'
   ).length;
@@ -229,10 +286,10 @@ export const generateKYCReport = async (kycData) => {
   // P1.A.6 - Lifestyle & Living
   const lifestyleLiving = principal.lifestyleLiving || {};
   const workFromHome = lifestyleLiving.workFromHome;
-  const wfhPeopleCount = lifestyleLiving.wfhPeopleCount;
-  const separateOfficesRequired = lifestyleLiving.separateOfficesRequired;
-  // Dedicated offices: if separateOfficesRequired is true, use wfhPeopleCount
-  const dedicatedOffices = separateOfficesRequired ? wfhPeopleCount : (workFromHome && workFromHome !== 'never' ? 1 : 0);
+
+  // FIX 3: Dedicated Offices - Read wfhPeopleCount directly
+  const dedicatedOffices = lifestyleLiving.wfhPeopleCount || 0;
+
   const entertainingStyle = lifestyleLiving.entertainingStyle;
   const entertainingFrequency = lifestyleLiving.entertainingFrequency;
 
@@ -244,12 +301,18 @@ export const generateKYCReport = async (kycData) => {
   // P1.A.5 - Design Identity
   const designIdentity = principal.designIdentity || {};
 
+  // FIX 4: Extract taste results correctly
+  const principalTasteResults = designIdentity.principalTasteResults || null;
+  const secondaryTasteResults = designIdentity.secondaryTasteResults || null;
+  const hasTasteData = !!(principalTasteResults || secondaryTasteResults);
+
   // Log extracted values for debugging
   console.log('[KYC Report] Extracted values:', {
     clientName,
     projectName,
     thisPropertyRole,
     investmentHorizon,
+    hasSecondary,
     adultsCount,
     childrenCount,
     staffingLevel,
@@ -265,6 +328,9 @@ export const generateKYCReport = async (kycData) => {
     bedroomCount,
     mustHaveSpaces,
     niceToHaveSpaces,
+    principalTasteResults,
+    secondaryTasteResults,
+    hasTasteData,
   });
 
   // ==========================================================================
@@ -348,6 +414,32 @@ export const generateKYCReport = async (kycData) => {
     currentY += 6;
   };
 
+  // FIX 2: Add helper for multi-line label/value with description
+  const addLabelValueWithDescription = (label, value, description, indent = 0) => {
+    currentY = checkPageBreak(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(label, margin + indent, currentY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.text);
+    const displayValue = value !== undefined && value !== null && value !== '' ? String(value) : 'Not specified';
+    doc.text(displayValue, margin + indent + 55, currentY);
+    currentY += 5;
+
+    if (description) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      const descLines = doc.splitTextToSize(description, contentWidth - indent - 55);
+      doc.text(descLines, margin + indent + 55, currentY);
+      currentY += descLines.length * 3.5 + 2;
+    }
+    currentY += 2;
+  };
+
   const addBulletList = (items, indent = 5) => {
     if (!items || items.length === 0) {
       currentY = checkPageBreak(6);
@@ -371,6 +463,48 @@ export const generateKYCReport = async (kycData) => {
       currentY += lines.length * 4 + 2;
     });
     currentY += 2;
+  };
+
+  // Helper to add DNA score bar visualization
+  const addDNAScoreBar = (label, score, leftLabel, rightLabel) => {
+    if (score === undefined || score === null) return;
+
+    currentY = checkPageBreak(18);
+
+    // Label
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.text);
+    doc.text(label, margin, currentY);
+    currentY += 5;
+
+    // Bar background
+    const barWidth = contentWidth - 40;
+    const barHeight = 6;
+    const barX = margin + 20;
+
+    doc.setFillColor(...COLORS.border);
+    doc.roundedRect(barX, currentY, barWidth, barHeight, 2, 2, 'F');
+
+    // Score marker (score is 0-5, convert to percentage)
+    const markerPos = barX + (score / 5) * barWidth;
+    doc.setFillColor(...COLORS.kycBlue);
+    doc.circle(markerPos, currentY + barHeight / 2, 4, 'F');
+
+    // Score text in marker
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(...COLORS.white);
+    doc.text(score.toFixed(1), markerPos, currentY + barHeight / 2 + 1.5, { align: 'center' });
+
+    // Left/Right labels
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(leftLabel, barX, currentY + barHeight + 4);
+    doc.text(rightLabel, barX + barWidth, currentY + barHeight + 4, { align: 'right' });
+
+    currentY += barHeight + 10;
   };
 
   // ==========================================================================
@@ -419,8 +553,8 @@ export const generateKYCReport = async (kycData) => {
 
   currentY += 5;
   addSubsectionTitle('Household Composition');
-  addLabelValue('Adults', adultsCount > 0 ? adultsCount : 'Not specified');
-  addLabelValue('Children', childrenCount > 0 ? childrenCount : '0');
+  addLabelValue('Adults', adultsCount);
+  addLabelValue('Children', childrenCount);
   addLabelValue('Staffing Level', getStaffingLevelLabel(staffingLevel));
 
   // ==========================================================================
@@ -451,8 +585,13 @@ export const generateKYCReport = async (kycData) => {
 
   currentY += 30;
 
+  // FIX 2: Quality Tier with full description
   addSubsectionTitle('Quality Standards');
-  addLabelValue('Quality Tier', getQualityTierLabel(interiorQualityTier));
+  addLabelValueWithDescription(
+    'Quality Tier',
+    getQualityTierLabel(interiorQualityTier),
+    getQualityTierDescription(interiorQualityTier)
+  );
 
   // ==========================================================================
   // PAGE 3 - LIFESTYLE & WORKING
@@ -491,40 +630,80 @@ export const generateKYCReport = async (kycData) => {
   addBulletList(niceToHaveSpaces);
 
   // ==========================================================================
-  // PAGE 5 - DESIGN IDENTITY (if available)
+  // PAGE 5 - DESIGN IDENTITY (always show, with "not completed" if no data)
   // ==========================================================================
 
-  if (designIdentity.principalTasteResults || designIdentity.tasteStyle) {
-    currentY = addNewPage();
+  currentY = addNewPage();
 
-    addSectionTitle('Design Identity');
+  addSectionTitle('Design Identity');
 
-    if (designIdentity.tasteStyle) {
-      addSubsectionTitle('Style Profile');
-      addLabelValue('Primary Style', designIdentity.tasteStyle);
+  // FIX 4: Always show Design Identity section, with proper handling of missing data
+  if (!hasTasteData) {
+    // No taste data - show message
+    currentY = checkPageBreak(20);
+    doc.setFillColor(...COLORS.accentLight);
+    doc.roundedRect(margin, currentY, contentWidth, 25, 3, 3, 'F');
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Taste Exploration not yet completed', margin + 8, currentY + 10);
+    doc.setFontSize(8);
+    doc.text('Complete the FYI module to generate Design DNA profile', margin + 8, currentY + 18);
+    currentY += 35;
+  } else {
+    // Principal Taste Results
+    if (principalTasteResults) {
+      addSubsectionTitle('Principal Design DNA');
+
+      // Style Label
+      const principalStyleLabel = principalTasteResults.styleLabel || principalTasteResults.dominant || null;
+      if (principalStyleLabel) {
+        addLabelValue('Style Profile', principalStyleLabel);
+      }
+
+      // DNA Scores
+      const principalDNA = principalTasteResults.dnaScores || principalTasteResults;
+
+      currentY += 5;
+
+      if (principalDNA.styleEra !== undefined) {
+        addDNAScoreBar('Style Era', principalDNA.styleEra, 'Contemporary', 'Traditional');
+      }
+
+      if (principalDNA.visualDensity !== undefined) {
+        addDNAScoreBar('Visual Density', principalDNA.visualDensity, 'Minimal', 'Layered');
+      }
+
+      if (principalDNA.moodPalette !== undefined) {
+        addDNAScoreBar('Mood Palette', principalDNA.moodPalette, 'Cool', 'Warm');
+      }
     }
 
-    const tasteResults = designIdentity.principalTasteResults;
-    if (tasteResults) {
+    // Secondary Taste Results (if exists)
+    if (secondaryTasteResults) {
+      currentY += 10;
+      addSubsectionTitle('Secondary Design DNA');
+
+      const secondaryStyleLabel = secondaryTasteResults.styleLabel || secondaryTasteResults.dominant || null;
+      if (secondaryStyleLabel) {
+        addLabelValue('Style Profile', secondaryStyleLabel);
+      }
+
+      const secondaryDNA = secondaryTasteResults.dnaScores || secondaryTasteResults;
+
       currentY += 5;
-      addSubsectionTitle('Design DNA');
 
-      if (tasteResults.styleEra !== undefined) {
-        const eraLabel = tasteResults.styleEra < 40 ? 'Classic/Traditional' :
-                         tasteResults.styleEra > 60 ? 'Contemporary/Modern' : 'Transitional';
-        addLabelValue('Style Era', `${eraLabel} (${tasteResults.styleEra})`);
+      if (secondaryDNA.styleEra !== undefined) {
+        addDNAScoreBar('Style Era', secondaryDNA.styleEra, 'Contemporary', 'Traditional');
       }
 
-      if (tasteResults.visualDensity !== undefined) {
-        const densityLabel = tasteResults.visualDensity < 40 ? 'Minimal/Clean' :
-                             tasteResults.visualDensity > 60 ? 'Layered/Rich' : 'Balanced';
-        addLabelValue('Visual Density', `${densityLabel} (${tasteResults.visualDensity})`);
+      if (secondaryDNA.visualDensity !== undefined) {
+        addDNAScoreBar('Visual Density', secondaryDNA.visualDensity, 'Minimal', 'Layered');
       }
 
-      if (tasteResults.moodPalette !== undefined) {
-        const moodLabel = tasteResults.moodPalette < 40 ? 'Cool/Serene' :
-                          tasteResults.moodPalette > 60 ? 'Warm/Inviting' : 'Neutral';
-        addLabelValue('Mood Palette', `${moodLabel} (${tasteResults.moodPalette})`);
+      if (secondaryDNA.moodPalette !== undefined) {
+        addDNAScoreBar('Mood Palette', secondaryDNA.moodPalette, 'Cool', 'Warm');
       }
     }
   }
