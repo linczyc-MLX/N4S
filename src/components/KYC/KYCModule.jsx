@@ -227,13 +227,13 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
             {isSaving ? 'Saving...' : 'SAVE'}
           </button>
           <button
-            className={`kyc-export-btn ${isExporting ? 'kyc-export-btn--exporting' : ''}`}
+            className="kyc-export-btn"
             onClick={handleExportReport}
             disabled={isExporting}
             title="Export KYC Report as PDF"
           >
-            <FileDown size={16} />
-            {isExporting ? 'Exporting...' : 'EXPORT'}
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export Report'}
           </button>
           {hasUnsavedChanges && !isSaving && (
             <span className="kyc-save-indicator">Unsaved</span>
