@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
   Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
-  ChevronDown, Save, FileText
+  ChevronDown, Save, FileDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYCDocumentation from './KYCDocumentation';
+import { generateKYCReport } from './KYCReportGenerator';
 
 // Import section components
 import PortfolioContextSection from './sections/PortfolioContextSection';
@@ -32,10 +33,12 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     isSaving,
     hasUnsavedChanges,
     lastSaved,
+    kycData,
   } = useAppContext();
 
   const [saveMessage, setSaveMessage] = useState(null);
   const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // SAVE HANDLER
   const handleSave = useCallback(async () => {
@@ -48,6 +51,21 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
       setTimeout(() => setSaveMessage(null), 5000);
     }
   }, [saveNow]);
+
+  // EXPORT REPORT HANDLER
+  const handleExportReport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      await generateKYCReport(kycData);
+      console.log('[KYC] Report exported successfully');
+    } catch (error) {
+      console.error('[KYC] Export error:', error);
+      setSaveMessage('Export failed');
+      setTimeout(() => setSaveMessage(null), 5000);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [kycData]);
 
   const sections = [
     { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
@@ -198,7 +216,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
           ))}
         </div>
 
-        {/* SAVE BUTTON */}
+        {/* SAVE & EXPORT BUTTONS */}
         <div className="kyc-module__save-area">
           <button
             className={`kyc-save-btn ${hasUnsavedChanges ? 'kyc-save-btn--unsaved' : ''} ${isSaving ? 'kyc-save-btn--saving' : ''}`}
@@ -207,6 +225,15 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
           >
             <Save size={16} />
             {isSaving ? 'Saving...' : 'SAVE'}
+          </button>
+          <button
+            className={`kyc-export-btn ${isExporting ? 'kyc-export-btn--exporting' : ''}`}
+            onClick={handleExportReport}
+            disabled={isExporting}
+            title="Export KYC Report as PDF"
+          >
+            <FileDown size={16} />
+            {isExporting ? 'Exporting...' : 'EXPORT'}
           </button>
           {hasUnsavedChanges && !isSaving && (
             <span className="kyc-save-indicator">Unsaved</span>
