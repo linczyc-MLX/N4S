@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin
+  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign
 } from 'lucide-react';
 
 // Import modules
@@ -11,6 +11,7 @@ import KYSModule from './components/KYS/KYSModule';
 import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 import KYMModule from './components/KYM/KYMModule';
+import VMXModule from './components/VMX/VMXModule';
 
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
@@ -85,8 +86,9 @@ const AppContent = () => {
     setShowDocs(false);
   }, [activeModule]);
 
-  // Module order: Dashboard, KYC, FYI, MVP, KYM, KYS, Settings
+  // Module order: Dashboard, KYC, FYI, MVP, KYM, KYS, VMX, Settings
   // KYS after KYM because site assessment needs validated program AND market context
+  // VMX after KYS because cost estimation uses program (FYI) + site (KYS) data
   const modules = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & Progress' },
     { id: 'kyc', label: 'KYC', icon: Users, description: 'Know Your Client' },
@@ -94,6 +96,7 @@ const AppContent = () => {
     { id: 'mvp', label: 'MVP', icon: ClipboardCheck, description: 'Mansion Validation' },
     { id: 'kym', label: 'KYM', icon: Map, description: 'Know Your Market' },
     { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
+    { id: 'vmx', label: 'VMX', icon: DollarSign, description: 'Vision Matrix' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
@@ -112,6 +115,8 @@ const AppContent = () => {
         return <FYIModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'kym':
         return <KYMModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
+      case 'vmx':
+        return <VMXModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'settings':
         return <SettingsPanel />;
       default:
