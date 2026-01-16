@@ -2,7 +2,16 @@
  * KYCReportGenerator.js
  *
  * Generates comprehensive KYC PDF reports following N4S brand standards.
- * AUDIT: All data paths verified against actual kycData structure.
+ * AUDIT COMPLETE: All data paths verified against actual kycData structure.
+ *
+ * DATA STRUCTURE (from AppContext.jsx):
+ * kycData.principal.portfolioContext - P1.A.1
+ * kycData.principal.familyHousehold - P1.A.2
+ * kycData.principal.projectParameters - P1.A.3
+ * kycData.principal.budgetFramework - P1.A.4
+ * kycData.principal.designIdentity - P1.A.5
+ * kycData.principal.lifestyleLiving - P1.A.6
+ * kycData.principal.spaceRequirements - P1.A.7
  */
 
 import jsPDF from 'jspdf';
@@ -39,31 +48,41 @@ const formatDate = (date) => {
   });
 };
 
-// Property Role labels
+// Property Role labels (thisPropertyRole values from PortfolioContextSection)
 const getPropertyRoleLabel = (role) => {
   const labels = {
-    'forever-home': 'Forever Home (15+ years)',
-    'primary-residence': 'Primary Residence (10-15 years)',
-    'medium-term': 'Medium-Term Hold (5-10 years)',
-    'investment': 'Investment Property (<5 years)',
-    'spec-build': 'Spec Development (Build to Sell)',
+    'primary': 'Primary Residence',
+    'secondary': 'Secondary/Vacation Home',
+    'vacation': 'Vacation Property',
+    'investment': 'Investment Property',
+    'legacy': 'Legacy/Generational Asset',
   };
   return labels[role] || role || 'Not specified';
 };
 
-// Staffing Level labels
+// Investment Horizon labels (investmentHorizon values)
+const getInvestmentHorizonLabel = (horizon) => {
+  const labels = {
+    'forever': 'Forever Home',
+    '10yr': '10+ Years',
+    '5yr': '5-10 Years',
+    'generational': 'Generational (Multi-decade)',
+  };
+  return labels[horizon] || horizon || 'Not specified';
+};
+
+// Staffing Level labels (from FamilyHouseholdSection)
 const getStaffingLevelLabel = (level) => {
   const labels = {
-    'minimal': 'Minimal (occasional services)',
-    'part-time': 'Part-Time Staff (weekly presence)',
-    'full-time': 'Full-Time Staff (daily presence)',
-    'estate': 'Estate Level (multiple full-time staff)',
-    'compound': 'Compound Level (dedicated estate manager)',
+    'none': 'No Staff',
+    'part_time': 'Part-Time Staff (cleaning, etc.)',
+    'full_time': 'Full-Time Staff (daily presence)',
+    'live_in': 'Live-In Staff (requires quarters)',
   };
   return labels[level] || level || 'Not specified';
 };
 
-// Quality Tier labels
+// Quality Tier labels (interiorQualityTier from BudgetFrameworkSection)
 const getQualityTierLabel = (tier) => {
   const labels = {
     'select': 'I - Select: The Curated Standard',
@@ -74,52 +93,86 @@ const getQualityTierLabel = (tier) => {
   return labels[tier] || tier || 'Not specified';
 };
 
-// Work From Home labels
+// Work From Home labels (from LifestyleLivingSection)
 const getWorkFromHomeLabel = (value) => {
   const labels = {
-    'never': 'Never / Rarely',
-    'occasionally': 'Occasionally (1-2 days/week)',
-    'frequently': 'Frequently (3-4 days/week)',
-    'primarily': 'Primarily Work From Home',
-    'full-time': 'Full-Time Remote',
+    'never': 'Never',
+    'sometimes': 'Sometimes (1-2 days/week)',
+    'often': 'Often (3-4 days/week)',
+    'always': 'Always (Full Remote)',
   };
   return labels[value] || value || 'Not specified';
 };
 
-// Entertainment Style labels
+// Entertainment Style labels (from LifestyleLivingSection)
 const getEntertainingStyleLabel = (value) => {
   const labels = {
-    'intimate': 'Intimate Gatherings (2-6 guests)',
-    'moderate': 'Moderate Entertaining (6-20 guests)',
-    'large': 'Large Events (20-50 guests)',
-    'grand': 'Grand Scale (50+ guests)',
-    'none': 'Minimal Entertaining',
+    'formal': 'Formal (Seated dinners)',
+    'casual': 'Casual (Relaxed gatherings)',
+    'both': 'Both Formal & Casual',
   };
   return labels[value] || value || 'Not specified';
 };
 
-// Entertainment Frequency labels
+// Entertainment Frequency labels (from LifestyleLivingSection)
 const getEntertainingFrequencyLabel = (value) => {
   const labels = {
-    'rarely': 'Rarely (few times per year)',
+    'rarely': 'Rarely (Few times/year)',
     'monthly': 'Monthly',
     'weekly': 'Weekly',
-    'frequently': 'Multiple times per week',
+    'daily': 'Daily/Constantly',
   };
   return labels[value] || value || 'Not specified';
+};
+
+// Space label mappings (from SpaceRequirementsSection)
+const getSpaceLabel = (spaceCode) => {
+  const labels = {
+    'primary-suite': 'Primary Suite',
+    'secondary-suites': 'Guest Suites',
+    'kids-bedrooms': "Children's Bedrooms",
+    'great-room': 'Great Room/Living',
+    'formal-living': 'Formal Living Room',
+    'family-room': 'Family Room',
+    'formal-dining': 'Formal Dining',
+    'casual-dining': 'Casual Dining/Breakfast',
+    'chef-kitchen': "Chef's Kitchen",
+    'catering-kitchen': 'Catering Kitchen',
+    'home-office': 'Home Office',
+    'library': 'Library',
+    'media-room': 'Media Room/Theater',
+    'game-room': 'Game Room',
+    'wine-cellar': 'Wine Cellar',
+    'gym': 'Home Gym',
+    'spa-wellness': 'Spa/Wellness Suite',
+    'pool-indoor': 'Indoor Pool',
+    'sauna': 'Sauna',
+    'steam-room': 'Steam Room',
+    'staff-quarters': 'Staff Quarters',
+    'mudroom': 'Mudroom',
+    'laundry': 'Laundry Room',
+    'art-gallery': 'Art Gallery',
+    'music-room': 'Music Room',
+    'safe-room': 'Safe Room/Panic Room',
+  };
+  return labels[spaceCode] || spaceCode;
 };
 
 /**
  * Generate KYC Report PDF
- * @param {object} kycData - Full KYC data from AppContext
+ * @param {object} kycData - Full KYC data from AppContext (contains principal, secondary, advisor)
  */
 export const generateKYCReport = async (kycData) => {
-  // DEBUG: Log full kycData to verify paths
+  // DEBUG: Log full kycData to verify all paths
+  console.log('=== KYC REPORT DATA AUDIT ===');
   console.log('[KYC Report] Full kycData:', JSON.stringify(kycData, null, 2));
   console.log('[KYC Report] portfolioContext:', kycData?.principal?.portfolioContext);
+  console.log('[KYC Report] familyHousehold:', kycData?.principal?.familyHousehold);
+  console.log('[KYC Report] projectParameters:', kycData?.principal?.projectParameters);
+  console.log('[KYC Report] budgetFramework:', kycData?.principal?.budgetFramework);
   console.log('[KYC Report] lifestyleLiving:', kycData?.principal?.lifestyleLiving);
   console.log('[KYC Report] spaceRequirements:', kycData?.principal?.spaceRequirements);
-  console.log('[KYC Report] operatingModel:', kycData?.principal?.operatingModel);
+  console.log('[KYC Report] designIdentity:', kycData?.principal?.designIdentity);
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -136,49 +189,83 @@ export const generateKYCReport = async (kycData) => {
   let totalPages = 5;
 
   // ==========================================================================
-  // EXTRACT DATA FROM CORRECT PATHS
+  // EXTRACT DATA FROM CORRECT PATHS (verified against AppContext.jsx)
   // ==========================================================================
 
   const principal = kycData?.principal || {};
 
   // P1.A.1 - Portfolio Context
   const portfolioContext = principal.portfolioContext || {};
-  const clientName = portfolioContext.clientName || 'Client';
-  const projectName = portfolioContext.projectName || 'Luxury Residence Project';
-  const propertyRole = portfolioContext.propertyRole;
-  const planningHorizon = portfolioContext.planningHorizon;
+  const principalFirstName = portfolioContext.principalFirstName || '';
+  const principalLastName = portfolioContext.principalLastName || '';
+  const clientName = [principalFirstName, principalLastName].filter(Boolean).join(' ') || 'Client';
+  const thisPropertyRole = portfolioContext.thisPropertyRole;
+  const investmentHorizon = portfolioContext.investmentHorizon;
+  const landAcquisitionCost = portfolioContext.landAcquisitionCost || 0;
 
   // P1.A.2 - Family & Household
-  const familyComposition = portfolioContext.familyComposition || {};
-  const adults = familyComposition.adults;
-  const children = familyComposition.children;
+  const familyHousehold = principal.familyHousehold || {};
+  const familyMembers = familyHousehold.familyMembers || [];
+  // Count adults and children from familyMembers array
+  const adultsCount = familyMembers.filter(m => m.role === 'adult' || m.role === 'elderly').length;
+  const childrenCount = familyMembers.filter(m =>
+    m.role === 'teenager' || m.role === 'child' || m.role === 'young-child'
+  ).length;
+  const staffingLevel = familyHousehold.staffingLevel;
 
-  // P1.A.3 - Operating Model
-  const operatingModel = principal.operatingModel || {};
-  const staffingLevel = operatingModel.staffingLevel;
+  // P1.A.3 - Project Parameters
+  const projectParameters = principal.projectParameters || {};
+  const projectName = projectParameters.projectName || 'Luxury Residence Project';
+  const bedroomCount = projectParameters.bedroomCount;
+  const targetGSF = projectParameters.targetGSF;
 
-  // P1.A.4 - Budget Parameters (stored in portfolioContext)
-  const landAcquisitionCost = portfolioContext.landAcquisitionCost || 0;
-  const totalBudget = portfolioContext.totalBudget || 0;
-  const interiorBudget = portfolioContext.interiorBudget || 0;
-  const grandTotal = landAcquisitionCost + totalBudget;
-  const qualityTier = portfolioContext.qualityTier;
+  // P1.A.4 - Budget Framework
+  const budgetFramework = principal.budgetFramework || {};
+  const totalProjectBudget = budgetFramework.totalProjectBudget || 0;
+  const interiorBudget = budgetFramework.interiorBudget || 0;
+  const grandTotal = landAcquisitionCost + totalProjectBudget;
+  const interiorQualityTier = budgetFramework.interiorQualityTier;
 
   // P1.A.6 - Lifestyle & Living
   const lifestyleLiving = principal.lifestyleLiving || {};
   const workFromHome = lifestyleLiving.workFromHome;
-  const officeCount = lifestyleLiving.officeCount;
+  const wfhPeopleCount = lifestyleLiving.wfhPeopleCount;
+  const separateOfficesRequired = lifestyleLiving.separateOfficesRequired;
+  // Dedicated offices: if separateOfficesRequired is true, use wfhPeopleCount
+  const dedicatedOffices = separateOfficesRequired ? wfhPeopleCount : (workFromHome && workFromHome !== 'never' ? 1 : 0);
   const entertainingStyle = lifestyleLiving.entertainingStyle;
   const entertainingFrequency = lifestyleLiving.entertainingFrequency;
 
   // P1.A.7 - Space Requirements
   const spaceRequirements = principal.spaceRequirements || {};
-  const bedroomCount = spaceRequirements.bedroomCount;
   const mustHaveSpaces = spaceRequirements.mustHaveSpaces || [];
   const niceToHaveSpaces = spaceRequirements.niceToHaveSpaces || [];
 
-  // Design Identity
+  // P1.A.5 - Design Identity
   const designIdentity = principal.designIdentity || {};
+
+  // Log extracted values for debugging
+  console.log('[KYC Report] Extracted values:', {
+    clientName,
+    projectName,
+    thisPropertyRole,
+    investmentHorizon,
+    adultsCount,
+    childrenCount,
+    staffingLevel,
+    landAcquisitionCost,
+    totalProjectBudget,
+    interiorBudget,
+    grandTotal,
+    interiorQualityTier,
+    workFromHome,
+    dedicatedOffices,
+    entertainingStyle,
+    entertainingFrequency,
+    bedroomCount,
+    mustHaveSpaces,
+    niceToHaveSpaces,
+  });
 
   // ==========================================================================
   // HELPER FUNCTIONS
@@ -277,7 +364,9 @@ export const generateKYCReport = async (kycData) => {
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.text);
       doc.text('•', margin + indent, currentY);
-      const lines = doc.splitTextToSize(String(item), contentWidth - indent - 8);
+      // Convert space codes to labels
+      const displayItem = getSpaceLabel(item);
+      const lines = doc.splitTextToSize(String(displayItem), contentWidth - indent - 8);
       doc.text(lines, margin + indent + 5, currentY);
       currentY += lines.length * 4 + 2;
     });
@@ -325,13 +414,13 @@ export const generateKYCReport = async (kycData) => {
 
   // Project Details
   addSubsectionTitle('Project Overview');
-  addLabelValue("This Property's Role", getPropertyRoleLabel(propertyRole));
-  addLabelValue('Investment Horizon', planningHorizon ? `${planningHorizon} years` : 'Not specified');
+  addLabelValue("This Property's Role", getPropertyRoleLabel(thisPropertyRole));
+  addLabelValue('Investment Horizon', getInvestmentHorizonLabel(investmentHorizon));
 
   currentY += 5;
   addSubsectionTitle('Household Composition');
-  addLabelValue('Adults', adults !== undefined ? adults : 'Not specified');
-  addLabelValue('Children', children !== undefined ? children : '0');
+  addLabelValue('Adults', adultsCount > 0 ? adultsCount : 'Not specified');
+  addLabelValue('Children', childrenCount > 0 ? childrenCount : '0');
   addLabelValue('Staffing Level', getStaffingLevelLabel(staffingLevel));
 
   // ==========================================================================
@@ -343,7 +432,7 @@ export const generateKYCReport = async (kycData) => {
   addSectionTitle('Budget Parameters');
 
   addLabelValue('Land Acquisition Cost', formatCurrency(landAcquisitionCost));
-  addLabelValue('Total Project Budget', formatCurrency(totalBudget));
+  addLabelValue('Total Project Budget', formatCurrency(totalProjectBudget));
   addLabelValue('Interior Budget', formatCurrency(interiorBudget));
 
   currentY += 5;
@@ -363,7 +452,7 @@ export const generateKYCReport = async (kycData) => {
   currentY += 30;
 
   addSubsectionTitle('Quality Standards');
-  addLabelValue('Quality Tier', getQualityTierLabel(qualityTier));
+  addLabelValue('Quality Tier', getQualityTierLabel(interiorQualityTier));
 
   // ==========================================================================
   // PAGE 3 - LIFESTYLE & WORKING
@@ -375,7 +464,7 @@ export const generateKYCReport = async (kycData) => {
 
   addSubsectionTitle('Work From Home');
   addLabelValue('WFH Frequency', getWorkFromHomeLabel(workFromHome));
-  addLabelValue('Dedicated Offices', officeCount !== undefined ? officeCount : 'Not specified');
+  addLabelValue('Dedicated Offices', dedicatedOffices > 0 ? dedicatedOffices : 'Not specified');
 
   currentY += 5;
   addSubsectionTitle('Entertainment');
@@ -391,7 +480,7 @@ export const generateKYCReport = async (kycData) => {
   addSectionTitle('Space Requirements');
 
   addSubsectionTitle('Bedrooms');
-  addLabelValue('Bedroom Count', bedroomCount !== undefined ? bedroomCount : 'Not specified');
+  addLabelValue('Bedroom Count', bedroomCount !== undefined && bedroomCount !== null ? bedroomCount : 'Not specified');
 
   currentY += 5;
   addSubsectionTitle('Must-Have Spaces');
