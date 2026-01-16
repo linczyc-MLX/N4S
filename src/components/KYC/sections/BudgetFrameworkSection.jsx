@@ -6,10 +6,19 @@ import SelectField from '../../shared/SelectField';
 const BudgetFrameworkSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
   const data = kycData[respondent].budgetFramework;
+  const portfolioContext = kycData[respondent].portfolioContext || {};
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'budgetFramework', { [field]: value });
   };
+
+  const handlePortfolioContextChange = (field, value) => {
+    updateKYCData(respondent, 'portfolioContext', { [field]: value });
+  };
+
+  // Calculate Grand Total (All-in Project Cost)
+  const landAcquisitionCost = portfolioContext.landAcquisitionCost || 0;
+  const grandTotal = landAcquisitionCost + (data.totalProjectBudget || 0);
 
   const budgetFlexibilityOptions = [
     { value: 'fixed', label: 'Fixed Ceiling - Cannot Exceed' },
@@ -77,6 +86,15 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
         
         <div className="form-grid form-grid--2col">
           <FormField
+            label="Land Acquisition Cost"
+            type="number"
+            value={portfolioContext.landAcquisitionCost}
+            onChange={(v) => handlePortfolioContextChange('landAcquisitionCost', parseInt(v) || null)}
+            placeholder="Land purchase price"
+            helpText="USD - Cost of land/lot"
+            min={0}
+          />
+          <FormField
             label="Total Project Budget"
             type="number"
             value={data.totalProjectBudget}
@@ -86,6 +104,9 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             min={0}
             required
           />
+        </div>
+
+        <div className="form-grid form-grid--2col">
           <FormField
             label="Interior Budget (ID + FF&E)"
             type="number"
@@ -96,6 +117,13 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             min={0}
             required
           />
+          <div className="budget-grand-total">
+            <span className="budget-grand-total__label">Grand Total (All-in Project Cost)</span>
+            <span className="budget-grand-total__value">
+              ${grandTotal.toLocaleString()}
+            </span>
+            <span className="budget-grand-total__help">Land + Total Project Budget</span>
+          </div>
         </div>
 
         {calculatedPerSF && (
