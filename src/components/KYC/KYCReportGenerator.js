@@ -244,7 +244,6 @@ export const generateKYCReport = async (kycData) => {
   const projectParameters = principal.projectParameters || {};
   const projectName = projectParameters.projectName || 'Luxury Residence Project';
   const bedroomCount = projectParameters.bedroomCount;
-  const targetGSF = projectParameters.targetGSF;
 
   // P1.A.4 - Budget Framework
   const budgetFramework = principal.budgetFramework || {};
