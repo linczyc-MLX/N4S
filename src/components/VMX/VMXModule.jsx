@@ -54,20 +54,24 @@ const mapLocationToRegionId = (city, state, country) => {
   return 'national_avg';
 };
 
-// Map N4S quality tier to VMX tier
+// Map N4S quality tier to VMX tier (VMX uses lowercase tier IDs)
 const mapQualityTierToVmxTier = (qualityTier) => {
   const tierMap = {
-    'standard': 'Select',
-    'premium': 'Reserve',
-    'luxury': 'Signature',
-    'ultra': 'Legacy',
-    // Direct mappings if already in VMX format
-    'Select': 'Select',
-    'Reserve': 'Reserve',
-    'Signature': 'Signature',
-    'Legacy': 'Legacy',
+    'standard': 'select',
+    'premium': 'reserve',
+    'luxury': 'signature',
+    'ultra': 'legacy',
+    // Direct mappings if already in VMX format (case-insensitive)
+    'select': 'select',
+    'reserve': 'reserve',
+    'signature': 'signature',
+    'legacy': 'legacy',
+    'Select': 'select',
+    'Reserve': 'reserve',
+    'Signature': 'signature',
+    'Legacy': 'legacy',
   };
-  return tierMap[qualityTier] || 'Reserve'; // Default to Reserve
+  return tierMap[qualityTier] || 'reserve'; // Default to reserve
 };
 
 // Map KYS site typology to VMX typology
@@ -166,16 +170,17 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           label: projectName,
           updatedAtISO: project.lastUpdated || new Date().toISOString(),
           context: {
-            version: '1',
+            version: 1,  // Must be number, not string
+            projectId: project.id,
             clientName,
             projectName,
-            compareModeEnabled: false,
+            compareMode: false,  // VMX expects 'compareMode', not 'compareModeEnabled'
             scenarioA: {
               areaSqft,
               tier,
               locationPreset: 'national',
               regionId,
-              typologyId,
+              typology: typologyId,  // VMX expects 'typology', not 'typologyId'
               landCost,
             },
           },
@@ -281,32 +286,18 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="vmx-module">
-      {/* View Mode Toggle */}
-      <div className="vmx-module__header">
-        <div className="vmx-module__view-toggle">
-          <button
-            className={`vmx-view-btn ${viewMode === 'lite' ? 'vmx-view-btn--active' : ''}`}
-            onClick={() => handleViewModeChange('lite')}
-          >
-            Lite View
-          </button>
-          <button
-            className={`vmx-view-btn ${viewMode === 'pro' ? 'vmx-view-btn--active' : ''}`}
-            onClick={() => handleViewModeChange('pro')}
-            disabled={!window.__N4S_VMX_ALLOW_PRO__}
-          >
-            Pro View
-          </button>
-        </div>
-
-        {currentContext && (
+      {/* Project Info Header - view toggle removed (VMX has its own) */}
+      {currentContext && (
+        <div className="vmx-module__header">
           <div className="vmx-module__project-info">
             <span className="vmx-project-label">Project:</span>
             <span className="vmx-project-name">{currentContext.projectName}</span>
-            <span className="vmx-project-client">({currentContext.clientName})</span>
+            {currentContext.clientName && (
+              <span className="vmx-project-client">({currentContext.clientName})</span>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* VMX Content Area */}
       <div className="vmx-module__content">
