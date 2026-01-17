@@ -1624,6 +1624,7 @@ export default function VMXApp() {
 
 
   return (
+    <div className="vmx-scope">
     <div className="container">
       <div className="topBar">
         <div>
@@ -2964,6 +2965,7 @@ export default function VMXApp() {
       </div>
     </>
       )}
+    </div>
     </div>
   );
 }

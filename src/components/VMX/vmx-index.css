@@ -1,45 +1,51 @@
-:root {
+/**
+ * VMX Scoped Styles
+ * All styles are scoped under .vmx-scope to prevent conflicts with N4S global styles.
+ * The VMXApp component wraps its content in a div with className="vmx-scope".
+ */
+
+.vmx-scope {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   line-height: 1.35;
   font-weight: 400;
   color: #0f172a;
   background: #f6f7fb;
-}
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: #f6f7fb;
+  box-sizing: border-box;
 }
 
-.container {
+.vmx-scope *, .vmx-scope *::before, .vmx-scope *::after {
+  box-sizing: border-box;
+}
+
+.vmx-scope .container {
   max-width: 1440px;
   margin: 0 auto;
   padding: 18px;
 }
 
-.card {
+.vmx-scope .card {
   background: #ffffff;
   border: 1px solid #e6eef8;
   border-radius: 18px;
   padding: 18px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  width: 100%;
 }
 
-h1, h2, h3 {
+.vmx-scope h1, .vmx-scope h2, .vmx-scope h3 {
   margin: 0;
 }
 
-h1 { font-size: 28px; letter-spacing: -0.02em; }
-h2 { font-size: 18px; letter-spacing: -0.02em; }
-h3 { font-size: 16px; letter-spacing: -0.02em; }
+.vmx-scope h1 { font-size: 28px; letter-spacing: -0.02em; }
+.vmx-scope h2 { font-size: 18px; letter-spacing: -0.02em; }
+.vmx-scope h3 { font-size: 16px; letter-spacing: -0.02em; }
 
-.muted {
+.vmx-scope .muted {
   color: #64748b;
   font-size: 13px;
 }
 
-.label {
+.vmx-scope .label {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -47,7 +53,7 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   text-transform: uppercase;
 }
 
-.input {
+.vmx-scope .input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #d6e2f1;
@@ -56,12 +62,12 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   outline: none;
   background: #fff;
 }
-.input:focus {
+.vmx-scope .input:focus {
   border-color: #9dbbff;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
 }
 
-.table {
+.vmx-scope .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -69,13 +75,13 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   border: 1px solid #e6eef8;
   border-radius: 14px;
 }
-.table th,
-.table td {
+.vmx-scope .table th,
+.vmx-scope .table td {
   padding: 12px 12px;
   border-bottom: 1px solid #eef3fb;
   vertical-align: middle;
 }
-.table thead th {
+.vmx-scope .table thead th {
   background: #f7faff;
   font-size: 12px;
   font-weight: 900;
@@ -83,26 +89,26 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-.table.small th,
-.table.small td {
+.vmx-scope .table.small th,
+.vmx-scope .table.small td {
   padding: 10px 10px;
 }
-.table tr:last-child td { border-bottom: none; }
+.vmx-scope .table tr:last-child td { border-bottom: none; }
 
-.adminHeader {
+.vmx-scope .adminHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
 }
 
-.adminTopGrid {
+.vmx-scope .adminTopGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.compareGrid {
+.vmx-scope .compareGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
@@ -110,26 +116,25 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   margin-top: 12px;
 }
 
-/* Compare mode: give STATUS circles breathing room (matches non-compare feel) */
-.compareGrid .statusCell {
+.vmx-scope .compareGrid .statusCell {
   width: 160px;
 }
 
-.summaryTop {
+.vmx-scope .summaryTop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 12px;
 }
 
-.big {
+.vmx-scope .big {
   font-size: 28px;
   font-weight: 950;
   letter-spacing: -0.03em;
   margin-top: 3px;
 }
 
-.error {
+.vmx-scope .error {
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -140,11 +145,11 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   font-size: 13px;
 }
 
-.catLabel {
+.vmx-scope .catLabel {
   font-weight: 900;
 }
 
-.bandBtn {
+.vmx-scope .bandBtn {
   width: 100%;
   text-align: left;
   border-radius: 14px;
@@ -154,23 +159,23 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   cursor: pointer;
   transition: transform 60ms ease, box-shadow 120ms ease, border-color 120ms ease;
 }
-.bandBtn:hover {
+.vmx-scope .bandBtn:hover {
   border-color: #b6ccff;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
-.bandBtn:active {
+.vmx-scope .bandBtn:active {
   transform: translateY(1px);
 }
-.bandBtn.active {
+.vmx-scope .bandBtn.active {
   border-color: #7aa6ff;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
 }
 
-.bandBtn.low { background: #ecfdf5; }
-.bandBtn.medium { background: #eff6ff; }
-.bandBtn.high { background: #fff7ed; }
+.vmx-scope .bandBtn.low { background: #ecfdf5; }
+.vmx-scope .bandBtn.medium { background: #eff6ff; }
+.vmx-scope .bandBtn.high { background: #fff7ed; }
 
-.bandTitle {
+.vmx-scope .bandTitle {
   font-size: 12px;
   font-weight: 950;
   color: #0f172a;
@@ -178,14 +183,14 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   letter-spacing: 0.03em;
 }
 
-.bandSub {
+.vmx-scope .bandSub {
   font-size: 12px;
   font-weight: 850;
   color: #334155;
   margin-top: 4px;
 }
 
-.linkBtn {
+.vmx-scope .linkBtn {
   appearance: none;
   border: none;
   background: transparent;
@@ -199,20 +204,20 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
 }
 
 /* Delta table styling */
-.deltaTable td, .deltaTable th {
+.vmx-scope .deltaTable td, .vmx-scope .deltaTable th {
   padding: 10px 10px;
 }
-.deltaRow {
+.vmx-scope .deltaRow {
   background: #fff;
 }
-.deltaRow.medium {
+.vmx-scope .deltaRow.medium {
   background: #fff7ed;
 }
-.deltaRow.high {
+.vmx-scope .deltaRow.high {
   background: #fee2e2;
 }
 
-.deltaPill {
+.vmx-scope .deltaPill {
   display: inline-flex;
   padding: 4px 10px;
   border-radius: 999px;
@@ -220,22 +225,17 @@ h3 { font-size: 16px; letter-spacing: -0.02em; }
   font-size: 12px;
   line-height: 1;
 }
-.deltaPill.inc {
+.vmx-scope .deltaPill.inc {
   background: #fee2e2;
   color: #991b1b;
 }
-.deltaPill.dec {
+.vmx-scope .deltaPill.dec {
   background: #dcfce7;
   color: #166534;
 }
 
-/* =========================
-   Global button styling
-   - Applies to ALL buttons except the band selection buttons (which have their own styling).
-   - This brings back consistent hover/active/down states for "Add Region", "Rename Region",
-     "Reset tier", "Copy into tier", "Save Snapshot", "Normalize / Fill ranges", etc.
-   ========================= */
-button:not(.bandBtn) {
+/* Button styling - scoped to VMX only */
+.vmx-scope button:not(.bandBtn) {
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid #d6e2f1;
@@ -251,52 +251,46 @@ button:not(.bandBtn) {
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
-button:not(.bandBtn):hover {
+.vmx-scope button:not(.bandBtn):hover {
   background: #f1f6ff;
   border-color: #b6ccff;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
-button:not(.bandBtn):active {
+.vmx-scope button:not(.bandBtn):active {
   transform: translateY(1px);
   background: #e7efff;
   border-color: #9dbbff;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
-button:not(.bandBtn):focus-visible {
+.vmx-scope button:not(.bandBtn):focus-visible {
   outline: 3px solid rgba(59, 130, 246, 0.35);
   outline-offset: 2px;
 }
 
-button:not(.bandBtn):disabled {
+.vmx-scope button:not(.bandBtn):disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Slightly larger "top-right utility" buttons when they appear in headers */
-.headerActions button:not(.bandBtn),
-.adminHeader button:not(.bandBtn) {
+.vmx-scope .headerActions button:not(.bandBtn),
+.vmx-scope .adminHeader button:not(.bandBtn) {
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 900;
 }
 
-/* =========================
-   Allocation & Flags – fixed, readable status badges
-   - Makes Scenario A and Scenario B row heights match, regardless of OK vs out-of-range.
-   - Restores the green "OK" circle and keeps the arrow positions as designed.
-   ========================= */
-
-.statusCell {
+/* Status cells and circles */
+.vmx-scope .statusCell {
   width: 120px;
   vertical-align: middle;
   text-align: center;
 }
 
-.statusCircle {
+.vmx-scope .statusCircle {
   width: 86px;
   height: 86px;
   border-radius: 999px;
@@ -313,85 +307,69 @@ button:not(.bandBtn):disabled {
   user-select: none;
 }
 
-.statusCircle.ok {
+.vmx-scope .statusCircle.ok {
   background: #dcfce7;
   color: #166534;
 }
 
-.statusCircle.alert {
+.vmx-scope .statusCircle.alert {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.statusArrow {
+.vmx-scope .statusArrow {
   font-size: 13px;
   line-height: 1;
 }
 
-.statusText {
+.vmx-scope .statusText {
   font-size: 16px;
 }
 
-.statusTextSmall {
+.vmx-scope .statusTextSmall {
   font-size: 12px;
   font-weight: 900;
   opacity: 0.9;
 }
 
-/* Ensure cards always occupy the same full width (helps edge alignment consistency). */
-.card {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* ============================
-   Advisory Readout – Status Pills
-   Fixes: Below/Above overlap + illegible wrapping
-   ============================ */
-
-.statusPill {
+/* Advisory Readout – Status Pills */
+.vmx-scope .statusPill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-
   padding: 6px 10px;
   border-radius: 999px;
-
   font-size: 12px;
   font-weight: 900;
-  line-height: 1;           /* key: prevents stacked/overlap */
-  white-space: nowrap;      /* key: prevents “Below” / “range” line breaks */
-
+  line-height: 1;
+  white-space: nowrap;
   border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.statusPill.ok {
+.vmx-scope .statusPill.ok {
   background: #dcfce7;
   color: #166534;
 }
 
-.statusPill.below,
-.statusPill.above {
+.vmx-scope .statusPill.below,
+.vmx-scope .statusPill.above {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.statusPill .arrow {
+.vmx-scope .statusPill .arrow {
   font-size: 12px;
   line-height: 1;
   transform: translateY(-0.5px);
 }
 
-/* If your advisory tables are tight, enforce a sensible status column width */
-.advisoryTable th.statusCol,
-.advisoryTable td.statusCol {
+.vmx-scope .advisoryTable th.statusCol,
+.vmx-scope .advisoryTable td.statusCol {
   width: 140px;
 }
 
-/* General: don’t let table cells clip badges */
-.advisoryTable td {
+.vmx-scope .advisoryTable td {
   overflow: visible;
   vertical-align: middle;
 }
-
