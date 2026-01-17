@@ -112,6 +112,9 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     kycData,
     fyiData,
     kysData,
+    vmxData,
+    updateVMXData,
+    saveNow,
     updateFYISelection,
     updateFYISettings,
     initializeFYISelections,
@@ -305,7 +308,11 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
 
       {/* VMX Content Area */}
       <div className="vmx-module__content">
-        <VMXApp />
+        <VMXApp
+          vmxData={vmxData}
+          updateVMXData={updateVMXData}
+          saveNow={saveNow}
+        />
       </div>
 
       <style>{`

@@ -129,6 +129,59 @@ const initialKYSData = {
   comparisonEnabled: false,  // Multi-site comparison mode
 };
 
+// Initial VMX data (Vision Matrix cost estimation)
+const initialVMXData = {
+  // Scenario configuration
+  tier: 'reserve',                    // TierId: select/reserve/signature/legacy
+  regionAId: 'us',                    // Primary region
+  regionBId: 'me',                    // Compare region
+  compareMode: false,                 // Whether compare mode is active
+  areaSqft: 15000,                    // Project area
+
+  // Location multipliers
+  locationAPreset: 'national',        // Location preset for scenario A
+  locationACustom: 1.0,               // Custom multiplier if preset is 'custom'
+  locationBPreset: 'national',
+  locationBCustom: 1.0,
+
+  // Typology
+  typologyA: 'suburban',
+  typologyB: 'suburban',
+
+  // Land costs
+  landCostA: 0,
+  landCostB: 0,
+
+  // Interior tier override (for Interiors + FF&E only)
+  interiorTierOverride: 'match',      // 'match' or a TierId
+
+  // Band selections per category (LOW/MEDIUM/HIGH)
+  selectionsA: {
+    FACILITATING: 'MEDIUM',
+    SUBSTRUCTURE: 'MEDIUM',
+    SUPERSTRUCTURE: 'MEDIUM',
+    INTERNAL_FINISHES: 'MEDIUM',
+    FF_E: 'MEDIUM',
+    SERVICES: 'MEDIUM',
+    EXTERNAL_WORKS: 'MEDIUM',
+  },
+  selectionsB: {
+    FACILITATING: 'MEDIUM',
+    SUBSTRUCTURE: 'MEDIUM',
+    SUPERSTRUCTURE: 'MEDIUM',
+    INTERNAL_FINISHES: 'MEDIUM',
+    FF_E: 'MEDIUM',
+    SERVICES: 'MEDIUM',
+    EXTERNAL_WORKS: 'MEDIUM',
+  },
+
+  // Custom benchmark library (if user has edited benchmarks)
+  customBenchmarkLibrary: null,
+
+  // UI mode
+  uiMode: 'lite',                     // 'lite' or 'pro'
+};
+
 // Empty project template
 const getEmptyProjectData = () => ({
   id: null,
@@ -146,6 +199,7 @@ const getEmptyProjectData = () => ({
   fyiData: JSON.parse(JSON.stringify(initialFYIData)),
   mvpData: JSON.parse(JSON.stringify(initialMVPData)),
   kysData: JSON.parse(JSON.stringify(initialKYSData)),
+  vmxData: JSON.parse(JSON.stringify(initialVMXData)),
   activeRespondent: 'principal',
 });
 
@@ -211,6 +265,7 @@ export const AppProvider = ({ children }) => {
   const fyiData = projectData.fyiData;
   const mvpData = projectData.mvpData || initialMVPData;
   const kysData = projectData.kysData || initialKYSData;
+  const vmxData = projectData.vmxData || initialVMXData;
 
   // ---------------------------------------------------------------------------
   // LOAD INITIAL DATA FROM SERVER
@@ -264,10 +319,13 @@ export const AppProvider = ({ children }) => {
               console.log('[APP] FYI selections:', data.fyiData?.selections);
               console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
               console.log('[APP] KYS data from fyiData:', data.fyiData?.kysData);
+              console.log('[APP] VMX data from fyiData:', data.fyiData?.vmxData);
               setActiveProjectIdState(activeId);
               // Merge with defaults to handle old projects missing new fields
               // Extract kysData from fyiData where it's stored for backend compatibility
               const loadedKysData = data.fyiData?.kysData || initialKYSData;
+              // Extract vmxData from fyiData where it's stored for backend compatibility
+              const loadedVmxData = data.fyiData?.vmxData || initialVMXData;
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
@@ -281,6 +339,8 @@ export const AppProvider = ({ children }) => {
                 },
                 // Ensure kysData is available at top level for component access
                 kysData: loadedKysData,
+                // Ensure vmxData is available at top level for component access
+                vmxData: loadedVmxData,
               });
               setActiveRespondent(data.activeRespondent || 'principal');
             }
@@ -324,6 +384,7 @@ export const AppProvider = ({ children }) => {
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
     console.log('[APP] MVP checklist being saved:', dataToSave.fyiData?.mvpChecklistState);
     console.log('[APP] KYS data being saved (in fyiData):', dataToSave.fyiData?.kysData);
+    console.log('[APP] VMX data being saved (in fyiData):', dataToSave.fyiData?.vmxData);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -693,6 +754,46 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update VMX data (Vision Matrix cost estimation)
+  // NOTE: Stored in fyiData.vmxData for PHP backend compatibility
+  const updateVMXData = useCallback((updates) => {
+    console.log('[APP] updateVMXData:', updates);
+    setProjectData(prev => {
+      // VMX data is stored in fyiData.vmxData for backend compatibility
+      const currentVmxData = prev.fyiData?.vmxData || prev.vmxData || initialVMXData;
+
+      const mergedVmxData = {
+        ...currentVmxData,
+        ...updates,
+        // Deep merge selectionsA if provided
+        ...(updates.selectionsA && {
+          selectionsA: {
+            ...currentVmxData.selectionsA,
+            ...updates.selectionsA,
+          },
+        }),
+        // Deep merge selectionsB if provided
+        ...(updates.selectionsB && {
+          selectionsB: {
+            ...currentVmxData.selectionsB,
+            ...updates.selectionsB,
+          },
+        }),
+      };
+
+      return {
+        ...prev,
+        fyiData: {
+          ...prev.fyiData,
+          vmxData: mergedVmxData,
+        },
+        // Also store at top level for easy access
+        vmxData: mergedVmxData,
+      };
+    });
+    markChanged();
+  }, [markChanged]);
+
   // ---------------------------------------------------------------------------
   // COMPLETION CALCULATIONS
   // ---------------------------------------------------------------------------
@@ -835,6 +936,7 @@ export const AppProvider = ({ children }) => {
     fyiData,
     mvpData,
     kysData,
+    vmxData,
 
     // Data updates
     updateClientData,
@@ -848,6 +950,7 @@ export const AppProvider = ({ children }) => {
     updateMVPAdjacencyConfig,
     updateMVPDecisionAnswer,
     updateKYSData,
+    updateVMXData,
 
     // UI state
     activeRespondent,

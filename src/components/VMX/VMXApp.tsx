@@ -436,7 +436,37 @@ function inputToPct(v: string) {
   return n / 100;
 }
 
-export default function VMXApp() {
+/**
+ * Props passed from VMXModule (N4S host wrapper)
+ * These enable server-side persistence via AppContext
+ */
+type VMXAppProps = {
+  vmxData?: {
+    tier?: string;
+    regionAId?: string;
+    regionBId?: string;
+    compareMode?: boolean;
+    areaSqft?: number;
+    locationAPreset?: string;
+    locationACustom?: number;
+    locationBPreset?: string;
+    locationBCustom?: number;
+    typologyA?: string;
+    typologyB?: string;
+    landCostA?: number;
+    landCostB?: number;
+    interiorTierOverride?: string;
+    selectionsA?: Record<string, string>;
+    selectionsB?: Record<string, string>;
+    customBenchmarkLibrary?: any;
+    uiMode?: string;
+  };
+  updateVMXData?: (updates: Record<string, any>) => void;
+  saveNow?: () => Promise<boolean>;
+};
+
+export default function VMXApp(props: VMXAppProps = {}) {
+  const { vmxData, updateVMXData, saveNow } = props;
   const [areaSqft, setAreaSqft] = useState<number>(15000);
   // Keep a string input for Lite view so users can type commas etc (syncs to numeric areaSqft)
   const [areaSqftInput, setAreaSqftInput] = useState<string>(() => String(areaSqft));
@@ -830,7 +860,7 @@ export default function VMXApp() {
     }
   }, [n4sClientName, n4sProjectName, n4sProjectId, landCostA, landCostB]);
 
-  // Bootstrap from N4S host if provided
+  // Bootstrap from N4S host if provided (window globals)
   useEffect(() => {
     try {
       const win = window as any;
@@ -851,6 +881,54 @@ export default function VMXApp() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Initialize from vmxData props (server-persisted state via AppContext)
+  // This takes precedence over localStorage for data integrity
+  const vmxDataInitialized = React.useRef(false);
+  useEffect(() => {
+    if (vmxDataInitialized.current || !vmxData) return;
+    vmxDataInitialized.current = true;
+
+    console.log('[VMX] Initializing from vmxData:', vmxData);
+
+    // Apply persisted state from server
+    if (vmxData.tier && TIERS.includes(vmxData.tier as TierId)) setTier(vmxData.tier as TierId);
+    if (vmxData.regionAId) setRegionAId(vmxData.regionAId);
+    if (vmxData.regionBId) setRegionBId(vmxData.regionBId);
+    if (typeof vmxData.compareMode === 'boolean') setCompareMode(vmxData.compareMode);
+    if (typeof vmxData.areaSqft === 'number' && vmxData.areaSqft > 0) setAreaSqft(vmxData.areaSqft);
+    if (vmxData.locationAPreset) setLocationAPreset(vmxData.locationAPreset);
+    if (typeof vmxData.locationACustom === 'number') setLocationACustom(vmxData.locationACustom);
+    if (vmxData.locationBPreset) setLocationBPreset(vmxData.locationBPreset);
+    if (typeof vmxData.locationBCustom === 'number') setLocationBCustom(vmxData.locationBCustom);
+    if (vmxData.typologyA) setTypologyA(vmxData.typologyA as TypologyId);
+    if (vmxData.typologyB) setTypologyB(vmxData.typologyB as TypologyId);
+    if (typeof vmxData.landCostA === 'number') setLandCostA(vmxData.landCostA);
+    if (typeof vmxData.landCostB === 'number') setLandCostB(vmxData.landCostB);
+    if (vmxData.interiorTierOverride) setInteriorTierOverride(vmxData.interiorTierOverride);
+    if (vmxData.uiMode === 'lite' || vmxData.uiMode === 'pro') setUiMode(vmxData.uiMode);
+
+    // Initialize selections from vmxData
+    if (vmxData.selectionsA) {
+      const newSelA = { ...selA };
+      for (const [catId, band] of Object.entries(vmxData.selectionsA)) {
+        if (newSelA[catId as VmxCategoryId]) {
+          newSelA[catId as VmxCategoryId] = { categoryId: catId as VmxCategoryId, band: band as HeatBand };
+        }
+      }
+      setSelA(newSelA);
+    }
+    if (vmxData.selectionsB) {
+      const newSelB = { ...selB };
+      for (const [catId, band] of Object.entries(vmxData.selectionsB)) {
+        if (newSelB[catId as VmxCategoryId]) {
+          newSelB[catId as VmxCategoryId] = { categoryId: catId as VmxCategoryId, band: band as HeatBand };
+        }
+      }
+      setSelB(newSelB);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vmxData]);
 
   useEffect(() => {
     try {
@@ -893,7 +971,57 @@ export default function VMXApp() {
     }
   }, [interiorTierOverride]);
 
+  // Sync state changes TO AppContext (server persistence)
+  // Only sync after initial load to avoid overwriting with defaults
+  const vmxSyncEnabled = React.useRef(false);
+  useEffect(() => {
+    // Enable sync after component has initialized from props
+    if (vmxDataInitialized.current) {
+      vmxSyncEnabled.current = true;
+    }
+  }, [vmxData]);
 
+  // Helper to build selections object for AppContext
+  const buildSelectionsObject = (selections: Record<VmxCategoryId, ScenarioSelection>): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const [catId, sel] of Object.entries(selections)) {
+      result[catId] = sel.band;
+    }
+    return result;
+  };
+
+  // Sync core state to AppContext when it changes
+  useEffect(() => {
+    if (!vmxSyncEnabled.current || !updateVMXData) return;
+
+    const stateToSync = {
+      tier,
+      regionAId,
+      regionBId,
+      compareMode,
+      areaSqft,
+      locationAPreset,
+      locationACustom,
+      locationBPreset,
+      locationBCustom,
+      typologyA,
+      typologyB,
+      landCostA,
+      landCostB,
+      interiorTierOverride,
+      uiMode,
+      selectionsA: buildSelectionsObject(selA),
+      selectionsB: buildSelectionsObject(selB),
+    };
+
+    console.log('[VMX] Syncing state to AppContext:', stateToSync);
+    updateVMXData(stateToSync);
+  }, [
+    tier, regionAId, regionBId, compareMode, areaSqft,
+    locationAPreset, locationACustom, locationBPreset, locationBCustom,
+    typologyA, typologyB, landCostA, landCostB, interiorTierOverride, uiMode,
+    selA, selB, updateVMXData
+  ]);
 
   const [deltaMediumThr, setDeltaMediumThr] = useState<number>(() => {
     try {
@@ -1694,20 +1822,50 @@ export default function VMXApp() {
             )}
           </div>
 
-          <button type="button" className="vmxSaveBtn" onClick={() => {
-            // VMX already auto-saves to localStorage, but this provides user feedback
+          <button type="button" className="vmxSaveBtn" onClick={async () => {
+            // Save to localStorage (for standalone VMX use)
             saveLibrary(library);
             saveSelection(regionAId, tier);
-            // Show brief confirmation
+
+            // Save to server via AppContext (for N4S integration)
             const btn = document.querySelector('.vmxSaveBtn') as HTMLButtonElement;
-            if (btn) {
-              const origText = btn.textContent;
-              btn.textContent = '✓ Saved';
-              btn.classList.add('saved');
-              setTimeout(() => {
-                btn.textContent = origText;
-                btn.classList.remove('saved');
-              }, 2000);
+            if (saveNow) {
+              try {
+                if (btn) {
+                  btn.textContent = '⏳ Saving...';
+                  btn.disabled = true;
+                }
+                const success = await saveNow();
+                if (btn) {
+                  btn.textContent = success ? '✓ Saved' : '✗ Failed';
+                  btn.classList.add(success ? 'saved' : '');
+                  btn.disabled = false;
+                  setTimeout(() => {
+                    btn.textContent = '💾 SAVE';
+                    btn.classList.remove('saved');
+                  }, 2000);
+                }
+              } catch (err) {
+                console.error('[VMX] Save failed:', err);
+                if (btn) {
+                  btn.textContent = '✗ Failed';
+                  btn.disabled = false;
+                  setTimeout(() => {
+                    btn.textContent = '💾 SAVE';
+                  }, 2000);
+                }
+              }
+            } else {
+              // Standalone mode - just show localStorage save feedback
+              if (btn) {
+                const origText = btn.textContent;
+                btn.textContent = '✓ Saved';
+                btn.classList.add('saved');
+                setTimeout(() => {
+                  btn.textContent = origText;
+                  btn.classList.remove('saved');
+                }, 2000);
+              }
             }
           }}>
             💾 SAVE
