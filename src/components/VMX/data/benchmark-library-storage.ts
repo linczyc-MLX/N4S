@@ -86,10 +86,33 @@ function demoForRegion(region: { id: string; name: string }): BenchmarkSet {
   return looksLikeME(region) ? demoBenchmarkME : demoBenchmark;
 }
 
+/**
+ * Tier scaling factors relative to Reserve (the base demo benchmark).
+ * Based on Interior Quality Tier pricing from KYC:
+ *   Select:    $140/$280/$420 (Low/Med/High) → ~0.61x of Reserve
+ *   Reserve:   $220/$460/$720 (Low/Med/High) → 1.00x (baseline)
+ *   Signature: $320/$650/$1000 (Low/Med/High) → ~1.41x of Reserve
+ *   Legacy:    $450/$900/$1400 (Low/Med/High) → ~1.96x of Reserve
+ */
+const TIER_SCALE_FACTORS: Record<TierId, number> = {
+  select: 0.61,
+  reserve: 1.0,
+  signature: 1.41,
+  legacy: 1.96,
+};
+
 function makeDemoBenchmark(base: BenchmarkSet, regionLabel: string, tier: TierId): BenchmarkSet {
   const next = cloneBenchmarkSet(base);
   next.id = `demo-${regionLabel.toLowerCase()}-${tier}`;
   next.name = `${regionLabel} — Demo — ${tierLabel(tier)}`;
+
+  // Apply tier scaling to all bands
+  const scaleFactor = TIER_SCALE_FACTORS[tier] ?? 1.0;
+  next.bands = next.bands.map((band) => ({
+    ...band,
+    psqft: Math.round(band.psqft * scaleFactor),
+  }));
+
   return next;
 }
 
