@@ -162,8 +162,8 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         const selectedSite = kysData?.sites?.find(s => s.id === kysData?.selectedSiteId);
         const typologyId = mapSiteTypology(selectedSite?.typology || projectParams.propertyType);
 
-        // Get land cost from KYS
-        const landCost = selectedSite?.landCost || 0;
+        // Get land cost - prioritize KYC Budget Framework, fallback to KYS site
+        const landCost = portfolioContext.landAcquisitionCost || selectedSite?.landCost || 0;
 
         return {
           id: project.id,
