@@ -1688,6 +1688,25 @@ export default function VMXApp() {
             )}
           </div>
 
+          <button type="button" className="vmxSaveBtn" onClick={() => {
+            // VMX already auto-saves to localStorage, but this provides user feedback
+            saveLibrary(library);
+            saveSelection(regionAId, tier);
+            // Show brief confirmation
+            const btn = document.querySelector('.vmxSaveBtn') as HTMLButtonElement;
+            if (btn) {
+              const origText = btn.textContent;
+              btn.textContent = '✓ Saved';
+              btn.classList.add('saved');
+              setTimeout(() => {
+                btn.textContent = origText;
+                btn.classList.remove('saved');
+              }, 2000);
+            }
+          }}>
+            💾 SAVE
+          </button>
+
           <button type="button" className="docsBtn" onClick={() => setShowDocs(true)}>
             Documentation
           </button>

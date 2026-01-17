@@ -373,3 +373,67 @@
   overflow: visible;
   vertical-align: middle;
 }
+
+/* Top Bar Layout */
+.vmx-scope .topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.vmx-scope .topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* VMX Save Button - matches N4S styling */
+.vmx-scope .vmxSaveBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #319795;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vmx-scope .vmxSaveBtn:hover {
+  background: #2c7a7b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(49, 151, 149, 0.3);
+}
+
+.vmx-scope .vmxSaveBtn:active {
+  transform: translateY(0);
+}
+
+.vmx-scope .vmxSaveBtn.saved {
+  background: #38a169;
+}
+
+/* Documentation Button */
+.vmx-scope .docsBtn {
+  padding: 9px 14px;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vmx-scope .docsBtn:hover {
+  background: rgba(15, 23, 42, 0.10);
+  border-color: rgba(15, 23, 42, 0.20);
+}
