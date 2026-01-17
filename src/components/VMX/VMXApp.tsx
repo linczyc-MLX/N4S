@@ -539,6 +539,7 @@ export default function VMXApp() {
 
   const [regionAId, setRegionAId] = useState<string>(initialSel.regionId);
   const [tier, setTier] = useState<TierId>(initialSel.tier);
+  const [tierLockedFromKYC, setTierLockedFromKYC] = useState<boolean>(false);
 
   const [compareMode, setCompareMode] = useState<boolean>(() => {
     try {
@@ -783,6 +784,11 @@ export default function VMXApp() {
     if (typeof ctx.projectId === "string") setN4sProjectId(ctx.projectId);
 
     if (typeof ctx.compareMode === "boolean") setCompareMode(ctx.compareMode);
+
+    // Check if tier is locked from KYC (P1.A.4 Interior Quality Tier)
+    if (typeof (ctx as any).tierLockedFromKYC === "boolean") {
+      setTierLockedFromKYC((ctx as any).tierLockedFromKYC);
+    }
 
     const a = ctx.scenarioA;
     if (a) {
@@ -1793,8 +1799,17 @@ export default function VMXApp() {
               </div>
 
               <div>
-                <label className="label">Quality Tier</label>
-                <select value={tier} onChange={(e) => setTier(e.target.value as any)}>
+                <label className="label">
+                  Quality Tier
+                  {tierLockedFromKYC && <span className="lockedBadge" title="Set in KYC P1.A.4"> (from KYC)</span>}
+                </label>
+                <select
+                  value={tier}
+                  onChange={(e) => setTier(e.target.value as any)}
+                  disabled={tierLockedFromKYC}
+                  title={tierLockedFromKYC ? "Tier is set from KYC P1.A.4 Interior Quality Tier" : undefined}
+                  style={tierLockedFromKYC ? { backgroundColor: "#f1f5f9", cursor: "not-allowed" } : undefined}
+                >
                   {TIERS.map((t) => (
                     <option key={t} value={t}>
                       {tierLabel(t)}
@@ -2080,8 +2095,18 @@ export default function VMXApp() {
           </div>
 
           <div>
-            <label className="label">Tier</label>
-            <select className="input" value={tier} onChange={(e) => setTier(e.target.value as TierId)}>
+            <label className="label">
+              Tier
+              {tierLockedFromKYC && <span className="lockedBadge" title="Set in KYC P1.A.4 Interior Quality Tier"> (from KYC)</span>}
+            </label>
+            <select
+              className="input"
+              value={tier}
+              onChange={(e) => setTier(e.target.value as TierId)}
+              disabled={tierLockedFromKYC}
+              title={tierLockedFromKYC ? "Tier is set from KYC P1.A.4 Interior Quality Tier" : undefined}
+              style={tierLockedFromKYC ? { backgroundColor: "#f1f5f9", cursor: "not-allowed" } : undefined}
+            >
               {TIERS.map((t) => (
                 <option key={t} value={t}>
                   {tierLabel(t)}

@@ -165,6 +165,9 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         // Get land cost - prioritize KYC Budget Framework, fallback to KYS site
         const landCost = portfolioContext.landAcquisitionCost || selectedSite?.landCost || 0;
 
+        // Flag if tier was set from KYC (should be locked in VMX)
+        const tierLockedFromKYC = !!budgetFramework.interiorQualityTier;
+
         return {
           id: project.id,
           label: projectName,
@@ -175,6 +178,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
             clientName,
             projectName,
             compareMode: false,  // VMX expects 'compareMode', not 'compareModeEnabled'
+            tierLockedFromKYC,  // If true, VMX should not allow tier changes
             scenarioA: {
               areaSqft,
               tier,
