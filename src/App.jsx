@@ -12,6 +12,7 @@ import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 import KYMModule from './components/KYM/KYMModule';
 import VMXModule from './components/VMX/VMXModule';
+import SettingsModule from './components/Settings/SettingsModule';
 
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
@@ -27,36 +28,6 @@ const moduleColors = {
   vmx: { bg: '#FBD0E0', text: '#1a1a1a', accent: '#FBD0E0' },                   // Light Pink (Soft Pillow 5)
   settings: { bg: '#374151', text: '#ffffff', accent: '#9ca3af' },              // Gray (utility) - KEEP
 };
-
-// Simple Settings Panel component
-const SettingsPanel = () => (
-  <div className="settings-panel">
-    <div className="settings-panel__header">
-      <h2>Settings</h2>
-      <p>Application settings and configuration</p>
-    </div>
-    <div className="settings-panel__content">
-      <div className="settings-section">
-        <h3>Project Settings</h3>
-        <p className="settings-section__description">
-          Configure project defaults and preferences.
-        </p>
-        <div className="settings-placeholder">
-          Settings options coming soon...
-        </div>
-      </div>
-      <div className="settings-section">
-        <h3>Export & Data</h3>
-        <p className="settings-section__description">
-          Export project data or manage backups.
-        </p>
-        <div className="settings-placeholder">
-          Export options coming soon...
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 const AppContent = () => {
   // Persist activeModule to localStorage so it survives page refresh
@@ -118,7 +89,7 @@ const AppContent = () => {
       case 'vmx':
         return <VMXModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'settings':
-        return <SettingsPanel />;
+        return <SettingsModule />;
       default:
         return <Dashboard onNavigate={setActiveModule} showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
     }

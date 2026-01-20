@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Users, Search, CheckCircle2, AlertCircle, Clock,
   ArrowRight, Building2, Palette, GitCompare, Map, Zap,
-  ClipboardCheck, Plus, ChevronDown, Trash2, FolderOpen
+  ClipboardCheck, ChevronDown, Trash2, FolderOpen
 } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import DashboardDocumentation from './DashboardDocumentation';
@@ -25,12 +25,10 @@ const N4S_PHASES = {
 const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
   const {
     clientData, updateClientData, kycData, fyiData, calculateCompleteness,
-    projects, activeProjectId, createProject, switchProject, deleteProject
+    projects, activeProjectId, createProject, setActiveProjectId, deleteProject
   } = useAppContext();
 
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
 
   // KYC progress - must account for both respondents if Secondary exists
   const principalProgress = calculateCompleteness('principal');
@@ -81,17 +79,8 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
     }
   };
 
-  const handleCreateProject = () => {
-    if (newProjectName.trim()) {
-      createProject(newProjectName.trim());
-      setNewProjectName('');
-      setShowNewProjectInput(false);
-      setShowProjectDropdown(false);
-    }
-  };
-
   const handleSwitchProject = (projectId) => {
-    switchProject(projectId);
+    setActiveProjectId(projectId);
     setShowProjectDropdown(false);
   };
 
@@ -207,20 +196,9 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
                 )}
               </div>
               <div className="project-dropdown__footer">
-                {showNewProjectInput ? (
-                  <div className="project-dropdown__new-input">
-                    <input type="text" placeholder="Project name..." value={newProjectName}
-                      onChange={(e) => setNewProjectName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} autoFocus />
-                    <button className="btn btn--primary btn--sm" onClick={handleCreateProject}>Create</button>
-                    <button className="btn btn--ghost btn--sm" 
-                      onClick={() => { setShowNewProjectInput(false); setNewProjectName(''); }}>Cancel</button>
-                  </div>
-                ) : (
-                  <button className="project-dropdown__new-btn" onClick={() => setShowNewProjectInput(true)}>
-                    <Plus size={16} /> New Project
-                  </button>
-                )}
+                <div className="project-dropdown__hint">
+                  <span>Create new projects in Settings</span>
+                </div>
               </div>
             </div>
           )}
@@ -246,8 +224,8 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
           </p>
         </div>
         {!activeProjectId ? (
-          <button className="btn btn--primary" onClick={() => { createProject('New Project'); onNavigate('kyc'); }}>
-            Start New Project <ArrowRight size={18} />
+          <button className="btn btn--primary" onClick={() => onNavigate('settings')}>
+            Go to Settings to Create Project <ArrowRight size={18} />
           </button>
         ) : !principalName && (
           <button className="btn btn--primary" onClick={() => onNavigate('kyc')}>

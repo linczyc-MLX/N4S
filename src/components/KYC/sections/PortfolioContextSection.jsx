@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, X, AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Plus, X, Info } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
@@ -7,30 +7,9 @@ import SelectField from '../../shared/SelectField';
 const PortfolioContextSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
   const data = kycData[respondent].portfolioContext;
-  const [showAuthorityModal, setShowAuthorityModal] = useState(false);
-  const [pendingAuthorityLevel, setPendingAuthorityLevel] = useState(null);
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
-  };
-
-  // Handle authority level selection with confirmation for Level 3+
-  const handleAuthorityLevelChange = (value) => {
-    const level = parseInt(value);
-    if (level >= 3) {
-      setPendingAuthorityLevel(level);
-      setShowAuthorityModal(true);
-    } else {
-      handleChange('familyOfficeAuthorityLevel', level);
-      handleChange('authorityLevelConfirmed', false);
-    }
-  };
-
-  const confirmAuthorityLevel = () => {
-    handleChange('familyOfficeAuthorityLevel', pendingAuthorityLevel);
-    handleChange('authorityLevelConfirmed', true);
-    setShowAuthorityModal(false);
-    setPendingAuthorityLevel(null);
   };
 
   // Handle multiple primary residences
@@ -86,176 +65,73 @@ const PortfolioContextSection = ({ respondent, tier }) => {
     { value: 'flexible', label: 'Flexible (12+ months)' },
   ];
 
-  const familyOfficeAuthorityOptions = [
-    { value: 1, label: 'Level 1: Advisory Only' },
-    { value: 2, label: 'Level 2: Veto Power on Budget/Timeline' },
-    { value: 3, label: 'Level 3: Co-Signatory on Stage Gates' },
-    { value: 4, label: 'Level 4: Full Authority Delegated' },
-  ];
-
   // Only show governance fields for Principal
   const isPrincipal = respondent === 'principal';
 
   // Show multiple residence inputs when count > 1
   const propertyCount = parseInt(data.currentPropertyCount) || 0;
 
+  // Get stakeholder info for display
+  const principalName = data.principalFirstName
+    ? `${data.principalFirstName} ${data.principalLastName || ''}`.trim()
+    : null;
+  const secondaryName = data.secondaryFirstName
+    ? `${data.secondaryFirstName} ${data.secondaryLastName || ''}`.trim()
+    : null;
+  const hasAdvisor = data.familyOfficeContact;
+
   return (
     <div className="kyc-section">
-      {/* Authority Level Confirmation Modal */}
-      {showAuthorityModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal__header">
-              <AlertTriangle size={24} className="modal__icon modal__icon--warning" />
-              <h3>Confirm Authority Level</h3>
-            </div>
-            <div className="modal__body">
-              <p>
-                You are granting <strong>
-                  {pendingAuthorityLevel === 3 ? 'Level 3: Co-Signatory on Stage Gates' : 'Level 4: Full Authority Delegated'}
-                </strong> to your Family Office/Advisor.
-              </p>
-              <p className="modal__warning">
-                This means they will {pendingAuthorityLevel === 3 
-                  ? 'need to co-sign all stage gate approvals' 
-                  : 'have full authority to make decisions on your behalf'}.
-              </p>
-              <p>Are you sure you want to proceed?</p>
-            </div>
-            <div className="modal__actions">
-              <button 
-                className="btn btn--secondary"
-                onClick={() => {
-                  setShowAuthorityModal(false);
-                  setPendingAuthorityLevel(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn--primary"
-                onClick={confirmAuthorityLevel}
-              >
-                Confirm Authority Level
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Stakeholder Summary - Read Only (configured in Settings) */}
       {isPrincipal && (
-        <>
-          <div className="kyc-section__group">
-            <h3 className="kyc-section__group-title">Principal Designation</h3>
-            <p className="kyc-section__group-description">
-              The Principal is the contractual decision-maker who signs all agreements and has final authority on Hard Stop decisions.
-            </p>
-            
-            <div className="form-grid form-grid--2col">
-              <FormField
-                label="First Name"
-                value={data.principalFirstName}
-                onChange={(v) => handleChange('principalFirstName', v)}
-                placeholder="First name"
-                required
-              />
-              <FormField
-                label="Last Name"
-                value={data.principalLastName}
-                onChange={(v) => handleChange('principalLastName', v)}
-                placeholder="Last name"
-                required
-              />
-            </div>
-            
-            <div className="form-grid form-grid--2col">
-              <FormField
-                label="Email"
-                type="email"
-                value={data.principalEmail}
-                onChange={(v) => handleChange('principalEmail', v)}
-                placeholder="email@example.com"
-                required
-              />
-              <FormField
-                label="Phone"
-                type="tel"
-                value={data.principalPhone}
-                onChange={(v) => handleChange('principalPhone', v)}
-                placeholder="+1 (555) 000-0000"
-              />
-            </div>
+        <div className="kyc-section__group kyc-section__group--info">
+          <div className="kyc-section__group-header">
+            <h3 className="kyc-section__group-title">Project Stakeholders</h3>
+            <span className="kyc-section__settings-link">
+              <Info size={14} />
+              Configured in Settings
+            </span>
           </div>
 
-          <div className="kyc-section__group">
-            <h3 className="kyc-section__group-title">Secondary Stakeholder</h3>
-            <p className="kyc-section__group-description">
-              Spouse or co-decision-maker (if applicable)
-            </p>
-            <div className="form-grid form-grid--2col">
-              <FormField
-                label="First Name"
-                value={data.secondaryFirstName}
-                onChange={(v) => handleChange('secondaryFirstName', v)}
-                placeholder="First name"
-              />
-              <FormField
-                label="Last Name"
-                value={data.secondaryLastName}
-                onChange={(v) => handleChange('secondaryLastName', v)}
-                placeholder="Last name"
-              />
+          {!principalName ? (
+            <div className="kyc-section__notice kyc-section__notice--warning">
+              <Info size={16} />
+              <span>
+                No stakeholders configured. Please go to <strong>Settings</strong> to set up the Principal and any additional stakeholders before continuing.
+              </span>
             </div>
-            <FormField
-              label="Email"
-              type="email"
-              value={data.secondaryEmail}
-              onChange={(v) => handleChange('secondaryEmail', v)}
-              placeholder="email@example.com"
-            />
-          </div>
-
-          <div className="kyc-section__group">
-            <h3 className="kyc-section__group-title">Family Office / Advisor</h3>
-            <div className="form-grid form-grid--2col">
-              <FormField
-                label="Family Office Contact"
-                value={data.familyOfficeContact}
-                onChange={(v) => handleChange('familyOfficeContact', v)}
-                placeholder="Name and firm (if applicable)"
-              />
-              <SelectField
-                label="Authority Level"
-                value={data.familyOfficeAuthorityLevel}
-                onChange={handleAuthorityLevelChange}
-                options={familyOfficeAuthorityOptions}
-                placeholder="Select authority level..."
-                helpText="Principal must formally designate this"
-              />
-            </div>
-            
-            {data.familyOfficeAuthorityLevel >= 3 && data.authorityLevelConfirmed && (
-              <div className="kyc-section__notice kyc-section__notice--info">
-                <AlertTriangle size={16} />
-                <span>
-                  Authority Level {data.familyOfficeAuthorityLevel} confirmed. 
-                  Stage gates will require {data.familyOfficeAuthorityLevel === 3 ? 'co-signature' : 'advisor approval'}.
-                </span>
+          ) : (
+            <div className="stakeholder-summary-display">
+              <div className="stakeholder-summary-display__item">
+                <span className="stakeholder-summary-display__label">Principal:</span>
+                <span className="stakeholder-summary-display__value">{principalName}</span>
+                {data.principalEmail && (
+                  <span className="stakeholder-summary-display__email">{data.principalEmail}</span>
+                )}
               </div>
-            )}
-            
-            {tier !== 'mvp' && (
-              <FormField
-                label="Domain Delegation Notes"
-                type="textarea"
-                value={data.domainDelegationNotes}
-                onChange={(v) => handleChange('domainDelegationNotes', v)}
-                placeholder="Document any specific authority delegations (e.g., 'Secondary has authority over children's spaces and her closet')"
-                rows={3}
-              />
-            )}
-          </div>
-        </>
+              {secondaryName && (
+                <div className="stakeholder-summary-display__item">
+                  <span className="stakeholder-summary-display__label">Secondary:</span>
+                  <span className="stakeholder-summary-display__value">{secondaryName}</span>
+                  {data.secondaryEmail && (
+                    <span className="stakeholder-summary-display__email">{data.secondaryEmail}</span>
+                  )}
+                </div>
+              )}
+              {hasAdvisor && (
+                <div className="stakeholder-summary-display__item">
+                  <span className="stakeholder-summary-display__label">Advisor:</span>
+                  <span className="stakeholder-summary-display__value">{data.familyOfficeContact}</span>
+                  {data.familyOfficeAuthorityLevel && (
+                    <span className="stakeholder-summary-display__authority">
+                      Level {data.familyOfficeAuthorityLevel}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="kyc-section__group">
