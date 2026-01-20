@@ -4435,3 +4435,212 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .combined-dna-item__thumb--gold {
   background: var(--gold);
 }
+
+/* ============================================
+   LuXeBrief Integration Panel (P1.A.6)
+   ============================================ */
+
+.luxebrief-panel {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
+  border: 1px solid #c3dafe;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.luxebrief-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.luxebrief-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.luxebrief-panel__title svg {
+  color: #3182ce;
+}
+
+.luxebrief-panel__title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0;
+}
+
+.luxebrief-panel__badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.luxebrief-panel__badge--pending {
+  background: var(--warning-bg);
+  color: #92400e;
+}
+
+.luxebrief-panel__badge--complete {
+  background: var(--success-bg);
+  color: #166534;
+}
+
+.luxebrief-panel__description {
+  color: var(--gray-600);
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.luxebrief-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.luxebrief-panel__recipient {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.luxebrief-panel__recipient-label {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+.luxebrief-panel__recipient-value {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.luxebrief-panel__recipient-email {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+.luxebrief-panel__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+}
+
+.luxebrief-panel__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--warning-bg);
+  border-radius: var(--radius-md);
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+.luxebrief-panel__notice svg {
+  color: var(--warning);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.luxebrief-panel__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--danger-bg);
+  border-radius: var(--radius-md);
+  color: #991b1b;
+  font-size: 0.9rem;
+}
+
+.luxebrief-panel__status {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.luxebrief-panel__status--complete {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.luxebrief-panel__status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.luxebrief-panel__status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.luxebrief-panel__status-label {
+  color: var(--gray-500);
+  min-width: 80px;
+}
+
+.luxebrief-panel__link {
+  color: #3182ce;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.luxebrief-panel__link:hover {
+  text-decoration: underline;
+}
+
+/* Divider between LuXeBrief and manual input */
+.kyc-section__divider {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.kyc-section__divider::before,
+.kyc-section__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+.kyc-section__divider span {
+  padding: 0 16px;
+  color: var(--gray-400);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Spin animation for loading */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
