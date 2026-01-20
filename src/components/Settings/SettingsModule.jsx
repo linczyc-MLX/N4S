@@ -508,6 +508,29 @@ const SettingsModule = () => {
                     </div>
                   </div>
 
+                  <div className="form-grid form-grid--2col">
+                    <div className="form-field">
+                      <label className="form-field__label">Email</label>
+                      <input
+                        type="email"
+                        className="form-field__input"
+                        value={stakeholderData.familyOfficeEmail || ''}
+                        onChange={(e) => handleStakeholderChange('familyOfficeEmail', e.target.value)}
+                        placeholder="advisor@familyoffice.com"
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-field__label">Phone</label>
+                      <input
+                        type="tel"
+                        className="form-field__input"
+                        value={stakeholderData.familyOfficePhone || ''}
+                        onChange={(e) => handleStakeholderChange('familyOfficePhone', e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                  </div>
+
                   {stakeholderData.familyOfficeAuthorityLevel >= 3 && stakeholderData.authorityLevelConfirmed && (
                     <div className="settings-section__notice settings-section__notice--info">
                       <AlertTriangle size={16} />
