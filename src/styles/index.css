@@ -4612,6 +4612,111 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   text-decoration: underline;
 }
 
+/* Mode badge for dual-respondent */
+.luxebrief-panel__mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  background: #e6f3ff;
+  color: #3182ce;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.luxebrief-panel__mode-badge svg {
+  flex-shrink: 0;
+}
+
+/* Dual-respondent card layout */
+.luxebrief-panel__dual-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .luxebrief-panel__dual-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Individual card for each respondent */
+.luxebrief-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.luxebrief-card--compact {
+  padding: 14px;
+}
+
+.luxebrief-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.luxebrief-card__role {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+}
+
+.luxebrief-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.luxebrief-card__recipient {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.luxebrief-card__name {
+  font-weight: 500;
+  color: var(--gray-800);
+  font-size: 0.95rem;
+}
+
+.luxebrief-card__email {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
+.luxebrief-card__meta {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+.luxebrief-card__send-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Small variants for compact notices/errors */
+.luxebrief-panel__notice--sm {
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  gap: 8px;
+}
+
+.luxebrief-panel__notice--sm svg {
+  flex-shrink: 0;
+}
+
+.luxebrief-panel__error--sm {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
 /* Divider between LuXeBrief and manual input */
 .kyc-section__divider {
   display: flex;

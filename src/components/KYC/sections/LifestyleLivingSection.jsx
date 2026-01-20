@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
@@ -9,11 +9,11 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData, clientData } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
-  // LuXeBrief state
-  const [luxeBriefLoading, setLuxeBriefLoading] = useState(false);
-  const [luxeBriefError, setLuxeBriefError] = useState(null);
+  // LuXeBrief state - now supports dual respondent
+  const [luxeBriefLoading, setLuxeBriefLoading] = useState({ principal: false, secondary: false });
+  const [luxeBriefError, setLuxeBriefError] = useState({ principal: null, secondary: null });
 
-  // Get LuXeBrief status from lifestyleLiving data
+  // Get LuXeBrief status from lifestyleLiving data (for current respondent view)
   const luxeBriefStatus = data.luxeBriefStatus || 'not_sent'; // not_sent, sent, completed
   const luxeBriefSessionId = data.luxeBriefSessionId;
   const luxeBriefSentAt = data.luxeBriefSentAt;
@@ -27,37 +27,52 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
   // Get stakeholder data for LuXeBrief
   const portfolioContext = kycData.principal?.portfolioContext || {};
-  const stakeholderName = respondent === 'principal'
-    ? `${portfolioContext.principalFirstName || ''} ${portfolioContext.principalLastName || ''}`.trim()
-    : `${portfolioContext.secondaryFirstName || ''} ${portfolioContext.secondaryLastName || ''}`.trim();
-  const stakeholderEmail = respondent === 'principal'
-    ? portfolioContext.principalEmail
-    : portfolioContext.secondaryEmail;
+
+  // Check questionnaire respondent preference (from Settings)
+  const questionnaireRespondent = portfolioContext.questionnaireRespondent || 'principal_only';
+  const isDualRespondent = questionnaireRespondent === 'principal_and_secondary';
+
+  // Get both Principal and Secondary data for dual-respondent mode
+  const principalName = `${portfolioContext.principalFirstName || ''} ${portfolioContext.principalLastName || ''}`.trim();
+  const principalEmail = portfolioContext.principalEmail;
+  const secondaryName = `${portfolioContext.secondaryFirstName || ''} ${portfolioContext.secondaryLastName || ''}`.trim();
+  const secondaryEmail = portfolioContext.secondaryEmail;
+
+  // Current respondent's data (for single respondent mode)
+  const stakeholderName = respondent === 'principal' ? principalName : secondaryName;
+  const stakeholderEmail = respondent === 'principal' ? principalEmail : secondaryEmail;
   const projectName = clientData?.projectName || 'Untitled Project';
+
+  // Get LuXeBrief status for both respondents (for dual-respondent mode)
+  const principalLuxeBriefData = kycData.principal?.lifestyleLiving || {};
+  const secondaryLuxeBriefData = kycData.secondary?.lifestyleLiving || {};
 
   // Check if we can send LuXeBrief (need name and email)
   const canSendLuXeBrief = stakeholderName && stakeholderEmail;
+  const canSendPrincipalLuXeBrief = principalName && principalEmail;
+  const canSendSecondaryLuXeBrief = secondaryName && secondaryEmail;
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'lifestyleLiving', { [field]: value });
   };
 
-  // Handle sending LuXeBrief invitation
-  const handleSendLuXeBrief = async () => {
-    if (!canSendLuXeBrief) return;
+  // Handle sending LuXeBrief invitation - now supports target parameter for dual-respondent mode
+  const handleSendLuXeBrief = async (target = respondent) => {
+    const targetName = target === 'principal' ? principalName : secondaryName;
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
 
-    setLuxeBriefLoading(true);
-    setLuxeBriefError(null);
+    if (!targetName || !targetEmail) return;
+
+    setLuxeBriefLoading(prev => ({ ...prev, [target]: true }));
+    setLuxeBriefError(prev => ({ ...prev, [target]: null }));
 
     try {
       // Generate subdomain from name (e.g., "Peter Thornwood" → "pthornwood")
-      const nameParts = stakeholderName.split(' ');
+      const nameParts = targetName.split(' ');
       const subdomain = nameParts.length >= 2
         ? `${nameParts[0].charAt(0).toLowerCase()}${nameParts[nameParts.length - 1].toLowerCase()}`
-        : stakeholderName.toLowerCase().replace(/\s+/g, '');
+        : targetName.toLowerCase().replace(/\s+/g, '');
 
-      // TODO: Replace with actual API call when LuXeBrief endpoint is ready
-      // For now, simulate the session creation
       const response = await fetch('https://luxebrief.not-4.sale/api/sessions/from-n4s', {
         method: 'POST',
         headers: {
@@ -66,9 +81,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         },
         body: JSON.stringify({
           n4sProjectId: clientData?.id || 'unknown',
-          principalType: respondent,
-          clientName: stakeholderName,
-          clientEmail: stakeholderEmail,
+          principalType: target,
+          clientName: targetName,
+          clientEmail: targetEmail,
           projectName: projectName,
           subdomain: subdomain
         })
@@ -80,38 +95,44 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
       const result = await response.json();
 
-      // Update status in KYC data
-      handleChange('luxeBriefStatus', 'sent');
-      handleChange('luxeBriefSessionId', result.sessionId);
-      handleChange('luxeBriefSentAt', new Date().toISOString());
-      handleChange('luxeBriefSubdomain', subdomain);
+      // Update status in KYC data for the target respondent
+      updateKYCData(target, 'lifestyleLiving', {
+        luxeBriefStatus: 'sent',
+        luxeBriefSessionId: result.sessionId,
+        luxeBriefSentAt: new Date().toISOString(),
+        luxeBriefSubdomain: subdomain
+      });
 
     } catch (error) {
       console.error('LuXeBrief send error:', error);
-      setLuxeBriefError(error.message || 'Failed to send LuXeBrief invitation');
+      setLuxeBriefError(prev => ({ ...prev, [target]: error.message || 'Failed to send LuXeBrief invitation' }));
     } finally {
-      setLuxeBriefLoading(false);
+      setLuxeBriefLoading(prev => ({ ...prev, [target]: false }));
     }
   };
 
-  // Handle checking LuXeBrief status
-  const handleRefreshStatus = async () => {
-    if (!luxeBriefSessionId) return;
+  // Handle checking LuXeBrief status - now supports target parameter
+  const handleRefreshStatus = async (target = respondent) => {
+    const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
+    const sessionId = targetData.luxeBriefSessionId;
+    if (!sessionId) return;
 
-    setLuxeBriefLoading(true);
+    setLuxeBriefLoading(prev => ({ ...prev, [target]: true }));
     try {
-      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${luxeBriefSessionId}`);
+      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}`);
       if (response.ok) {
         const session = await response.json();
-        if (session.status === 'completed' && luxeBriefStatus !== 'completed') {
-          handleChange('luxeBriefStatus', 'completed');
-          handleChange('luxeBriefCompletedAt', session.completedAt || new Date().toISOString());
+        if (session.status === 'completed' && targetData.luxeBriefStatus !== 'completed') {
+          updateKYCData(target, 'lifestyleLiving', {
+            luxeBriefStatus: 'completed',
+            luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
+          });
         }
       }
     } catch (error) {
       console.error('Status refresh error:', error);
     } finally {
-      setLuxeBriefLoading(false);
+      setLuxeBriefLoading(prev => ({ ...prev, [target]: false }));
     }
   };
 
@@ -168,6 +189,108 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     handleChange(field, updated);
   };
 
+  // Helper component to render a single respondent's LuXeBrief card
+  const renderLuXeBriefCard = (target, targetName, targetEmail, targetData, isCompact = false) => {
+    const status = targetData.luxeBriefStatus || 'not_sent';
+    const sessionId = targetData.luxeBriefSessionId;
+    const sentAt = targetData.luxeBriefSentAt;
+    const completedAt = targetData.luxeBriefCompletedAt;
+    const subdomain = targetData.luxeBriefSubdomain;
+    const canSend = targetName && targetEmail;
+    const loading = luxeBriefLoading[target];
+    const error = luxeBriefError[target];
+
+    return (
+      <div className={`luxebrief-card ${isCompact ? 'luxebrief-card--compact' : ''}`}>
+        <div className="luxebrief-card__header">
+          <span className="luxebrief-card__role">{target === 'principal' ? 'Principal' : 'Secondary'}</span>
+          {status === 'completed' && (
+            <span className="luxebrief-panel__badge luxebrief-panel__badge--complete">
+              <CheckCircle size={12} /> Completed
+            </span>
+          )}
+          {status === 'sent' && (
+            <span className="luxebrief-panel__badge luxebrief-panel__badge--pending">
+              <Clock size={12} /> Awaiting
+            </span>
+          )}
+        </div>
+
+        {/* Not Sent State */}
+        {status === 'not_sent' && (
+          <div className="luxebrief-card__content">
+            {!canSend ? (
+              <div className="luxebrief-panel__notice luxebrief-panel__notice--sm">
+                <AlertTriangle size={14} />
+                <span>Configure {target === 'principal' ? 'Principal' : 'Secondary'} in Settings</span>
+              </div>
+            ) : (
+              <>
+                <div className="luxebrief-card__recipient">
+                  <span className="luxebrief-card__name">{targetName}</span>
+                  <span className="luxebrief-card__email">{targetEmail}</span>
+                </div>
+                <button
+                  className="btn btn--primary btn--sm luxebrief-card__send-btn"
+                  onClick={() => handleSendLuXeBrief(target)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <><RefreshCw size={14} className="spin" /> Sending...</>
+                  ) : (
+                    <><Send size={14} /> Send</>
+                  )}
+                </button>
+              </>
+            )}
+            {error && (
+              <div className="luxebrief-panel__error luxebrief-panel__error--sm">
+                <AlertTriangle size={12} /> {error}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sent State */}
+        {status === 'sent' && (
+          <div className="luxebrief-card__content">
+            <div className="luxebrief-card__recipient">
+              <span className="luxebrief-card__name">{targetName}</span>
+              <span className="luxebrief-card__meta">Sent {sentAt ? new Date(sentAt).toLocaleDateString() : ''}</span>
+            </div>
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={() => handleRefreshStatus(target)}
+              disabled={loading}
+            >
+              {loading ? <RefreshCw size={12} className="spin" /> : <RefreshCw size={12} />}
+            </button>
+          </div>
+        )}
+
+        {/* Completed State */}
+        {status === 'completed' && (
+          <div className="luxebrief-card__content">
+            <div className="luxebrief-card__recipient">
+              <span className="luxebrief-card__name">{targetName}</span>
+              <span className="luxebrief-card__meta">Completed {completedAt ? new Date(completedAt).toLocaleDateString() : ''}</span>
+            </div>
+            {sessionId && (
+              <a
+                href={`https://luxebrief.not-4.sale/api/sessions/${sessionId}/export/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn--primary btn--sm"
+              >
+                <ExternalLink size={12} /> Report
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="kyc-section">
       {/* LuXeBrief Integration Panel */}
@@ -177,125 +300,134 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
             <Mail size={20} />
             <h3>LuXeBrief Lifestyle Questionnaire</h3>
           </div>
-          {luxeBriefStatus === 'completed' && (
-            <span className="luxebrief-panel__badge luxebrief-panel__badge--complete">
-              <CheckCircle size={14} /> Completed
-            </span>
-          )}
-          {luxeBriefStatus === 'sent' && (
-            <span className="luxebrief-panel__badge luxebrief-panel__badge--pending">
-              <Clock size={14} /> Awaiting Response
+          {isDualRespondent && (
+            <span className="luxebrief-panel__mode-badge">
+              <Users size={14} /> Principal + Secondary
             </span>
           )}
         </div>
 
         <p className="luxebrief-panel__description">
-          Send a voice-guided lifestyle questionnaire to {stakeholderName || 'the client'} for deeper insights into their daily routines and preferences.
+          {isDualRespondent
+            ? 'Send voice-guided lifestyle questionnaires to both Principal and Secondary for individual insights into their daily routines and preferences.'
+            : `Send a voice-guided lifestyle questionnaire to ${stakeholderName || 'the client'} for deeper insights into their daily routines and preferences.`
+          }
         </p>
 
-        {/* Not Sent State */}
-        {luxeBriefStatus === 'not_sent' && (
-          <div className="luxebrief-panel__actions">
-            {!canSendLuXeBrief ? (
-              <div className="luxebrief-panel__notice">
-                <AlertTriangle size={16} />
-                <span>
-                  Please configure {respondent === 'principal' ? 'Principal' : 'Secondary'} name and email in <strong>Settings</strong> before sending.
-                </span>
+        {/* Dual Respondent Mode - Show two cards side by side */}
+        {isDualRespondent ? (
+          <div className="luxebrief-panel__dual-cards">
+            {renderLuXeBriefCard('principal', principalName, principalEmail, principalLuxeBriefData, true)}
+            {renderLuXeBriefCard('secondary', secondaryName, secondaryEmail, secondaryLuxeBriefData, true)}
+          </div>
+        ) : (
+          /* Single Respondent Mode - Original layout */
+          <>
+            {/* Not Sent State */}
+            {luxeBriefStatus === 'not_sent' && (
+              <div className="luxebrief-panel__actions">
+                {!canSendLuXeBrief ? (
+                  <div className="luxebrief-panel__notice">
+                    <AlertTriangle size={16} />
+                    <span>
+                      Please configure {respondent === 'principal' ? 'Principal' : 'Secondary'} name and email in <strong>Settings</strong> before sending.
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="luxebrief-panel__recipient">
+                      <span className="luxebrief-panel__recipient-label">Send to:</span>
+                      <span className="luxebrief-panel__recipient-value">{stakeholderName}</span>
+                      <span className="luxebrief-panel__recipient-email">{stakeholderEmail}</span>
+                    </div>
+                    <button
+                      className="btn btn--primary luxebrief-panel__send-btn"
+                      onClick={() => handleSendLuXeBrief()}
+                      disabled={luxeBriefLoading[respondent]}
+                    >
+                      {luxeBriefLoading[respondent] ? (
+                        <>
+                          <RefreshCw size={16} className="spin" /> Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} /> Send LuXeBrief Questionnaire
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+                {luxeBriefError[respondent] && (
+                  <div className="luxebrief-panel__error">
+                    <AlertTriangle size={14} /> {luxeBriefError[respondent]}
+                  </div>
+                )}
               </div>
-            ) : (
-              <>
-                <div className="luxebrief-panel__recipient">
-                  <span className="luxebrief-panel__recipient-label">Send to:</span>
-                  <span className="luxebrief-panel__recipient-value">{stakeholderName}</span>
-                  <span className="luxebrief-panel__recipient-email">{stakeholderEmail}</span>
+            )}
+
+            {/* Sent State */}
+            {luxeBriefStatus === 'sent' && (
+              <div className="luxebrief-panel__status">
+                <div className="luxebrief-panel__status-info">
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Sent to:</span>
+                    <span>{stakeholderName} ({stakeholderEmail})</span>
+                  </div>
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Sent:</span>
+                    <span>{luxeBriefSentAt ? new Date(luxeBriefSentAt).toLocaleString() : 'Unknown'}</span>
+                  </div>
+                  {data.luxeBriefSubdomain && (
+                    <div className="luxebrief-panel__status-row">
+                      <span className="luxebrief-panel__status-label">Link:</span>
+                      <a
+                        href={`https://${data.luxeBriefSubdomain}.luxebrief.not-4.sale`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="luxebrief-panel__link"
+                      >
+                        {data.luxeBriefSubdomain}.luxebrief.not-4.sale <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <button
-                  className="btn btn--primary luxebrief-panel__send-btn"
-                  onClick={handleSendLuXeBrief}
-                  disabled={luxeBriefLoading}
+                  className="btn btn--secondary btn--sm"
+                  onClick={() => handleRefreshStatus()}
+                  disabled={luxeBriefLoading[respondent]}
                 >
-                  {luxeBriefLoading ? (
-                    <>
-                      <RefreshCw size={16} className="spin" /> Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} /> Send LuXeBrief Questionnaire
-                    </>
-                  )}
+                  {luxeBriefLoading[respondent] ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
+                  Check Status
                 </button>
-              </>
-            )}
-            {luxeBriefError && (
-              <div className="luxebrief-panel__error">
-                <AlertTriangle size={14} /> {luxeBriefError}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Sent State */}
-        {luxeBriefStatus === 'sent' && (
-          <div className="luxebrief-panel__status">
-            <div className="luxebrief-panel__status-info">
-              <div className="luxebrief-panel__status-row">
-                <span className="luxebrief-panel__status-label">Sent to:</span>
-                <span>{stakeholderName} ({stakeholderEmail})</span>
-              </div>
-              <div className="luxebrief-panel__status-row">
-                <span className="luxebrief-panel__status-label">Sent:</span>
-                <span>{luxeBriefSentAt ? new Date(luxeBriefSentAt).toLocaleString() : 'Unknown'}</span>
-              </div>
-              {data.luxeBriefSubdomain && (
-                <div className="luxebrief-panel__status-row">
-                  <span className="luxebrief-panel__status-label">Link:</span>
+            {/* Completed State */}
+            {luxeBriefStatus === 'completed' && (
+              <div className="luxebrief-panel__status luxebrief-panel__status--complete">
+                <div className="luxebrief-panel__status-info">
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Completed by:</span>
+                    <span>{stakeholderName}</span>
+                  </div>
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Completed:</span>
+                    <span>{luxeBriefCompletedAt ? new Date(luxeBriefCompletedAt).toLocaleString() : 'Unknown'}</span>
+                  </div>
+                </div>
+                {luxeBriefSessionId && (
                   <a
-                    href={`https://${data.luxeBriefSubdomain}.luxebrief.not-4.sale`}
+                    href={`https://luxebrief.not-4.sale/api/sessions/${luxeBriefSessionId}/export/pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="luxebrief-panel__link"
+                    className="btn btn--primary btn--sm"
                   >
-                    {data.luxeBriefSubdomain}.luxebrief.not-4.sale <ExternalLink size={12} />
+                    <ExternalLink size={14} /> View Report
                   </a>
-                </div>
-              )}
-            </div>
-            <button
-              className="btn btn--secondary btn--sm"
-              onClick={handleRefreshStatus}
-              disabled={luxeBriefLoading}
-            >
-              {luxeBriefLoading ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
-              Check Status
-            </button>
-          </div>
-        )}
-
-        {/* Completed State */}
-        {luxeBriefStatus === 'completed' && (
-          <div className="luxebrief-panel__status luxebrief-panel__status--complete">
-            <div className="luxebrief-panel__status-info">
-              <div className="luxebrief-panel__status-row">
-                <span className="luxebrief-panel__status-label">Completed by:</span>
-                <span>{stakeholderName}</span>
+                )}
               </div>
-              <div className="luxebrief-panel__status-row">
-                <span className="luxebrief-panel__status-label">Completed:</span>
-                <span>{luxeBriefCompletedAt ? new Date(luxeBriefCompletedAt).toLocaleString() : 'Unknown'}</span>
-              </div>
-            </div>
-            {luxeBriefSessionId && (
-              <a
-                href={`https://luxebrief.not-4.sale/api/sessions/${luxeBriefSessionId}/export/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn--primary btn--sm"
-              >
-                <ExternalLink size={14} /> View Report
-              </a>
             )}
-          </div>
+          </>
         )}
       </div>
 

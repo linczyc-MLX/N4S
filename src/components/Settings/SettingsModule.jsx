@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   Settings, FolderPlus, Users, Building2, Trash2, CheckCircle2,
-  ChevronDown, ChevronRight, AlertTriangle, Save, UserPlus, Briefcase
+  ChevronDown, ChevronRight, AlertTriangle, Save, UserPlus, Briefcase,
+  ClipboardList
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import './SettingsModule.css';
@@ -422,6 +423,51 @@ const SettingsModule = () => {
                       placeholder="email@example.com"
                     />
                   </div>
+
+                  {/* Respondent Preference - shows when Secondary is configured */}
+                  {(stakeholderData.secondaryFirstName || stakeholderData.secondaryEmail) && (
+                    <div className="respondent-preference">
+                      <div className="respondent-preference__header">
+                        <ClipboardList size={16} />
+                        <h4>Questionnaire Respondents</h4>
+                      </div>
+                      <p className="respondent-preference__description">
+                        Choose who completes the Design Preferences (P1.A.5) and Lifestyle & Living (P1.A.6) questionnaires.
+                      </p>
+                      <div className="respondent-preference__options">
+                        <label className="respondent-preference__option">
+                          <input
+                            type="radio"
+                            name="questionnaireRespondent"
+                            value="principal_only"
+                            checked={stakeholderData.questionnaireRespondent !== 'principal_and_secondary'}
+                            onChange={() => handleStakeholderChange('questionnaireRespondent', 'principal_only')}
+                          />
+                          <div className="respondent-preference__option-content">
+                            <span className="respondent-preference__option-label">Principal Only</span>
+                            <span className="respondent-preference__option-desc">
+                              Only {stakeholderData.principalFirstName || 'Principal'} completes the design and lifestyle questionnaires
+                            </span>
+                          </div>
+                        </label>
+                        <label className="respondent-preference__option">
+                          <input
+                            type="radio"
+                            name="questionnaireRespondent"
+                            value="principal_and_secondary"
+                            checked={stakeholderData.questionnaireRespondent === 'principal_and_secondary'}
+                            onChange={() => handleStakeholderChange('questionnaireRespondent', 'principal_and_secondary')}
+                          />
+                          <div className="respondent-preference__option-content">
+                            <span className="respondent-preference__option-label">Principal + Secondary</span>
+                            <span className="respondent-preference__option-desc">
+                              Both {stakeholderData.principalFirstName || 'Principal'} and {stakeholderData.secondaryFirstName || 'Secondary'} complete separate questionnaires
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Family Office / Advisor */}
