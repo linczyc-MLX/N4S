@@ -6,7 +6,7 @@ import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, clientData } = useAppContext();
+  const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
   // LuXeBrief Lifestyle state - now supports dual respondent
@@ -87,7 +87,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer luxebrief-admin-2024'
+          'Authorization': 'Bearer luxury-admin-2024'
         },
         body: JSON.stringify({
           n4sProjectId: clientData?.id || 'unknown',
@@ -141,6 +141,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               luxeBriefSessionId: session.id,
               luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
             });
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
             return; // Done - found completed session
           }
         }
@@ -159,6 +161,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               luxeBriefSessionId: emailData.sessionId,
               luxeBriefCompletedAt: emailData.completedAt || new Date().toISOString()
             });
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
           } else if (!sessionId && emailData.sessionId) {
             // If we had no session ID but found one by email, store it
             updateKYCData(target, 'lifestyleLiving', {
@@ -195,7 +199,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer luxebrief-admin-2024'
+          'Authorization': 'Bearer luxury-admin-2024'
         },
         body: JSON.stringify({
           n4sProjectId: clientData?.id || 'unknown',
@@ -326,6 +330,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(session.id, target);
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
             return;
           }
         }
@@ -345,6 +351,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(emailData.sessionId, target);
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
           } else if (!sessionId && emailData.sessionId) {
             updateKYCData(target, 'lifestyleLiving', {
               luxeLivingSessionId: emailData.sessionId
