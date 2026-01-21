@@ -255,7 +255,7 @@ export const AppProvider = ({ children }) => {
   // ---------------------------------------------------------------------------
   const [activeRespondent, setActiveRespondent] = useState('principal');
   const [currentKYCSection, setCurrentKYCSection] = useState(0);
-  const [disclosureTier, setDisclosureTier] = useState('mvp');
+  const [disclosureTier, setDisclosureTier] = useState('enhanced');
 
   // ---------------------------------------------------------------------------
   // DERIVED VALUES (read-only extractions from projectData)
