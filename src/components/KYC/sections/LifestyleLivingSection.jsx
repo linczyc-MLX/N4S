@@ -6,7 +6,7 @@ import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
+  const { kycData, updateKYCData, clientData } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
   // LuXeBrief Lifestyle state - now supports dual respondent
@@ -123,15 +123,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
   // Handle checking LuXeBrief status - now supports target parameter
   // Enhanced to search by email if stored session is not completed (handles session ID mismatch)
-  // Auto-saves after status update to persist across page refreshes
   const handleRefreshStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
     const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
     const sessionId = targetData.luxeBriefSessionId;
 
     setLuxeBriefLoading(prev => ({ ...prev, [target]: true }));
-    let statusUpdated = false;
-
     try {
       // First, check the stored session ID if we have one
       if (sessionId) {
@@ -144,16 +141,15 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               luxeBriefSessionId: session.id,
               luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
             });
-            statusUpdated = true;
+            return; // Done - found completed session
           }
         }
       }
 
-      // If stored session not completed (or not found), search by email for any completed Lifestyle session
+      // If stored session not completed (or not found), search by email for any completed session
       // This handles the session ID mismatch case (e.g., CORS failed on original send, user completed via curl-created session)
-      // Note: sessionType=lifestyle to distinguish from Living questionnaire
-      if (!statusUpdated && targetEmail) {
-        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=lifestyle`);
+      if (targetEmail) {
+        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}`);
         if (emailResponse.ok) {
           const emailData = await emailResponse.json();
           // If we found a completed session with a different ID, update our stored session ID
@@ -163,13 +159,11 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               luxeBriefSessionId: emailData.sessionId,
               luxeBriefCompletedAt: emailData.completedAt || new Date().toISOString()
             });
-            statusUpdated = true;
           } else if (!sessionId && emailData.sessionId) {
             // If we had no session ID but found one by email, store it
             updateKYCData(target, 'lifestyleLiving', {
               luxeBriefSessionId: emailData.sessionId
             });
-            statusUpdated = true;
           }
         }
       }
@@ -177,10 +171,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       console.error('Status refresh error:', error);
     } finally {
       setLuxeBriefLoading(prev => ({ ...prev, [target]: false }));
-      // Auto-save if status was updated so it persists across page refreshes
-      if (statusUpdated && saveNow) {
-        setTimeout(() => saveNow(), 100); // Small delay to ensure state update completes
-      }
     }
   };
 
@@ -314,15 +304,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   };
 
   // Handle checking LuXeBrief Living status
-  // Auto-saves after status update to persist across page refreshes
   const handleRefreshLivingStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
     const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
     const sessionId = targetData.luxeLivingSessionId;
 
     setLuxeLivingLoading(prev => ({ ...prev, [target]: true }));
-    let statusUpdated = false;
-
     try {
       // First, check the stored session ID if we have one
       if (sessionId) {
@@ -339,13 +326,13 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(session.id, target);
-            statusUpdated = true;
+            return;
           }
         }
       }
 
       // If stored session not completed, search by email for any completed Living session
-      if (!statusUpdated && targetEmail) {
+      if (targetEmail) {
         const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
         if (emailResponse.ok) {
           const emailData = await emailResponse.json();
@@ -358,12 +345,10 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(emailData.sessionId, target);
-            statusUpdated = true;
           } else if (!sessionId && emailData.sessionId) {
             updateKYCData(target, 'lifestyleLiving', {
               luxeLivingSessionId: emailData.sessionId
             });
-            statusUpdated = true;
           }
         }
       }
@@ -371,10 +356,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       console.error('Living status refresh error:', error);
     } finally {
       setLuxeLivingLoading(prev => ({ ...prev, [target]: false }));
-      // Auto-save if status was updated so it persists across page refreshes
-      if (statusUpdated && saveNow) {
-        setTimeout(() => saveNow(), 100); // Small delay to ensure state update completes
-      }
     }
   };
 
