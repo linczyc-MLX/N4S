@@ -230,6 +230,79 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     }
   };
 
+  // Sync Living responses to KYC spaceRequirements
+  const syncLivingToSpaceRequirements = async (sessionId, target) => {
+    try {
+      // Fetch the living responses from LuXeBrief
+      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}/living-responses`);
+      if (!response.ok) {
+        console.error('Failed to fetch Living responses for sync');
+        return;
+      }
+
+      const livingResponses = await response.json();
+
+      // Parse and map responses to KYC spaceRequirements fields
+      const spaceRequirements = {};
+
+      for (const resp of livingResponses) {
+        try {
+          const data = JSON.parse(resp.data);
+
+          // Map Interior step data
+          if (resp.stepId === 'interior') {
+            if (data.mustHaveSpaces?.length) spaceRequirements.mustHaveSpaces = data.mustHaveSpaces;
+            if (data.niceToHaveSpaces?.length) spaceRequirements.niceToHaveSpaces = data.niceToHaveSpaces;
+            if (data.wantsSeparateFamilyRoom !== undefined) spaceRequirements.wantsSeparateFamilyRoom = data.wantsSeparateFamilyRoom;
+            if (data.wantsSecondFormalLiving !== undefined) spaceRequirements.wantsSecondFormalLiving = data.wantsSecondFormalLiving;
+            if (data.wantsBar !== undefined) spaceRequirements.wantsBar = data.wantsBar;
+            if (data.wantsBunkRoom !== undefined) spaceRequirements.wantsBunkRoom = data.wantsBunkRoom;
+            if (data.wantsBreakfastNook !== undefined) spaceRequirements.wantsBreakfastNook = data.wantsBreakfastNook;
+          }
+
+          // Map Exterior step data
+          if (resp.stepId === 'exterior') {
+            if (data.mustHavePoolWater?.length) spaceRequirements.mustHavePoolWater = data.mustHavePoolWater;
+            if (data.wouldLikePoolWater?.length) spaceRequirements.wouldLikePoolWater = data.wouldLikePoolWater;
+            if (data.mustHaveSport?.length) spaceRequirements.mustHaveSport = data.mustHaveSport;
+            if (data.wouldLikeSport?.length) spaceRequirements.wouldLikeSport = data.wouldLikeSport;
+            if (data.mustHaveOutdoorLiving?.length) spaceRequirements.mustHaveOutdoorLiving = data.mustHaveOutdoorLiving;
+            if (data.wouldLikeOutdoorLiving?.length) spaceRequirements.wouldLikeOutdoorLiving = data.wouldLikeOutdoorLiving;
+            if (data.mustHaveGarden?.length) spaceRequirements.mustHaveGarden = data.mustHaveGarden;
+            if (data.wouldLikeGarden?.length) spaceRequirements.wouldLikeGarden = data.wouldLikeGarden;
+            if (data.mustHaveStructures?.length) spaceRequirements.mustHaveStructures = data.mustHaveStructures;
+            if (data.wouldLikeStructures?.length) spaceRequirements.wouldLikeStructures = data.wouldLikeStructures;
+            if (data.mustHaveAccess?.length) spaceRequirements.mustHaveAccess = data.mustHaveAccess;
+            if (data.wouldLikeAccess?.length) spaceRequirements.wouldLikeAccess = data.wouldLikeAccess;
+          }
+
+          // Map Final step data (garage, tech, views, etc.)
+          if (resp.stepId === 'final') {
+            if (data.garageSize) spaceRequirements.garageSize = data.garageSize;
+            if (data.garageFeatures?.length) spaceRequirements.garageFeatures = data.garageFeatures;
+            if (data.technologyRequirements?.length) spaceRequirements.technologyRequirements = data.technologyRequirements;
+            if (data.sustainabilityPriorities?.length) spaceRequirements.sustainabilityPriorities = data.sustainabilityPriorities;
+            if (data.viewPriorityRooms?.length) spaceRequirements.viewPriorityRooms = data.viewPriorityRooms;
+            if (data.minimumLotSize) spaceRequirements.minimumLotSize = data.minimumLotSize;
+            if (data.minimumSetback) spaceRequirements.minimumSetback = data.minimumSetback;
+            if (data.currentSpacePainPoints) spaceRequirements.currentSpacePainPoints = data.currentSpacePainPoints;
+            if (data.dailyRoutinesSummary) spaceRequirements.dailyRoutinesSummary = data.dailyRoutinesSummary;
+          }
+        } catch (e) {
+          console.error('Error parsing Living response:', e);
+        }
+      }
+
+      // Update KYC spaceRequirements with synced data
+      if (Object.keys(spaceRequirements).length > 0) {
+        console.log(`[Living Sync] Syncing ${Object.keys(spaceRequirements).length} fields to ${target} spaceRequirements`);
+        updateKYCData(target, 'spaceRequirements', spaceRequirements);
+      }
+    } catch (error) {
+      console.error('Error syncing Living to spaceRequirements:', error);
+    }
+  };
+
   // Handle checking LuXeBrief Living status
   const handleRefreshLivingStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
@@ -244,11 +317,15 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         if (response.ok) {
           const session = await response.json();
           if (session.status === 'completed' && targetData.luxeLivingStatus !== 'completed') {
+            // Update Living status
             updateKYCData(target, 'lifestyleLiving', {
               luxeLivingStatus: 'completed',
               luxeLivingSessionId: session.id,
               luxeLivingCompletedAt: session.completedAt || new Date().toISOString()
             });
+
+            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
+            await syncLivingToSpaceRequirements(session.id, target);
             return;
           }
         }
@@ -265,6 +342,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               luxeLivingSessionId: emailData.sessionId,
               luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
             });
+
+            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
+            await syncLivingToSpaceRequirements(emailData.sessionId, target);
           } else if (!sessionId && emailData.sessionId) {
             updateKYCData(target, 'lifestyleLiving', {
               luxeLivingSessionId: emailData.sessionId

@@ -294,17 +294,20 @@ function WorkflowTab() {
       principal: true,
       secondary: true,
       tier: 'full',
-      description: 'How you actually live day-to-day.',
+      description: 'How you actually live day-to-day. Includes LuXeBrief Lifestyle (voice-guided) and LuXeBrief Living (form-based questionnaire).',
       captures: [
         'Entertaining frequency and scale',
         'Morning and evening routines',
         'Work-from-home requirements',
-        'Hobbies and collections'
+        'Hobbies and collections',
+        'LuXeBrief Lifestyle: Voice-guided lifestyle interview',
+        'LuXeBrief Living: Form-based space program questionnaire'
       ],
       impacts: [
         'Kitchen and dining sizing',
         'Privacy posture requirements',
-        'Specialty room recommendations'
+        'Specialty room recommendations',
+        'Direct sync to FYI space selections (Living)'
       ]
     },
     {
@@ -422,6 +425,56 @@ function WorkflowTab() {
           </div>
         </div>
       ))}
+
+      {/* LuXeBrief Integration */}
+      <div className="doc-card doc-card--highlight">
+        <h3 className="doc-subsection-title">LuXeBrief Integration</h3>
+        <p className="doc-paragraph">
+          Sections P1.A.6 and P1.A.7 can be completed via LuXeBrief—N4S's external questionnaire platform
+          that offers two modes for capturing lifestyle and space requirements.
+        </p>
+        <div className="doc-luxebrief-grid">
+          <div className="doc-luxebrief-card">
+            <div className="doc-luxebrief-header">
+              <div className="doc-luxebrief-badge doc-luxebrief-badge--lifestyle">LuXeBrief Lifestyle</div>
+            </div>
+            <p><strong>Voice-Guided Interview</strong></p>
+            <p>AI-powered conversational questionnaire that captures lifestyle nuances through natural dialogue.
+            Responses are transcribed, analyzed, and summarized into a comprehensive lifestyle brief.</p>
+            <ul>
+              <li>10-15 minute audio interview</li>
+              <li>AI-generated lifestyle summary</li>
+              <li>PDF executive summary report</li>
+            </ul>
+          </div>
+          <div className="doc-luxebrief-card">
+            <div className="doc-luxebrief-header">
+              <div className="doc-luxebrief-badge doc-luxebrief-badge--living">LuXeBrief Living</div>
+            </div>
+            <p><strong>Form-Based Questionnaire</strong></p>
+            <p>Structured 7-step questionnaire that directly captures space requirements with must-have and
+            nice-to-have selections for interior and exterior amenities.</p>
+            <ul>
+              <li>7 comprehensive sections</li>
+              <li>Direct sync to KYC Space Requirements</li>
+              <li>Auto-populates FYI space selections</li>
+            </ul>
+          </div>
+        </div>
+        <div className="doc-luxebrief-flow">
+          <h4>Data Flow</h4>
+          <div className="doc-flow-diagram">
+            <span className="doc-flow-step">LuXeBrief Living</span>
+            <span className="doc-flow-arrow">→</span>
+            <span className="doc-flow-step">KYC Space Requirements</span>
+            <span className="doc-flow-arrow">→</span>
+            <span className="doc-flow-step">FYI Module</span>
+          </div>
+          <p>When a LuXeBrief Living questionnaire is completed, responses automatically sync to KYC's
+          Space Requirements section (P1.A.7), which then pre-populates the FYI space program.
+          Clients can review and adjust selections in FYI before proceeding to MVP.</p>
+        </div>
+      </div>
 
       {/* Completion Guide */}
       <div className="doc-card">
@@ -1693,28 +1746,152 @@ const kycDocumentationStyles = `
   line-height: 1.5;
 }
 
+/* LuXeBrief Integration Styles */
+.doc-luxebrief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.doc-luxebrief-card {
+  padding: 1.25rem;
+  background-color: ${COLORS.surface};
+  border-radius: 8px;
+  border: 1px solid ${COLORS.border};
+}
+
+.doc-luxebrief-header {
+  margin-bottom: 0.75rem;
+}
+
+.doc-luxebrief-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.doc-luxebrief-badge--lifestyle {
+  background-color: ${COLORS.navy};
+  color: #fff;
+}
+
+.doc-luxebrief-badge--living {
+  background-color: ${COLORS.teal};
+  color: #fff;
+}
+
+.doc-luxebrief-card p {
+  font-size: 0.875rem;
+  color: ${COLORS.text};
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.doc-luxebrief-card p strong {
+  color: ${COLORS.navy};
+}
+
+.doc-luxebrief-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.doc-luxebrief-card li {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+  padding: 0.25rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.doc-luxebrief-card li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: ${COLORS.success};
+}
+
+.doc-luxebrief-flow {
+  padding: 1rem;
+  background-color: ${COLORS.surface};
+  border-radius: 8px;
+}
+
+.doc-luxebrief-flow h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: ${COLORS.textMuted};
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem 0;
+}
+
+.doc-flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.doc-flow-step {
+  padding: 0.5rem 1rem;
+  background-color: ${COLORS.navy};
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.doc-flow-arrow {
+  color: ${COLORS.gold};
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.doc-luxebrief-flow p {
+  font-size: 0.875rem;
+  color: ${COLORS.text};
+  margin: 0;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
   .doc-respondent-grid,
   .doc-capture-options,
-  .doc-tips-grid {
+  .doc-tips-grid,
+  .doc-luxebrief-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .doc-privacy-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .doc-section-card__details {
     grid-template-columns: 1fr;
   }
-  
+
   .doc-gate-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-  
+
   .doc-code-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .doc-flow-diagram {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doc-flow-arrow {
+    transform: rotate(90deg);
   }
 }
 `;
