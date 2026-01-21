@@ -34,19 +34,47 @@ const defaultSettings = {
 };
 
 // Initialize selections with all available spaces for tier set to 'M'
-export const initializeSelectionsForTier = (tier, hasBasement = false) => {
+// If kycSpaceRequirements is provided, use mustHaveSpaces/niceToHaveSpaces to set inclusion
+export const initializeSelectionsForTier = (tier, hasBasement = false, kycSpaceRequirements = null) => {
   const availableSpaces = getSpacesForTier(tier);
   const selections = {};
 
+  // Extract KYC space requirements if provided (from LuXeBrief Living sync)
+  const mustHaveSpaces = kycSpaceRequirements?.mustHaveSpaces || [];
+  const niceToHaveSpaces = kycSpaceRequirements?.niceToHaveSpaces || [];
+  const hasKYCData = mustHaveSpaces.length > 0 || niceToHaveSpaces.length > 0;
+
   availableSpaces.forEach(space => {
     if (space.baseSF[tier] !== null) {
+      // Determine inclusion based on KYC data if available
+      let included = true; // Default: include all spaces
+      let notes = '';
+
+      if (hasKYCData) {
+        // If we have KYC data, use it to drive inclusion
+        const isMustHave = mustHaveSpaces.includes(space.code) || mustHaveSpaces.includes(space.name);
+        const isNiceToHave = niceToHaveSpaces.includes(space.code) || niceToHaveSpaces.includes(space.name);
+
+        if (isMustHave) {
+          included = true;
+          notes = 'Must have (from LuXeBrief Living)';
+        } else if (isNiceToHave) {
+          included = true; // Include nice-to-have but mark them
+          notes = 'Nice to have (from LuXeBrief Living)';
+        } else {
+          // If KYC data exists but this space isn't in either list, exclude by default
+          // This ensures FYI reflects the client's actual selections
+          included = false;
+        }
+      }
+
       selections[space.code] = {
-        included: true,
+        included,
         size: 'M',
         level: space.defaultLevel,
         customSF: null,
         imageUrl: null,
-        notes: ''
+        notes
       };
     }
   });

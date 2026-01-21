@@ -156,8 +156,16 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
         hasBasement: consolidatedKYC?.projectParameters?.hasBasement || false,
       });
 
-      // Initialize selections
-      const newSelections = initializeSelectionsForTier(tier, false);
+      // Initialize selections - pass KYC spaceRequirements for LuXeBrief Living sync
+      // This pre-selects spaces based on client's mustHaveSpaces/niceToHaveSpaces from Living questionnaire
+      const kycSpaceRequirements = consolidatedKYC?.spaceRequirements || null;
+      if (kycSpaceRequirements?.mustHaveSpaces?.length || kycSpaceRequirements?.niceToHaveSpaces?.length) {
+        console.log('[FYI] Using KYC spaceRequirements from LuXeBrief Living sync:', {
+          mustHave: kycSpaceRequirements.mustHaveSpaces,
+          niceToHave: kycSpaceRequirements.niceToHaveSpaces
+        });
+      }
+      const newSelections = initializeSelectionsForTier(tier, false, kycSpaceRequirements);
       initializeFYISelections(newSelections);
     }
 
