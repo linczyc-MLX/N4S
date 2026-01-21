@@ -87,7 +87,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer luxury-admin-2024'
+          'Authorization': 'Bearer luxebrief-admin-2024'
         },
         body: JSON.stringify({
           n4sProjectId: clientData?.id || 'unknown',
@@ -199,7 +199,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer luxury-admin-2024'
+          'Authorization': 'Bearer luxebrief-admin-2024'
         },
         body: JSON.stringify({
           n4sProjectId: clientData?.id || 'unknown',
