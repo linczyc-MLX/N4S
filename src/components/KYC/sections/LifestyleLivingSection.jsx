@@ -112,21 +112,49 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   };
 
   // Handle checking LuXeBrief status - now supports target parameter
+  // Enhanced to search by email if stored session is not completed (handles session ID mismatch)
   const handleRefreshStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
     const sessionId = targetData.luxeBriefSessionId;
-    if (!sessionId) return;
 
     setLuxeBriefLoading(prev => ({ ...prev, [target]: true }));
     try {
-      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}`);
-      if (response.ok) {
-        const session = await response.json();
-        if (session.status === 'completed' && targetData.luxeBriefStatus !== 'completed') {
-          updateKYCData(target, 'lifestyleLiving', {
-            luxeBriefStatus: 'completed',
-            luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
-          });
+      // First, check the stored session ID if we have one
+      if (sessionId) {
+        const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}`);
+        if (response.ok) {
+          const session = await response.json();
+          if (session.status === 'completed' && targetData.luxeBriefStatus !== 'completed') {
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeBriefStatus: 'completed',
+              luxeBriefSessionId: session.id,
+              luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
+            });
+            return; // Done - found completed session
+          }
+        }
+      }
+
+      // If stored session not completed (or not found), search by email for any completed session
+      // This handles the session ID mismatch case (e.g., CORS failed on original send, user completed via curl-created session)
+      if (targetEmail) {
+        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}`);
+        if (emailResponse.ok) {
+          const emailData = await emailResponse.json();
+          // If we found a completed session with a different ID, update our stored session ID
+          if (emailData.status === 'completed') {
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeBriefStatus: 'completed',
+              luxeBriefSessionId: emailData.sessionId,
+              luxeBriefCompletedAt: emailData.completedAt || new Date().toISOString()
+            });
+          } else if (!sessionId && emailData.sessionId) {
+            // If we had no session ID but found one by email, store it
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeBriefSessionId: emailData.sessionId
+            });
+          }
         }
       }
     } catch (error) {
