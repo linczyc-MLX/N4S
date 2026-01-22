@@ -4491,6 +4491,22 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   color: #166534;
 }
 
+.luxebrief-panel__badge--ready {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Toggle button for Secondary confirmation step */
+.btn--toggle {
+  background: #e5e7eb;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.btn--toggle:hover {
+  background: #d1d5db;
+}
+
 .luxebrief-panel__description {
   color: var(--gray-600);
   font-size: 0.95rem;
