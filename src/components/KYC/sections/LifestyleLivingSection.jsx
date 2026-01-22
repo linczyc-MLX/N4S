@@ -313,6 +313,53 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     }
   };
 
+  // Get correct Living session ID by email lookup (returns sessionId or null)
+  const getCorrectLivingSessionId = async (targetEmail) => {
+    if (!targetEmail) return null;
+    try {
+      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'completed' && data.sessionId) {
+          return data.sessionId;
+        }
+      }
+    } catch (e) {
+      console.error('Error getting correct session ID:', e);
+    }
+    return null;
+  };
+
+  // Handle clicking the Living Report button - verify session ID first
+  const handleLivingReportClick = async (e, target) => {
+    e.preventDefault();
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
+    const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
+    const storedSessionId = targetData.luxeLivingSessionId;
+
+    // Get the correct session ID from LuXeBrief
+    const correctSessionId = await getCorrectLivingSessionId(targetEmail);
+
+    if (correctSessionId && correctSessionId !== storedSessionId) {
+      // Session ID mismatch - update N4S and use correct one
+      console.log(`[Living Report] Correcting session ID from ${storedSessionId} to ${correctSessionId}`);
+      updateKYCData(target, 'lifestyleLiving', {
+        luxeLivingSessionId: correctSessionId,
+        luxeLivingStatus: 'completed'
+      });
+      if (saveNow) setTimeout(() => saveNow(), 100);
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
+    } else if (correctSessionId) {
+      // Session ID is correct, just open
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
+    } else if (storedSessionId) {
+      // Couldn't verify, use stored (fallback)
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${storedSessionId}/export/pdf`, '_blank');
+    } else {
+      alert('No Living session found. Please refresh the status.');
+    }
+  };
+
   // Handle checking LuXeBrief Living status
   const handleRefreshLivingStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
@@ -680,16 +727,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <span className="luxebrief-card__name">{targetName}</span>
               <span className="luxebrief-card__meta">Completed {completedAt ? new Date(completedAt).toLocaleDateString() : ''}</span>
             </div>
-            {sessionId && (
-              <a
-                href={`https://luxebrief.not-4.sale/api/sessions/${sessionId}/export/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn--primary btn--sm"
-              >
-                <ExternalLink size={12} /> Report
-              </a>
-            )}
+            <button
+              onClick={(e) => handleLivingReportClick(e, target)}
+              className="btn btn--primary btn--sm"
+            >
+              <ExternalLink size={12} /> Report
+            </button>
           </div>
         )}
       </div>
@@ -958,16 +1001,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                     <span>{luxeLivingCompletedAt ? new Date(luxeLivingCompletedAt).toLocaleString() : 'Unknown'}</span>
                   </div>
                 </div>
-                {luxeLivingSessionId && (
-                  <a
-                    href={`https://luxebrief.not-4.sale/api/sessions/${luxeLivingSessionId}/export/pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn--primary btn--sm"
-                  >
-                    <ExternalLink size={14} /> View Report
-                  </a>
-                )}
+                <button
+                  onClick={(e) => handleLivingReportClick(e, respondent)}
+                  className="btn btn--primary btn--sm"
+                >
+                  <ExternalLink size={14} /> View Report
+                </button>
               </div>
             )}
           </>
