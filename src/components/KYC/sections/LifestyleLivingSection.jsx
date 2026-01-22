@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users, ClipboardList, ChevronUp, ChevronDown, Download } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
@@ -22,6 +22,13 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     lifestyle: false,
     living: false
   });
+
+  // State for Manual Entry panel expansion
+  const [manualEntryExpanded, setManualEntryExpanded] = useState(false);
+
+  // State for export loading/error
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState(null);
 
   // Get LuXeBrief Lifestyle status from lifestyleLiving data (for current respondent view)
   const luxeBriefStatus = data.luxeBriefStatus || 'not_sent'; // not_sent, sent, completed
@@ -470,6 +477,128 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       window.open(`https://luxebrief.not-4.sale/api/sessions/${storedSessionId}/export/pdf`, '_blank');
     } else {
       alert('No Living session found. Please refresh the status.');
+    }
+  };
+
+  // Handle exporting the Manual Lifestyle & Living Report
+  const handleExportManualReport = async () => {
+    setExportError(null);
+
+    // Get space requirements data from principal
+    const spaceReqs = kycData.principal?.spaceRequirements || {};
+
+    // Validate: Check that at least SOME data has been entered
+    const hasInteriorData = spaceReqs.mustHaveSpaces?.length > 0 || spaceReqs.niceToHaveSpaces?.length > 0;
+    const hasExteriorData = spaceReqs.mustHavePoolWater?.length > 0 || spaceReqs.wouldLikePoolWater?.length > 0 ||
+                            spaceReqs.mustHaveSport?.length > 0 || spaceReqs.wouldLikeSport?.length > 0 ||
+                            spaceReqs.mustHaveOutdoorLiving?.length > 0 || spaceReqs.wouldLikeOutdoorLiving?.length > 0;
+    const hasOtherData = spaceReqs.garageSize || spaceReqs.technologyRequirements?.length > 0;
+    const hasLifestyleData = data.workFromHome || data.hobbies?.length > 0 || data.entertainingFrequency;
+
+    if (!hasInteriorData && !hasExteriorData && !hasOtherData && !hasLifestyleData) {
+      setExportError('Please enter some data before exporting the report.');
+      return;
+    }
+
+    setExportLoading(true);
+
+    try {
+      // Collect ALL manual entry data from KYC
+      const manualData = {
+        // Interior Spaces
+        mustHaveSpaces: spaceReqs.mustHaveSpaces || [],
+        niceToHaveSpaces: spaceReqs.niceToHaveSpaces || [],
+        wantsSeparateFamilyRoom: spaceReqs.wantsSeparateFamilyRoom,
+        wantsSecondFormalLiving: spaceReqs.wantsSecondFormalLiving,
+        wantsBar: spaceReqs.wantsBar,
+        wantsBunkRoom: spaceReqs.wantsBunkRoom,
+        wantsBreakfastNook: spaceReqs.wantsBreakfastNook,
+
+        // Exterior - Pool & Water
+        mustHavePoolWater: spaceReqs.mustHavePoolWater || [],
+        wouldLikePoolWater: spaceReqs.wouldLikePoolWater || [],
+
+        // Exterior - Sports
+        mustHaveSport: spaceReqs.mustHaveSport || [],
+        wouldLikeSport: spaceReqs.wouldLikeSport || [],
+
+        // Exterior - Outdoor Living
+        mustHaveOutdoorLiving: spaceReqs.mustHaveOutdoorLiving || [],
+        wouldLikeOutdoorLiving: spaceReqs.wouldLikeOutdoorLiving || [],
+
+        // Exterior - Garden
+        mustHaveGarden: spaceReqs.mustHaveGarden || [],
+        wouldLikeGarden: spaceReqs.wouldLikeGarden || [],
+
+        // Exterior - Structures
+        mustHaveStructures: spaceReqs.mustHaveStructures || [],
+        wouldLikeStructures: spaceReqs.wouldLikeStructures || [],
+
+        // Exterior - Access
+        mustHaveAccess: spaceReqs.mustHaveAccess || [],
+        wouldLikeAccess: spaceReqs.wouldLikeAccess || [],
+
+        // Final/Additional Details
+        garageSize: spaceReqs.garageSize,
+        garageFeatures: spaceReqs.garageFeatures || [],
+        technologyRequirements: spaceReqs.technologyRequirements || [],
+        sustainabilityPriorities: spaceReqs.sustainabilityPriorities || [],
+        viewPriorityRooms: spaceReqs.viewPriorityRooms || [],
+        minimumLotSize: spaceReqs.minimumLotSize,
+        minimumSetback: spaceReqs.minimumSetback,
+        currentSpacePainPoints: spaceReqs.currentSpacePainPoints,
+
+        // Lifestyle data from this section
+        workFromHome: data.workFromHome,
+        wfhPeopleCount: data.wfhPeopleCount,
+        separateOfficesRequired: data.separateOfficesRequired,
+        officeRequirements: data.officeRequirements,
+        hobbies: data.hobbies || [],
+        hobbyDetails: data.hobbyDetails,
+        lateNightMediaUse: data.lateNightMediaUse,
+        entertainingFrequency: data.entertainingFrequency,
+        entertainingStyle: data.entertainingStyle,
+        typicalGuestCount: data.typicalGuestCount,
+        wellnessPriorities: data.wellnessPriorities || [],
+        privacyLevelRequired: data.privacyLevelRequired,
+        noiseSensitivity: data.noiseSensitivity,
+        indoorOutdoorLiving: data.indoorOutdoorLiving,
+        dailyRoutinesSummary: data.dailyRoutinesSummary,
+
+        // Project/Client Info
+        projectName: clientData?.projectName || 'N4S Project',
+        clientName: `${portfolioContext.principalFirstName || ''} ${portfolioContext.principalLastName || ''}`.trim() || 'Client',
+        generatedDate: new Date().toISOString(),
+        isManualEntry: true
+      };
+
+      // Call API to generate PDF
+      const response = await fetch('https://luxebrief.not-4.sale/api/manual-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer luxebrief-admin-2024'
+        },
+        body: JSON.stringify(manualData)
+      });
+
+      if (response.ok) {
+        // Download the PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Manual-Lifestyle-Living-Report-${new Date().toISOString().split('T')[0]}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error exporting manual report:', error);
+      setExportError('Failed to export report. Please try again.');
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -1082,10 +1211,54 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         )}
       </div>
 
-      {/* Manual input section header */}
-      <div className="kyc-section__divider">
-        <span>Or enter lifestyle details manually below</span>
+      {/* Manual Entry Toggle Section */}
+      <div className="kyc-section__manual-toggle">
+        <span className="kyc-section__manual-toggle-text">
+          ALTERNATIVELY ENTER DETAILS MANUALLY
+        </span>
+        <button
+          className={`btn ${manualEntryExpanded ? 'btn--secondary' : 'btn--toggle'}`}
+          onClick={() => setManualEntryExpanded(!manualEntryExpanded)}
+          aria-expanded={manualEntryExpanded}
+          aria-controls="manual-entry-content"
+        >
+          {manualEntryExpanded ? (
+            <><ChevronUp size={14} /> Collapse</>
+          ) : (
+            <><ChevronDown size={14} /> Manual Entry</>
+          )}
+        </button>
       </div>
+
+      {/* Collapsible Manual Entry Content */}
+      {manualEntryExpanded && (
+        <div
+          className="kyc-section__manual-entry"
+          id="manual-entry-content"
+          role="region"
+          aria-label="Manual Entry Section"
+        >
+          {/* Export Manual Report Button */}
+          <div className="kyc-section__manual-entry-header">
+            <button
+              className="btn btn--primary"
+              onClick={handleExportManualReport}
+              disabled={exportLoading}
+            >
+              {exportLoading ? (
+                <><RefreshCw size={14} className="spin" /> Generating...</>
+              ) : (
+                <><Download size={14} /> Export Manual Report</>
+              )}
+            </button>
+          </div>
+
+          {/* Error Display */}
+          {exportError && (
+            <div className="kyc-section__manual-entry-error">
+              <AlertTriangle size={14} /> {exportError}
+            </div>
+          )}
 
       {/* WFH Confirmation for Secondary when Principal indicated 2+ offices */}
       {showWfhConfirmation && (
@@ -1332,6 +1505,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         placeholder="Describe a typical day - morning routines, how you use spaces, evening patterns..."
         rows={3}
       />
+        </div>
+      )}
     </div>
   );
 };
