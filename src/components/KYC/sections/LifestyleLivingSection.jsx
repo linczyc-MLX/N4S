@@ -113,6 +113,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         luxeBriefSubdomain: subdomain
       });
 
+      // Persist to server so status survives page refresh
+      if (saveNow) setTimeout(() => saveNow(), 100);
+
     } catch (error) {
       console.error('LuXeBrief send error:', error);
       setLuxeBriefError(prev => ({ ...prev, [target]: error.message || 'Failed to send LuXeBrief invitation' }));
@@ -225,6 +228,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         luxeLivingSentAt: new Date().toISOString(),
         luxeLivingSubdomain: subdomain
       });
+
+      // Persist to server so status survives page refresh
+      if (saveNow) setTimeout(() => saveNow(), 100);
 
     } catch (error) {
       console.error('LuXeBrief Living send error:', error);
