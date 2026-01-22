@@ -544,21 +544,32 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       <div className={`luxebrief-card ${isCompact ? 'luxebrief-card--compact' : ''}`}>
         <div className="luxebrief-card__header">
           <span className="luxebrief-card__role">{target === 'principal' ? 'Principal' : 'Secondary'}</span>
-          {/* Status Badge */}
+          {/* Status Badge - State 4: Completed */}
           {status === 'completed' && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--complete">
               <CheckCircle size={12} /> Completed
             </span>
           )}
+          {/* Status Badge - State 3: Awaiting */}
           {status === 'sent' && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--pending">
               <Clock size={12} /> Awaiting
             </span>
           )}
+          {/* Status Badge - State 2: Ready to Send (Secondary confirmed) */}
           {status === 'not_sent' && isConfirmed && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--ready">
               Ready to Send
             </span>
+          )}
+          {/* Toggle Badge - State 1: Complete toggle (Secondary not confirmed) */}
+          {status === 'not_sent' && !isConfirmed && target === 'secondary' && canSend && (
+            <button
+              className="luxebrief-panel__badge luxebrief-panel__badge--toggle"
+              onClick={() => setSecondaryConfirmed(prev => ({ ...prev, lifestyle: true }))}
+            >
+              <span className="toggle-circle"></span> Complete
+            </button>
           )}
         </div>
 
@@ -574,19 +585,13 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <>
                 <div className="luxebrief-card__recipient">
                   <span className="luxebrief-card__name">{targetName}</span>
-                  {!isConfirmed && <span className="luxebrief-card__email">{targetEmail}</span>}
+                  <span className="luxebrief-card__email">{targetEmail}</span>
                 </div>
-                {/* Step 1: Secondary Not Confirmed - Show "Complete" toggle */}
+                {/* State 1: Secondary Not Confirmed - Empty placeholder */}
                 {target === 'secondary' && !isConfirmed && (
-                  <button
-                    className="btn btn--toggle"
-                    onClick={() => setSecondaryConfirmed(prev => ({ ...prev, lifestyle: true }))}
-                    disabled={!canSend}
-                  >
-                    <CheckCircle size={14} /> Complete
-                  </button>
+                  <div className="luxebrief-card__placeholder"></div>
                 )}
-                {/* Step 1: Principal shows Send directly */}
+                {/* Principal shows Send directly */}
                 {target === 'principal' && (
                   <button
                     className="btn btn--primary"
@@ -600,7 +605,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                     )}
                   </button>
                 )}
-                {/* Step 2: Secondary Confirmed - Show "Send" button */}
+                {/* State 2: Secondary Confirmed - Show "Send" button */}
                 {target === 'secondary' && isConfirmed && (
                   <button
                     className="btn btn--primary"
@@ -680,21 +685,32 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       <div className={`luxebrief-card ${isCompact ? 'luxebrief-card--compact' : ''}`}>
         <div className="luxebrief-card__header">
           <span className="luxebrief-card__role">{target === 'principal' ? 'Principal' : 'Secondary'}</span>
-          {/* Status Badge */}
+          {/* Status Badge - State 4: Completed */}
           {status === 'completed' && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--complete">
               <CheckCircle size={12} /> Completed
             </span>
           )}
+          {/* Status Badge - State 3: Awaiting */}
           {status === 'sent' && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--pending">
               <Clock size={12} /> Awaiting
             </span>
           )}
+          {/* Status Badge - State 2: Ready to Send (Secondary confirmed) */}
           {status === 'not_sent' && isConfirmed && (
             <span className="luxebrief-panel__badge luxebrief-panel__badge--ready">
               Ready to Send
             </span>
+          )}
+          {/* Toggle Badge - State 1: Complete toggle (Secondary not confirmed) */}
+          {status === 'not_sent' && !isConfirmed && target === 'secondary' && canSend && (
+            <button
+              className="luxebrief-panel__badge luxebrief-panel__badge--toggle"
+              onClick={() => setSecondaryConfirmed(prev => ({ ...prev, living: true }))}
+            >
+              <span className="toggle-circle"></span> Complete
+            </button>
           )}
         </div>
 
@@ -710,19 +726,13 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <>
                 <div className="luxebrief-card__recipient">
                   <span className="luxebrief-card__name">{targetName}</span>
-                  {!isConfirmed && <span className="luxebrief-card__email">{targetEmail}</span>}
+                  <span className="luxebrief-card__email">{targetEmail}</span>
                 </div>
-                {/* Step 1: Secondary Not Confirmed - Show "Complete" toggle */}
+                {/* State 1: Secondary Not Confirmed - Empty placeholder */}
                 {target === 'secondary' && !isConfirmed && (
-                  <button
-                    className="btn btn--toggle"
-                    onClick={() => setSecondaryConfirmed(prev => ({ ...prev, living: true }))}
-                    disabled={!canSend}
-                  >
-                    <CheckCircle size={14} /> Complete
-                  </button>
+                  <div className="luxebrief-card__placeholder"></div>
                 )}
-                {/* Step 1: Principal shows Send directly */}
+                {/* Principal shows Send directly */}
                 {target === 'principal' && (
                   <button
                     className="btn btn--primary"
@@ -736,7 +746,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                     )}
                   </button>
                 )}
-                {/* Step 2: Secondary Confirmed - Show "Send" button */}
+                {/* State 2: Secondary Confirmed - Show "Send" button */}
                 {target === 'secondary' && isConfirmed && (
                   <button
                     className="btn btn--primary"
