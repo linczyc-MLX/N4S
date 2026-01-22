@@ -4503,8 +4503,13 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   border: 1px solid #d1d5db;
 }
 
-.btn--toggle:hover {
+.btn--toggle:hover:not(:disabled) {
   background: #d1d5db;
+}
+
+.btn--toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .luxebrief-panel__description {
@@ -4688,6 +4693,15 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* All action buttons in cards should be full width */
+.luxebrief-card__content .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .luxebrief-card__recipient {
