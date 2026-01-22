@@ -4496,6 +4496,42 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   color: #92400e;
 }
 
+/* Toggle badge in header for Secondary State 1 (clickable) */
+.luxebrief-panel__badge--toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #e5e7eb;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.luxebrief-panel__badge--toggle:hover {
+  background: #d1d5db;
+}
+
+.luxebrief-panel__badge--toggle .toggle-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #9ca3af;
+  border: 2px solid #6b7280;
+}
+
+/* Empty placeholder for State 1 action area */
+.luxebrief-card__placeholder {
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+}
+
 /* Toggle button for Secondary confirmation step */
 .btn--toggle {
   background: #e5e7eb;
