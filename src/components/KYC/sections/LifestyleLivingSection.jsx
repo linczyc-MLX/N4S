@@ -579,7 +579,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 1: Secondary Not Confirmed - Show "Complete" toggle */}
                 {target === 'secondary' && !isConfirmed && (
                   <button
-                    className="btn btn--secondary btn--sm btn--toggle"
+                    className="btn btn--toggle"
                     onClick={() => setSecondaryConfirmed(prev => ({ ...prev, lifestyle: true }))}
                     disabled={!canSend}
                   >
@@ -589,7 +589,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 1: Principal shows Send directly */}
                 {target === 'principal' && (
                   <button
-                    className="btn btn--primary btn--sm luxebrief-card__send-btn"
+                    className="btn btn--primary"
                     onClick={() => handleSendLuXeBrief(target)}
                     disabled={loading}
                   >
@@ -603,7 +603,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 2: Secondary Confirmed - Show "Send" button */}
                 {target === 'secondary' && isConfirmed && (
                   <button
-                    className="btn btn--primary btn--sm luxebrief-card__send-btn"
+                    className="btn btn--primary"
                     onClick={() => handleSendLuXeBrief(target)}
                     disabled={loading}
                   >
@@ -632,11 +632,11 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <span className="luxebrief-card__meta">Sent {sentAt ? new Date(sentAt).toLocaleDateString() : ''}</span>
             </div>
             <button
-              className="btn btn--secondary btn--sm"
+              className="btn btn--secondary"
               onClick={() => handleRefreshStatus(target)}
               disabled={loading}
             >
-              {loading ? <RefreshCw size={12} className="spin" /> : <RefreshCw size={12} />}
+              {loading ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
             </button>
           </div>
         )}
@@ -651,9 +651,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
             {sessionId && (
               <button
                 onClick={(e) => handleLifestyleReportClick(e, target)}
-                className="btn btn--primary btn--sm"
+                className="btn btn--primary"
               >
-                <ExternalLink size={12} /> Report
+                <ExternalLink size={14} /> Report
               </button>
             )}
           </div>
@@ -715,7 +715,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 1: Secondary Not Confirmed - Show "Complete" toggle */}
                 {target === 'secondary' && !isConfirmed && (
                   <button
-                    className="btn btn--secondary btn--sm btn--toggle"
+                    className="btn btn--toggle"
                     onClick={() => setSecondaryConfirmed(prev => ({ ...prev, living: true }))}
                     disabled={!canSend}
                   >
@@ -725,7 +725,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 1: Principal shows Send directly */}
                 {target === 'principal' && (
                   <button
-                    className="btn btn--primary btn--sm luxebrief-card__send-btn"
+                    className="btn btn--primary"
                     onClick={() => handleSendLuxeLiving(target)}
                     disabled={loading}
                   >
@@ -739,7 +739,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                 {/* Step 2: Secondary Confirmed - Show "Send" button */}
                 {target === 'secondary' && isConfirmed && (
                   <button
-                    className="btn btn--primary btn--sm luxebrief-card__send-btn"
+                    className="btn btn--primary"
                     onClick={() => handleSendLuxeLiving(target)}
                     disabled={loading}
                   >
@@ -768,11 +768,11 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <span className="luxebrief-card__meta">Sent {sentAt ? new Date(sentAt).toLocaleDateString() : ''}</span>
             </div>
             <button
-              className="btn btn--secondary btn--sm"
+              className="btn btn--secondary"
               onClick={() => handleRefreshLivingStatus(target)}
               disabled={loading}
             >
-              {loading ? <RefreshCw size={12} className="spin" /> : <RefreshCw size={12} />}
+              {loading ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
             </button>
           </div>
         )}
@@ -787,9 +787,9 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
             {sessionId && (
               <button
                 onClick={(e) => handleLivingReportClick(e, target)}
-                className="btn btn--primary btn--sm"
+                className="btn btn--primary"
               >
-                <ExternalLink size={12} /> Report
+                <ExternalLink size={14} /> Report
               </button>
             )}
           </div>
