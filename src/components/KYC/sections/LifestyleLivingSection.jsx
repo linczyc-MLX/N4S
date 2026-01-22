@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users, ClipboardList } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
@@ -313,6 +313,113 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     }
   };
 
+  // Handle checking LuXeBrief Living status
+  const handleRefreshLivingStatus = async (target = respondent) => {
+    const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
+    const sessionId = targetData.luxeLivingSessionId;
+
+    setLuxeLivingLoading(prev => ({ ...prev, [target]: true }));
+    try {
+      // First, check the stored session ID if we have one
+      if (sessionId) {
+        const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}`);
+        if (response.ok) {
+          const session = await response.json();
+          if (session.status === 'completed' && targetData.luxeLivingStatus !== 'completed') {
+            // Update Living status
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeLivingStatus: 'completed',
+              luxeLivingSessionId: session.id,
+              luxeLivingCompletedAt: session.completedAt || new Date().toISOString()
+            });
+
+            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
+            await syncLivingToSpaceRequirements(session.id, target);
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
+            return;
+          }
+        }
+      }
+
+      // If stored session not completed, search by email for any completed Living session
+      if (targetEmail) {
+        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
+        if (emailResponse.ok) {
+          const emailData = await emailResponse.json();
+          if (emailData.status === 'completed') {
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeLivingStatus: 'completed',
+              luxeLivingSessionId: emailData.sessionId,
+              luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
+            });
+
+            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
+            await syncLivingToSpaceRequirements(emailData.sessionId, target);
+            // Persist the status change to server so it survives page reload
+            if (saveNow) setTimeout(() => saveNow(), 100);
+          } else if (!sessionId && emailData.sessionId) {
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeLivingSessionId: emailData.sessionId
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Living status refresh error:', error);
+    } finally {
+      setLuxeLivingLoading(prev => ({ ...prev, [target]: false }));
+    }
+  };
+
+  // Get correct Lifestyle session ID by email lookup (returns sessionId or null)
+  const getCorrectLifestyleSessionId = async (targetEmail) => {
+    if (!targetEmail) return null;
+    try {
+      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=lifestyle`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'completed' && data.sessionId) {
+          return data.sessionId;
+        }
+      }
+    } catch (e) {
+      console.error('Error getting correct Lifestyle session ID:', e);
+    }
+    return null;
+  };
+
+  // Handle clicking the Lifestyle Report button - verify session ID first
+  const handleLifestyleReportClick = async (e, target) => {
+    e.preventDefault();
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
+    const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
+    const storedSessionId = targetData.luxeBriefSessionId;
+
+    // Get the correct session ID from LuXeBrief
+    const correctSessionId = await getCorrectLifestyleSessionId(targetEmail);
+
+    if (correctSessionId && correctSessionId !== storedSessionId) {
+      // Session ID mismatch - update N4S and use correct one
+      console.log(`[Lifestyle Report] Correcting session ID from ${storedSessionId} to ${correctSessionId}`);
+      updateKYCData(target, 'lifestyleLiving', {
+        luxeBriefSessionId: correctSessionId,
+        luxeBriefStatus: 'completed'
+      });
+      if (saveNow) setTimeout(() => saveNow(), 100);  // PERSIST the fix
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
+    } else if (correctSessionId) {
+      // Session ID is correct, just open
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
+    } else if (storedSessionId) {
+      // Couldn't verify, use stored (fallback)
+      window.open(`https://luxebrief.not-4.sale/api/sessions/${storedSessionId}/export/pdf`, '_blank');
+    } else {
+      alert('No Lifestyle session found. Please refresh the status.');
+    }
+  };
+
   // Get correct Living session ID by email lookup (returns sessionId or null)
   const getCorrectLivingSessionId = async (targetEmail) => {
     if (!targetEmail) return null;
@@ -325,7 +432,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         }
       }
     } catch (e) {
-      console.error('Error getting correct session ID:', e);
+      console.error('Error getting correct Living session ID:', e);
     }
     return null;
   };
@@ -347,7 +454,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         luxeLivingSessionId: correctSessionId,
         luxeLivingStatus: 'completed'
       });
-      if (saveNow) setTimeout(() => saveNow(), 100);
+      if (saveNow) setTimeout(() => saveNow(), 100);  // PERSIST the fix
       window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
     } else if (correctSessionId) {
       // Session ID is correct, just open
@@ -359,132 +466,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       alert('No Living session found. Please refresh the status.');
     }
   };
-
-  // Handle checking LuXeBrief Living status
-  const handleRefreshLivingStatus = async (target = respondent) => {
-    const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
-    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
-    const storedSessionId = targetData.luxeLivingSessionId;
-
-    console.log('[handleRefreshLivingStatus] Called for:', target, {
-      targetEmail,
-      storedSessionId,
-      currentStatus: targetData.luxeLivingStatus
-    });
-
-    setLuxeLivingLoading(prev => ({ ...prev, [target]: true }));
-    try {
-      // ALWAYS search by email first to get the correct/latest completed Living session
-      // This ensures we have the right session ID even if the stored one is wrong
-      if (targetEmail) {
-        const url = `https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`;
-        console.log('[handleRefreshLivingStatus] Fetching:', url);
-        const emailResponse = await fetch(url);
-        console.log('[handleRefreshLivingStatus] Response status:', emailResponse.status);
-        if (emailResponse.ok) {
-          const emailData = await emailResponse.json();
-          console.log('[handleRefreshLivingStatus] Email lookup result:', emailData);
-
-          // If we found a completed Living session and it's different from stored, update it
-          if (emailData.status === 'completed') {
-            const needsUpdate =
-              targetData.luxeLivingStatus !== 'completed' ||
-              storedSessionId !== emailData.sessionId;
-
-            if (needsUpdate) {
-              console.log(`[Living] Updating session ID from ${storedSessionId} to ${emailData.sessionId}`);
-              updateKYCData(target, 'lifestyleLiving', {
-                luxeLivingStatus: 'completed',
-                luxeLivingSessionId: emailData.sessionId,
-                luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
-              });
-
-              // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
-              await syncLivingToSpaceRequirements(emailData.sessionId, target);
-              // Persist the status change to server so it survives page reload
-              if (saveNow) setTimeout(() => saveNow(), 100);
-            }
-            return;
-          }
-
-          // Not completed but has a session - update session ID if different
-          if (emailData.sessionId && emailData.sessionId !== storedSessionId) {
-            console.log(`[Living] Updating pending session ID from ${storedSessionId} to ${emailData.sessionId}`);
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeLivingSessionId: emailData.sessionId
-            });
-            if (saveNow) setTimeout(() => saveNow(), 100);
-          }
-        }
-      }
-
-      // Fallback: Check stored session ID if email lookup didn't find anything
-      if (storedSessionId && !targetEmail) {
-        const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${storedSessionId}`);
-        if (response.ok) {
-          const session = await response.json();
-          if (session.status === 'completed' && targetData.luxeLivingStatus !== 'completed') {
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeLivingStatus: 'completed',
-              luxeLivingSessionId: session.id,
-              luxeLivingCompletedAt: session.completedAt || new Date().toISOString()
-            });
-            await syncLivingToSpaceRequirements(session.id, target);
-            if (saveNow) setTimeout(() => saveNow(), 100);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Living status refresh error:', error);
-    } finally {
-      setLuxeLivingLoading(prev => ({ ...prev, [target]: false }));
-    }
-  };
-
-  // Auto-refresh Living status on component mount if status is "sent" or "completed"
-  // This ensures the correct session ID is fetched from LuXeBrief via email lookup
-  // Also runs for "completed" to fix any session ID mismatches
-  useEffect(() => {
-    const autoRefresh = async () => {
-      console.log('[Living AutoRefresh] Starting...', {
-        isDualRespondent,
-        luxeLivingStatus,
-        respondent,
-        principalStatus: principalLuxeBriefData.luxeLivingStatus,
-        secondaryStatus: secondaryLuxeBriefData.luxeLivingStatus,
-        principalEmail,
-        secondaryEmail
-      });
-
-      if (isDualRespondent) {
-        // Dual respondent mode - check both
-        const principalStatus = principalLuxeBriefData.luxeLivingStatus;
-        console.log('[Living AutoRefresh] Dual mode - Principal status:', principalStatus);
-        if (principalStatus === 'sent' || principalStatus === 'completed') {
-          console.log('[Living AutoRefresh] Refreshing principal...');
-          await handleRefreshLivingStatus('principal');
-        }
-        const secondaryStatus = secondaryLuxeBriefData.luxeLivingStatus;
-        console.log('[Living AutoRefresh] Dual mode - Secondary status:', secondaryStatus);
-        if (secondaryStatus === 'sent' || secondaryStatus === 'completed') {
-          console.log('[Living AutoRefresh] Refreshing secondary...');
-          await handleRefreshLivingStatus('secondary');
-        }
-      } else {
-        // Single respondent mode
-        console.log('[Living AutoRefresh] Single mode - status:', luxeLivingStatus, 'respondent:', respondent);
-        if (luxeLivingStatus === 'sent' || luxeLivingStatus === 'completed') {
-          console.log('[Living AutoRefresh] Refreshing', respondent);
-          await handleRefreshLivingStatus(respondent);
-        } else {
-          console.log('[Living AutoRefresh] Skipped - status is:', luxeLivingStatus);
-        }
-      }
-      console.log('[Living AutoRefresh] Complete');
-    };
-    autoRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
 
   const wfhOptions = [
     { value: 'never', label: 'Never' },
@@ -626,14 +607,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <span className="luxebrief-card__meta">Completed {completedAt ? new Date(completedAt).toLocaleDateString() : ''}</span>
             </div>
             {sessionId && (
-              <a
-                href={`https://luxebrief.not-4.sale/api/sessions/${sessionId}/export/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={(e) => handleLifestyleReportClick(e, target)}
                 className="btn btn--primary btn--sm"
               >
                 <ExternalLink size={12} /> Report
-              </a>
+              </button>
             )}
           </div>
         )}
@@ -727,12 +706,14 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               <span className="luxebrief-card__name">{targetName}</span>
               <span className="luxebrief-card__meta">Completed {completedAt ? new Date(completedAt).toLocaleDateString() : ''}</span>
             </div>
-            <button
-              onClick={(e) => handleLivingReportClick(e, target)}
-              className="btn btn--primary btn--sm"
-            >
-              <ExternalLink size={12} /> Report
-            </button>
+            {sessionId && (
+              <button
+                onClick={(e) => handleLivingReportClick(e, target)}
+                className="btn btn--primary btn--sm"
+              >
+                <ExternalLink size={12} /> Report
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -864,14 +845,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                   </div>
                 </div>
                 {luxeBriefSessionId && (
-                  <a
-                    href={`https://luxebrief.not-4.sale/api/sessions/${luxeBriefSessionId}/export/pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={(e) => handleLifestyleReportClick(e, respondent)}
                     className="btn btn--primary btn--sm"
                   >
                     <ExternalLink size={14} /> View Report
-                  </a>
+                  </button>
                 )}
               </div>
             )}
@@ -1001,12 +980,14 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
                     <span>{luxeLivingCompletedAt ? new Date(luxeLivingCompletedAt).toLocaleString() : 'Unknown'}</span>
                   </div>
                 </div>
-                <button
-                  onClick={(e) => handleLivingReportClick(e, respondent)}
-                  className="btn btn--primary btn--sm"
-                >
-                  <ExternalLink size={14} /> View Report
-                </button>
+                {luxeLivingSessionId && (
+                  <button
+                    onClick={(e) => handleLivingReportClick(e, respondent)}
+                    className="btn btn--primary btn--sm"
+                  >
+                    <ExternalLink size={14} /> View Report
+                  </button>
+                )}
               </div>
             )}
           </>
