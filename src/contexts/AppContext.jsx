@@ -388,6 +388,8 @@ export const AppProvider = ({ children }) => {
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
+      // Also save disclosureTier to app state so it persists on refresh
+      await api.setState('disclosureTier', disclosureTier);
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
       console.log('[APP] Save successful!');
@@ -399,7 +401,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsSaving(false);
     }
-  }, [activeProjectId, projectData, activeRespondent]);
+  }, [activeProjectId, projectData, activeRespondent, disclosureTier]);
 
   // ---------------------------------------------------------------------------
   // PROJECT MANAGEMENT
