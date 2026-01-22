@@ -319,14 +319,24 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
     const storedSessionId = targetData.luxeLivingSessionId;
 
+    console.log('[handleRefreshLivingStatus] Called for:', target, {
+      targetEmail,
+      storedSessionId,
+      currentStatus: targetData.luxeLivingStatus
+    });
+
     setLuxeLivingLoading(prev => ({ ...prev, [target]: true }));
     try {
       // ALWAYS search by email first to get the correct/latest completed Living session
       // This ensures we have the right session ID even if the stored one is wrong
       if (targetEmail) {
-        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
+        const url = `https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`;
+        console.log('[handleRefreshLivingStatus] Fetching:', url);
+        const emailResponse = await fetch(url);
+        console.log('[handleRefreshLivingStatus] Response status:', emailResponse.status);
         if (emailResponse.ok) {
           const emailData = await emailResponse.json();
+          console.log('[handleRefreshLivingStatus] Email lookup result:', emailData);
 
           // If we found a completed Living session and it's different from stored, update it
           if (emailData.status === 'completed') {
@@ -389,22 +399,41 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   // Also runs for "completed" to fix any session ID mismatches
   useEffect(() => {
     const autoRefresh = async () => {
+      console.log('[Living AutoRefresh] Starting...', {
+        isDualRespondent,
+        luxeLivingStatus,
+        respondent,
+        principalStatus: principalLuxeBriefData.luxeLivingStatus,
+        secondaryStatus: secondaryLuxeBriefData.luxeLivingStatus,
+        principalEmail,
+        secondaryEmail
+      });
+
       if (isDualRespondent) {
         // Dual respondent mode - check both
         const principalStatus = principalLuxeBriefData.luxeLivingStatus;
+        console.log('[Living AutoRefresh] Dual mode - Principal status:', principalStatus);
         if (principalStatus === 'sent' || principalStatus === 'completed') {
+          console.log('[Living AutoRefresh] Refreshing principal...');
           await handleRefreshLivingStatus('principal');
         }
         const secondaryStatus = secondaryLuxeBriefData.luxeLivingStatus;
+        console.log('[Living AutoRefresh] Dual mode - Secondary status:', secondaryStatus);
         if (secondaryStatus === 'sent' || secondaryStatus === 'completed') {
+          console.log('[Living AutoRefresh] Refreshing secondary...');
           await handleRefreshLivingStatus('secondary');
         }
       } else {
         // Single respondent mode
+        console.log('[Living AutoRefresh] Single mode - status:', luxeLivingStatus, 'respondent:', respondent);
         if (luxeLivingStatus === 'sent' || luxeLivingStatus === 'completed') {
+          console.log('[Living AutoRefresh] Refreshing', respondent);
           await handleRefreshLivingStatus(respondent);
+        } else {
+          console.log('[Living AutoRefresh] Skipped - status is:', luxeLivingStatus);
         }
       }
+      console.log('[Living AutoRefresh] Complete');
     };
     autoRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
