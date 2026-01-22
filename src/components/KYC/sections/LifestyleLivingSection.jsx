@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users, ClipboardList } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
@@ -372,6 +372,29 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       setLuxeLivingLoading(prev => ({ ...prev, [target]: false }));
     }
   };
+
+  // Auto-refresh Living status on component mount if status is "sent"
+  // This ensures the correct session ID is fetched from LuXeBrief via email lookup
+  useEffect(() => {
+    const autoRefresh = async () => {
+      if (isDualRespondent) {
+        // Dual respondent mode - check both
+        if (principalLuxeBriefData.luxeLivingStatus === 'sent') {
+          await handleRefreshLivingStatus('principal');
+        }
+        if (secondaryLuxeBriefData.luxeLivingStatus === 'sent') {
+          await handleRefreshLivingStatus('secondary');
+        }
+      } else {
+        // Single respondent mode
+        if (luxeLivingStatus === 'sent') {
+          await handleRefreshLivingStatus(respondent);
+        }
+      }
+    };
+    autoRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   const wfhOptions = [
     { value: 'never', label: 'Never' },
