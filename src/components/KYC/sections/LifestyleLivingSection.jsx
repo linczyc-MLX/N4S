@@ -317,52 +317,63 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const handleRefreshLivingStatus = async (target = respondent) => {
     const targetData = target === 'principal' ? principalLuxeBriefData : secondaryLuxeBriefData;
     const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
-    const sessionId = targetData.luxeLivingSessionId;
+    const storedSessionId = targetData.luxeLivingSessionId;
 
     setLuxeLivingLoading(prev => ({ ...prev, [target]: true }));
     try {
-      // First, check the stored session ID if we have one
-      if (sessionId) {
-        const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${sessionId}`);
+      // ALWAYS search by email first to get the correct/latest completed Living session
+      // This ensures we have the right session ID even if the stored one is wrong
+      if (targetEmail) {
+        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
+        if (emailResponse.ok) {
+          const emailData = await emailResponse.json();
+
+          // If we found a completed Living session and it's different from stored, update it
+          if (emailData.status === 'completed') {
+            const needsUpdate =
+              targetData.luxeLivingStatus !== 'completed' ||
+              storedSessionId !== emailData.sessionId;
+
+            if (needsUpdate) {
+              console.log(`[Living] Updating session ID from ${storedSessionId} to ${emailData.sessionId}`);
+              updateKYCData(target, 'lifestyleLiving', {
+                luxeLivingStatus: 'completed',
+                luxeLivingSessionId: emailData.sessionId,
+                luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
+              });
+
+              // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
+              await syncLivingToSpaceRequirements(emailData.sessionId, target);
+              // Persist the status change to server so it survives page reload
+              if (saveNow) setTimeout(() => saveNow(), 100);
+            }
+            return;
+          }
+
+          // Not completed but has a session - update session ID if different
+          if (emailData.sessionId && emailData.sessionId !== storedSessionId) {
+            console.log(`[Living] Updating pending session ID from ${storedSessionId} to ${emailData.sessionId}`);
+            updateKYCData(target, 'lifestyleLiving', {
+              luxeLivingSessionId: emailData.sessionId
+            });
+            if (saveNow) setTimeout(() => saveNow(), 100);
+          }
+        }
+      }
+
+      // Fallback: Check stored session ID if email lookup didn't find anything
+      if (storedSessionId && !targetEmail) {
+        const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${storedSessionId}`);
         if (response.ok) {
           const session = await response.json();
           if (session.status === 'completed' && targetData.luxeLivingStatus !== 'completed') {
-            // Update Living status
             updateKYCData(target, 'lifestyleLiving', {
               luxeLivingStatus: 'completed',
               luxeLivingSessionId: session.id,
               luxeLivingCompletedAt: session.completedAt || new Date().toISOString()
             });
-
-            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(session.id, target);
-            // Persist the status change to server so it survives page reload
             if (saveNow) setTimeout(() => saveNow(), 100);
-            return;
-          }
-        }
-      }
-
-      // If stored session not completed, search by email for any completed Living session
-      if (targetEmail) {
-        const emailResponse = await fetch(`https://luxebrief.not-4.sale/api/sessions/by-email/${encodeURIComponent(targetEmail)}?sessionType=living`);
-        if (emailResponse.ok) {
-          const emailData = await emailResponse.json();
-          if (emailData.status === 'completed') {
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeLivingStatus: 'completed',
-              luxeLivingSessionId: emailData.sessionId,
-              luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
-            });
-
-            // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
-            await syncLivingToSpaceRequirements(emailData.sessionId, target);
-            // Persist the status change to server so it survives page reload
-            if (saveNow) setTimeout(() => saveNow(), 100);
-          } else if (!sessionId && emailData.sessionId) {
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeLivingSessionId: emailData.sessionId
-            });
           }
         }
       }
@@ -373,21 +384,24 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     }
   };
 
-  // Auto-refresh Living status on component mount if status is "sent"
+  // Auto-refresh Living status on component mount if status is "sent" or "completed"
   // This ensures the correct session ID is fetched from LuXeBrief via email lookup
+  // Also runs for "completed" to fix any session ID mismatches
   useEffect(() => {
     const autoRefresh = async () => {
       if (isDualRespondent) {
         // Dual respondent mode - check both
-        if (principalLuxeBriefData.luxeLivingStatus === 'sent') {
+        const principalStatus = principalLuxeBriefData.luxeLivingStatus;
+        if (principalStatus === 'sent' || principalStatus === 'completed') {
           await handleRefreshLivingStatus('principal');
         }
-        if (secondaryLuxeBriefData.luxeLivingStatus === 'sent') {
+        const secondaryStatus = secondaryLuxeBriefData.luxeLivingStatus;
+        if (secondaryStatus === 'sent' || secondaryStatus === 'completed') {
           await handleRefreshLivingStatus('secondary');
         }
       } else {
         // Single respondent mode
-        if (luxeLivingStatus === 'sent') {
+        if (luxeLivingStatus === 'sent' || luxeLivingStatus === 'completed') {
           await handleRefreshLivingStatus(respondent);
         }
       }
