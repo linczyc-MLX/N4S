@@ -118,16 +118,27 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
       const result = await response.json();
 
-      // Update status in KYC data for the target respondent
-      updateKYCData(target, 'lifestyleLiving', {
+      // Data to save for this target
+      const lifestyleData = {
         luxeBriefStatus: 'sent',
         luxeBriefSessionId: result.sessionId,
         luxeBriefSentAt: new Date().toISOString(),
         luxeBriefSubdomain: subdomain
-      });
+      };
 
-      // Persist to server so status survives page refresh
-      if (saveNow) setTimeout(() => saveNow(), 100);
+      // Update status in KYC data for the target respondent
+      updateKYCData(target, 'lifestyleLiving', lifestyleData);
+
+      // Persist to server immediately with the data (fixes race condition)
+      if (saveNow) {
+        saveNow({
+          kycData: {
+            [target]: {
+              lifestyleLiving: lifestyleData
+            }
+          }
+        });
+      }
 
     } catch (error) {
       console.error('LuXeBrief send error:', error);
@@ -152,13 +163,14 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         if (response.ok) {
           const session = await response.json();
           if (session.status === 'completed' && targetData.luxeBriefStatus !== 'completed') {
-            updateKYCData(target, 'lifestyleLiving', {
+            const completedData = {
               luxeBriefStatus: 'completed',
               luxeBriefSessionId: session.id,
               luxeBriefCompletedAt: session.completedAt || new Date().toISOString()
-            });
-            // Persist the status change to server so it survives page reload
-            if (saveNow) setTimeout(() => saveNow(), 100);
+            };
+            updateKYCData(target, 'lifestyleLiving', completedData);
+            // Persist immediately with data (fixes race condition)
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: completedData } } });
             return; // Done - found completed session
           }
         }
@@ -172,18 +184,19 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           const emailData = await emailResponse.json();
           // If we found a completed session with a different ID, update our stored session ID
           if (emailData.status === 'completed') {
-            updateKYCData(target, 'lifestyleLiving', {
+            const completedData = {
               luxeBriefStatus: 'completed',
               luxeBriefSessionId: emailData.sessionId,
               luxeBriefCompletedAt: emailData.completedAt || new Date().toISOString()
-            });
-            // Persist the status change to server so it survives page reload
-            if (saveNow) setTimeout(() => saveNow(), 100);
+            };
+            updateKYCData(target, 'lifestyleLiving', completedData);
+            // Persist immediately with data (fixes race condition)
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: completedData } } });
           } else if (!sessionId && emailData.sessionId) {
             // If we had no session ID but found one by email, store it
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeBriefSessionId: emailData.sessionId
-            });
+            const sessionData = { luxeBriefSessionId: emailData.sessionId };
+            updateKYCData(target, 'lifestyleLiving', sessionData);
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: sessionData } } });
           }
         }
       }
@@ -234,16 +247,27 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
 
       const result = await response.json();
 
-      // Update status in KYC data for the target respondent
-      updateKYCData(target, 'lifestyleLiving', {
+      // Data to save for this target
+      const livingData = {
         luxeLivingStatus: 'sent',
         luxeLivingSessionId: result.sessionId,
         luxeLivingSentAt: new Date().toISOString(),
         luxeLivingSubdomain: subdomain
-      });
+      };
 
-      // Persist to server so status survives page refresh
-      if (saveNow) setTimeout(() => saveNow(), 100);
+      // Update status in KYC data for the target respondent
+      updateKYCData(target, 'lifestyleLiving', livingData);
+
+      // Persist to server immediately with the data (fixes race condition)
+      if (saveNow) {
+        saveNow({
+          kycData: {
+            [target]: {
+              lifestyleLiving: livingData
+            }
+          }
+        });
+      }
 
     } catch (error) {
       console.error('LuXeBrief Living send error:', error);
@@ -341,16 +365,17 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           const session = await response.json();
           if (session.status === 'completed' && targetData.luxeLivingStatus !== 'completed') {
             // Update Living status
-            updateKYCData(target, 'lifestyleLiving', {
+            const completedData = {
               luxeLivingStatus: 'completed',
               luxeLivingSessionId: session.id,
               luxeLivingCompletedAt: session.completedAt || new Date().toISOString()
-            });
+            };
+            updateKYCData(target, 'lifestyleLiving', completedData);
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(session.id, target);
-            // Persist the status change to server so it survives page reload
-            if (saveNow) setTimeout(() => saveNow(), 100);
+            // Persist immediately with data (fixes race condition)
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: completedData } } });
             return;
           }
         }
@@ -362,20 +387,21 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         if (emailResponse.ok) {
           const emailData = await emailResponse.json();
           if (emailData.status === 'completed') {
-            updateKYCData(target, 'lifestyleLiving', {
+            const completedData = {
               luxeLivingStatus: 'completed',
               luxeLivingSessionId: emailData.sessionId,
               luxeLivingCompletedAt: emailData.completedAt || new Date().toISOString()
-            });
+            };
+            updateKYCData(target, 'lifestyleLiving', completedData);
 
             // CRITICAL: Sync Living responses to KYC spaceRequirements for FYI module
             await syncLivingToSpaceRequirements(emailData.sessionId, target);
-            // Persist the status change to server so it survives page reload
-            if (saveNow) setTimeout(() => saveNow(), 100);
+            // Persist immediately with data (fixes race condition)
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: completedData } } });
           } else if (!sessionId && emailData.sessionId) {
-            updateKYCData(target, 'lifestyleLiving', {
-              luxeLivingSessionId: emailData.sessionId
-            });
+            const sessionData = { luxeLivingSessionId: emailData.sessionId };
+            updateKYCData(target, 'lifestyleLiving', sessionData);
+            if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: sessionData } } });
           }
         }
       }
@@ -416,11 +442,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     if (correctSessionId && correctSessionId !== storedSessionId) {
       // Session ID mismatch - update N4S and use correct one
       console.log(`[Lifestyle Report] Correcting session ID from ${storedSessionId} to ${correctSessionId}`);
-      updateKYCData(target, 'lifestyleLiving', {
+      const correctedData = {
         luxeBriefSessionId: correctSessionId,
         luxeBriefStatus: 'completed'
-      });
-      if (saveNow) setTimeout(() => saveNow(), 100);  // PERSIST the fix
+      };
+      updateKYCData(target, 'lifestyleLiving', correctedData);
+      if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: correctedData } } });
       window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
     } else if (correctSessionId) {
       // Session ID is correct, just open
@@ -463,11 +490,12 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     if (correctSessionId && correctSessionId !== storedSessionId) {
       // Session ID mismatch - update N4S and use correct one
       console.log(`[Living Report] Correcting session ID from ${storedSessionId} to ${correctSessionId}`);
-      updateKYCData(target, 'lifestyleLiving', {
+      const correctedData = {
         luxeLivingSessionId: correctSessionId,
         luxeLivingStatus: 'completed'
-      });
-      if (saveNow) setTimeout(() => saveNow(), 100);  // PERSIST the fix
+      };
+      updateKYCData(target, 'lifestyleLiving', correctedData);
+      if (saveNow) saveNow({ kycData: { [target]: { lifestyleLiving: correctedData } } });
       window.open(`https://luxebrief.not-4.sale/api/sessions/${correctSessionId}/export/pdf`, '_blank');
     } else if (correctSessionId) {
       // Session ID is correct, just open

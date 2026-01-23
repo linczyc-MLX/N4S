@@ -365,7 +365,9 @@ export const AppProvider = ({ children }) => {
   // ---------------------------------------------------------------------------
   // SAVE TO SERVER (MANUAL)
   // ---------------------------------------------------------------------------
-  const saveNow = useCallback(async () => {
+  // saveNow accepts optional immediate updates to merge before saving
+  // This fixes the race condition where React state hasn't updated yet
+  const saveNow = useCallback(async (immediateUpdates = null) => {
     if (!activeProjectId) {
       console.warn('[APP] No project to save');
       return false;
@@ -374,11 +376,40 @@ export const AppProvider = ({ children }) => {
     setIsSaving(true);
     setSaveError(null);
 
-    const dataToSave = {
+    // Start with current projectData
+    let dataToSave = {
       ...projectData,
       id: activeProjectId,
       activeRespondent,
     };
+
+    // If immediate updates provided, merge them in (fixes race condition)
+    if (immediateUpdates?.kycData) {
+      dataToSave = {
+        ...dataToSave,
+        kycData: {
+          ...dataToSave.kycData,
+          ...immediateUpdates.kycData,
+          // Deep merge each respondent
+          principal: {
+            ...dataToSave.kycData?.principal,
+            ...immediateUpdates.kycData?.principal,
+            lifestyleLiving: {
+              ...dataToSave.kycData?.principal?.lifestyleLiving,
+              ...immediateUpdates.kycData?.principal?.lifestyleLiving,
+            },
+          },
+          secondary: {
+            ...dataToSave.kycData?.secondary,
+            ...immediateUpdates.kycData?.secondary,
+            lifestyleLiving: {
+              ...dataToSave.kycData?.secondary?.lifestyleLiving,
+              ...immediateUpdates.kycData?.secondary?.lifestyleLiving,
+            },
+          },
+        },
+      };
+    }
 
     console.log('[APP] Saving to server...');
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
