@@ -1090,15 +1090,29 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [refreshProfiles]);
 
-  // Save client config to KYC data
+  // Save client config to KYC data - ONLY when values actually change from stored data
   useEffect(() => {
-    updateKYCData(respondent, 'designIdentity', {
-      clientType,
-      clientBaseName,
-      principalName,
-      secondaryName
-    });
-  }, [clientType, clientBaseName, principalName, secondaryName, updateKYCData, respondent]);
+    // Compare with stored data to prevent marking as "unsaved" on mount
+    const storedType = data.clientType || 'couple';
+    const storedBaseName = data.clientBaseName || '';
+    const storedPrincipalName = data.principalName || '';
+    const storedSecondaryName = data.secondaryName || '';
+
+    const hasChanges =
+      clientType !== storedType ||
+      clientBaseName !== storedBaseName ||
+      principalName !== storedPrincipalName ||
+      secondaryName !== storedSecondaryName;
+
+    if (hasChanges) {
+      updateKYCData(respondent, 'designIdentity', {
+        clientType,
+        clientBaseName,
+        principalName,
+        secondaryName
+      });
+    }
+  }, [clientType, clientBaseName, principalName, secondaryName, updateKYCData, respondent, data.clientType, data.clientBaseName, data.principalName, data.secondaryName]);
 
   // Get status
   const statusP = getProfileStatus(profileP);
