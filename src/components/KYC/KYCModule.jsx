@@ -40,6 +40,34 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
   const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Define sections FIRST (needed for completion check)
+  const sections = [
+    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
+    { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
+    { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp', taskCode: 'P1.A.3' },
+    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp', taskCode: 'P1.A.4' },
+    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp', taskCode: 'P1.A.5' },
+    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced', taskCode: 'P1.A.6' },
+    { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp', taskCode: 'P1.A.7' },
+    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.8' },
+    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.9' },
+  ];
+
+  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6/7
+  const respondentTabs = [
+    { id: 'principal', label: 'Principal', color: 'navy', description: 'Primary decision-maker' },
+    { id: 'secondary', label: 'Secondary', color: 'teal', description: 'Spouse / Co-decision-maker' },
+  ];
+
+  // REMOVED: fyi-extended option
+  const tierOptions = [
+    { id: 'mvp', label: 'Quick Capture', description: '15-20 min' },
+    { id: 'enhanced', label: 'Full Discovery', description: '45-60 min' },
+  ];
+
+  // Sections available to Secondary (Partner) - only P1.A.5, P1.A.6, P1.A.7
+  const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
+
   // Check if ALL sections are complete (for Export Report button)
   const areAllSectionsComplete = sections.every(section => {
     // Check Principal completion for all sections
@@ -47,7 +75,6 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     if (principalStatus !== 'complete') return false;
 
     // For P1.A.5, P1.A.6, P1.A.7 - also need Secondary to be complete
-    const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
     if (secondarySections.includes(section.id)) {
       const secondaryStatus = getSectionCompletionStatus('secondary', section.id);
       if (secondaryStatus !== 'complete') return false;
@@ -82,33 +109,6 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
       setIsExporting(false);
     }
   }, [kycData]);
-
-  const sections = [
-    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
-    { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
-    { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp', taskCode: 'P1.A.3' },
-    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp', taskCode: 'P1.A.4' },
-    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp', taskCode: 'P1.A.5' },
-    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced', taskCode: 'P1.A.6' },
-    { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp', taskCode: 'P1.A.7' },
-    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.8' },
-    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.9' },
-  ];
-
-  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6/7
-  const respondentTabs = [
-    { id: 'principal', label: 'Principal', color: 'navy', description: 'Primary decision-maker' },
-    { id: 'secondary', label: 'Secondary', color: 'teal', description: 'Spouse / Co-decision-maker' },
-  ];
-
-  // REMOVED: fyi-extended option
-  const tierOptions = [
-    { id: 'mvp', label: 'Quick Capture', description: '15-20 min' },
-    { id: 'enhanced', label: 'Full Discovery', description: '45-60 min' },
-  ];
-
-  // Sections available to Secondary (Partner) - only P1.A.5, P1.A.6, P1.A.7
-  const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
 
   // Check if section is visible based on tier and respondent
   const isSectionVisible = (section) => {
