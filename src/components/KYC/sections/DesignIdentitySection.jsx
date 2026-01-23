@@ -1,10 +1,11 @@
 // ============================================
 // N4S KYC DESIGN IDENTITY SECTION (P1.A.5)
 // Design Preferences with Taste Exploration
-// Version 2.5 - FINAL with Location & Enhanced Reports
+// Version 3.0 - Email-based workflow (mirrors P1.A.6)
 // ============================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Send, Clock, CheckCircle, ExternalLink, Mail, RefreshCw, Users, Palette } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import {
   viewTasteReport,
@@ -14,10 +15,14 @@ import TasteExploration from '../../TasteExploration/TasteExploration';
 import { quads, categoryOrder } from '../../../data/tasteQuads';
 
 // ============================================
+// TEMPORARY DEV FLAG - Set to true to hide completed data for UI design
+// Set to false to restore normal behavior
+// ============================================
+const DEV_HIDE_COMPLETED_DATA = true;
+
+// ============================================
 // CONFIGURATION
 // ============================================
-
-const PROFILE_STORAGE_PREFIX = 'n4s_taste_profile_';
 
 // Architectural Styles Data with Cloudinary URLs
 const ARCH_STYLES = [
@@ -63,66 +68,18 @@ const ARCH_STYLES = [
 // HELPER FUNCTIONS
 // ============================================
 
-// Load profile from localStorage
-const loadProfileFromStorage = (clientId) => {
-  if (!clientId) return null;
-  try {
-    const stored = localStorage.getItem(`${PROFILE_STORAGE_PREFIX}${clientId}`);
-    return stored ? JSON.parse(stored) : null;
-  } catch (e) {
-    console.error('Error loading profile:', e);
-    return null;
-  }
-};
-
-// Save profile to localStorage
-const saveProfileToStorage = (clientId, profile) => {
-  if (!clientId) return null;
-  try {
-    const toSave = {
-      ...profile,
-      clientId,
-      savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(`${PROFILE_STORAGE_PREFIX}${clientId}`, JSON.stringify(toSave));
-    return toSave;
-  } catch (e) {
-    console.error('Error saving profile:', e);
-    return null;
-  }
-};
-
-// Extract profile from URL (when redirecting back from Taste app)
-const extractProfileFromURL = () => {
-  try {
-    const hash = window.location.hash;
-    if (hash && hash.includes('tasteProfile=')) {
-      const encoded = hash.split('tasteProfile=')[1];
-      if (encoded) {
-        const decoded = JSON.parse(atob(decodeURIComponent(encoded)));
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        return decoded;
-      }
-    }
-  } catch (e) {
-    console.error('Error extracting profile from URL:', e);
-  }
-  return null;
-};
-
-// Get profile status
-const getProfileStatus = (profile) => {
-  if (!profile) return 'not_started';
-  // Check for completedAt at top level OR inside session
-  if (profile.completedAt || profile.session?.completedAt) return 'complete';
-  if (profile.session?.progress) {
-    const cats = Object.values(profile.session.progress);
-    const hasAnyProgress = cats.some(c => c.completedQuads > 0);
-    return hasAnyProgress ? 'in_progress' : 'not_started';
-  }
-  // Also check for selections directly (old format)
-  if (profile.selections && Object.keys(profile.selections).length > 0) return 'complete';
+// Get profile status from kycData
+const getProfileStatus = (tasteResults) => {
+  if (DEV_HIDE_COMPLETED_DATA) return 'not_started'; // DEV: Force pre-completion UI
+  if (!tasteResults) return 'not_started';
+  if (tasteResults.completedAt) return 'complete';
   return 'not_started';
+};
+
+// Get taste exploration status (email workflow)
+const getTasteExplorationStatus = (data) => {
+  if (DEV_HIDE_COMPLETED_DATA) return 'not_sent'; // DEV: Force pre-completion UI
+  return data?.tasteExplorationStatus || 'not_sent';
 };
 
 // ============================================
@@ -188,49 +145,6 @@ const ArchStyleCarousel = () => {
 };
 
 // ============================================
-// PROFILE STATUS CARD COMPONENT
-// ============================================
-
-const ProfileCard = ({ clientId, name, profile, status, onLaunch, isPrimary }) => {
-  const statusLabels = {
-    'not_started': 'Not Started',
-    'in_progress': 'In Progress',
-    'complete': 'Complete'
-  };
-
-  const statusColors = {
-    'not_started': '#94a3b8',
-    'in_progress': '#f59e0b',
-    'complete': '#10b981'
-  };
-
-  return (
-    <div className={`profile-card ${isPrimary ? 'profile-card--primary' : 'profile-card--secondary'}`}>
-      <div className="profile-card__header">
-        <span className="profile-card__badge">{isPrimary ? 'P' : 'S'}</span>
-        <span className="profile-card__name">{name || clientId}</span>
-      </div>
-      <div className="profile-card__status" style={{ color: statusColors[status] }}>
-        {statusLabels[status]}
-      </div>
-      {status !== 'complete' && (
-        <button
-          className="profile-card__btn"
-          onClick={() => onLaunch(isPrimary ? 'principal' : 'secondary')}
-        >
-          {status === 'in_progress' ? 'Continue' : 'Start'} Taste Exploration
-        </button>
-      )}
-      {status === 'complete' && profile?.session && (
-        <div className="profile-card__summary">
-          <small>Completed {new Date(profile.session.completedAt).toLocaleDateString()}</small>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ============================================
 // DESIGN DNA SLIDER COMPONENT
 // ============================================
 
@@ -285,6 +199,153 @@ const ComparisonSlider = ({ label, valueP, valueS, leftLabel, rightLabel, princi
           <span className="comparison-slider__right-label">{rightLabel}</span>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ============================================
+// TASTE EXPLORATION CARD COMPONENT (mirrors LuXeBrief card)
+// ============================================
+
+const TasteExplorationCard = ({
+  target,
+  targetName,
+  targetEmail,
+  status,
+  sentAt,
+  completedAt,
+  sessionId,
+  canSend,
+  loading,
+  error,
+  isConfirmed,
+  onConfirm,
+  onSend,
+  onRefresh,
+  onViewReport,
+  isCompact = false
+}) => {
+  return (
+    <div className={`luxebrief-card ${isCompact ? 'luxebrief-card--compact' : ''}`}>
+      <div className="luxebrief-card__header">
+        <span className="luxebrief-card__role">{target === 'principal' ? 'Principal' : 'Secondary'}</span>
+        {/* Status Badge - State 4: Completed */}
+        {status === 'completed' && (
+          <span className="luxebrief-panel__badge luxebrief-panel__badge--complete">
+            <CheckCircle size={12} /> Completed
+          </span>
+        )}
+        {/* Status Badge - State 3: Awaiting */}
+        {status === 'sent' && (
+          <span className="luxebrief-panel__badge luxebrief-panel__badge--pending">
+            <Clock size={12} /> Awaiting
+          </span>
+        )}
+        {/* Status Badge - State 2: Ready to Send (Secondary confirmed) */}
+        {status === 'not_sent' && isConfirmed && (
+          <span className="luxebrief-panel__badge luxebrief-panel__badge--ready">
+            Ready to Send
+          </span>
+        )}
+        {/* Toggle Badge - State 1: Complete toggle (Secondary not confirmed) */}
+        {status === 'not_sent' && !isConfirmed && target === 'secondary' && canSend && (
+          <button
+            className="luxebrief-panel__badge luxebrief-panel__badge--toggle"
+            onClick={onConfirm}
+          >
+            <span className="toggle-circle"></span> Complete
+          </button>
+        )}
+      </div>
+
+      {/* Not Sent State */}
+      {status === 'not_sent' && (
+        <div className="luxebrief-card__content">
+          {!canSend ? (
+            <div className="luxebrief-panel__notice luxebrief-panel__notice--sm">
+              <AlertTriangle size={14} />
+              <span>Configure {target === 'principal' ? 'Principal' : 'Secondary'} in Settings</span>
+            </div>
+          ) : (
+            <>
+              <div className="luxebrief-card__recipient">
+                <span className="luxebrief-card__name">{targetName}</span>
+                <span className="luxebrief-card__email">{targetEmail}</span>
+              </div>
+              {/* State 1: Secondary Not Confirmed - Empty placeholder */}
+              {target === 'secondary' && !isConfirmed && (
+                <div className="luxebrief-card__placeholder"></div>
+              )}
+              {/* Principal shows Send directly */}
+              {target === 'principal' && (
+                <button
+                  className="btn btn--primary"
+                  onClick={() => onSend(target)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <><RefreshCw size={14} className="spin" /> Sending...</>
+                  ) : (
+                    <><Send size={14} /> Send</>
+                  )}
+                </button>
+              )}
+              {/* State 2: Secondary Confirmed - Show "Send" button */}
+              {target === 'secondary' && isConfirmed && (
+                <button
+                  className="btn btn--primary"
+                  onClick={() => onSend(target)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <><RefreshCw size={14} className="spin" /> Sending...</>
+                  ) : (
+                    <><Send size={14} /> Send</>
+                  )}
+                </button>
+              )}
+            </>
+          )}
+          {error && (
+            <div className="luxebrief-panel__error luxebrief-panel__error--sm">
+              <AlertTriangle size={12} /> {error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 3: Sent/Awaiting State */}
+      {status === 'sent' && (
+        <div className="luxebrief-card__content">
+          <div className="luxebrief-card__recipient">
+            <span className="luxebrief-card__name">{targetName}</span>
+            <span className="luxebrief-card__meta">Sent {sentAt ? new Date(sentAt).toLocaleDateString() : ''}</span>
+          </div>
+          <button
+            className="btn btn--secondary"
+            onClick={() => onRefresh(target)}
+            disabled={loading}
+          >
+            {loading ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
+          </button>
+        </div>
+      )}
+
+      {/* Step 4: Completed State */}
+      {status === 'completed' && (
+        <div className="luxebrief-card__content">
+          <div className="luxebrief-card__recipient">
+            <span className="luxebrief-card__name">{targetName}</span>
+            <span className="luxebrief-card__meta">Completed {completedAt ? new Date(completedAt).toLocaleDateString() : ''}</span>
+          </div>
+          <button
+            onClick={() => onViewReport(target)}
+            className="btn btn--primary"
+          >
+            <ExternalLink size={14} /> Report
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -577,25 +638,6 @@ const CompletedView = ({
         </div>
       )}
 
-      {/* Partner Pending Notice */}
-      {profileP && !profileS && (
-        <div className="kyc-section__group">
-          <div className="partner-pending-notice">
-            <span className="partner-pending-notice__icon">◐</span>
-            <div>
-              <strong>Partner Profile Pending</strong>
-              <p>
-                Once {secondaryName || 'Secondary'} completes their Taste Exploration,
-                a Partner Alignment Analysis will be available.
-              </p>
-              <button className="refresh-btn refresh-btn--inline" onClick={onRefresh}>
-                ↻ Check for Updates
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Report Buttons */}
       <div className="completed-view__reports">
         <h4>📄 Taste Profile Report</h4>
@@ -631,210 +673,6 @@ const CompletedView = ({
         {isGenerating && <p className="report-status">Generating report...</p>}
       </div>
 
-      {/* Secondary Partner Section */}
-      {clientType === 'couple' && (
-        <div className="completed-view__partner">
-          <h4>Partner Profile</h4>
-          {profileS ? (
-            <div className="partner-summary">
-              <p>✅ {secondaryName || 'Secondary'} has completed their Taste Exploration</p>
-              
-              {/* Style Badge for Partner */}
-              <div className="dna-label" style={{ marginBottom: '16px' }}>
-                <span className="dna-label__style">{getStyleLabel(metricsS.ct)}</span>
-              </div>
-              
-              <DesignDNASlider
-                label="Style Era"
-                value={metricsS.ct}
-                leftLabel="Contemporary"
-                rightLabel="Traditional"
-              />
-              <DesignDNASlider
-                label="Material Complexity"
-                value={metricsS.ml}
-                leftLabel="Minimal"
-                rightLabel="Layered"
-              />
-              <DesignDNASlider
-                label="Mood Palette"
-                value={metricsS.mp}
-                leftLabel="Warm"
-                rightLabel="Cool"
-              />
-              <p className="comparison-note">
-                Full partner alignment analysis is included in the PDF report above.
-              </p>
-              <div className="partner-report-buttons" style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-                <button
-                  className="report-btn report-btn--view"
-                  onClick={async () => {
-                    setIsGenerating(true);
-                    try {
-                      await viewTasteReport(profileS, null, { ...buildReportOptions(), clientName: secondaryName || 'Partner' });
-                    } catch (e) {
-                      console.error('Error generating report:', e);
-                    }
-                    setIsGenerating(false);
-                  }}
-                  disabled={isGenerating}
-                >
-                  <span className="report-btn__icon">👁️</span>
-                  <span className="report-btn__text">View {secondaryName || 'Partner'}'s Report</span>
-                </button>
-                <button
-                  className="report-btn report-btn--download"
-                  onClick={async () => {
-                    setIsGenerating(true);
-                    try {
-                      await downloadTasteReport(profileS, null, { ...buildReportOptions(), clientName: secondaryName || 'Partner' }, secondaryName || 'Partner');
-                    } catch (e) {
-                      console.error('Error downloading report:', e);
-                    }
-                    setIsGenerating(false);
-                  }}
-                  disabled={isGenerating}
-                >
-                  <span className="report-btn__icon">📥</span>
-                  <span className="report-btn__text">Download {secondaryName || 'Partner'}'s PDF</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="partner-pending">
-              <p>⏳ Waiting for {secondaryName || 'Secondary'} to complete their Taste Exploration</p>
-              <button className="btn-launch-secondary" onClick={onLaunchSecondary}>
-                Start {secondaryName || 'Secondary'}'s Exploration
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Combined Design DNA Section - Only shown when both partners complete */}
-      {clientType === 'couple' && profileP && profileS && (
-        <div className="completed-view__combined">
-          <h4>🎯 Combined Design DNA</h4>
-          <p className="combined-intro">Averaged design preferences from both partners</p>
-          
-          {(() => {
-            // Get scores from both profiles
-            const scoresP = profileP?.session?.profile?.scores || profileP?.profile?.scores || {};
-            const scoresS = profileS?.session?.profile?.scores || profileS?.profile?.scores || {};
-            
-            // Calculate combined (averaged) scores
-            const getCombined = (attr) => {
-              const p = scoresP[attr] || 5;
-              const s = scoresS[attr] || 5;
-              return Math.round(((p + s) / 2) * 10) / 10;
-            };
-            
-            const combinedScores = {
-              tradition: getCombined('tradition'),
-              formality: getCombined('formality'),
-              warmth: getCombined('warmth'),
-              drama: getCombined('drama'),
-              openness: getCombined('openness'),
-              art_focus: getCombined('art_focus')
-            };
-            
-            return (
-              <div className="combined-dna-grid">
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Tradition</span>
-                    <span className="combined-dna-item__value">{combinedScores.tradition}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Contemporary</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.tradition - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.tradition - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Traditional</span>
-                  </div>
-                </div>
-                
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Formality</span>
-                    <span className="combined-dna-item__value">{combinedScores.formality}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Casual</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill combined-dna-item__fill--navy" style={{ width: `${((combinedScores.formality - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb combined-dna-item__thumb--navy" style={{ left: `${((combinedScores.formality - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Formal</span>
-                  </div>
-                </div>
-                
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Warmth</span>
-                    <span className="combined-dna-item__value">{combinedScores.warmth}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Cool</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill combined-dna-item__fill--gold" style={{ width: `${((combinedScores.warmth - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb combined-dna-item__thumb--gold" style={{ left: `${((combinedScores.warmth - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Warm</span>
-                  </div>
-                </div>
-                
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Drama</span>
-                    <span className="combined-dna-item__value">{combinedScores.drama}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Subtle</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill combined-dna-item__fill--gold" style={{ width: `${((combinedScores.drama - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb combined-dna-item__thumb--gold" style={{ left: `${((combinedScores.drama - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Bold</span>
-                  </div>
-                </div>
-                
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Openness</span>
-                    <span className="combined-dna-item__value">{combinedScores.openness}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Enclosed</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.openness - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.openness - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Open</span>
-                  </div>
-                </div>
-                
-                <div className="combined-dna-item">
-                  <div className="combined-dna-item__header">
-                    <span className="combined-dna-item__label">Art Focus</span>
-                    <span className="combined-dna-item__value">{combinedScores.art_focus}</span>
-                  </div>
-                  <div className="combined-dna-item__slider">
-                    <span className="combined-dna-item__endpoint">Understated</span>
-                    <div className="combined-dna-item__track">
-                      <div className="combined-dna-item__fill" style={{ width: `${((combinedScores.art_focus - 1) / 9) * 100}%` }} />
-                      <div className="combined-dna-item__thumb" style={{ left: `${((combinedScores.art_focus - 1) / 9) * 100}%` }} />
-                    </div>
-                    <span className="combined-dna-item__endpoint">Gallery-like</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
       {/* Actions */}
       <div className="completed-view__actions">
         <button
@@ -854,155 +692,51 @@ const CompletedView = ({
 };
 
 // ============================================
-// WELCOME VIEW COMPONENT
-// ============================================
-
-const WelcomeView = ({
-  clientType, setClientType,
-  clientBaseName, setClientBaseName,
-  principalName, setPrincipalName,
-  secondaryName, setSecondaryName,
-  clientIdP, clientIdS,
-  statusP, statusS,
-  onLaunch, onRefresh
-}) => {
-  return (
-    <div className="welcome-view">
-      {/* Section Header */}
-      <div className="section-header">
-        <div className="section-header__icon">🎨</div>
-        <div className="section-header__text">
-          <h2>P1.A.5 Design Preferences</h2>
-          <p>Discover your client's architectural and interior design aesthetic through the Taste Exploration experience.</p>
-        </div>
-      </div>
-
-      {/* Architectural Style Reference */}
-      <div className="style-reference">
-        <h3>Architectural Style Spectrum</h3>
-        <p>The 9-point scale from Avant-Contemporary (AS1) to Heritage Estate (AS9):</p>
-        <ArchStyleCarousel />
-      </div>
-
-      {/* Client Configuration */}
-      <div className="client-config">
-        <h3>Client Configuration</h3>
-
-        <div className="client-type-toggle">
-          <button
-            type="button"
-            className={`toggle-btn ${clientType === 'individual' ? 'active' : ''}`}
-            onClick={() => setClientType('individual')}
-          >
-            👤 Individual
-          </button>
-          <button
-            type="button"
-            className={`toggle-btn ${clientType === 'couple' ? 'active' : ''}`}
-            onClick={() => setClientType('couple')}
-          >
-            👥 Couple
-          </button>
-        </div>
-
-        <div className="client-names">
-          <div className="name-field">
-            <label>Family Name</label>
-            <input
-              type="text"
-              value={clientBaseName}
-              onChange={(e) => setClientBaseName(e.target.value)}
-              placeholder="e.g. Thornwood"
-            />
-            {clientBaseName && <small>IDs: {clientIdP}{clientType === 'couple' && `, ${clientIdS}`}</small>}
-          </div>
-
-          <div className="name-field">
-            <label>{clientType === 'couple' ? 'Principal Name' : 'Client Name'}</label>
-            <input
-              type="text"
-              value={principalName}
-              onChange={(e) => setPrincipalName(e.target.value)}
-              placeholder="e.g. Peter"
-            />
-          </div>
-
-          {clientType === 'couple' && (
-            <div className="name-field">
-              <label>Secondary Name</label>
-              <input
-                type="text"
-                value={secondaryName}
-                onChange={(e) => setSecondaryName(e.target.value)}
-                placeholder="e.g. Mary"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Launch Cards */}
-      {clientBaseName && (
-        <div className="launch-section">
-          <h3>Taste Exploration</h3>
-          <p>Launch the visual preference discovery experience for your client(s).</p>
-
-          <div className="profile-cards">
-            <ProfileCard
-              clientId={clientIdP}
-              name={principalName}
-              profile={null}
-              status={statusP}
-              onLaunch={onLaunch}
-              isPrimary={true}
-            />
-
-            {clientType === 'couple' && (
-              <ProfileCard
-                clientId={clientIdS}
-                name={secondaryName}
-                profile={null}
-                status={statusS}
-                onLaunch={onLaunch}
-                isPrimary={false}
-              />
-            )}
-          </div>
-
-          <button className="btn-refresh-small" onClick={onRefresh}>
-            🔄 Refresh Status
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ============================================
 // MAIN COMPONENT
 // ============================================
 
 const DesignIdentitySection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, calculateCompleteness, saveNow } = useAppContext();
+  const { kycData, updateKYCData, calculateCompleteness, saveNow, clientData } = useAppContext();
   const data = kycData[respondent]?.designIdentity || {};
 
   // Calculate KYC completion for report button styling
   const kycComplete = calculateCompleteness(respondent) === 100;
 
-  // Client configuration state
-  const [clientType, setClientType] = useState(data.clientType || 'couple');
-  const [clientBaseName, setClientBaseName] = useState(data.clientBaseName || '');
-  const [principalName, setPrincipalName] = useState(data.principalName || '');
-  const [secondaryName, setSecondaryName] = useState(data.secondaryName || '');
+  // Loading and error states for taste exploration
+  const [tasteLoading, setTasteLoading] = useState({ principal: false, secondary: false });
+  const [tasteError, setTasteError] = useState({ principal: null, secondary: null });
 
-  // Taste profiles from localStorage
-  const [profileP, setProfileP] = useState(null);
-  const [profileS, setProfileS] = useState(null);
+  // Track if user has confirmed they want to send Secondary questionnaire
+  const [secondaryConfirmed, setSecondaryConfirmed] = useState(false);
+
+  // State for embedded Taste Exploration (fallback mode)
   const [activeExploration, setActiveExploration] = useState(null);
 
-  // Generate client IDs
-  const clientIdP = clientBaseName ? `${clientBaseName}-P` : null;
-  const clientIdS = clientType === 'couple' && clientBaseName ? `${clientBaseName}-S` : null;
+  // Get stakeholder data
+  const portfolioContext = kycData.principal?.portfolioContext || {};
+
+  // Check questionnaire respondent preference (from Settings)
+  const questionnaireRespondent = portfolioContext.questionnaireRespondent || 'principal_only';
+  const isDualRespondent = questionnaireRespondent === 'principal_and_secondary';
+
+  // Get both Principal and Secondary data for dual-respondent mode
+  const principalName = `${portfolioContext.principalFirstName || ''} ${portfolioContext.principalLastName || ''}`.trim();
+  const principalEmail = portfolioContext.principalEmail;
+  const secondaryName = `${portfolioContext.secondaryFirstName || ''} ${portfolioContext.secondaryLastName || ''}`.trim();
+  const secondaryEmail = portfolioContext.secondaryEmail;
+  const projectName = clientData?.projectName || 'Untitled Project';
+
+  // Get taste exploration status for both respondents
+  const principalDesignData = kycData.principal?.designIdentity || {};
+  const secondaryDesignData = kycData.secondary?.designIdentity || {};
+
+  // Check if we can send (need name and email)
+  const canSendPrincipal = principalName && principalEmail;
+  const canSendSecondary = secondaryName && secondaryEmail;
+
+  // Get taste exploration status
+  const principalStatus = getTasteExplorationStatus(principalDesignData);
+  const secondaryStatus = getTasteExplorationStatus(secondaryDesignData);
 
   // Get location from P1.A.3 (Lifestyle Geography Section)
   const getLocationFromKYC = () => {
@@ -1022,229 +756,340 @@ const DesignIdentitySection = ({ respondent, tier }) => {
 
   const location = getLocationFromKYC();
 
-  // Check URL for returned profile data on mount
-  useEffect(() => {
-    const urlProfile = extractProfileFromURL();
-    if (urlProfile && urlProfile.clientId) {
-      saveProfileToStorage(urlProfile.clientId, urlProfile);
-      window.dispatchEvent(new Event('storage'));
-    }
-  }, []);
+  // Handle sending Taste Exploration invitation
+  const handleSendTasteExploration = async (target) => {
+    const targetName = target === 'principal' ? principalName : secondaryName;
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
 
-  // Load profiles - check kycData FIRST (backend), then fall back to localStorage
-  const refreshProfiles = useCallback(() => {
-    const designIdentity = kycData?.principal?.designIdentity || {};
+    if (!targetName || !targetEmail) return;
 
-    // PRINCIPAL: Check kycData FIRST (backend source of truth), then localStorage
-    let pProfile = null;
-    const pServerData = designIdentity.principalTasteResults;
-    if (pServerData?.completedAt) {
-      // Use backend data
-      pProfile = {
-        clientId: clientIdP,
-        session: pServerData,
-        completedAt: pServerData.completedAt
+    setTasteLoading(prev => ({ ...prev, [target]: true }));
+    setTasteError(prev => ({ ...prev, [target]: null }));
+
+    try {
+      // Generate subdomain from name (e.g., "Peter Thornwood" → "pthornwood")
+      const nameParts = targetName.split(' ');
+      const subdomain = nameParts.length >= 2
+        ? `${nameParts[0].charAt(0).toLowerCase()}${nameParts[nameParts.length - 1].toLowerCase()}`
+        : targetName.toLowerCase().replace(/\s+/g, '');
+
+      // TODO: Replace with actual Taste Exploration API endpoint when external site is built (ITR-002)
+      // For now, we'll simulate the session creation and store the status
+      console.log(`[TASTE-SEND] Would send to: ${targetName} (${targetEmail})`);
+      console.log(`[TASTE-SEND] Project: ${projectName}, Subdomain: ${subdomain}`);
+
+      // Simulate API response (replace with actual API call when ITR-002 is complete)
+      const simulatedSessionId = `taste_${Date.now()}_${target}`;
+
+      // Data to save for this target
+      const tasteData = {
+        tasteExplorationStatus: 'sent',
+        tasteExplorationSessionId: simulatedSessionId,
+        tasteExplorationSentAt: new Date().toISOString(),
+        tasteExplorationSubdomain: subdomain
       };
-      // Sync to localStorage for cache
-      if (clientIdP) {
-        saveProfileToStorage(clientIdP, pProfile);
+
+      // Update status in KYC data for the target respondent
+      updateKYCData(target, 'designIdentity', tasteData);
+
+      // Persist to server immediately with the data (fixes race condition)
+      if (saveNow) {
+        saveNow({
+          kycData: {
+            [target]: {
+              designIdentity: tasteData
+            }
+          }
+        });
       }
-    } else if (clientIdP) {
-      // Fall back to localStorage
-      pProfile = loadProfileFromStorage(clientIdP);
+
+    } catch (error) {
+      console.error('Taste Exploration send error:', error);
+      setTasteError(prev => ({ ...prev, [target]: error.message || 'Failed to send Taste Exploration invitation' }));
+    } finally {
+      setTasteLoading(prev => ({ ...prev, [target]: false }));
     }
-    setProfileP(pProfile);
+  };
 
-    // SECONDARY: Check kycData FIRST (backend source of truth), then localStorage
-    // NOTE: secondaryTasteResults is stored in kycData.principal.designIdentity (NOT kycData.secondary)
-    let sProfile = null;
-    const sServerData = designIdentity.secondaryTasteResults;
-    if (sServerData?.completedAt) {
-      // Use backend data
-      sProfile = {
-        clientId: clientIdS,
-        session: sServerData,
-        completedAt: sServerData.completedAt
-      };
-      // Sync to localStorage for cache
-      if (clientIdS) {
-        saveProfileToStorage(clientIdS, sProfile);
-      }
-    } else if (clientIdS) {
-      // Fall back to localStorage
-      sProfile = loadProfileFromStorage(clientIdS);
+  // Handle checking Taste Exploration status
+  const handleRefreshStatus = async (target) => {
+    const targetData = target === 'principal' ? principalDesignData : secondaryDesignData;
+    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
+    const sessionId = targetData.tasteExplorationSessionId;
+
+    setTasteLoading(prev => ({ ...prev, [target]: true }));
+    try {
+      // TODO: Replace with actual API call when external site is built (ITR-002)
+      console.log(`[TASTE-REFRESH] Checking status for session: ${sessionId}`);
+
+      // Simulate checking status (replace with actual API call)
+      // For now, just show a message
+      console.log(`[TASTE-REFRESH] Status check complete`);
+
+    } catch (error) {
+      console.error('Status refresh error:', error);
+    } finally {
+      setTasteLoading(prev => ({ ...prev, [target]: false }));
     }
-    setProfileS(sProfile);
-  }, [clientIdP, clientIdS, kycData]);
+  };
 
-  useEffect(() => {
-    refreshProfiles();
-  }, [refreshProfiles]);
+  // Handle viewing report
+  const handleViewReport = (target) => {
+    const targetData = target === 'principal' ? principalDesignData : secondaryDesignData;
+    const tasteResults = targetData.principalTasteResults || targetData.secondaryTasteResults;
 
-  // Listen for storage events
-  useEffect(() => {
-    const handleStorageChange = () => {
-      refreshProfiles();
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [refreshProfiles]);
-
-  // Save client config to KYC data - ONLY when values actually change from stored data
-  useEffect(() => {
-    // Compare with stored data to prevent marking as "unsaved" on mount
-    const storedType = data.clientType || 'couple';
-    const storedBaseName = data.clientBaseName || '';
-    const storedPrincipalName = data.principalName || '';
-    const storedSecondaryName = data.secondaryName || '';
-
-    const hasChanges =
-      clientType !== storedType ||
-      clientBaseName !== storedBaseName ||
-      principalName !== storedPrincipalName ||
-      secondaryName !== storedSecondaryName;
-
-    if (hasChanges) {
-      updateKYCData(respondent, 'designIdentity', {
-        clientType,
-        clientBaseName,
-        principalName,
-        secondaryName
-      });
+    if (tasteResults) {
+      viewTasteReport(tasteResults, null, { location, kycData });
     }
-  }, [clientType, clientBaseName, principalName, secondaryName, updateKYCData, respondent, data.clientType, data.clientBaseName, data.principalName, data.secondaryName]);
+  };
 
-  // Get status
-  const statusP = getProfileStatus(profileP);
-  const statusS = getProfileStatus(profileS);
+  // Get completed profiles for CompletedView
+  const profileP = principalDesignData.principalTasteResults;
+  const profileS = principalDesignData.secondaryTasteResults;
 
   // Determine if we should show completed view
-  const currentStatus = respondent === 'principal' ? statusP : statusS;
-  const showCompletedView = currentStatus === 'complete';
-
-  // Launch Taste Exploration
-  const handleLaunch = (who) => {
-    const clientId = who === 'principal' ? clientIdP : clientIdS;
-    if (!clientId) {
-      alert('Please enter a client name first');
-      return;
-    }
-    setActiveExploration(who);
-  };
-
-  const handleExplorationComplete = async (result) => {
-    const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
-    if (result && clientId) {
-      const completedAt = new Date().toISOString();
-
-      // Build taste data object
-      const tasteData = {
-        clientId,
-        selections: result.selections,
-        skipped: result.skipped || [],
-        profile: result.profile,
-        completedAt
-      };
-
-      // Save to kycData (syncs to backend via AppContext)
-      const tasteField = activeExploration === 'principal'
-        ? 'principalTasteResults'
-        : 'secondaryTasteResults';
-      console.log(`[TASTE-SAVE] Saving ${tasteField} to kycData for backend sync`);
-      updateKYCData('principal', 'designIdentity', { [tasteField]: tasteData });
-
-      // Also save to localStorage (backup/cache)
-      saveProfileToStorage(clientId, {
-        clientId,
-        session: result,
-        completedAt
-      });
-
-      // Auto-save to backend immediately (user shouldn't have to click SAVE after 36 quads)
-      setTimeout(async () => {
-        console.log('[TASTE-SAVE] Auto-saving to backend...');
-        await saveNow();
-        console.log('[TASTE-SAVE] Backend sync complete');
-      }, 100);
-    }
-    refreshProfiles();
-    setActiveExploration(null);
-  };
-
-  const handleExplorationBack = () => {
-    setActiveExploration(null);
-  };
+  const principalComplete = profileP?.completedAt && !DEV_HIDE_COMPLETED_DATA;
+  const secondaryComplete = profileS?.completedAt && !DEV_HIDE_COMPLETED_DATA;
+  const showCompletedView = principalComplete;
 
   // Handle retake
   const handleRetake = () => {
     if (window.confirm('This will reset your Taste Exploration results. Are you sure?')) {
-      // Clear localStorage
-      if (clientIdP) {
-        localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdP}`);
-      }
-      if (clientIdS) {
-        localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${clientIdS}`);
-      }
       // Clear kycData taste results (syncs to backend)
       console.log('[TASTE-RESET] Clearing taste results from kycData');
       updateKYCData('principal', 'designIdentity', {
         principalTasteResults: null,
-        secondaryTasteResults: null
+        secondaryTasteResults: null,
+        tasteExplorationStatus: 'not_sent',
+        tasteExplorationSessionId: null,
+        tasteExplorationSentAt: null,
+        tasteExplorationCompletedAt: null
       });
-      setProfileP(null);
-      setProfileS(null);
+      updateKYCData('secondary', 'designIdentity', {
+        tasteExplorationStatus: 'not_sent',
+        tasteExplorationSessionId: null,
+        tasteExplorationSentAt: null,
+        tasteExplorationCompletedAt: null
+      });
     }
   };
 
-  if (activeExploration) {
-    const clientId = activeExploration === 'principal' ? clientIdP : clientIdS;
-    const clientName = activeExploration === 'principal' ? principalName : secondaryName;
+  // Refresh profiles callback for CompletedView
+  const refreshProfiles = useCallback(() => {
+    // Force re-render by reading from kycData
+    console.log('[TASTE-REFRESH] Refreshing profiles from kycData');
+  }, []);
+
+  // If showing completed view
+  if (showCompletedView) {
     return (
       <div className="kyc-section design-identity-section">
-        <TasteExploration
-          clientId={clientId}
-          clientName={clientName || clientId}
-          respondentType={activeExploration}
-          onComplete={handleExplorationComplete}
-          onBack={handleExplorationBack}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="kyc-section design-identity-section">
-      {showCompletedView ? (
         <CompletedView
           profileP={profileP}
           profileS={profileS}
-          clientType={clientType}
-          principalName={principalName}
-          secondaryName={secondaryName}
+          clientType={isDualRespondent ? 'couple' : 'individual'}
+          principalName={principalName || portfolioContext.principalFirstName || 'Principal'}
+          secondaryName={secondaryName || portfolioContext.secondaryFirstName || 'Secondary'}
           location={location}
           kycData={kycData}
           kycComplete={kycComplete}
           onRetake={handleRetake}
           onRefresh={refreshProfiles}
-          onLaunchSecondary={() => handleLaunch(clientIdS)}
+          onLaunchSecondary={() => handleSendTasteExploration('secondary')}
         />
-      ) : (
-        <WelcomeView
-          clientType={clientType}
-          setClientType={setClientType}
-          clientBaseName={clientBaseName}
-          setClientBaseName={setClientBaseName}
-          principalName={principalName}
-          setPrincipalName={setPrincipalName}
-          secondaryName={secondaryName}
-          setSecondaryName={setSecondaryName}
-          clientIdP={clientIdP}
-          clientIdS={clientIdS}
-          statusP={statusP}
-          statusS={statusS}
-          onLaunch={handleLaunch}
-          onRefresh={refreshProfiles}
-        />
+      </div>
+    );
+  }
+
+  // Pre-completion view with email-based workflow
+  return (
+    <div className="kyc-section design-identity-section">
+      {/* Section Header */}
+      <div className="section-header">
+        <div className="section-header__icon">🎨</div>
+        <div className="section-header__text">
+          <h2>P1.A.5 Design Preferences</h2>
+          <p>Discover your client's architectural and interior design aesthetic through the Taste Exploration experience.</p>
+        </div>
+      </div>
+
+      {/* Architectural Style Reference */}
+      <div className="style-reference">
+        <h3>Architectural Style Spectrum</h3>
+        <p>The 9-point scale from Avant-Contemporary (AS1) to Heritage Estate (AS9):</p>
+        <ArchStyleCarousel />
+      </div>
+
+      {/* Taste Exploration Panel (mirrors LuXeBrief panel) */}
+      <div className="kyc-section__group luxebrief-panel">
+        <div className="luxebrief-panel__header">
+          <div className="luxebrief-panel__title">
+            <Palette size={20} />
+            <h3>Taste Exploration Questionnaire</h3>
+          </div>
+          {isDualRespondent && (
+            <span className="luxebrief-panel__mode-badge">
+              <Users size={14} /> Principal + Secondary
+            </span>
+          )}
+        </div>
+
+        <p className="luxebrief-panel__description">
+          {isDualRespondent
+            ? 'Send visual preference questionnaires to both Principal and Secondary for individual insights into their architectural and interior design tastes.'
+            : `Send a visual preference questionnaire to ${principalName || 'the client'} to discover their architectural and interior design aesthetic.`
+          }
+        </p>
+
+        {/* Dual Respondent Mode - Show two cards side by side */}
+        {isDualRespondent ? (
+          <div className="luxebrief-panel__dual-cards">
+            <TasteExplorationCard
+              target="principal"
+              targetName={principalName}
+              targetEmail={principalEmail}
+              status={principalStatus}
+              sentAt={principalDesignData.tasteExplorationSentAt}
+              completedAt={principalDesignData.tasteExplorationCompletedAt}
+              sessionId={principalDesignData.tasteExplorationSessionId}
+              canSend={canSendPrincipal}
+              loading={tasteLoading.principal}
+              error={tasteError.principal}
+              isConfirmed={true}
+              onConfirm={() => {}}
+              onSend={handleSendTasteExploration}
+              onRefresh={handleRefreshStatus}
+              onViewReport={handleViewReport}
+              isCompact={true}
+            />
+            <TasteExplorationCard
+              target="secondary"
+              targetName={secondaryName}
+              targetEmail={secondaryEmail}
+              status={secondaryStatus}
+              sentAt={secondaryDesignData.tasteExplorationSentAt}
+              completedAt={secondaryDesignData.tasteExplorationCompletedAt}
+              sessionId={secondaryDesignData.tasteExplorationSessionId}
+              canSend={canSendSecondary}
+              loading={tasteLoading.secondary}
+              error={tasteError.secondary}
+              isConfirmed={secondaryConfirmed}
+              onConfirm={() => setSecondaryConfirmed(true)}
+              onSend={handleSendTasteExploration}
+              onRefresh={handleRefreshStatus}
+              onViewReport={handleViewReport}
+              isCompact={true}
+            />
+          </div>
+        ) : (
+          /* Single Respondent Mode */
+          <>
+            {/* Not Sent State */}
+            {principalStatus === 'not_sent' && (
+              <div className="luxebrief-panel__actions">
+                {!canSendPrincipal ? (
+                  <div className="luxebrief-panel__notice">
+                    <AlertTriangle size={16} />
+                    <span>
+                      Please configure Principal name and email in <strong>Settings</strong> before sending.
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="luxebrief-panel__recipient">
+                      <span className="luxebrief-panel__recipient-label">Send to:</span>
+                      <span className="luxebrief-panel__recipient-value">{principalName}</span>
+                      <span className="luxebrief-panel__recipient-email">{principalEmail}</span>
+                    </div>
+                    <button
+                      className="btn btn--primary luxebrief-panel__send-btn"
+                      onClick={() => handleSendTasteExploration('principal')}
+                      disabled={tasteLoading.principal}
+                    >
+                      {tasteLoading.principal ? (
+                        <>
+                          <RefreshCw size={16} className="spin" /> Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} /> Send Taste Exploration
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+                {tasteError.principal && (
+                  <div className="luxebrief-panel__error">
+                    <AlertTriangle size={14} /> {tasteError.principal}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sent State */}
+            {principalStatus === 'sent' && (
+              <div className="luxebrief-panel__status">
+                <div className="luxebrief-panel__status-info">
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Sent to:</span>
+                    <span>{principalName} ({principalEmail})</span>
+                  </div>
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Sent:</span>
+                    <span>{principalDesignData.tasteExplorationSentAt ? new Date(principalDesignData.tasteExplorationSentAt).toLocaleString() : 'Unknown'}</span>
+                  </div>
+                  {principalDesignData.tasteExplorationSubdomain && (
+                    <div className="luxebrief-panel__status-row">
+                      <span className="luxebrief-panel__status-label">Link:</span>
+                      <span className="luxebrief-panel__link-placeholder">
+                        Taste Exploration site coming soon (ITR-002)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={() => handleRefreshStatus('principal')}
+                  disabled={tasteLoading.principal}
+                >
+                  {tasteLoading.principal ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
+                  Check Status
+                </button>
+              </div>
+            )}
+
+            {/* Completed State */}
+            {principalStatus === 'completed' && (
+              <div className="luxebrief-panel__status luxebrief-panel__status--complete">
+                <div className="luxebrief-panel__status-info">
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Completed by:</span>
+                    <span>{principalName}</span>
+                  </div>
+                  <div className="luxebrief-panel__status-row">
+                    <span className="luxebrief-panel__status-label">Completed:</span>
+                    <span>{principalDesignData.tasteExplorationCompletedAt ? new Date(principalDesignData.tasteExplorationCompletedAt).toLocaleString() : 'Unknown'}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleViewReport('principal')}
+                  className="btn btn--primary btn--sm"
+                >
+                  <ExternalLink size={14} /> View Report
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Dev Mode Notice */}
+      {DEV_HIDE_COMPLETED_DATA && (
+        <div className="kyc-section__group" style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px' }}>
+          <p style={{ margin: 0, color: '#92400e' }}>
+            <strong>⚠️ DEV MODE:</strong> Completed taste data is hidden. Set <code>DEV_HIDE_COMPLETED_DATA = false</code> to restore.
+          </p>
+        </div>
       )}
     </div>
   );
