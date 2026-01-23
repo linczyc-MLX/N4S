@@ -242,15 +242,18 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
             <Save size={16} />
             {isSaving ? 'Saving...' : 'SAVE'}
           </button>
-          <button
-            className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
-            onClick={handleExportReport}
-            disabled={isExporting || !areAllSectionsComplete}
-            title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
-          >
-            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-            {isExporting ? 'Exporting...' : 'Export Report'}
-          </button>
+          {/* Export Report only shows on P1.A.1 Portfolio Context */}
+          {visibleSections[currentKYCSection]?.id === 'portfolioContext' && (
+            <button
+              className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
+              onClick={handleExportReport}
+              disabled={isExporting || !areAllSectionsComplete}
+              title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </button>
+          )}
           {hasUnsavedChanges && !isSaving && (
             <span className="kyc-save-indicator">Unsaved</span>
           )}

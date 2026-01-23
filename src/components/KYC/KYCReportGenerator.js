@@ -309,15 +309,16 @@ export const generateKYCReport = async (kycData) => {
     return currentY;
   };
 
-  const addSectionHeader = (code, title) => {
-    currentY = checkPageBreak(12);
+  const addSectionHeader = (code, title, minContentHeight = 25) => {
+    // Ensure section header + some content stays together (not orphaned at bottom)
+    currentY = checkPageBreak(8 + minContentHeight);
     doc.setFillColor(...COLORS.kycBlue);
     doc.roundedRect(margin, currentY, contentWidth, 8, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...COLORS.white);
     doc.text(`${code}  ${title}`, margin + 3, currentY + 5.5);
-    currentY += 11;
+    currentY += 14; // Increased gap after header (was 11)
   };
 
   const addSubsection = (title) => {
@@ -339,7 +340,10 @@ export const generateKYCReport = async (kycData) => {
     doc.setTextColor(...COLORS.text);
     const displayValue = value !== undefined && value !== null && value !== '' ? String(value) : '—';
     const lines = doc.splitTextToSize(displayValue, contentWidth - labelWidth - indent);
-    doc.text(lines, margin + labelWidth + indent, currentY);
+    // Always left-align all lines (including last line)
+    lines.forEach((line, idx) => {
+      doc.text(line, margin + labelWidth + indent, currentY + (idx * 3.5));
+    });
     currentY += Math.max(lines.length * 3.5, 4);
   };
 
@@ -393,7 +397,10 @@ export const generateKYCReport = async (kycData) => {
     // Compact: show as comma-separated on one line if short
     const text = displayItems.join(', ');
     const lines = doc.splitTextToSize(text, contentWidth - 5);
-    doc.text(lines, margin + 3, currentY);
+    // Always left-align all lines (including last line)
+    lines.forEach((line, idx) => {
+      doc.text(line, margin + 3, currentY + (idx * 3.5));
+    });
     currentY += lines.length * 3.5 + 1;
   };
 
@@ -548,41 +555,64 @@ export const generateKYCReport = async (kycData) => {
   const principalTaste = designIdentity.principalTasteResults;
   const secondaryTaste = designIdentity.secondaryTasteResults;
 
-  if (principalTaste?.completedAt) {
-    addSubsection(`Principal Taste Profile${portfolioContext.principalFirstName ? ` (${portfolioContext.principalFirstName})` : ''}`);
-    const pScores = principalTaste.profile?.scores || {};
+  // Side-by-side taste profiles if both exist
+  if (principalTaste?.completedAt || secondaryTaste?.completedAt) {
+    const colWidth = contentWidth / 2 - 3;
+    const dims = ['tradition', 'formality', 'warmth', 'drama', 'openness', 'art_focus'];
+    const dimLabels = ['Tradition', 'Formality', 'Warmth', 'Drama', 'Openness', 'Art Focus'];
+
+    // Column headers
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.navy);
+    if (principalTaste?.completedAt) {
+      doc.text(`Principal${portfolioContext.principalFirstName ? ` (${portfolioContext.principalFirstName})` : ''}`, margin, currentY);
+    }
+    if (secondaryTaste?.completedAt) {
+      doc.text(`Secondary${portfolioContext.secondaryFirstName ? ` (${portfolioContext.secondaryFirstName})` : ''}`, margin + colWidth + 6, currentY);
+    }
+    currentY += 5;
+
+    const pScores = principalTaste?.profile?.scores || {};
+    const sScores = secondaryTaste?.profile?.scores || {};
+
+    // Style row
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Style', margin, currentY);
+    doc.setTextColor(...COLORS.text);
     if (pScores.tradition !== undefined) {
-      const style = pScores.tradition < 4 ? 'Contemporary' : pScores.tradition > 6 ? 'Traditional' : 'Transitional';
-      addCompactRow('Style', style);
+      const pStyle = pScores.tradition < 4 ? 'Contemporary' : pScores.tradition > 6 ? 'Traditional' : 'Transitional';
+      doc.text(pStyle, margin + 30, currentY);
     }
-    const dims = ['tradition', 'formality', 'warmth', 'drama', 'openness', 'art_focus'];
-    const dimLabels = ['Tradition', 'Formality', 'Warmth', 'Drama', 'Openness', 'Art Focus'];
-    dims.forEach((dim, i) => {
-      if (pScores[dim] !== undefined) {
-        addCompactRow(dimLabels[i], `${pScores[dim].toFixed(1)}/10`);
-      }
-    });
-    addSpacer(2);
-  }
-
-  if (secondaryTaste?.completedAt) {
-    addSubsection(`Secondary Taste Profile${portfolioContext.secondaryFirstName ? ` (${portfolioContext.secondaryFirstName})` : ''}`);
-    const sScores = secondaryTaste.profile?.scores || {};
     if (sScores.tradition !== undefined) {
-      const style = sScores.tradition < 4 ? 'Contemporary' : sScores.tradition > 6 ? 'Traditional' : 'Transitional';
-      addCompactRow('Style', style);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('Style', margin + colWidth + 6, currentY);
+      doc.setTextColor(...COLORS.text);
+      const sStyle = sScores.tradition < 4 ? 'Contemporary' : sScores.tradition > 6 ? 'Traditional' : 'Transitional';
+      doc.text(sStyle, margin + colWidth + 36, currentY);
     }
-    const dims = ['tradition', 'formality', 'warmth', 'drama', 'openness', 'art_focus'];
-    const dimLabels = ['Tradition', 'Formality', 'Warmth', 'Drama', 'Openness', 'Art Focus'];
+    currentY += 3.5;
+
+    // Dimension rows side by side
     dims.forEach((dim, i) => {
-      if (sScores[dim] !== undefined) {
-        addCompactRow(dimLabels[i], `${sScores[dim].toFixed(1)}/10`);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text(dimLabels[i], margin, currentY);
+      doc.setTextColor(...COLORS.text);
+      if (pScores[dim] !== undefined) {
+        doc.text(`${pScores[dim].toFixed(1)}/10`, margin + 30, currentY);
       }
+      if (sScores[dim] !== undefined) {
+        doc.setTextColor(...COLORS.textMuted);
+        doc.text(dimLabels[i], margin + colWidth + 6, currentY);
+        doc.setTextColor(...COLORS.text);
+        doc.text(`${sScores[dim].toFixed(1)}/10`, margin + colWidth + 36, currentY);
+      }
+      currentY += 3.5;
     });
     addSpacer(2);
-  }
-
-  if (!principalTaste?.completedAt && !secondaryTaste?.completedAt) {
+  } else {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.textMuted);
