@@ -40,6 +40,22 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
   const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Check if ALL sections are complete (for Export Report button)
+  const areAllSectionsComplete = sections.every(section => {
+    // Check Principal completion for all sections
+    const principalStatus = getSectionCompletionStatus('principal', section.id);
+    if (principalStatus !== 'complete') return false;
+
+    // For P1.A.5, P1.A.6, P1.A.7 - also need Secondary to be complete
+    const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
+    if (secondarySections.includes(section.id)) {
+      const secondaryStatus = getSectionCompletionStatus('secondary', section.id);
+      if (secondaryStatus !== 'complete') return false;
+    }
+
+    return true;
+  });
+
   // SAVE HANDLER
   const handleSave = useCallback(async () => {
     const success = await saveNow();
@@ -227,10 +243,10 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
             {isSaving ? 'Saving...' : 'SAVE'}
           </button>
           <button
-            className="kyc-export-btn"
+            className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
             onClick={handleExportReport}
-            disabled={isExporting}
-            title="Export KYC Report as PDF"
+            disabled={isExporting || !areAllSectionsComplete}
+            title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
           >
             <FileDown size={16} className={isExporting ? 'spinning' : ''} />
             {isExporting ? 'Exporting...' : 'Export Report'}

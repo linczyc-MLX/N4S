@@ -404,8 +404,9 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.kyc-export-btn:hover { background: #2a4a75; border-color: #2a4a75; }
-.kyc-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.kyc-export-btn:hover:not(:disabled) { background: #2a4a75; border-color: #2a4a75; }
+.kyc-export-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #9ca3af; border-color: #9ca3af; }
+.kyc-export-btn--disabled { background: #9ca3af !important; border-color: #9ca3af !important; }
 .kyc-export-btn .spinning { animation: spin 1s linear infinite; }
 
 /* Respondent Tabs */
