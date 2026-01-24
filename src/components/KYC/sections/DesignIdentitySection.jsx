@@ -1001,6 +1001,11 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   const profileP = principalDesignData.principalTasteResults;
   const profileS = principalDesignData.secondaryTasteResults;
 
+  // Debug: Log what's in principalDesignData
+  console.log('[DESIGN-IDENTITY] principalDesignData keys:', Object.keys(principalDesignData || {}));
+  console.log('[DESIGN-IDENTITY] principalDesignData.secondaryTasteResults:', principalDesignData?.secondaryTasteResults);
+  console.log('[DESIGN-IDENTITY] secondaryDesignData:', secondaryDesignData);
+
   // Determine if we should show completed view
   const principalComplete = profileP?.completedAt && !DEV_HIDE_COMPLETED_DATA;
   const secondaryComplete = profileS?.completedAt && !DEV_HIDE_COMPLETED_DATA;
