@@ -18,7 +18,7 @@ import { quads, categoryOrder } from '../../../data/tasteQuads';
 // TEMPORARY DEV FLAG - Set to true to hide completed data for UI design
 // Set to false to restore normal behavior
 // ============================================
-const DEV_HIDE_COMPLETED_DATA = true;
+const DEV_HIDE_COMPLETED_DATA = false;
 
 // ============================================
 // CONFIGURATION
