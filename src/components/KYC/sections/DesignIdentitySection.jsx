@@ -388,15 +388,12 @@ const CompletedView = ({
   const getMetrics = (profile) => {
     if (!profile) return { ct: 3, ml: 3, mp: 3 };
 
-    // FIRST: Use converted profile scores from LuXeBrief (already calculated)
+    // FIRST: Use converted profile scores from LuXeBrief (new format)
     // These are stored in profile.profile.scores with 1-10 scale
     const scores = profile.profile?.scores;
     if (scores && (scores.tradition !== undefined || scores.warmth !== undefined)) {
-      console.log('[METRICS] Using profile scores:', scores);
+      console.log('[METRICS] Using converted profile scores:', scores);
       // Map 1-10 scale to 1-5 scale for display
-      // tradition -> style era (1=contemporary, 10=traditional)
-      // formality -> material complexity
-      // warmth inverted -> mood palette (high warmth = warm end)
       return {
         ct: scores.tradition ? scores.tradition / 2 : 2.5,
         ml: scores.formality ? scores.formality / 2 : 2.5,
@@ -404,8 +401,32 @@ const CompletedView = ({
       };
     }
 
+    // SECOND: Try old LuXeBrief format (stored directly on profile)
+    // Old format: profile.profile = { warmthScore: 65, formalityScore: 55, ... } (1-100 scale)
+    const oldProfile = profile.profile;
+    if (oldProfile && (oldProfile.warmthScore !== undefined || oldProfile.traditionScore !== undefined)) {
+      console.log('[METRICS] Using old LuXeBrief profile format:', oldProfile);
+      // Convert 1-100 scale to 1-5 scale for display
+      return {
+        ct: oldProfile.traditionScore ? oldProfile.traditionScore / 20 : 2.5,
+        ml: oldProfile.formalityScore ? oldProfile.formalityScore / 20 : 2.5,
+        mp: oldProfile.warmthScore ? (100 - oldProfile.warmthScore) / 20 + 1 : 2.5
+      };
+    }
+
+    // THIRD: Try even older format where profile IS the scores object directly
+    // Format: profile = { warmthScore: 65, ... }
+    if (profile.warmthScore !== undefined || profile.traditionScore !== undefined) {
+      console.log('[METRICS] Using direct profile scores format:', profile);
+      return {
+        ct: profile.traditionScore ? profile.traditionScore / 20 : 2.5,
+        ml: profile.formalityScore ? profile.formalityScore / 20 : 2.5,
+        mp: profile.warmthScore ? (100 - profile.warmthScore) / 20 + 1 : 2.5
+      };
+    }
+
     // FALLBACK: Calculate from image codes (for locally-completed sessions)
-    console.log('[METRICS] No profile scores, falling back to image code calculation');
+    console.log('[METRICS] No profile scores found, falling back to image code calculation');
 
     // Helper to extract AS/VD/MP codes from image filename
     const extractCodes = (imageUrl) => {
