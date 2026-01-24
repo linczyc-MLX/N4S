@@ -141,24 +141,50 @@ async function loadImageAsBase64(url) {
 
 // Get selection for a category from profile
 function getSelectionForCategory(profile, categoryId) {
-  const flatSelections = profile.selections || profile.session?.selections || {};
   const categoryQuads = quads.filter(q => q.category === categoryId);
 
-  for (const quad of categoryQuads) {
-    const sel = flatSelections[quad.quadId];
-    if (sel && sel.favorites && sel.favorites.length > 0) {
-      return { quadId: quad.quadId, positionIndex: sel.favorites[0] };
+  // FIRST: Try dictionary format (profile.selections or profile.session.selections)
+  const flatSelections = profile.selections || profile.session?.selections || {};
+
+  // Check if flatSelections is a dictionary (object with quadId keys)
+  if (flatSelections && typeof flatSelections === 'object' && !Array.isArray(flatSelections)) {
+    for (const quad of categoryQuads) {
+      const sel = flatSelections[quad.quadId];
+      if (sel && sel.favorites && sel.favorites.length > 0) {
+        console.log('[PDF-SELECTIONS] Found dictionary selection for', categoryId, ':', quad.quadId);
+        return { quadId: quad.quadId, positionIndex: sel.favorites[0] };
+      }
     }
   }
 
-  // Fallback to nested structure
+  // SECOND: Try array format from LuXeBrief (selections as array)
+  // LuXeBrief format: [{quadId, favorite1, favorite2, leastFavorite}]
+  const arraySelections = Array.isArray(profile.selections) ? profile.selections :
+                          Array.isArray(profile.session?.selections) ? profile.session.selections : [];
+
+  for (const sel of arraySelections) {
+    if (categoryQuads.some(q => q.quadId === sel.quadId)) {
+      // Found a selection for this category
+      const positionIndex = sel.favorite1 !== undefined ? sel.favorite1 :
+                           sel.favorites?.[0] !== undefined ? sel.favorites[0] :
+                           sel.selectedIndex;
+      if (positionIndex !== undefined && positionIndex >= 0 && positionIndex <= 3) {
+        console.log('[PDF-SELECTIONS] Found array selection for', categoryId, ':', sel.quadId);
+        return { quadId: sel.quadId, positionIndex };
+      }
+    }
+  }
+
+  // THIRD: Fallback to nested structure (progress-based)
   const nestedSelections = profile.session?.progress?.[categoryId]?.selections || [];
   for (const sel of nestedSelections) {
     if (sel.selectedIndex >= 0 && sel.selectedIndex <= 3) {
+      console.log('[PDF-SELECTIONS] Found nested selection for', categoryId, ':', sel.quadId);
       return { quadId: sel.quadId, positionIndex: sel.selectedIndex };
     }
   }
 
+  console.log('[PDF-SELECTIONS] No selection found for category:', categoryId);
   return null;
 }
 
@@ -187,16 +213,57 @@ export class TasteReportGenerator {
 
     // Extract profile scores (attribute-based: formality, warmth, etc.)
     // These come from calculateProfileFromSelections() in TasteExploration
-    // Scale: 1-10 (native)
+    // Scale: 1-10 (native) - but LuXeBrief may send 1-100 scale in old format
     const extractScores = (profile) => {
-      const scores = profile?.session?.profile?.scores || profile?.profile?.scores || {};
+      // FIRST: Try new nested format (profile.profile.scores or session.profile.scores)
+      const scores = profile?.session?.profile?.scores || profile?.profile?.scores;
+      if (scores && (scores.tradition !== undefined || scores.warmth !== undefined)) {
+        console.log('[PDF-SCORES] Using nested profile scores (1-10 scale):', scores);
+        return {
+          formality: scores.formality || 5,
+          warmth: scores.warmth || 5,
+          drama: scores.drama || 5,
+          tradition: scores.tradition || 5,
+          openness: scores.openness || 5,
+          art_focus: scores.art_focus || 5
+        };
+      }
+
+      // SECOND: Try old LuXeBrief format (flat *Score properties at 1-100 scale)
+      const oldProfile = profile?.profile;
+      if (oldProfile && (oldProfile.warmthScore !== undefined || oldProfile.traditionScore !== undefined)) {
+        console.log('[PDF-SCORES] Using old LuXeBrief format (1-100 scale), converting:', oldProfile);
+        return {
+          formality: oldProfile.formalityScore ? oldProfile.formalityScore / 10 : 5,
+          warmth: oldProfile.warmthScore ? oldProfile.warmthScore / 10 : 5,
+          drama: oldProfile.dramaScore ? oldProfile.dramaScore / 10 : 5,
+          tradition: oldProfile.traditionScore ? oldProfile.traditionScore / 10 : 5,
+          openness: oldProfile.opennessScore ? oldProfile.opennessScore / 10 : 5,
+          art_focus: oldProfile.artFocusScore ? oldProfile.artFocusScore / 10 : 5
+        };
+      }
+
+      // THIRD: Try even older format where profile IS the scores directly
+      if (profile?.warmthScore !== undefined || profile?.traditionScore !== undefined) {
+        console.log('[PDF-SCORES] Using direct profile scores format (1-100 scale), converting:', profile);
+        return {
+          formality: profile.formalityScore ? profile.formalityScore / 10 : 5,
+          warmth: profile.warmthScore ? profile.warmthScore / 10 : 5,
+          drama: profile.dramaScore ? profile.dramaScore / 10 : 5,
+          tradition: profile.traditionScore ? profile.traditionScore / 10 : 5,
+          openness: profile.opennessScore ? profile.opennessScore / 10 : 5,
+          art_focus: profile.artFocusScore ? profile.artFocusScore / 10 : 5
+        };
+      }
+
+      console.log('[PDF-SCORES] No profile scores found, using defaults');
       return {
-        formality: scores.formality || 5,
-        warmth: scores.warmth || 5,
-        drama: scores.drama || 5,
-        tradition: scores.tradition || 5,
-        openness: scores.openness || 5,
-        art_focus: scores.art_focus || 5
+        formality: 5,
+        warmth: 5,
+        drama: 5,
+        tradition: 5,
+        openness: 5,
+        art_focus: 5
       };
     };
     this.profileScoresP = extractScores(this.profileP);
@@ -232,11 +299,19 @@ export class TasteReportGenerator {
     let count = 0;
 
     if (!profile) {
+      console.log('[PDF-CALC] No profile provided, returning defaults');
       return {
         data: {},
         metrics: { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5, styleLabel: 'Transitional' }
       };
     }
+
+    console.log('[PDF-CALC] Calculating category data for profile:', {
+      hasSelections: !!profile.selections,
+      selectionsType: Array.isArray(profile.selections) ? 'array' : typeof profile.selections,
+      hasSession: !!profile.session,
+      hasProfileScores: !!(profile.profile?.scores || profile.session?.profile?.scores)
+    });
 
     CATEGORY_ORDER.forEach(cat => {
       const selection = getSelectionForCategory(profile, cat.id);
@@ -244,6 +319,7 @@ export class TasteReportGenerator {
         const imageUrl = getSelectionImageUrl(selection.quadId, selection.positionIndex);
         const codes = extractCodesFromFilename(imageUrl);
         const metrics = getCategoryMetricsFromSelection(selection.quadId, selection.positionIndex);
+        console.log('[PDF-CALC] Category', cat.id, 'found selection:', selection, 'metrics:', metrics);
         data[cat.id] = {
           ...cat,
           selection,
@@ -266,19 +342,55 @@ export class TasteReportGenerator {
       }
     });
 
-    const metrics = count > 0 ? {
-      styleEra: totalStyleEra / count,
-      materialComplexity: totalMaterialComplexity / count,
-      moodPalette: totalMoodPalette / count,
-      styleLabel: getStyleLabel(totalStyleEra / count)
-    } : {
-      styleEra: 2.5,
-      materialComplexity: 2.5,
-      moodPalette: 2.5,
-      styleLabel: 'Transitional'
-    };
+    console.log('[PDF-CALC] Found', count, 'categories with selections');
 
-    return { data, metrics };
+    // If we found selections, calculate from them
+    if (count > 0) {
+      const avgStyleEra = totalStyleEra / count;
+      const metrics = {
+        styleEra: avgStyleEra,
+        materialComplexity: totalMaterialComplexity / count,
+        moodPalette: totalMoodPalette / count,
+        styleLabel: getStyleLabel(avgStyleEra)
+      };
+      console.log('[PDF-CALC] Calculated metrics from selections:', metrics);
+      return { data, metrics };
+    }
+
+    // FALLBACK: If no selections found but we have profile scores, use those
+    const scores = profile?.profile?.scores || profile?.session?.profile?.scores;
+    if (scores && scores.tradition !== undefined) {
+      // Convert tradition score (1-10) to styleEra (1-5)
+      const styleEra = scores.tradition ? scores.tradition / 2 : 2.5;
+      const metrics = {
+        styleEra,
+        materialComplexity: scores.formality ? scores.formality / 2 : 2.5,
+        moodPalette: scores.warmth ? (10 - scores.warmth) / 2 + 1 : 2.5,
+        styleLabel: getStyleLabel(styleEra)
+      };
+      console.log('[PDF-CALC] Using profile scores as fallback:', metrics);
+      return { data, metrics };
+    }
+
+    // FALLBACK 2: Old LuXeBrief format (1-100 scale)
+    const oldScores = profile?.profile;
+    if (oldScores && (oldScores.traditionScore !== undefined || oldScores.warmthScore !== undefined)) {
+      const styleEra = oldScores.traditionScore ? oldScores.traditionScore / 20 : 2.5;
+      const metrics = {
+        styleEra,
+        materialComplexity: oldScores.formalityScore ? oldScores.formalityScore / 20 : 2.5,
+        moodPalette: oldScores.warmthScore ? (100 - oldScores.warmthScore) / 20 + 1 : 2.5,
+        styleLabel: getStyleLabel(styleEra)
+      };
+      console.log('[PDF-CALC] Using old LuXeBrief scores as fallback:', metrics);
+      return { data, metrics };
+    }
+
+    console.log('[PDF-CALC] No data found, using defaults');
+    return {
+      data,
+      metrics: { styleEra: 2.5, materialComplexity: 2.5, moodPalette: 2.5, styleLabel: 'Transitional' }
+    };
   }
 
   // Calculate alignment score between partners (0-100%)
