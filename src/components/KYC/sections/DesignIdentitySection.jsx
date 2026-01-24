@@ -490,6 +490,12 @@ const CompletedView = ({
   const metricsP = getMetrics(profileP);
   const metricsS = profileS ? getMetrics(profileS) : null;
 
+  // Debug: Log profile data for Partner Alignment
+  console.log('[COMPLETED-VIEW] profileP:', profileP ? { completedAt: profileP.completedAt, hasProfile: !!profileP.profile, hasSelections: !!profileP.selections } : null);
+  console.log('[COMPLETED-VIEW] profileS:', profileS ? { completedAt: profileS.completedAt, hasProfile: !!profileS.profile, hasSelections: !!profileS.selections } : null);
+  console.log('[COMPLETED-VIEW] metricsP:', metricsP);
+  console.log('[COMPLETED-VIEW] metricsS:', metricsS);
+
   // Calculate alignment percentage between Principal and Secondary
   const calculateAlignment = () => {
     if (!metricsP || !metricsS) return 0;
