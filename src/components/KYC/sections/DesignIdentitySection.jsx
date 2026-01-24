@@ -384,9 +384,28 @@ const CompletedView = ({
     }, 500);
   };
 
-  // Calculate metrics from profile (same algorithm as TasteReportGenerator)
+  // Calculate metrics from profile - USE PROFILE SCORES DIRECTLY
   const getMetrics = (profile) => {
     if (!profile) return { ct: 3, ml: 3, mp: 3 };
+
+    // FIRST: Use converted profile scores from LuXeBrief (already calculated)
+    // These are stored in profile.profile.scores with 1-10 scale
+    const scores = profile.profile?.scores;
+    if (scores && (scores.tradition !== undefined || scores.warmth !== undefined)) {
+      console.log('[METRICS] Using profile scores:', scores);
+      // Map 1-10 scale to 1-5 scale for display
+      // tradition -> style era (1=contemporary, 10=traditional)
+      // formality -> material complexity
+      // warmth inverted -> mood palette (high warmth = warm end)
+      return {
+        ct: scores.tradition ? scores.tradition / 2 : 2.5,
+        ml: scores.formality ? scores.formality / 2 : 2.5,
+        mp: scores.warmth ? (10 - scores.warmth) / 2 + 1 : 2.5
+      };
+    }
+
+    // FALLBACK: Calculate from image codes (for locally-completed sessions)
+    console.log('[METRICS] No profile scores, falling back to image code calculation');
 
     // Helper to extract AS/VD/MP codes from image filename
     const extractCodes = (imageUrl) => {
@@ -988,28 +1007,10 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     console.log('[TASTE-REFRESH] Refreshing profiles from kycData');
   }, []);
 
-  // If showing completed view
-  if (showCompletedView) {
-    return (
-      <div className="kyc-section design-identity-section">
-        <CompletedView
-          profileP={profileP}
-          profileS={profileS}
-          clientType={isDualRespondent ? 'couple' : 'individual'}
-          principalName={principalName || portfolioContext.principalFirstName || 'Principal'}
-          secondaryName={secondaryName || portfolioContext.secondaryFirstName || 'Secondary'}
-          location={location}
-          kycData={kycData}
-          kycComplete={kycComplete}
-          onRetake={handleRetake}
-          onRefresh={refreshProfiles}
-          onLaunchSecondary={() => handleSendTasteExploration('secondary')}
-        />
-      </div>
-    );
-  }
+  // REMOVED: Early return that replaced entire layout
+  // CompletedView now shows BELOW the questionnaire panel, not instead of it
 
-  // Pre-completion view with email-based workflow
+  // Main view - always shows questionnaire panel, plus CompletedView when principal is done
   return (
     <div className="kyc-section design-identity-section">
       {/* Section Header */}
@@ -1198,6 +1199,23 @@ const DesignIdentitySection = ({ respondent, tier }) => {
             <strong>⚠️ DEV MODE:</strong> Completed taste data is hidden. Set <code>DEV_HIDE_COMPLETED_DATA = false</code> to restore.
           </p>
         </div>
+      )}
+
+      {/* Taste Profile Complete - Shows BELOW questionnaire panel when Principal is complete */}
+      {principalComplete && (
+        <CompletedView
+          profileP={profileP}
+          profileS={profileS}
+          clientType={isDualRespondent ? 'couple' : 'individual'}
+          principalName={principalName || portfolioContext.principalFirstName || 'Principal'}
+          secondaryName={secondaryName || portfolioContext.secondaryFirstName || 'Secondary'}
+          location={location}
+          kycData={kycData}
+          kycComplete={kycComplete}
+          onRetake={handleRetake}
+          onRefresh={refreshProfiles}
+          onLaunchSecondary={() => handleSendTasteExploration('secondary')}
+        />
       )}
     </div>
   );
