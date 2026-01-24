@@ -1001,11 +1001,15 @@ const DesignIdentitySection = ({ respondent, tier }) => {
     }
   };
 
-  // Refresh profiles callback for CompletedView
+  // Refresh profiles callback for CompletedView - actually re-fetch from LuXeBrief
   const refreshProfiles = useCallback(() => {
-    // Force re-render by reading from kycData
-    console.log('[TASTE-REFRESH] Refreshing profiles from kycData');
-  }, []);
+    console.log('[TASTE-REFRESH] Re-fetching profiles from LuXeBrief');
+    // Re-fetch from LuXeBrief to get fresh data with proper format conversion
+    handleRefreshStatus('principal');
+    if (isDualRespondent) {
+      handleRefreshStatus('secondary');
+    }
+  }, [isDualRespondent]);
 
   // REMOVED: Early return that replaced entire layout
   // CompletedView now shows BELOW the questionnaire panel, not instead of it
