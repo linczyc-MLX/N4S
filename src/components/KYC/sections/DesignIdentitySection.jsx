@@ -888,6 +888,22 @@ const DesignIdentitySection = ({ respondent, tier }) => {
         }
         console.log(`[TASTE-REFRESH] Converted selections:`, selectionsDict);
 
+        // Convert LuXeBrief profile format to N4S TasteReportGenerator format
+        // LuXeBrief stores: { warmthScore: 65, formalityScore: 55, ... } (1-100 scale)
+        // N4S expects: { profile: { scores: { warmth: 6.5, formality: 5.5, ... } } } (1-10 scale)
+        const luxeProfile = sessionData.profile || {};
+        const convertedProfile = {
+          scores: {
+            warmth: (luxeProfile.warmthScore || 50) / 10,
+            formality: (luxeProfile.formalityScore || 50) / 10,
+            drama: (luxeProfile.dramaScore || 50) / 10,
+            tradition: (luxeProfile.traditionScore || 50) / 10,
+            openness: (luxeProfile.opennessScore || 50) / 10,
+            art_focus: (luxeProfile.artFocusScore || 50) / 10
+          }
+        };
+        console.log(`[TASTE-REFRESH] Converted profile scores:`, convertedProfile);
+
         // Update KYC data with completed status and profile
         const tasteData = {
           tasteExplorationStatus: 'completed',
@@ -895,7 +911,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
           // Store the profile results for use in reports
           [`${target}TasteResults`]: {
             completedAt: sessionData.completedAt || new Date().toISOString(),
-            profile: sessionData.profile,
+            profile: convertedProfile,  // Converted to N4S format with nested scores
             selections: selectionsDict  // Store as dictionary for TasteReportGenerator
           }
         };
