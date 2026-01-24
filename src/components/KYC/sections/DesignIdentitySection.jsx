@@ -998,13 +998,16 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   };
 
   // Get completed profiles for CompletedView
+  // Principal results are stored in principalDesignData.principalTasteResults
+  // Secondary results are stored in secondaryDesignData (from kycData.secondary.designIdentity)
   const profileP = principalDesignData.principalTasteResults;
-  const profileS = principalDesignData.secondaryTasteResults;
+  // Secondary taste results come from secondary's own designIdentity data
+  const profileS = secondaryDesignData?.principalTasteResults || secondaryDesignData?.secondaryTasteResults || null;
 
-  // Debug: Log what's in principalDesignData
-  console.log('[DESIGN-IDENTITY] principalDesignData keys:', Object.keys(principalDesignData || {}));
-  console.log('[DESIGN-IDENTITY] principalDesignData.secondaryTasteResults:', principalDesignData?.secondaryTasteResults);
-  console.log('[DESIGN-IDENTITY] secondaryDesignData:', secondaryDesignData);
+  // Debug: Log profile data
+  console.log('[DESIGN-IDENTITY] profileP:', profileP ? { completedAt: profileP.completedAt } : null);
+  console.log('[DESIGN-IDENTITY] profileS:', profileS ? { completedAt: profileS.completedAt } : null);
+  console.log('[DESIGN-IDENTITY] secondaryDesignData keys:', Object.keys(secondaryDesignData || {}));
 
   // Determine if we should show completed view
   const principalComplete = profileP?.completedAt && !DEV_HIDE_COMPLETED_DATA;
