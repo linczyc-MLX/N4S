@@ -872,6 +872,22 @@ const DesignIdentitySection = ({ respondent, tier }) => {
 
       // Check if session is completed
       if (sessionData.status === 'completed' || sessionData.profile) {
+        // Convert selections array to dictionary format expected by TasteReportGenerator
+        // LuXeBrief returns: [{quadId, favorite1, favorite2, leastFavorite}, ...]
+        // N4S expects: {quadId: {favorites: [idx, idx], least: idx}, ...}
+        const selectionsDict = {};
+        if (Array.isArray(sessionData.selections)) {
+          sessionData.selections.forEach(sel => {
+            if (sel.quadId && !sel.isSkipped) {
+              selectionsDict[sel.quadId] = {
+                favorites: [sel.favorite1, sel.favorite2].filter(f => f !== null && f !== undefined),
+                least: sel.leastFavorite
+              };
+            }
+          });
+        }
+        console.log(`[TASTE-REFRESH] Converted selections:`, selectionsDict);
+
         // Update KYC data with completed status and profile
         const tasteData = {
           tasteExplorationStatus: 'completed',
@@ -880,7 +896,7 @@ const DesignIdentitySection = ({ respondent, tier }) => {
           [`${target}TasteResults`]: {
             completedAt: sessionData.completedAt || new Date().toISOString(),
             profile: sessionData.profile,
-            selections: sessionData.selections
+            selections: selectionsDict  // Store as dictionary for TasteReportGenerator
           }
         };
 
