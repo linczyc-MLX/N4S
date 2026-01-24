@@ -773,20 +773,47 @@ const DesignIdentitySection = ({ respondent, tier }) => {
         ? `${nameParts[0].charAt(0).toLowerCase()}${nameParts[nameParts.length - 1].toLowerCase()}`
         : targetName.toLowerCase().replace(/\s+/g, '');
 
-      // TODO: Replace with actual Taste Exploration API endpoint when external site is built (ITR-002)
-      // For now, we'll simulate the session creation and store the status
-      console.log(`[TASTE-SEND] Would send to: ${targetName} (${targetEmail})`);
-      console.log(`[TASTE-SEND] Project: ${projectName}, Subdomain: ${subdomain}`);
+      // Call LuXeBrief API to create taste session and send email
+      const LUXEBRIEF_API = 'https://luxebrief.not-4.sale';
+      const ADMIN_TOKEN = 'luxebrief-admin-2024'; // Matches LuXeBrief server/routes.ts
 
-      // Simulate API response (replace with actual API call when ITR-002 is complete)
-      const simulatedSessionId = `taste_${Date.now()}_${target}`;
+      console.log(`[TASTE-SEND] Sending to: ${targetName} (${targetEmail})`);
+      console.log(`[TASTE-SEND] Project: ${projectName}, Subdomain: ${subdomain}, SessionType: taste`);
+
+      const response = await fetch(`${LUXEBRIEF_API}/api/sessions/from-n4s`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ADMIN_TOKEN}`
+        },
+        body: JSON.stringify({
+          n4sProjectId: clientData?.id || `n4s_${Date.now()}`,
+          principalType: target,
+          clientName: targetName,
+          clientEmail: targetEmail,
+          projectName: projectName,
+          subdomain: subdomain,
+          sessionType: 'taste' // Key: Request taste exploration type
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to create session`);
+      }
+
+      const result = await response.json();
+      console.log(`[TASTE-SEND] Session created:`, result);
 
       // Data to save for this target
       const tasteData = {
         tasteExplorationStatus: 'sent',
-        tasteExplorationSessionId: simulatedSessionId,
+        tasteExplorationSessionId: result.sessionId,
+        tasteExplorationAccessToken: result.accessToken,
         tasteExplorationSentAt: new Date().toISOString(),
-        tasteExplorationSubdomain: subdomain
+        tasteExplorationSubdomain: subdomain,
+        tasteExplorationInvitationUrl: result.invitationUrl,
+        tasteExplorationEmailSent: result.emailSent
       };
 
       // Update status in KYC data for the target respondent
@@ -803,6 +830,11 @@ const DesignIdentitySection = ({ respondent, tier }) => {
         });
       }
 
+      // Show success/warning based on email status
+      if (!result.emailSent) {
+        console.warn(`[TASTE-SEND] Email was not sent. Invitation URL: ${result.invitationUrl}`);
+      }
+
     } catch (error) {
       console.error('Taste Exploration send error:', error);
       setTasteError(prev => ({ ...prev, [target]: error.message || 'Failed to send Taste Exploration invitation' }));
@@ -814,20 +846,64 @@ const DesignIdentitySection = ({ respondent, tier }) => {
   // Handle checking Taste Exploration status
   const handleRefreshStatus = async (target) => {
     const targetData = target === 'principal' ? principalDesignData : secondaryDesignData;
-    const targetEmail = target === 'principal' ? principalEmail : secondaryEmail;
+    const accessToken = targetData.tasteExplorationAccessToken;
     const sessionId = targetData.tasteExplorationSessionId;
+
+    if (!accessToken && !sessionId) {
+      console.log(`[TASTE-REFRESH] No session token found for ${target}`);
+      return;
+    }
 
     setTasteLoading(prev => ({ ...prev, [target]: true }));
     try {
-      // TODO: Replace with actual API call when external site is built (ITR-002)
-      console.log(`[TASTE-REFRESH] Checking status for session: ${sessionId}`);
+      const LUXEBRIEF_API = 'https://luxebrief.not-4.sale';
 
-      // Simulate checking status (replace with actual API call)
-      // For now, just show a message
-      console.log(`[TASTE-REFRESH] Status check complete`);
+      console.log(`[TASTE-REFRESH] Checking status for session: ${sessionId}, token: ${accessToken}`);
+
+      // Fetch session status from LuXeBrief
+      const response = await fetch(`${LUXEBRIEF_API}/api/taste/session/${accessToken}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch session status: ${response.status}`);
+      }
+
+      const sessionData = await response.json();
+      console.log(`[TASTE-REFRESH] Session data:`, sessionData);
+
+      // Check if session is completed
+      if (sessionData.status === 'completed' || sessionData.profile) {
+        // Update KYC data with completed status and profile
+        const tasteData = {
+          tasteExplorationStatus: 'completed',
+          tasteExplorationCompletedAt: sessionData.completedAt || new Date().toISOString(),
+          // Store the profile results for use in reports
+          [`${target}TasteResults`]: {
+            completedAt: sessionData.completedAt || new Date().toISOString(),
+            profile: sessionData.profile,
+            selections: sessionData.selections
+          }
+        };
+
+        updateKYCData(target, 'designIdentity', tasteData);
+
+        if (saveNow) {
+          saveNow({
+            kycData: {
+              [target]: {
+                designIdentity: tasteData
+              }
+            }
+          });
+        }
+
+        console.log(`[TASTE-REFRESH] Session completed! Profile saved.`);
+      } else {
+        console.log(`[TASTE-REFRESH] Session still in progress. Status: ${sessionData.status}`);
+      }
 
     } catch (error) {
       console.error('Status refresh error:', error);
+      setTasteError(prev => ({ ...prev, [target]: error.message || 'Failed to check status' }));
     } finally {
       setTasteLoading(prev => ({ ...prev, [target]: false }));
     }
