@@ -40,6 +40,7 @@ jobs:
         run: |
           npm install
           CI=false npm run build
+          cp -r api build/api
 
 # Please do not touch the following action
       - name: Store deployment content
