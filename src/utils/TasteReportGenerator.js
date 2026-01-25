@@ -394,30 +394,37 @@ export class TasteReportGenerator {
   }
 
   // Calculate alignment score between partners (0-100%)
+  // Uses the same formula as the dashboard (DesignIdentitySection.jsx)
+  // Based on 3 DNA axes: styleEra (ct), materialComplexity (ml), moodPalette (mp)
   calculateAlignmentScore() {
     if (!this.hasPartnerData) return null;
+    if (!this.overallMetrics || !this.overallMetricsS) return null;
 
-    let totalDifference = 0;
-    let categoryCount = 0;
+    // Get metrics from principal and secondary (1-5 scale)
+    const metricsP = this.overallMetrics;
+    const metricsS = this.overallMetricsS;
 
-    CATEGORY_ORDER.forEach(cat => {
-      const pData = this.categoryData[cat.id];
-      const sData = this.categoryDataS[cat.id];
+    // Calculate differences on each DNA axis (same as dashboard)
+    const ctDiff = Math.abs((metricsP.styleEra || 2.5) - (metricsS.styleEra || 2.5));
+    const mlDiff = Math.abs((metricsP.materialComplexity || 2.5) - (metricsS.materialComplexity || 2.5));
+    const mpDiff = Math.abs((metricsP.moodPalette || 2.5) - (metricsS.moodPalette || 2.5));
 
-      if (pData?.hasSelection && sData?.hasSelection) {
-        const diff = Math.abs(pData.asCode - sData.asCode);
-        totalDifference += diff;
-        categoryCount++;
-      }
+    // Average difference across 3 axes
+    const avgDiff = (ctDiff + mlDiff + mpDiff) / 3;
+
+    // Convert to percentage (same formula as dashboard)
+    // Max difference on 1-5 scale is 4, so divide by 5 (scale range) to normalize
+    const alignment = Math.max(0, Math.round(100 - (avgDiff / 5 * 100)));
+
+    console.log('[PDF-ALIGNMENT] Calculated alignment:', {
+      metricsP: { ct: metricsP.styleEra, ml: metricsP.materialComplexity, mp: metricsP.moodPalette },
+      metricsS: { ct: metricsS.styleEra, ml: metricsS.materialComplexity, mp: metricsS.moodPalette },
+      diffs: { ct: ctDiff, ml: mlDiff, mp: mpDiff },
+      avgDiff,
+      alignment
     });
 
-    if (categoryCount === 0) return null;
-
-    // Average difference (0-8 range), convert to percentage
-    // 0 difference = 100%, 8 difference = 0%
-    const avgDiff = totalDifference / categoryCount;
-    const alignment = Math.max(0, 100 - (avgDiff * 12.5));
-    return Math.round(alignment);
+    return alignment;
   }
 
   // Find significant divergences between partners
