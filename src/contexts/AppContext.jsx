@@ -834,12 +834,18 @@ export const AppProvider = ({ children }) => {
     const sectionData = kycData[respondent]?.[sectionId];
     if (!sectionData) return 'empty';
 
-    // Special handling for designIdentity - requires taste profile
-    // NOTE: BOTH taste results are stored in kycData.principal.designIdentity
+    // Special handling for designIdentity - requires taste profile completion
     if (sectionId === 'designIdentity') {
-      const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
-      const tasteSourceData = kycData.principal?.designIdentity;
-      return tasteSourceData?.[tasteKey]?.completedAt ? 'complete' : 'empty';
+      if (respondent === 'principal') {
+        // Principal's results are in kycData.principal.designIdentity.principalTasteResults
+        const tasteResults = kycData.principal?.designIdentity?.principalTasteResults;
+        return tasteResults?.completedAt ? 'complete' : 'empty';
+      } else {
+        // Secondary's results are in kycData.secondary.designIdentity
+        const secondaryDesignData = kycData.secondary?.designIdentity;
+        const tasteResults = secondaryDesignData?.principalTasteResults || secondaryDesignData?.secondaryTasteResults;
+        return tasteResults?.completedAt ? 'complete' : 'empty';
+      }
     }
 
     const requiredFields = REQUIRED_FIELDS[sectionId] || [];

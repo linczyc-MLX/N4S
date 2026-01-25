@@ -509,13 +509,8 @@ export default function VMXApp(props: VMXAppProps = {}) {
     } catch {
       // ignore
     }
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", uiMode);
-      window.history.replaceState({}, "", url.toString());
-    } catch {
-      // ignore
-    }
+    // NOTE: Removed URL parameter update (?view=lite/pro) to keep URL clean
+    // Lite/Pro mode is persisted via localStorage instead
   }, [uiMode]);
 
 
