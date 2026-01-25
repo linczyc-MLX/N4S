@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign
+  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign, Monitor
 } from 'lucide-react';
 
 // Import modules
@@ -12,6 +12,7 @@ import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 import KYMModule from './components/KYM/KYMModule';
 import VMXModule from './components/VMX/VMXModule';
+import LCDModule from './components/LCD/LCDModule';
 import SettingsModule from './components/Settings/SettingsModule';
 
 // Import context provider
@@ -26,6 +27,7 @@ const moduleColors = {
   mvp: { bg: '#AFBDB0', text: '#1a1a1a', accent: '#AFBDB0' },                   // Sage Green (Soft Pillow 3)
   kym: { bg: '#E4C0BE', text: '#1a1a1a', accent: '#E4C0BE' },                   // Dusty Rose (Soft Pillow 4)
   vmx: { bg: '#FBD0E0', text: '#1a1a1a', accent: '#FBD0E0' },                   // Light Pink (Soft Pillow 5)
+  lcd: { bg: '#1a1a1a', text: '#ffffff', accent: '#c9a227' },                   // Black/Gold (PANDA branding)
   settings: { bg: '#374151', text: '#ffffff', accent: '#9ca3af' },              // Gray (utility) - KEEP
 };
 
@@ -68,6 +70,7 @@ const AppContent = () => {
     { id: 'kym', label: 'KYM', icon: Map, description: 'Know Your Market' },
     { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
     { id: 'vmx', label: 'VMX', icon: DollarSign, description: 'Vision Matrix' },
+    { id: 'lcd', label: 'LCD', icon: Monitor, description: 'LuXeBrief Portal' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
@@ -88,6 +91,8 @@ const AppContent = () => {
         return <KYMModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'vmx':
         return <VMXModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
+      case 'lcd':
+        return <LCDModule />;
       case 'settings':
         return <SettingsModule />;
       default:

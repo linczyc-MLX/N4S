@@ -129,6 +129,95 @@ const initialKYSData = {
   comparisonEnabled: false,  // Multi-site comparison mode
 };
 
+// Initial LCD data (LuXeBrief Client Dashboard)
+const initialLCDData = {
+  // Portal activation
+  portalActive: false,
+  portalSlug: '',                    // e.g., 'thornwood' → thornwood.luxebrief.not-4.sale
+  activatedAt: null,
+
+  // Access credentials (stored hashed on server)
+  clientPasswordHash: '',
+  advisorPasswordHash: '',
+  // Plain passwords shown once on generation, then cleared
+  clientPasswordPlain: '',
+  advisorPasswordPlain: '',
+
+  // Client contact info
+  clientEmail: '',
+  secondaryEmail: '',
+
+  // Content visibility toggles
+  visibility: {
+    kyc: {
+      enabled: true,
+      profileReport: true,
+      luxebriefPrincipal: true,
+      luxebriefSecondary: true,
+      partnerAlignment: true,
+    },
+    fyi: {
+      enabled: true,
+      spaceProgram: true,
+      zoneBreakdown: true,
+    },
+    mvp: {
+      enabled: true,
+      validationResults: true,
+      designBrief: true,
+    },
+    kym: {
+      enabled: true,
+      propertyShortlist: true,
+      marketSnapshot: true,
+    },
+    kys: {
+      enabled: true,
+      recommendedSites: true,
+      siteComparison: true,
+    },
+    vmx: {
+      enabled: true,
+      budgetSummary: true,
+    },
+  },
+
+  // Milestone sign-offs (client approval at each module)
+  milestones: {
+    kyc: { signed: false, signedAt: null, signedBy: null },
+    fyi: { signed: false, signedAt: null, signedBy: null },
+    mvp: { signed: false, signedAt: null, signedBy: null },
+    kym: { signed: false, signedAt: null, signedBy: null },
+    kys: { signed: false, signedAt: null, signedBy: null },
+    vmx: { signed: false, signedAt: null, signedBy: null },
+  },
+
+  // Phase gating
+  phases: {
+    p1Complete: false,    // All P1 milestones signed
+    p2Unlocked: false,
+    p3Unlocked: false,
+  },
+
+  // Notification settings
+  notifications: {
+    onNewDocument: true,
+    onMilestoneReady: true,
+    onQuestionnaireReminder: true,
+    weeklyProgress: false,
+  },
+
+  // Parker (PANDA) settings
+  parker: {
+    greetingStyle: 'professional',  // 'professional' | 'friendly' | 'formal'
+    customWelcome: '',
+  },
+
+  // Client activity log (for advisor visibility)
+  clientActivity: [],
+  // Format: { timestamp: ISO8601, action: 'login'|'view_document'|'sign_off'|'questionnaire_complete', details: string }
+};
+
 // Initial VMX data (Vision Matrix cost estimation)
 const initialVMXData = {
   // Scenario configuration
@@ -200,6 +289,7 @@ const getEmptyProjectData = () => ({
   mvpData: JSON.parse(JSON.stringify(initialMVPData)),
   kysData: JSON.parse(JSON.stringify(initialKYSData)),
   vmxData: JSON.parse(JSON.stringify(initialVMXData)),
+  lcdData: JSON.parse(JSON.stringify(initialLCDData)),
   activeRespondent: 'principal',
 });
 
@@ -266,6 +356,7 @@ export const AppProvider = ({ children }) => {
   const mvpData = projectData.mvpData || initialMVPData;
   const kysData = projectData.kysData || initialKYSData;
   const vmxData = projectData.vmxData || initialVMXData;
+  const lcdData = projectData.lcdData || initialLCDData;
 
   // ---------------------------------------------------------------------------
   // LOAD INITIAL DATA FROM SERVER
@@ -326,6 +417,8 @@ export const AppProvider = ({ children }) => {
               const loadedKysData = data.fyiData?.kysData || initialKYSData;
               // Extract vmxData from fyiData where it's stored for backend compatibility
               const loadedVmxData = data.fyiData?.vmxData || initialVMXData;
+              // Load lcdData directly (first-class data type)
+              const loadedLcdData = data.lcdData || initialLCDData;
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
@@ -341,6 +434,8 @@ export const AppProvider = ({ children }) => {
                 kysData: loadedKysData,
                 // Ensure vmxData is available at top level for component access
                 vmxData: loadedVmxData,
+                // Ensure lcdData is available at top level for component access
+                lcdData: loadedLcdData,
               });
               setActiveRespondent(data.activeRespondent || 'principal');
             }
@@ -457,10 +552,15 @@ export const AppProvider = ({ children }) => {
         console.log('[APP] MVP data:', data.mvpData);
         console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
         console.log('[APP] KYS data from fyiData:', data.fyiData?.kysData);
+        console.log('[APP] LCD data:', data.lcdData);
         setActiveProjectIdState(projectId);
         // Merge with defaults to handle old projects missing new fields
         // Extract kysData from fyiData where it's stored for backend compatibility
         const loadedKysData = data.fyiData?.kysData || initialKYSData;
+        // Extract vmxData from fyiData where it's stored for backend compatibility
+        const loadedVmxData = data.fyiData?.vmxData || initialVMXData;
+        // Load lcdData directly (first-class data type)
+        const loadedLcdData = data.lcdData || initialLCDData;
         setProjectData({
           ...getEmptyProjectData(),
           ...data,
@@ -474,6 +574,10 @@ export const AppProvider = ({ children }) => {
           },
           // Ensure kysData is available at top level for component access
           kysData: loadedKysData,
+          // Ensure vmxData is available at top level for component access
+          vmxData: loadedVmxData,
+          // Ensure lcdData is available at top level for component access
+          lcdData: loadedLcdData,
         });
         setActiveRespondent(data.activeRespondent || 'principal');
         await api.setState('activeProjectId', projectId);
@@ -827,6 +931,85 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update LCD data (LuXeBrief Client Dashboard)
+  // NOTE: Stored in lcdData for PHP backend persistence
+  const updateLCDData = useCallback((updates) => {
+    console.log('[APP] updateLCDData:', updates);
+    setProjectData(prev => {
+      const currentLcdData = prev.lcdData || initialLCDData;
+
+      return {
+        ...prev,
+        lcdData: {
+          ...currentLcdData,
+          ...updates,
+          // Deep merge visibility if provided
+          ...(updates.visibility && {
+            visibility: {
+              ...currentLcdData.visibility,
+              ...updates.visibility,
+              // Deep merge each module's visibility
+              ...(updates.visibility.kyc && {
+                kyc: { ...currentLcdData.visibility?.kyc, ...updates.visibility.kyc },
+              }),
+              ...(updates.visibility.fyi && {
+                fyi: { ...currentLcdData.visibility?.fyi, ...updates.visibility.fyi },
+              }),
+              ...(updates.visibility.mvp && {
+                mvp: { ...currentLcdData.visibility?.mvp, ...updates.visibility.mvp },
+              }),
+              ...(updates.visibility.kym && {
+                kym: { ...currentLcdData.visibility?.kym, ...updates.visibility.kym },
+              }),
+              ...(updates.visibility.kys && {
+                kys: { ...currentLcdData.visibility?.kys, ...updates.visibility.kys },
+              }),
+              ...(updates.visibility.vmx && {
+                vmx: { ...currentLcdData.visibility?.vmx, ...updates.visibility.vmx },
+              }),
+            },
+          }),
+          // Deep merge milestones if provided
+          ...(updates.milestones && {
+            milestones: {
+              ...currentLcdData.milestones,
+              ...updates.milestones,
+            },
+          }),
+          // Deep merge phases if provided
+          ...(updates.phases && {
+            phases: {
+              ...currentLcdData.phases,
+              ...updates.phases,
+            },
+          }),
+          // Deep merge notifications if provided
+          ...(updates.notifications && {
+            notifications: {
+              ...currentLcdData.notifications,
+              ...updates.notifications,
+            },
+          }),
+          // Deep merge parker if provided
+          ...(updates.parker && {
+            parker: {
+              ...currentLcdData.parker,
+              ...updates.parker,
+            },
+          }),
+          // Append to clientActivity if provided
+          ...(updates.clientActivity && {
+            clientActivity: [
+              ...(currentLcdData.clientActivity || []),
+              ...updates.clientActivity,
+            ],
+          }),
+        },
+      };
+    });
+    markChanged();
+  }, [markChanged]);
+
   // ---------------------------------------------------------------------------
   // COMPLETION CALCULATIONS
   // ---------------------------------------------------------------------------
@@ -984,6 +1167,7 @@ export const AppProvider = ({ children }) => {
     mvpData,
     kysData,
     vmxData,
+    lcdData,
 
     // Data updates
     updateClientData,
@@ -998,6 +1182,7 @@ export const AppProvider = ({ children }) => {
     updateMVPDecisionAnswer,
     updateKYSData,
     updateVMXData,
+    updateLCDData,
 
     // UI state
     activeRespondent,
