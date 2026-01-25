@@ -37,9 +37,12 @@ switch ($action) {
 
             if (!$kycData) continue;
 
+            // N4S stores data at kycData.principal.portfolioContext
+            $portfolioContext = $kycData['principal']['portfolioContext'] ?? [];
+
             // Check if email matches principal or secondary
-            $principalEmail = strtolower($kycData['profiles']['principal']['contactInfo']['email'] ?? '');
-            $secondaryEmail = strtolower($kycData['profiles']['secondary']['contactInfo']['email'] ?? '');
+            $principalEmail = strtolower($portfolioContext['principalEmail'] ?? '');
+            $secondaryEmail = strtolower($portfolioContext['secondaryEmail'] ?? '');
 
             $role = null;
             if ($email === $principalEmail) {
@@ -51,14 +54,14 @@ switch ($action) {
             if ($role) {
                 // Get principal name for display
                 $principalName = trim(
-                    ($kycData['profiles']['principal']['contactInfo']['firstName'] ?? '') . ' ' .
-                    ($kycData['profiles']['principal']['contactInfo']['lastName'] ?? '')
+                    ($portfolioContext['principalFirstName'] ?? '') . ' ' .
+                    ($portfolioContext['principalLastName'] ?? '')
                 );
 
                 // Get secondary name
                 $secondaryName = trim(
-                    ($kycData['profiles']['secondary']['contactInfo']['firstName'] ?? '') . ' ' .
-                    ($kycData['profiles']['secondary']['contactInfo']['lastName'] ?? '')
+                    ($portfolioContext['secondaryFirstName'] ?? '') . ' ' .
+                    ($portfolioContext['secondaryLastName'] ?? '')
                 );
 
                 // Calculate KYC completion
@@ -107,9 +110,12 @@ switch ($action) {
 
         $kycData = $project['kyc_json'] ? json_decode($project['kyc_json'], true) : null;
 
+        // N4S stores data at kycData.principal.portfolioContext
+        $portfolioContext = $kycData['principal']['portfolioContext'] ?? [];
+
         // Verify email has access
-        $principalEmail = strtolower($kycData['profiles']['principal']['contactInfo']['email'] ?? '');
-        $secondaryEmail = strtolower($kycData['profiles']['secondary']['contactInfo']['email'] ?? '');
+        $principalEmail = strtolower($portfolioContext['principalEmail'] ?? '');
+        $secondaryEmail = strtolower($portfolioContext['secondaryEmail'] ?? '');
 
         if ($email !== $principalEmail && $email !== $secondaryEmail) {
             errorResponse('Access denied', 403);
@@ -118,9 +124,10 @@ switch ($action) {
         $role = ($email === $principalEmail) ? 'principal' : 'secondary';
 
         // Get LuXeBrief status from kycData
+        $designIdentity = $kycData['principal']['designIdentity'] ?? [];
         $luxebriefStatus = [
-            'principal' => $kycData['profiles']['principal']['luxebriefStatus'] ?? 'not_started',
-            'secondary' => $kycData['profiles']['secondary']['luxebriefStatus'] ?? 'not_started'
+            'principal' => $designIdentity['luxebriefStatus'] ?? 'not_started',
+            'secondary' => $kycData['secondary']['designIdentity']['luxebriefStatus'] ?? 'not_started'
         ];
 
         jsonResponse([
@@ -144,23 +151,25 @@ switch ($action) {
 function calculateKYCCompletion($kycData) {
     if (!$kycData) return 0;
 
+    // Check principal data sections
+    $principal = $kycData['principal'] ?? [];
+
     $sections = [
-        'designIdentity' => 10,
+        'portfolioContext' => 15,
         'familyHousehold' => 15,
-        'financialFramework' => 15,
-        'timeline' => 10,
-        'designPreferences' => 15,
-        'lifestyleLiving' => 20,
-        'partnerAlignment' => 10,
-        'additionalContext' => 5
+        'projectParameters' => 15,
+        'budgetFramework' => 15,
+        'designIdentity' => 15,
+        'lifestyleLiving' => 15,
+        'partnerAlignment' => 10
     ];
 
     $totalWeight = array_sum($sections);
     $completedWeight = 0;
 
-    // Simple check: if section has data, count as complete
+    // Check if section has data
     foreach ($sections as $section => $weight) {
-        if (isset($kycData[$section]) && !empty($kycData[$section])) {
+        if (isset($principal[$section]) && !empty($principal[$section])) {
             $completedWeight += $weight;
         }
     }
