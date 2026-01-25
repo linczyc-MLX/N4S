@@ -393,21 +393,87 @@ export class TasteReportGenerator {
     };
   }
 
+  // Get metrics from profile scores (mirrors dashboard's getMetrics function exactly)
+  // This ensures alignment calculation matches the dashboard display
+  getMetricsFromProfileScores(profile) {
+    if (!profile) return null;
+
+    // FIRST: Use converted profile scores from LuXeBrief (new format)
+    // These are stored in profile.profile.scores with 1-10 scale
+    const scores = profile.profile?.scores;
+    if (scores && (scores.tradition !== undefined || scores.warmth !== undefined)) {
+      console.log('[PDF-METRICS] Using converted profile scores (1-10 scale):', scores);
+      // Map 1-10 scale to 1-5 scale for display (same as dashboard)
+      return {
+        ct: scores.tradition ? scores.tradition / 2 : 2.5,
+        ml: scores.formality ? scores.formality / 2 : 2.5,
+        mp: scores.warmth ? (10 - scores.warmth) / 2 + 1 : 2.5  // INVERTED like dashboard
+      };
+    }
+
+    // SECOND: Try old LuXeBrief format (stored directly on profile.profile)
+    // Old format: profile.profile = { warmthScore: 65, formalityScore: 55, ... } (1-100 scale)
+    const oldProfile = profile.profile;
+    if (oldProfile && (oldProfile.warmthScore !== undefined || oldProfile.traditionScore !== undefined)) {
+      console.log('[PDF-METRICS] Using old LuXeBrief profile format (1-100 scale):', oldProfile);
+      // Convert 1-100 scale to 1-5 scale for display (same as dashboard)
+      return {
+        ct: oldProfile.traditionScore ? oldProfile.traditionScore / 20 : 2.5,
+        ml: oldProfile.formalityScore ? oldProfile.formalityScore / 20 : 2.5,
+        mp: oldProfile.warmthScore ? (100 - oldProfile.warmthScore) / 20 + 1 : 2.5  // INVERTED like dashboard
+      };
+    }
+
+    // THIRD: Try even older format where profile IS the scores object directly
+    if (profile.warmthScore !== undefined || profile.traditionScore !== undefined) {
+      console.log('[PDF-METRICS] Using direct profile scores format (1-100 scale):', profile);
+      return {
+        ct: profile.traditionScore ? profile.traditionScore / 20 : 2.5,
+        ml: profile.formalityScore ? profile.formalityScore / 20 : 2.5,
+        mp: profile.warmthScore ? (100 - profile.warmthScore) / 20 + 1 : 2.5  // INVERTED like dashboard
+      };
+    }
+
+    // FALLBACK: Use calculated metrics from image codes
+    console.log('[PDF-METRICS] No profile scores found, will use image-calculated metrics');
+    return null;
+  }
+
   // Calculate alignment score between partners (0-100%)
-  // Uses the same formula as the dashboard (DesignIdentitySection.jsx)
+  // Uses the same formula AND data source as the dashboard (DesignIdentitySection.jsx)
   // Based on 3 DNA axes: styleEra (ct), materialComplexity (ml), moodPalette (mp)
   calculateAlignmentScore() {
     if (!this.hasPartnerData) return null;
-    if (!this.overallMetrics || !this.overallMetricsS) return null;
 
-    // Get metrics from principal and secondary (1-5 scale)
-    const metricsP = this.overallMetrics;
-    const metricsS = this.overallMetricsS;
+    // Try to get metrics from profile scores first (same as dashboard)
+    // This ensures we use the same data source as the dashboard display
+    let metricsP = this.getMetricsFromProfileScores(this.profileP);
+    let metricsS = this.getMetricsFromProfileScores(this.profileS);
+
+    // Fallback to calculated metrics from image codes if no profile scores
+    if (!metricsP && this.overallMetrics) {
+      console.log('[PDF-ALIGNMENT] Using calculated metrics for Principal');
+      metricsP = {
+        ct: this.overallMetrics.styleEra || 2.5,
+        ml: this.overallMetrics.materialComplexity || 2.5,
+        mp: this.overallMetrics.moodPalette || 2.5
+      };
+    }
+    if (!metricsS && this.overallMetricsS) {
+      console.log('[PDF-ALIGNMENT] Using calculated metrics for Secondary');
+      metricsS = {
+        ct: this.overallMetricsS.styleEra || 2.5,
+        ml: this.overallMetricsS.materialComplexity || 2.5,
+        mp: this.overallMetricsS.moodPalette || 2.5
+      };
+    }
+
+    if (!metricsP || !metricsS) return null;
 
     // Calculate differences on each DNA axis (same as dashboard)
-    const ctDiff = Math.abs((metricsP.styleEra || 2.5) - (metricsS.styleEra || 2.5));
-    const mlDiff = Math.abs((metricsP.materialComplexity || 2.5) - (metricsS.materialComplexity || 2.5));
-    const mpDiff = Math.abs((metricsP.moodPalette || 2.5) - (metricsS.moodPalette || 2.5));
+    const ctDiff = Math.abs((metricsP.ct || 2.5) - (metricsS.ct || 2.5));
+    const mlDiff = Math.abs((metricsP.ml || 2.5) - (metricsS.ml || 2.5));
+    const mpDiff = Math.abs((metricsP.mp || 2.5) - (metricsS.mp || 2.5));
 
     // Average difference across 3 axes
     const avgDiff = (ctDiff + mlDiff + mpDiff) / 3;
@@ -417,8 +483,8 @@ export class TasteReportGenerator {
     const alignment = Math.max(0, Math.round(100 - (avgDiff / 5 * 100)));
 
     console.log('[PDF-ALIGNMENT] Calculated alignment:', {
-      metricsP: { ct: metricsP.styleEra, ml: metricsP.materialComplexity, mp: metricsP.moodPalette },
-      metricsS: { ct: metricsS.styleEra, ml: metricsS.materialComplexity, mp: metricsS.moodPalette },
+      metricsP,
+      metricsS,
       diffs: { ct: ctDiff, ml: mlDiff, mp: mpDiff },
       avgDiff,
       alignment
