@@ -5,7 +5,7 @@
 $DB_HOST = getenv('DB_HOST') ?: 'db5019349376.hosting-data.io';
 $DB_NAME = getenv('DB_NAME') ?: 'dbs15149159';
 $DB_USER = getenv('DB_USER') ?: 'dbu2492912';
-$DB_PASS = getenv('DB_PASS') ?: ''; // Set via environment or replace during deploy
+$DB_PASS = getenv('DB_PASS') ?: 'reMarkable2026!'; // Set via environment or replace during deploy
 $DB_PORT = getenv('DB_PORT') ?: 3306;
 
 // CORS headers for API access
