@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   User, Users, Home, DollarSign, Palette, Heart,
-  Layout, Globe, Briefcase, ChevronLeft, ChevronRight,
+  Globe, Briefcase, ChevronLeft, ChevronRight,
   ChevronDown, Save, FileDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
@@ -15,7 +15,6 @@ import ProjectParametersSection from './sections/ProjectParametersSection';
 import BudgetFrameworkSection from './sections/BudgetFrameworkSection';
 import DesignIdentitySection from './sections/DesignIdentitySection';
 import LifestyleLivingSection from './sections/LifestyleLivingSection';
-import SpaceRequirementsSection from './sections/SpaceRequirementsSection';
 import CulturalContextSection from './sections/CulturalContextSection';
 import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
@@ -41,6 +40,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
   const [isExporting, setIsExporting] = useState(false);
 
   // Define sections FIRST (needed for completion check)
+  // NOTE: P1.A.7 (Space Requirements) was merged into P1.A.6 (Lifestyle & Living)
+  // P1.A.8/P1.A.9 renumbered to P1.A.7/P1.A.8
   const sections = [
     { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
     { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
@@ -48,12 +49,11 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp', taskCode: 'P1.A.4' },
     { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp', taskCode: 'P1.A.5' },
     { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced', taskCode: 'P1.A.6' },
-    { id: 'spaceRequirements', label: 'Space Requirements', icon: Layout, tier: 'mvp', taskCode: 'P1.A.7' },
-    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.8' },
-    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.9' },
+    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.7' },
+    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.8' },
   ];
 
-  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6/7
+  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6
   const respondentTabs = [
     { id: 'principal', label: 'Principal', color: 'navy', description: 'Primary decision-maker' },
     { id: 'secondary', label: 'Secondary', color: 'teal', description: 'Spouse / Co-decision-maker' },
@@ -65,8 +65,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     { id: 'enhanced', label: 'Full Discovery', description: '45-60 min' },
   ];
 
-  // Sections available to Secondary (Partner) - only P1.A.5, P1.A.6, P1.A.7
-  const secondarySections = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
+  // Sections available to Secondary (Partner) - only P1.A.5 and P1.A.6 (which now includes Space Requirements)
+  const secondarySections = ['designIdentity', 'lifestyleLiving'];
 
   // Check if ALL sections are complete (for Export Report button)
   const areAllSectionsComplete = sections.every(section => {
@@ -74,7 +74,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     const principalStatus = getSectionCompletionStatus('principal', section.id);
     if (principalStatus !== 'complete') return false;
 
-    // For P1.A.5, P1.A.6, P1.A.7 - also need Secondary to be complete
+    // For P1.A.5, P1.A.6 - also need Secondary to be complete
     if (secondarySections.includes(section.id)) {
       const secondaryStatus = getSectionCompletionStatus('secondary', section.id);
       if (secondaryStatus !== 'complete') return false;
@@ -112,7 +112,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   // Check if section is visible based on tier and respondent
   const isSectionVisible = (section) => {
-    // Secondary can only see P1.A.5/6/7
+    // Secondary can only see P1.A.5/6
     if (activeRespondent === 'secondary' && !secondarySections.includes(section.id)) {
       return false;
     }
@@ -194,7 +194,6 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
       case 'budgetFramework': return <BudgetFrameworkSection {...props} />;
       case 'designIdentity': return <DesignIdentitySection {...props} />;
       case 'lifestyleLiving': return <LifestyleLivingSection {...props} />;
-      case 'spaceRequirements': return <SpaceRequirementsSection {...props} />;
       case 'culturalContext': return <CulturalContextSection {...props} />;
       case 'workingPreferences': return <WorkingPreferencesSection {...props} />;
       default: return null;

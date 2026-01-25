@@ -209,8 +209,8 @@ const getEmptyProjectData = () => ({
 
 const AppContext = createContext(null);
 
-// Sections available to Secondary respondent
-const SECONDARY_SECTIONS = ['designIdentity', 'lifestyleLiving', 'spaceRequirements'];
+// Sections available to Secondary respondent (P1.A.6 now includes Space Requirements)
+const SECONDARY_SECTIONS = ['designIdentity', 'lifestyleLiving'];
 
 // Required fields for completion calculation
 const REQUIRED_FIELDS = {
