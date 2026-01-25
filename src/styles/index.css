@@ -330,23 +330,13 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 
 /* KYC Module */
 .kyc-module { max-width: 1200px; }
-.kyc-module__tier-selector { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.kyc-module__tier-label { font-weight: 500; color: var(--gray-600); }
-.tier-tabs { display: flex; background: var(--gray-100); border-radius: var(--radius-md); padding: 4px; }
-.tier-tab {
-  padding: 8px 16px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
+
+/* Top Action Bar - Save and Export aligned right */
+.kyc-module__top-bar {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 24px;
 }
-.tier-tab--active { background: var(--white); box-shadow: var(--shadow-sm); }
-.tier-tab__label { font-weight: 600; font-size: 0.9rem; color: var(--gray-700); }
-.tier-tab__duration { font-size: 0.75rem; color: var(--gray-500); }
 
 /* KYC Save Button */
 .kyc-module__save-area {
@@ -409,7 +399,26 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .kyc-export-btn--disabled { background: #9ca3af !important; border-color: #9ca3af !important; }
 .kyc-export-btn .spinning { animation: spin 1s linear infinite; }
 
-/* Respondent Tabs */
+/* Respondent Status Display (non-clickable) */
+.kyc-module__respondent-status { display: flex; gap: 16px; margin-bottom: 32px; }
+.respondent-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+}
+.respondent-status--navy { border-color: var(--navy); background: rgba(26,54,93,0.05); }
+.respondent-status--teal { border-color: var(--teal); background: rgba(49,151,149,0.05); }
+.respondent-status__content { flex: 1; text-align: left; }
+.respondent-status__label { display: block; font-weight: 600; color: var(--gray-800); }
+.respondent-status__description { display: block; font-size: 0.8rem; color: var(--gray-500); }
+.respondent-status__progress { font-weight: 700; font-size: 0.9rem; color: var(--gray-600); }
+
+/* Legacy Respondent Tabs (kept for backwards compatibility) */
 .kyc-module__respondent-tabs { display: flex; gap: 16px; margin-bottom: 32px; }
 .respondent-tab {
   flex: 1;
@@ -1289,6 +1298,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   .matching-results { grid-template-columns: 1fr; }
   .form-grid--2col, .form-grid--3col, .form-grid--4col { grid-template-columns: 1fr; }
   .kyc-module__respondent-tabs { flex-direction: column; }
+  .kyc-module__respondent-status { flex-direction: column; }
   .workflow-steps { flex-direction: column; }
   .workflow-step__connector { display: none; }
   .dashboard__stats { grid-template-columns: 1fr; }

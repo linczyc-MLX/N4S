@@ -20,8 +20,6 @@ import WorkingPreferencesSection from './sections/WorkingPreferencesSection';
 
 const KYCModule = ({ showDocs, onCloseDocs }) => {
   const {
-    activeRespondent,
-    setActiveRespondent,
     currentKYCSection,
     setCurrentKYCSection,
     calculateCompleteness,
@@ -102,12 +100,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     }
   }, [kycData]);
 
-  // Check if section is visible based on respondent
-  // All sections visible for Principal; Secondary only sees P1.A.5/6
+  // All sections always visible (Principal view only - LRA manages the dashboard)
   const isSectionVisible = (section) => {
-    if (activeRespondent === 'secondary' && !secondarySections.includes(section.id)) {
-      return false;
-    }
     return true;
   };
 
@@ -173,7 +167,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     if (!section) return null;
 
     const props = {
-      respondent: activeRespondent,
+      respondent: 'principal', // Always Principal view - LRA manages the dashboard
       tier: 'enhanced', // Always Full Discovery mode
     };
 
@@ -192,11 +186,11 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   // Get incomplete sections for the dropdown
   const incompleteSections = visibleSections.filter(section => {
-    const status = getSectionCompletionStatus(activeRespondent, section.id);
+    const status = getSectionCompletionStatus('principal', section.id);
     return status !== 'complete';
   });
 
-  const completionPercentage = calculateCompleteness(activeRespondent);
+  const completionPercentage = calculateCompleteness('principal');
 
   // If in docs mode, show documentation
   if (showDocs) {
@@ -205,8 +199,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kyc-module">
-      {/* SAVE & EXPORT BUTTONS */}
-      <div className="kyc-module__action-bar">
+      {/* Top Action Bar - SAVE & Export on right side */}
+      <div className="kyc-module__top-bar">
         <div className="kyc-module__save-area">
           <button
             className={`kyc-save-btn ${hasUnsavedChanges ? 'kyc-save-btn--unsaved' : ''} ${isSaving ? 'kyc-save-btn--saving' : ''}`}
@@ -216,18 +210,15 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
             <Save size={16} />
             {isSaving ? 'Saving...' : 'SAVE'}
           </button>
-          {/* Export Report only shows on P1.A.1 Portfolio Context */}
-          {visibleSections[currentKYCSection]?.id === 'portfolioContext' && (
-            <button
-              className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
-              onClick={handleExportReport}
-              disabled={isExporting || !areAllSectionsComplete}
-              title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
-            >
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </button>
-          )}
+          <button
+            className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
+            onClick={handleExportReport}
+            disabled={isExporting || !areAllSectionsComplete}
+            title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
+          >
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export Report'}
+          </button>
           {hasUnsavedChanges && !isSaving && (
             <span className="kyc-save-indicator">Unsaved</span>
           )}
@@ -242,50 +233,22 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
         </div>
       </div>
 
-      {/* Respondent Tabs */}
-      <div className="kyc-module__respondent-tabs">
+      {/* Respondent Status Display (non-clickable) */}
+      <div className="kyc-module__respondent-status">
         {respondentTabs.map(tab => (
-          <button
+          <div
             key={tab.id}
-            className={`respondent-tab respondent-tab--${tab.color} ${
-              activeRespondent === tab.id ? 'respondent-tab--active' : ''
-            }`}
-            onClick={() => {
-              // Get current section ID before switching
-              const currentSectionId = visibleSections[currentKYCSection]?.id;
-
-              // Switch respondent
-              setActiveRespondent(tab.id);
-
-              // Calculate new visible sections for the target respondent
-              const targetSections = sections.filter(section => {
-                if (tab.id === 'secondary' && !secondarySections.includes(section.id)) {
-                  return false;
-                }
-                return true;
-              });
-
-              // Try to stay on the same section if it exists for the new respondent
-              const newSectionIndex = targetSections.findIndex(s => s.id === currentSectionId);
-
-              if (newSectionIndex >= 0) {
-                // Section exists for new respondent - stay on it
-                setCurrentKYCSection(newSectionIndex);
-              } else {
-                // Section doesn't exist - go to first available section
-                setCurrentKYCSection(0);
-              }
-            }}
+            className={`respondent-status respondent-status--${tab.color}`}
           >
             <User size={18} />
-            <div className="respondent-tab__content">
-              <span className="respondent-tab__label">{tab.label}</span>
-              <span className="respondent-tab__description">{tab.description}</span>
+            <div className="respondent-status__content">
+              <span className="respondent-status__label">{tab.label}</span>
+              <span className="respondent-status__description">{tab.description}</span>
             </div>
-            <span className="respondent-tab__progress">
+            <span className="respondent-status__progress">
               {calculateCompleteness(tab.id)}%
             </span>
-          </button>
+          </div>
         ))}
       </div>
 
@@ -314,7 +277,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
                   <div className="remaining-dropdown__header">Incomplete Sections</div>
                   <div className="remaining-dropdown__list">
                     {incompleteSections.map((section, idx) => {
-                      const status = getSectionCompletionStatus(activeRespondent, section.id);
+                      const status = getSectionCompletionStatus('principal', section.id);
                       const Icon = section.icon;
                       const sectionIndex = visibleSections.findIndex(s => s.id === section.id);
                       return (
@@ -347,7 +310,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
           <ul className="kyc-module__nav-list">
             {visibleSections.map((section, index) => {
               const Icon = section.icon;
-              const status = getSectionCompletionStatus(activeRespondent, section.id);
+              const status = getSectionCompletionStatus('principal', section.id);
               const isActive = currentKYCSection === index;
 
               return (
