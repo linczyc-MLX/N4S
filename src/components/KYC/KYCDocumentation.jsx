@@ -12,9 +12,9 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  ChevronDown, 
+import {
+  ArrowLeft,
+  ChevronDown,
   ChevronRight,
   CheckCircle,
   AlertTriangle,
@@ -23,7 +23,6 @@ import {
   DollarSign,
   Palette,
   Heart,
-  Layout,
   Globe,
   Briefcase,
   Info,
@@ -137,10 +136,10 @@ function OverviewTab() {
               <Users size={20} />
               <h4>Principal</h4>
             </div>
-            <p>Primary decision-maker who completes all sections. Captures core project parameters, 
+            <p>Primary decision-maker who completes all sections. Captures core project parameters,
             budget framework, and household composition.</p>
             <div className="doc-respondent-sections">
-              <span>All 9 sections</span>
+              <span>All 8 sections</span>
             </div>
           </div>
           <div className="doc-respondent doc-respondent--teal">
@@ -148,10 +147,10 @@ function OverviewTab() {
               <Users size={20} />
               <h4>Secondary</h4>
             </div>
-            <p>Spouse or co-decision-maker who provides their own perspective on taste, lifestyle, 
-            and space priorities. Selections are additive, not deviations.</p>
+            <p>Spouse or co-decision-maker who provides their own perspective on taste and lifestyle
+            preferences. Selections are additive, not deviations.</p>
             <div className="doc-respondent-sections">
-              <span>3 sections: Design, Lifestyle, Space</span>
+              <span>2 sections: Design, Lifestyle & Living</span>
             </div>
           </div>
         </div>
@@ -294,12 +293,13 @@ function WorkflowTab() {
       principal: true,
       secondary: true,
       tier: 'full',
-      description: 'How you actually live day-to-day. Includes LuXeBrief Lifestyle (voice-guided) and LuXeBrief Living (form-based questionnaire).',
+      description: 'How you actually live day-to-day plus space requirements. Includes LuXeBrief Lifestyle (voice-guided), LuXeBrief Living (form-based questionnaire), and Manual Entry panel for space program.',
       captures: [
         'Entertaining frequency and scale',
         'Morning and evening routines',
         'Work-from-home requirements',
         'Hobbies and collections',
+        'Must-have and nice-to-have interior/exterior spaces',
         'LuXeBrief Lifestyle: Voice-guided lifestyle interview',
         'LuXeBrief Living: Form-based space program questionnaire'
       ],
@@ -307,31 +307,12 @@ function WorkflowTab() {
         'Kitchen and dining sizing',
         'Privacy posture requirements',
         'Specialty room recommendations',
-        'Direct sync to FYI space selections (Living)'
+        'FYI space program generation',
+        'Direct sync to FYI space selections'
       ]
     },
     {
       code: 'P1.A.7',
-      title: 'Space Requirements',
-      icon: Layout,
-      principal: true,
-      secondary: true,
-      tier: 'quick',
-      description: 'Specific room needs and priorities.',
-      captures: [
-        'Must-have spaces',
-        'Nice-to-have spaces',
-        'Space size preferences',
-        'Special equipment or collections'
-      ],
-      impacts: [
-        'FYI space program generation',
-        'Square footage allocation',
-        'Zone distribution'
-      ]
-    },
-    {
-      code: 'P1.A.8',
       title: 'Cultural Context',
       icon: Globe,
       principal: true,
@@ -351,7 +332,7 @@ function WorkflowTab() {
       ]
     },
     {
-      code: 'P1.A.9',
+      code: 'P1.A.8',
       title: 'Working Preferences',
       icon: Briefcase,
       principal: true,
@@ -430,7 +411,7 @@ function WorkflowTab() {
       <div className="doc-card doc-card--highlight">
         <h3 className="doc-subsection-title">LuXeBrief Integration</h3>
         <p className="doc-paragraph">
-          Sections P1.A.6 and P1.A.7 can be completed via LuXeBrief—N4S's external questionnaire platform
+          P1.A.6 Lifestyle & Living can be completed via LuXeBrief—N4S's external questionnaire platform
           that offers two modes for capturing lifestyle and space requirements.
         </p>
         <div className="doc-luxebrief-grid">
@@ -466,12 +447,12 @@ function WorkflowTab() {
           <div className="doc-flow-diagram">
             <span className="doc-flow-step">LuXeBrief Living</span>
             <span className="doc-flow-arrow">→</span>
-            <span className="doc-flow-step">KYC Space Requirements</span>
+            <span className="doc-flow-step">KYC Lifestyle & Living</span>
             <span className="doc-flow-arrow">→</span>
             <span className="doc-flow-step">FYI Module</span>
           </div>
           <p>When a LuXeBrief Living questionnaire is completed, responses automatically sync to KYC's
-          Space Requirements section (P1.A.7), which then pre-populates the FYI space program.
+          Lifestyle & Living section (P1.A.6), which then pre-populates the FYI space program.
           Clients can review and adjust selections in FYI before proceeding to MVP.</p>
         </div>
       </div>
@@ -765,24 +746,18 @@ function ReferenceTab() {
           </div>
           <div className="doc-code-row doc-code-row--secondary">
             <code>P1.A.6</code>
-            <span>Lifestyle & Living</span>
-            <span>✓</span>
-            <span>✓</span>
-          </div>
-          <div className="doc-code-row doc-code-row--secondary">
-            <code>P1.A.7</code>
-            <span>Space Requirements</span>
+            <span>Lifestyle & Living (incl. Space Requirements)</span>
             <span>✓</span>
             <span>✓</span>
           </div>
           <div className="doc-code-row">
-            <code>P1.A.8</code>
+            <code>P1.A.7</code>
             <span>Cultural Context</span>
             <span>✓</span>
             <span>—</span>
           </div>
           <div className="doc-code-row">
-            <code>P1.A.9</code>
+            <code>P1.A.8</code>
             <span>Working Preferences</span>
             <span>✓</span>
             <span>—</span>
