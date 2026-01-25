@@ -24,8 +24,6 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     setActiveRespondent,
     currentKYCSection,
     setCurrentKYCSection,
-    disclosureTier,
-    setDisclosureTier,
     calculateCompleteness,
     getSectionCompletionStatus,
     saveNow,
@@ -39,30 +37,24 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
   const [showRemainingDropdown, setShowRemainingDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Define sections FIRST (needed for completion check)
+  // Define sections - all sections always visible (Full Discovery mode only)
   // NOTE: P1.A.7 (Space Requirements) was merged into P1.A.6 (Lifestyle & Living)
   // P1.A.8/P1.A.9 renumbered to P1.A.7/P1.A.8
   const sections = [
-    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, tier: 'mvp', taskCode: 'P1.A.1' },
-    { id: 'familyHousehold', label: 'Family & Household', icon: Users, tier: 'mvp', taskCode: 'P1.A.2' },
-    { id: 'projectParameters', label: 'Project Parameters', icon: Home, tier: 'mvp', taskCode: 'P1.A.3' },
-    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, tier: 'mvp', taskCode: 'P1.A.4' },
-    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, tier: 'mvp', taskCode: 'P1.A.5' },
-    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, tier: 'enhanced', taskCode: 'P1.A.6' },
-    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, tier: 'enhanced', taskCode: 'P1.A.7' },
-    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, tier: 'enhanced', taskCode: 'P1.A.8' },
+    { id: 'portfolioContext', label: 'Portfolio Context', icon: Briefcase, taskCode: 'P1.A.1' },
+    { id: 'familyHousehold', label: 'Family & Household', icon: Users, taskCode: 'P1.A.2' },
+    { id: 'projectParameters', label: 'Project Parameters', icon: Home, taskCode: 'P1.A.3' },
+    { id: 'budgetFramework', label: 'Budget Framework', icon: DollarSign, taskCode: 'P1.A.4' },
+    { id: 'designIdentity', label: 'Design Preferences', icon: Palette, taskCode: 'P1.A.5' },
+    { id: 'lifestyleLiving', label: 'Lifestyle & Living', icon: Heart, taskCode: 'P1.A.6' },
+    { id: 'culturalContext', label: 'Cultural Context', icon: Globe, taskCode: 'P1.A.7' },
+    { id: 'workingPreferences', label: 'Working Preferences', icon: Briefcase, taskCode: 'P1.A.8' },
   ];
 
-  // REMOVED: advisor tab - Secondary/Partner only completes P1.A.5/6
+  // Respondent tabs - Secondary/Partner only completes P1.A.5/6
   const respondentTabs = [
     { id: 'principal', label: 'Principal', color: 'navy', description: 'Primary decision-maker' },
     { id: 'secondary', label: 'Secondary', color: 'teal', description: 'Spouse / Co-decision-maker' },
-  ];
-
-  // REMOVED: fyi-extended option
-  const tierOptions = [
-    { id: 'mvp', label: 'Quick Capture', description: '15-20 min' },
-    { id: 'enhanced', label: 'Full Discovery', description: '45-60 min' },
   ];
 
   // Sections available to Secondary (Partner) - only P1.A.5 and P1.A.6 (which now includes Space Requirements)
@@ -110,15 +102,13 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
     }
   }, [kycData]);
 
-  // Check if section is visible based on tier and respondent
+  // Check if section is visible based on respondent
+  // All sections visible for Principal; Secondary only sees P1.A.5/6
   const isSectionVisible = (section) => {
-    // Secondary can only see P1.A.5/6
     if (activeRespondent === 'secondary' && !secondarySections.includes(section.id)) {
       return false;
     }
-    // Tier filtering
-    if (disclosureTier === 'enhanced') return true;
-    return section.tier === 'mvp';
+    return true;
   };
 
   const visibleSections = sections.filter(s => isSectionVisible(s));
@@ -184,7 +174,7 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
     const props = {
       respondent: activeRespondent,
-      tier: disclosureTier,
+      tier: 'enhanced', // Always Full Discovery mode
     };
 
     switch (section.id) {
@@ -215,23 +205,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kyc-module">
-      {/* Tier Selector with SAVE Button */}
-      <div className="kyc-module__tier-selector">
-        <span className="kyc-module__tier-label">Disclosure Level:</span>
-        <div className="tier-tabs">
-          {tierOptions.map(tier => (
-            <button
-              key={tier.id}
-              className={`tier-tab ${disclosureTier === tier.id ? 'tier-tab--active' : ''}`}
-              onClick={() => setDisclosureTier(tier.id)}
-            >
-              <span className="tier-tab__label">{tier.label}</span>
-              <span className="tier-tab__duration">{tier.description}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* SAVE & EXPORT BUTTONS */}
+      {/* SAVE & EXPORT BUTTONS */}
+      <div className="kyc-module__action-bar">
         <div className="kyc-module__save-area">
           <button
             className={`kyc-save-btn ${hasUnsavedChanges ? 'kyc-save-btn--unsaved' : ''} ${isSaving ? 'kyc-save-btn--saving' : ''}`}
@@ -278,22 +253,21 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
             onClick={() => {
               // Get current section ID before switching
               const currentSectionId = visibleSections[currentKYCSection]?.id;
-              
+
               // Switch respondent
               setActiveRespondent(tab.id);
-              
+
               // Calculate new visible sections for the target respondent
               const targetSections = sections.filter(section => {
                 if (tab.id === 'secondary' && !secondarySections.includes(section.id)) {
                   return false;
                 }
-                if (disclosureTier === 'enhanced') return true;
-                return section.tier === 'mvp';
+                return true;
               });
-              
+
               // Try to stay on the same section if it exists for the new respondent
               const newSectionIndex = targetSections.findIndex(s => s.id === currentSectionId);
-              
+
               if (newSectionIndex >= 0) {
                 // Section exists for new respondent - stay on it
                 setCurrentKYCSection(newSectionIndex);

@@ -157,22 +157,24 @@ function OverviewTab() {
       </div>
 
       <div className="doc-card doc-card--highlight">
-        <h3 className="doc-subsection-title">Capture Depth Options</h3>
+        <h3 className="doc-subsection-title">Completion Time</h3>
         <p className="doc-paragraph">
-          Choose the level of detail based on your timeline and how well-defined your requirements are.
+          The KYC module captures comprehensive client information across 8 sections. Principal
+          respondents complete all sections while Secondary respondents complete only the taste
+          and lifestyle sections relevant to design alignment.
         </p>
         <div className="doc-capture-options">
           <div className="doc-capture-option">
-            <div className="doc-capture-badge">Quick Capture</div>
-            <div className="doc-capture-time">15-20 min</div>
-            <p>Core sections only. Best for clients with clear requirements or time constraints. 
-            Covers essentials: portfolio, family, project parameters, budget, design, and space requirements.</p>
+            <div className="doc-capture-badge doc-capture-badge--full">Principal</div>
+            <div className="doc-capture-time">45-60 min</div>
+            <p>All 8 sections covering portfolio context, household composition, project parameters,
+            budget framework, design preferences, lifestyle, cultural context, and working preferences.</p>
           </div>
           <div className="doc-capture-option">
-            <div className="doc-capture-badge doc-capture-badge--full">Full Discovery</div>
-            <div className="doc-capture-time">45-60 min</div>
-            <p>All sections including Lifestyle & Living, Cultural Context, and Working Preferences. 
-            Best for complex projects or clients who want maximum customization.</p>
+            <div className="doc-capture-badge">Secondary</div>
+            <div className="doc-capture-time">15-20 min</div>
+            <p>Design Preferences and Lifestyle & Living sections only. Captures independent perspective
+            on taste and lifestyle to inform design alignment.</p>
           </div>
         </div>
       </div>
@@ -189,9 +191,7 @@ function WorkflowTab() {
       code: 'P1.A.1',
       title: 'Portfolio Context',
       icon: Briefcase,
-      principal: true,
       secondary: false,
-      tier: 'quick',
       description: 'Your real estate portfolio and this project\'s role within it.',
       captures: [
         'Primary residence vs. vacation home vs. investment',
@@ -209,9 +209,7 @@ function WorkflowTab() {
       code: 'P1.A.2',
       title: 'Family & Household',
       icon: Users,
-      principal: true,
       secondary: false,
-      tier: 'quick',
       description: 'Who lives in or regularly visits your home.',
       captures: [
         'Permanent residents and ages',
@@ -230,9 +228,7 @@ function WorkflowTab() {
       code: 'P1.A.3',
       title: 'Project Parameters',
       icon: Home,
-      principal: true,
       secondary: false,
-      tier: 'quick',
       description: 'Physical scope and site constraints.',
       captures: [
         'Target square footage',
@@ -250,9 +246,7 @@ function WorkflowTab() {
       code: 'P1.A.4',
       title: 'Budget Framework',
       icon: DollarSign,
-      principal: true,
       secondary: false,
-      tier: 'quick',
       description: 'Investment parameters and value priorities.',
       captures: [
         'Construction budget range',
@@ -270,9 +264,7 @@ function WorkflowTab() {
       code: 'P1.A.5',
       title: 'Design Preferences',
       icon: Palette,
-      principal: true,
       secondary: true,
-      tier: 'quick',
       description: 'Visual and stylistic preferences for your home.',
       captures: [
         'Taste exploration (110 image quads)',
@@ -290,9 +282,7 @@ function WorkflowTab() {
       code: 'P1.A.6',
       title: 'Lifestyle & Living',
       icon: Heart,
-      principal: true,
       secondary: true,
-      tier: 'full',
       description: 'How you actually live day-to-day plus space requirements. Includes LuXeBrief Lifestyle (voice-guided), LuXeBrief Living (form-based questionnaire), and Manual Entry panel for space program.',
       captures: [
         'Entertaining frequency and scale',
@@ -315,9 +305,7 @@ function WorkflowTab() {
       code: 'P1.A.7',
       title: 'Cultural Context',
       icon: Globe,
-      principal: true,
       secondary: false,
-      tier: 'full',
       description: 'Cultural and regional considerations.',
       captures: [
         'Cultural background and traditions',
@@ -335,9 +323,7 @@ function WorkflowTab() {
       code: 'P1.A.8',
       title: 'Working Preferences',
       icon: Briefcase,
-      principal: true,
       secondary: false,
-      tier: 'full',
       description: 'How you prefer to work with your design team.',
       captures: [
         'Decision-making style',
@@ -358,9 +344,8 @@ function WorkflowTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">KYC Section Guide</h2>
         <p className="doc-paragraph">
-          Complete each section to build your personalized mansion program. Sections marked with 
-          "Full Discovery" are optional in Quick Capture mode but provide valuable detail for 
-          complex projects.
+          Complete each section to build your personalized mansion program. Sections marked with
+          "Secondary" are also completed by the Secondary respondent for design alignment.
         </p>
       </div>
 
@@ -375,9 +360,6 @@ function WorkflowTab() {
                 {section.title}
               </h3>
               <div className="doc-section-card__badges">
-                {section.tier === 'full' && (
-                  <span className="doc-section-badge doc-section-badge--full">Full Discovery</span>
-                )}
                 {section.secondary && (
                   <span className="doc-section-badge doc-section-badge--secondary">Secondary</span>
                 )}
@@ -881,17 +863,9 @@ function ReferenceTab() {
             who initiated the project.</dd>
             
             <dt>Secondary Respondent</dt>
-            <dd>Spouse or co-decision-maker who provides independent perspective on taste, 
-            lifestyle, and space priorities.</dd>
-            
-            <dt>Quick Capture</dt>
-            <dd>Abbreviated KYC mode covering core sections only. Suitable for projects with 
-            well-defined requirements or time constraints.</dd>
-            
-            <dt>Full Discovery</dt>
-            <dd>Comprehensive KYC mode including all sections. Recommended for complex projects 
-            or clients wanting maximum personalization.</dd>
-            
+            <dd>Spouse or co-decision-maker who provides independent perspective on taste and
+            lifestyle preferences. Completes P1.A.5 (Design Preferences) and P1.A.6 (Lifestyle & Living).</dd>
+
             <dt>Privacy Posture</dt>
             <dd>Client preference for separation between public, private, and service zones. 
             Affects MVP red flag thresholds.</dd>
