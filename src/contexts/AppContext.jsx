@@ -883,12 +883,20 @@ export const AppProvider = ({ children }) => {
       if (sectionKey === 'designIdentity') {
         totalRequired += 1;
         // Check for completed taste profile based on respondent type
-        // NOTE: BOTH principalTasteResults AND secondaryTasteResults are stored in
-        // kycData.principal.designIdentity (not kycData.secondary.designIdentity)
-        const tasteKey = respondent === 'principal' ? 'principalTasteResults' : 'secondaryTasteResults';
-        const tasteSourceData = kycData.principal?.designIdentity;
-        if (tasteSourceData?.[tasteKey]?.completedAt) {
-          filledRequired += 1;
+        // Principal's results are in kycData.principal.designIdentity.principalTasteResults
+        // Secondary's results are in kycData.secondary.designIdentity (principalTasteResults or secondaryTasteResults)
+        if (respondent === 'principal') {
+          const tasteResults = kycData.principal?.designIdentity?.principalTasteResults;
+          if (tasteResults?.completedAt) {
+            filledRequired += 1;
+          }
+        } else {
+          // Secondary's taste results are stored in their own designIdentity data
+          const secondaryDesignData = kycData.secondary?.designIdentity;
+          const tasteResults = secondaryDesignData?.principalTasteResults || secondaryDesignData?.secondaryTasteResults;
+          if (tasteResults?.completedAt) {
+            filledRequired += 1;
+          }
         }
         return;
       }
