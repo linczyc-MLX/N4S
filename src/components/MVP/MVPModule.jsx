@@ -164,18 +164,41 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   };
   
   // Calculate gate status based on completion
+  // Deployment Workflow: A (Profile) → B (Space Program) → C (Module Validation) → D (Adjacency Lock) → E (Brief Ready)
   const gateStatus = useMemo(() => {
+    // Stage A: KYC Profile has target GSF defined
     const kycComplete = kycData?.principal?.projectParameters?.targetGSF > 0;
+
+    // Stage B: FYI Space Program has selections
     const fyiComplete = fyiData?.selections && Object.keys(fyiData.selections).length > 0;
+
+    // Stage C: Module checklists reviewed (40 items total across 8 modules)
+    // Require at least 24 items (60%) for completion, any checked items for 'current'
     const checklistCount = Object.values(moduleChecklistState).filter(Boolean).length;
+    const modulesComplete = checklistCount >= 24;  // 60% threshold for full completion
     const modulesReviewed = checklistCount > 0;
-    
+
+    // Stage D: All 10 adjacency decisions answered
+    const decisionAnswers = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
+    const decisionCount = Object.keys(decisionAnswers).length;
+    const decisionsComplete = decisionCount >= 10;
+    const decisionsStarted = decisionCount > 0;
+
+    // Stage E: Validation passed (no critical red flags and score >= 80)
+    const validationResults = fyiData?.mvpAdjacencyConfig?.validationResults;
+    const hasValidation = validationResults && validationResults.overallScore !== undefined;
+    const criticalFlags = validationResults?.redFlags?.filter(f => f.severity === 'critical')?.length || 0;
+    const validationPassed = hasValidation &&
+                             validationResults.overallScore >= 80 &&
+                             criticalFlags === 0;
+    const validationWarning = hasValidation && !validationPassed;
+
     return {
       A: kycComplete ? 'complete' : 'current',
       B: fyiComplete ? 'complete' : (kycComplete ? 'current' : 'locked'),
-      C: modulesReviewed ? 'current' : (fyiComplete ? 'current' : 'locked'),
-      D: 'locked',
-      E: 'locked'
+      C: modulesComplete ? 'complete' : (modulesReviewed || fyiComplete ? 'current' : 'locked'),
+      D: decisionsComplete ? 'complete' : (decisionsStarted || modulesComplete ? 'current' : (modulesReviewed ? 'current' : 'locked')),
+      E: validationPassed ? 'complete' : (validationWarning ? 'warning' : (decisionsComplete ? 'current' : 'locked'))
     };
   }, [kycData, fyiData, moduleChecklistState]);
   
