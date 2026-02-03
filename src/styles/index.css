@@ -4182,7 +4182,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .deployment-workflow__gates {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0;
+  gap: 12px;
   align-items: flex-start;
 }
 
@@ -4190,6 +4190,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .deployment-workflow__gate {
