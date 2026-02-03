@@ -42,8 +42,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const luxeLivingSessionId = data.luxeLivingSessionId;
   const luxeLivingSentAt = data.luxeLivingSentAt;
   const luxeLivingCompletedAt = data.luxeLivingCompletedAt;
-  const { kycData, updateKYCData, activeProjectId, clientData } = useAppContext();
-  const data = kycData[respondent].lifestyleLiving;
 
   // Get client name for LuXeBrief
   const principalContext = kycData.principal?.portfolioContext || {};
