@@ -4,8 +4,10 @@ import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
+import LuXeBriefButton from '../LuXeBriefButton';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
+<<<<<<< Updated upstream
   const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
@@ -41,6 +43,26 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const luxeLivingSessionId = data.luxeLivingSessionId;
   const luxeLivingSentAt = data.luxeLivingSentAt;
   const luxeLivingCompletedAt = data.luxeLivingCompletedAt;
+=======
+  const { kycData, updateKYCData, activeProjectId, clientData } = useAppContext();
+  const data = kycData[respondent].lifestyleLiving;
+
+  // Get client name for LuXeBrief
+  const principalContext = kycData.principal?.portfolioContext || {};
+  const clientFirstName = principalContext.principalFirstName || '';
+  const clientLastName = principalContext.principalLastName || '';
+  const clientName = `${clientFirstName} ${clientLastName}`.trim() || clientData?.projectName || 'Client';
+
+  // Generate client slug for subdomain
+  const clientSlug = (clientFirstName.charAt(0) + clientLastName).toLowerCase().replace(/[^a-z0-9]/g, '') || 'client';
+
+  // LuXeBrief status tracking (stored in lifestyleLiving data)
+  const luxeBriefStatus = data.luxeBriefStatus || null;
+
+  const handleLuXeBriefStatusChange = (newStatus) => {
+    updateKYCData(respondent, 'lifestyleLiving', { luxeBriefStatus: newStatus });
+  };
+>>>>>>> Stashed changes
 
   // Get principal's WFH data for Secondary confirmation
   const principalLifestyle = kycData.principal?.lifestyleLiving || {};
@@ -1533,8 +1555,27 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         placeholder="Describe a typical day - morning routines, how you use spaces, evening patterns..."
         rows={3}
       />
+<<<<<<< Updated upstream
         </div>
       )}
+=======
+
+      {/* Voice Briefing Integration */}
+      <div className="kyc-section__group">
+        <h3 className="kyc-section__group-title">Voice Briefing</h3>
+        <p className="kyc-section__group-description">
+          Send an interactive voice briefing to capture detailed lifestyle preferences through natural conversation.
+        </p>
+        <LuXeBriefButton
+          clientName={clientName}
+          clientSlug={clientSlug}
+          respondentType={respondent}
+          projectId={activeProjectId}
+          existingStatus={luxeBriefStatus}
+          onStatusChange={handleLuXeBriefStatusChange}
+        />
+      </div>
+>>>>>>> Stashed changes
     </div>
   );
 };
