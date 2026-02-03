@@ -4,7 +4,6 @@ import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
-import LuXeBriefButton from '../LuXeBriefButton';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
@@ -1551,23 +1550,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
       />
         </div>
       )}
-
-      {/* Voice Briefing Integration */}
-      <div className="kyc-section__group">
-        <h3 className="kyc-section__group-title">Voice Briefing</h3>
-        <p className="kyc-section__group-description">
-          Send an interactive voice briefing to capture detailed lifestyle preferences through natural conversation.
-        </p>
-        <LuXeBriefButton
-          clientName={clientName}
-          clientSlug={clientSlug}
-          respondentType={respondent}
-          projectId={activeProjectId}
-          existingStatus={luxeBriefStatus}
-          onStatusChange={handleLuXeBriefStatusChange}
-        />
-      </div>
->>>>>>> Stashed changes
     </div>
   );
 };
