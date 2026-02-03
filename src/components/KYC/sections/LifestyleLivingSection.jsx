@@ -53,7 +53,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const clientSlug = (clientFirstName.charAt(0) + clientLastName).toLowerCase().replace(/[^a-z0-9]/g, '') || 'client';
 
   // LuXeBrief status tracking (stored in lifestyleLiving data)
-  const luxeBriefStatus = data.luxeBriefStatus || null;
 
   const handleLuXeBriefStatusChange = (newStatus) => {
     updateKYCData(respondent, 'lifestyleLiving', { luxeBriefStatus: newStatus });
