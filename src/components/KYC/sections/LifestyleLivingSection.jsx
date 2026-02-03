@@ -58,7 +58,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const handleLuXeBriefStatusChange = (newStatus) => {
     updateKYCData(respondent, 'lifestyleLiving', { luxeBriefStatus: newStatus });
   };
->>>>>>> Stashed changes
 
   // Get principal's WFH data for Secondary confirmation
   const principalLifestyle = kycData.principal?.lifestyleLiving || {};
