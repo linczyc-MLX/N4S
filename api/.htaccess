@@ -6,10 +6,11 @@
     Allow from all
 </IfModule>
 
-# Set PHP handler
-<FilesMatch "\.php$">
-    SetHandler application/x-httpd-php
-</FilesMatch>
+# PHP 8.4 handler for IONOS
+# Removed explicit SetHandler - let IONOS handle PHP automatically
+# If PHP still doesn't execute, try uncommenting one of these:
+# SetHandler "proxy:fcgi://localhost"
+# AddHandler php84-cgi .php
 
 # CORS headers
 <IfModule mod_headers.c>
