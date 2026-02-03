@@ -7,7 +7,6 @@ import SliderField from '../../shared/SliderField';
 import LuXeBriefButton from '../LuXeBriefButton';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
-<<<<<<< Updated upstream
   const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
@@ -43,7 +42,6 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
   const luxeLivingSessionId = data.luxeLivingSessionId;
   const luxeLivingSentAt = data.luxeLivingSentAt;
   const luxeLivingCompletedAt = data.luxeLivingCompletedAt;
-=======
   const { kycData, updateKYCData, activeProjectId, clientData } = useAppContext();
   const data = kycData[respondent].lifestyleLiving;
 
@@ -1555,10 +1553,8 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         placeholder="Describe a typical day - morning routines, how you use spaces, evening patterns..."
         rows={3}
       />
-<<<<<<< Updated upstream
         </div>
       )}
-=======
 
       {/* Voice Briefing Integration */}
       <div className="kyc-section__group">
