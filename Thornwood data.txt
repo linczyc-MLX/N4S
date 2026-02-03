@@ -1,0 +1,2819 @@
+root@ubuntu:/var/www/luxebrief# curl -s "https://website.not-4.sale/api/projects.php" | head -100
+[{"id":"proj_thornwood_001","project_name":"Thornwood Estate","project_code":"MJUJX","created_at":"2026-01-08 10:39:37","updated_at":"2026-01-25 20:58:45"}]root@ubuntu:/var/www/luxebrief# curl -s "https://website.not-4.sale/api/projects.php?id=proj_thornwood_001" | python3 -m json.tool
+{
+    "id": "proj_thornwood_001",
+    "clientData": {
+        "projectName": "Thornwood Estate",
+        "projectCode": "MJUJX",
+        "createdAt": "2026-01-08 10:39:37",
+        "lastUpdated": "2026-01-25 20:58:45"
+    },
+    "activeRespondent": "principal",
+    "fyiData": {
+        "brief": null,
+        "completedAt": null,
+        "settings": {
+            "targetSF": 15000,
+            "deltaPct": 10,
+            "circulationPct": 0.14,
+            "lockToTarget": false,
+            "programTier": "15k",
+            "hasBasement": false
+        },
+        "selections": {
+            "FOY": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PWD": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "OFF": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "DR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "WINE": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "LIB": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "FR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "KIT": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "BKF": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "SCUL": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "CHEF": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "MEDIA": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PWD2": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "BAR": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GAME": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "THR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "MUS": {
+                "included": false,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PWD3": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GYM": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "SPA": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "MAS": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "POOLSUP": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PWD4": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PRI": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PRIBATH": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PRICL_HIS": {
+                "included": true,
+                "size": "S",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PRICL_HER": {
+                "included": true,
+                "size": "S",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PRILNG": {
+                "included": true,
+                "size": "S",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GST1": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GST2": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GST3": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "JRPRI": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "JRPRIBATH": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "JRPRICL": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "BNK": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PLY": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "NNY": {
+                "included": true,
+                "size": "M",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "STF": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "MUD": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "LND": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "LN2": {
+                "included": true,
+                "size": "S",
+                "level": 2,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "MEP": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "STR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GAR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "WRK": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "COR": {
+                "included": true,
+                "size": "S",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "TERR": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "POOL": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "OKT": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "FPT": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "ODN": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "CTY": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "POOL_BATH": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "DRV": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_GST1": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_GST2": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_PWD": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_LIV": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_KIT": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "GH_DIN": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_SHW": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_CHG": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_BATH": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_ENT": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_KIT": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            },
+            "PH_DIN": {
+                "included": true,
+                "size": "M",
+                "level": 1,
+                "customSF": null,
+                "imageUrl": null,
+                "notes": ""
+            }
+        },
+        "mvpChecklistState": {
+            "k1": true,
+            "k2": true,
+            "k3": true,
+            "e5": true,
+            "e4": true,
+            "st4": true,
+            "st3": true
+        },
+        "mvpAdjacencyDecisions": [],
+        "mvpAdjacencyConfig": {
+            "tier": "15k",
+            "decisionAnswers": {
+                "kitchen-family": "kit-open",
+                "primary-privacy": "pri-wing",
+                "dining-formality": "dr-formal",
+                "wellness-placement": "wellness-pool",
+                "secondary-clustering": "sec-clustered"
+            },
+            "questionnaireCompletedAt": null,
+            "validationRunAt": "2026-01-16T14:40:57.447Z",
+            "validationResults": {
+                "overallScore": 100,
+                "moduleScores": [
+                    {
+                        "id": "module-01",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-02",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-03",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-04",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-05",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-06",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-07",
+                        "score": 100
+                    },
+                    {
+                        "id": "module-08",
+                        "score": 100
+                    }
+                ],
+                "redFlagsTriggered": [],
+                "bridgesEnabled": [
+                    "butlerPantry",
+                    "wetFeetIntercept"
+                ]
+            }
+        },
+        "architectShortlist": [],
+        "idShortlist": [],
+        "compatibilityMatrix": [],
+        "selectedArchitect": null,
+        "selectedID": null,
+        "kysData": {
+            "sites": [
+                {
+                    "id": "site_mkh17cznsy24n",
+                    "createdAt": "2026-01-16T15:26:44.867Z",
+                    "updatedAt": "2026-01-16T16:23:20.259Z",
+                    "basicInfo": {
+                        "name": "22105 Carbon Mesa Rd",
+                        "address": "22105 Carbon Mesa Rd",
+                        "city": "Malibu",
+                        "state": "CA",
+                        "zipCode": "90265",
+                        "acreage": "12.94",
+                        "listingPrice": "6495000",
+                        "notes": "Imported from KYM Land Acquisition.\nFeatures: \nSource: https://www.realtor.com/realestateandhomes-detail/22105-Carbon-Mesa-Rd_Malibu_CA_90265_M14078-73943",
+                        "askingPrice": 6500000,
+                        "lotSizeAcres": 12.94
+                    },
+                    "scores": {
+                        "1.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "1.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "1.3": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "1.4": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "1.5": {
+                            "score": 3.5,
+                            "notes": ""
+                        },
+                        "2.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "2.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "2.3": {
+                            "score": 5,
+                            "notes": ""
+                        },
+                        "2.4": {
+                            "score": 3,
+                            "notes": ""
+                        },
+                        "3.1": {
+                            "score": 3.5,
+                            "notes": ""
+                        },
+                        "3.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "3.3": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "3.4": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "3.5": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "4.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "4.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "4.3": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "4.4": {
+                            "score": 5,
+                            "notes": ""
+                        },
+                        "4.5": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "5.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "5.2": {
+                            "score": 2,
+                            "notes": ""
+                        },
+                        "5.3": {
+                            "score": 3,
+                            "notes": ""
+                        },
+                        "5.4": {
+                            "score": 3.5,
+                            "notes": ""
+                        },
+                        "6.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "6.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "6.3": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "7.1": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "7.2": {
+                            "score": 4,
+                            "notes": ""
+                        },
+                        "7.3": {
+                            "score": 4.5,
+                            "notes": ""
+                        },
+                        "7.4": {
+                            "score": 3.5,
+                            "notes": ""
+                        },
+                        "7.5": {
+                            "score": 4,
+                            "notes": ""
+                        }
+                    },
+                    "handoffNotes": {
+                        "siteConstraints": "",
+                        "insightsForKYM": "",
+                        "waivedDealBreakers": []
+                    }
+                }
+            ],
+            "selectedSiteId": null,
+            "comparisonEnabled": false
+        },
+        "vmxData": {
+            "tier": "reserve",
+            "regionAId": "us",
+            "regionBId": "me",
+            "compareMode": false,
+            "areaSqft": 15000,
+            "locationAPreset": "national",
+            "locationACustom": 1,
+            "locationBPreset": "national",
+            "locationBCustom": 1,
+            "typologyA": "suburban",
+            "typologyB": "suburban",
+            "landCostA": 0,
+            "landCostB": 0,
+            "interiorTierOverride": "match",
+            "selectionsA": {
+                "FACILITATING": "MEDIUM",
+                "SUBSTRUCTURE": "MEDIUM",
+                "SUPERSTRUCTURE": "MEDIUM",
+                "INTERNAL_FINISHES": "MEDIUM",
+                "FF_E": "MEDIUM",
+                "SERVICES": "MEDIUM",
+                "EXTERNAL_WORKS": "MEDIUM"
+            },
+            "selectionsB": {
+                "FACILITATING": "MEDIUM",
+                "SUBSTRUCTURE": "MEDIUM",
+                "SUPERSTRUCTURE": "MEDIUM",
+                "INTERNAL_FINISHES": "MEDIUM",
+                "FF_E": "MEDIUM",
+                "SERVICES": "MEDIUM",
+                "EXTERNAL_WORKS": "MEDIUM"
+            },
+            "customBenchmarkLibrary": null,
+            "uiMode": "lite"
+        }
+    },
+    "kycData": {
+        "principal": {
+            "portfolioContext": {
+                "principalFirstName": "Peter",
+                "principalLastName": "Thornwood",
+                "principalEmail": "client-p01@not-4.sale",
+                "principalPhone": "",
+                "secondaryFirstName": "Sarah",
+                "secondaryLastName": "Thornwood",
+                "secondaryEmail": "client-s01@not-4.sale",
+                "familyOfficeContact": "Tom Adams",
+                "familyOfficeAuthorityLevel": 3,
+                "authorityLevelConfirmed": true,
+                "domainDelegationNotes": "",
+                "currentPropertyCount": 2,
+                "primaryResidences": [
+                    {
+                        "country": "USA",
+                        "city": "New York"
+                    },
+                    {
+                        "country": "UK",
+                        "city": "London"
+                    }
+                ],
+                "thisPropertyRole": "vacation",
+                "investmentHorizon": "5yr",
+                "exitStrategy": "",
+                "lifeStage": "established",
+                "decisionTimeline": "flexible",
+                "landAcquisitionCost": 6500000,
+                "questionnaireRespondent": "principal_and_secondary",
+                "familyOfficeEmail": "client-a01@not-4.sale"
+            },
+            "familyHousehold": {
+                "familyMembers": [
+                    {
+                        "name": "Samantha",
+                        "age": "13",
+                        "role": "teenager",
+                        "specialNeeds": "",
+                        "id": 1767218278926
+                    },
+                    {
+                        "name": "Amy",
+                        "age": "15",
+                        "role": "teenager",
+                        "specialNeeds": "",
+                        "id": 1767723325292
+                    }
+                ],
+                "pets": "2 dogs, indoor",
+                "petGroomingRoom": true,
+                "petDogRun": true,
+                "staffingLevel": "full_time",
+                "liveInStaff": null,
+                "staffAccommodationRequired": false,
+                "multigenerationalNeeds": false,
+                "anticipatedFamilyChanges": ""
+            },
+            "projectParameters": {
+                "projectCity": "Malibu, CA",
+                "projectCountry": "USA",
+                "specificAddress": "",
+                "propertyType": "new-build",
+                "targetGSF": 15000,
+                "bedroomCount": 5,
+                "bathroomCount": 9,
+                "floors": 2,
+                "hasBasement": false,
+                "sfCapConstraint": null,
+                "timeline": "24plus",
+                "complexityFactors": [],
+                "architecturalIntegration": "full-arch",
+                "localKnowledgeCritical": "standard",
+                "projectName": "Thornwood Estate",
+                "siteTypology": "hillside",
+                "levelsAboveArrival": 1,
+                "levelsBelowArrival": 0,
+                "hasGuestHouse": false,
+                "hasPoolHouse": true
+            },
+            "budgetFramework": {
+                "totalProjectBudget": 55000000,
+                "interiorBudget": 15000000,
+                "perSFExpectation": null,
+                "budgetFlexibility": "flexible",
+                "architectFeeStructure": "fixed",
+                "interiorDesignerFeeStructure": "hybrid",
+                "interiorQualityTier": "reserve",
+                "artBudgetSeparate": false,
+                "artBudgetAmount": null
+            },
+            "designIdentity": {
+                "tasteExplorationStatus": "completed",
+                "tasteExplorationCompletedAt": "2026-01-24T01:36:53.000Z",
+                "principalTasteResults": {
+                    "completedAt": "2026-01-24T01:36:53.000Z",
+                    "profile": {
+                        "id": 1,
+                        "sessionId": 35,
+                        "warmthScore": 74,
+                        "formalityScore": 79,
+                        "dramaScore": 87,
+                        "traditionScore": 48,
+                        "opennessScore": 50,
+                        "artFocusScore": 50,
+                        "completedQuads": 36,
+                        "skippedQuads": 0,
+                        "totalQuads": 36,
+                        "topMaterials": "[]",
+                        "createdAt": "2026-01-24T01:36:53.000Z",
+                        "updatedAt": "2026-01-24T01:36:53.000Z"
+                    },
+                    "selections": [
+                        {
+                            "id": 1,
+                            "sessionId": 35,
+                            "quadId": "LS-001",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:22:56.000Z",
+                            "updatedAt": "2026-01-24T01:22:56.000Z"
+                        },
+                        {
+                            "id": 2,
+                            "sessionId": 35,
+                            "quadId": "LS-002",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:23:01.000Z",
+                            "updatedAt": "2026-01-24T01:23:01.000Z"
+                        },
+                        {
+                            "id": 3,
+                            "sessionId": 35,
+                            "quadId": "LS-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:13.000Z",
+                            "updatedAt": "2026-01-24T01:32:13.000Z"
+                        },
+                        {
+                            "id": 4,
+                            "sessionId": 35,
+                            "quadId": "LS-004",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:19.000Z",
+                            "updatedAt": "2026-01-24T01:32:19.000Z"
+                        },
+                        {
+                            "id": 5,
+                            "sessionId": 35,
+                            "quadId": "DS-001",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:24.000Z",
+                            "updatedAt": "2026-01-24T01:32:24.000Z"
+                        },
+                        {
+                            "id": 6,
+                            "sessionId": 35,
+                            "quadId": "DS-002",
+                            "favorite1": 0,
+                            "favorite2": 3,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:29.000Z",
+                            "updatedAt": "2026-01-24T01:32:29.000Z"
+                        },
+                        {
+                            "id": 7,
+                            "sessionId": 35,
+                            "quadId": "DS-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:39.000Z",
+                            "updatedAt": "2026-01-24T01:32:39.000Z"
+                        },
+                        {
+                            "id": 8,
+                            "sessionId": 35,
+                            "quadId": "DS-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:46.000Z",
+                            "updatedAt": "2026-01-24T01:32:46.000Z"
+                        },
+                        {
+                            "id": 9,
+                            "sessionId": 35,
+                            "quadId": "KT-001",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:51.000Z",
+                            "updatedAt": "2026-01-24T01:32:51.000Z"
+                        },
+                        {
+                            "id": 10,
+                            "sessionId": 35,
+                            "quadId": "KT-002",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:32:59.000Z",
+                            "updatedAt": "2026-01-24T01:32:59.000Z"
+                        },
+                        {
+                            "id": 11,
+                            "sessionId": 35,
+                            "quadId": "KT-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:04.000Z",
+                            "updatedAt": "2026-01-24T01:33:04.000Z"
+                        },
+                        {
+                            "id": 12,
+                            "sessionId": 35,
+                            "quadId": "KT-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:10.000Z",
+                            "updatedAt": "2026-01-24T01:33:10.000Z"
+                        },
+                        {
+                            "id": 13,
+                            "sessionId": 35,
+                            "quadId": "PB-001",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:15.000Z",
+                            "updatedAt": "2026-01-24T01:33:15.000Z"
+                        },
+                        {
+                            "id": 14,
+                            "sessionId": 35,
+                            "quadId": "PB-002",
+                            "favorite1": 0,
+                            "favorite2": 3,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:20.000Z",
+                            "updatedAt": "2026-01-24T01:33:20.000Z"
+                        },
+                        {
+                            "id": 15,
+                            "sessionId": 35,
+                            "quadId": "PB-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:31.000Z",
+                            "updatedAt": "2026-01-24T01:33:31.000Z"
+                        },
+                        {
+                            "id": 16,
+                            "sessionId": 35,
+                            "quadId": "PB-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:44.000Z",
+                            "updatedAt": "2026-01-24T01:33:44.000Z"
+                        },
+                        {
+                            "id": 17,
+                            "sessionId": 35,
+                            "quadId": "PBT-001",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:33:57.000Z",
+                            "updatedAt": "2026-01-24T01:33:57.000Z"
+                        },
+                        {
+                            "id": 18,
+                            "sessionId": 35,
+                            "quadId": "PBT-002",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:22.000Z",
+                            "updatedAt": "2026-01-24T01:35:22.000Z"
+                        },
+                        {
+                            "id": 19,
+                            "sessionId": 35,
+                            "quadId": "PBT-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:26.000Z",
+                            "updatedAt": "2026-01-24T01:35:26.000Z"
+                        },
+                        {
+                            "id": 20,
+                            "sessionId": 35,
+                            "quadId": "PBT-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:32.000Z",
+                            "updatedAt": "2026-01-24T01:35:32.000Z"
+                        },
+                        {
+                            "id": 21,
+                            "sessionId": 35,
+                            "quadId": "GB-001",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:36.000Z",
+                            "updatedAt": "2026-01-24T01:35:36.000Z"
+                        },
+                        {
+                            "id": 22,
+                            "sessionId": 35,
+                            "quadId": "GB-002",
+                            "favorite1": 0,
+                            "favorite2": 3,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:40.000Z",
+                            "updatedAt": "2026-01-24T01:35:40.000Z"
+                        },
+                        {
+                            "id": 23,
+                            "sessionId": 35,
+                            "quadId": "GB-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:35:57.000Z",
+                            "updatedAt": "2026-01-24T01:35:57.000Z"
+                        },
+                        {
+                            "id": 24,
+                            "sessionId": 35,
+                            "quadId": "GB-004",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:01.000Z",
+                            "updatedAt": "2026-01-24T01:36:01.000Z"
+                        },
+                        {
+                            "id": 25,
+                            "sessionId": 35,
+                            "quadId": "FA-001",
+                            "favorite1": 1,
+                            "favorite2": 0,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:06.000Z",
+                            "updatedAt": "2026-01-24T01:36:06.000Z"
+                        },
+                        {
+                            "id": 26,
+                            "sessionId": 35,
+                            "quadId": "FA-002",
+                            "favorite1": 0,
+                            "favorite2": 3,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:10.000Z",
+                            "updatedAt": "2026-01-24T01:36:10.000Z"
+                        },
+                        {
+                            "id": 27,
+                            "sessionId": 35,
+                            "quadId": "FA-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:14.000Z",
+                            "updatedAt": "2026-01-24T01:36:14.000Z"
+                        },
+                        {
+                            "id": 28,
+                            "sessionId": 35,
+                            "quadId": "FA-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:18.000Z",
+                            "updatedAt": "2026-01-24T01:36:18.000Z"
+                        },
+                        {
+                            "id": 29,
+                            "sessionId": 35,
+                            "quadId": "EA-001",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:22.000Z",
+                            "updatedAt": "2026-01-24T01:36:22.000Z"
+                        },
+                        {
+                            "id": 30,
+                            "sessionId": 35,
+                            "quadId": "EA-002",
+                            "favorite1": 3,
+                            "favorite2": 0,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:26.000Z",
+                            "updatedAt": "2026-01-24T01:36:26.000Z"
+                        },
+                        {
+                            "id": 31,
+                            "sessionId": 35,
+                            "quadId": "EA-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 0,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:30.000Z",
+                            "updatedAt": "2026-01-24T01:36:30.000Z"
+                        },
+                        {
+                            "id": 32,
+                            "sessionId": 35,
+                            "quadId": "EA-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:34.000Z",
+                            "updatedAt": "2026-01-24T01:36:34.000Z"
+                        },
+                        {
+                            "id": 33,
+                            "sessionId": 35,
+                            "quadId": "OL-001",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:37.000Z",
+                            "updatedAt": "2026-01-24T01:36:37.000Z"
+                        },
+                        {
+                            "id": 34,
+                            "sessionId": 35,
+                            "quadId": "OL-002",
+                            "favorite1": 0,
+                            "favorite2": 3,
+                            "leastFavorite": 2,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:41.000Z",
+                            "updatedAt": "2026-01-24T01:36:41.000Z"
+                        },
+                        {
+                            "id": 35,
+                            "sessionId": 35,
+                            "quadId": "OL-003",
+                            "favorite1": 1,
+                            "favorite2": 2,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:45.000Z",
+                            "updatedAt": "2026-01-24T01:36:45.000Z"
+                        },
+                        {
+                            "id": 36,
+                            "sessionId": 35,
+                            "quadId": "OL-004",
+                            "favorite1": 0,
+                            "favorite2": 1,
+                            "leastFavorite": 3,
+                            "isSkipped": false,
+                            "createdAt": "2026-01-24T01:36:49.000Z",
+                            "updatedAt": "2026-01-24T01:36:49.000Z"
+                        }
+                    ]
+                }
+            },
+            "lifestyleLiving": {
+                "dailyRoutinesSummary": "Rise, shower, coffee, go to home office",
+                "workFromHome": "sometimes",
+                "wfhPeopleCount": 2,
+                "hobbies": [
+                    "fitness",
+                    "wine",
+                    "cooking",
+                    "reading",
+                    "gaming",
+                    "spa"
+                ],
+                "hobbyDetails": "",
+                "entertainingFrequency": "weekly",
+                "typicalGuestCount": "12 for dinner, 30 for parties",
+                "entertainingStyle": "casual",
+                "wellnessPriorities": [
+                    "gym",
+                    "pool",
+                    "spa",
+                    "yoga",
+                    "massage",
+                    "meditation",
+                    "cold-plunge"
+                ],
+                "lateNightMediaUse": true,
+                "privacyLevelRequired": 4,
+                "noiseSensitivity": 4,
+                "indoorOutdoorLiving": 5,
+                "separateOfficesRequired": true,
+                "luxeBriefStatus": "completed",
+                "luxeBriefSessionId": 10,
+                "luxeBriefSentAt": "2026-01-20T18:13:25.769Z",
+                "luxeBriefSubdomain": "pthornwood",
+                "luxeBriefCompletedAt": "2026-01-21T23:56:11.000Z",
+                "luxeLivingStatus": "completed",
+                "luxeLivingSessionId": 17,
+                "luxeLivingSentAt": "2026-01-22T00:26:56.173Z",
+                "luxeLivingSubdomain": "pthornwood",
+                "luxeLivingCompletedAt": "2026-01-21T23:56:11.000Z"
+            },
+            "spaceRequirements": {
+                "mustHaveSpaces": [
+                    "primary-suite",
+                    "secondary-suites",
+                    "great-room",
+                    "family-room",
+                    "formal-dining",
+                    "casual-dining",
+                    "chef-kitchen",
+                    "home-office",
+                    "library",
+                    "media-room",
+                    "wine-cellar",
+                    "gym",
+                    "spa-wellness",
+                    "steam-room",
+                    "sauna",
+                    "safe-room"
+                ],
+                "niceToHaveSpaces": [
+                    "laundry"
+                ],
+                "currentSpacePainPoints": "",
+                "viewPriorityRooms": [
+                    "primary-suite",
+                    "living",
+                    "dining"
+                ],
+                "adjacencyRequirements": "Use Adjacency Matrix - Office close to Primary with exterior access",
+                "storageNeeds": "standard",
+                "accessibilityRequirements": "",
+                "technologyRequirements": [
+                    "smart-home",
+                    "av-integration",
+                    "security",
+                    "lighting-control",
+                    "climate-zones"
+                ],
+                "sustainabilityPriorities": [
+                    "solar"
+                ],
+                "wantsSeparateFamilyRoom": true,
+                "wantsSecondFormalLiving": false,
+                "wantsBar": true,
+                "wantsBunkRoom": true,
+                "wantsBreakfastNook": true,
+                "garageSize": "8-car",
+                "garageFeatures": [
+                    "climate-controlled",
+                    "car-wash-bay",
+                    "ev-charging"
+                ],
+                "mustHavePoolWater": [
+                    "swimming-pool",
+                    "pool-house",
+                    "spa-hot-tub"
+                ],
+                "mustHaveSport": [
+                    "tennis-court",
+                    "basketball-half",
+                    "playground"
+                ],
+                "mustHaveOutdoorLiving": [
+                    "outdoor-kitchen",
+                    "covered-outdoor",
+                    "fire-pit",
+                    "outdoor-fireplace"
+                ],
+                "wouldLikeOutdoorLiving": [
+                    "pergola-pavilion"
+                ],
+                "mustHaveGarden": [
+                    "mature-trees"
+                ],
+                "wouldLikeGarden": [
+                    "kitchen-garden",
+                    "cutting-garden"
+                ],
+                "mustHaveStructures": [
+                    "gym-pavilion"
+                ],
+                "mustHaveAccess": [
+                    "gated-entry",
+                    "long-driveway",
+                    "motor-court"
+                ],
+                "privacyNoNeighbors": "preferred",
+                "privacyPerimeter": "flexible",
+                "minimumSetback": "200 ft",
+                "minimumLotSize": "2 acres",
+                "wouldLikeSport": [
+                    "basketball-half"
+                ]
+            },
+            "culturalContext": {
+                "culturalBackground": "American",
+                "regionalSensibilities": [
+                    "american"
+                ],
+                "religiousObservances": "",
+                "entertainingCulturalNorms": "",
+                "crossCulturalRequirements": "",
+                "languagesPreferred": []
+            },
+            "workingPreferences": {
+                "communicationStyle": "relational",
+                "decisionCadence": "milestone",
+                "collaborationStyle": "directive",
+                "principalInvolvementRequired": "must-have",
+                "presentationFormat": "hybrid",
+                "previousDesignerExperience": "",
+                "redFlagsToAvoid": "",
+                "existingIndustryConnections": "",
+                "celebrityVsQuietProfessional": 4,
+                "caRequirement": "full",
+                "contractorRelationshipPreference": "design-build",
+                "earlyContractorInvolvement": true,
+                "starchitectPreference": 3
+            },
+            "advisorAssessed": {
+                "visionFlexibilityIndex": null,
+                "profileCompleteness": 0,
+                "dataConfidenceScore": null,
+                "divergenceLog": [],
+                "sessionNotes": ""
+            }
+        },
+        "secondary": {
+            "portfolioContext": {
+                "principalFirstName": "",
+                "principalLastName": "",
+                "principalEmail": "",
+                "principalPhone": "",
+                "secondaryFirstName": "",
+                "secondaryLastName": "",
+                "secondaryEmail": "",
+                "familyOfficeContact": "",
+                "familyOfficeAuthorityLevel": null,
+                "authorityLevelConfirmed": false,
+                "domainDelegationNotes": "",
+                "currentPropertyCount": 3,
+                "primaryResidences": [
+                    {
+                        "country": "USA",
+                        "city": "New York"
+                    },
+                    {
+                        "country": "USA",
+                        "city": "London"
+                    },
+                    {
+                        "country": "Monaco",
+                        "city": "Monte Carlo"
+                    }
+                ],
+                "thisPropertyRole": "vacation",
+                "investmentHorizon": "5yr",
+                "exitStrategy": "sale",
+                "lifeStage": "established",
+                "decisionTimeline": "flexible"
+            },
+            "familyHousehold": {
+                "familyMembers": [
+                    {
+                        "name": "Amy",
+                        "age": "13",
+                        "role": "teenager",
+                        "specialNeeds": "",
+                        "id": 1767323927749
+                    },
+                    {
+                        "name": "Samantha",
+                        "age": "15",
+                        "role": "teenager",
+                        "specialNeeds": "",
+                        "id": 1767410698564
+                    }
+                ],
+                "pets": "2 dogs, indoor",
+                "petGroomingRoom": true,
+                "petDogRun": true,
+                "staffingLevel": "full_time",
+                "liveInStaff": null,
+                "staffAccommodationRequired": false,
+                "multigenerationalNeeds": false,
+                "anticipatedFamilyChanges": ""
+            },
+            "projectParameters": {
+                "projectCity": "Malibu, Ca",
+                "projectCountry": "USA",
+                "specificAddress": "",
+                "propertyType": "new-build",
+                "targetGSF": 15000,
+                "bedroomCount": 5,
+                "bathroomCount": 9,
+                "floors": 2,
+                "hasBasement": false,
+                "sfCapConstraint": null,
+                "timeline": "24plus",
+                "complexityFactors": [],
+                "architecturalIntegration": "full-arch",
+                "localKnowledgeCritical": "standard",
+                "siteTypology": "hillside",
+                "projectName": "Thornwood Estate"
+            },
+            "budgetFramework": {
+                "totalProjectBudget": 55000000,
+                "interiorBudget": 15000000,
+                "perSFExpectation": null,
+                "budgetFlexibility": "flexible",
+                "architectFeeStructure": "fixed",
+                "interiorDesignerFeeStructure": "hybrid",
+                "interiorQualityTier": "reserve",
+                "artBudgetSeparate": false,
+                "artBudgetAmount": null
+            },
+            "designIdentity": {
+                "tasteExplorationStatus": "completed",
+                "tasteExplorationCompletedAt": "2026-01-24T22:34:38.000Z",
+                "secondaryTasteResults": {
+                    "completedAt": "2026-01-24T22:34:38.000Z",
+                    "profile": {
+                        "scores": {
+                            "warmth": 7.9,
+                            "formality": 8.2,
+                            "drama": 7.2,
+                            "tradition": 6.7,
+                            "openness": 5,
+                            "art_focus": 5
+                        }
+                    },
+                    "selections": {
+                        "LS-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "LS-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "LS-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "LS-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "DS-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "DS-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "DS-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "DS-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "KT-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "KT-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "KT-003": {
+                            "favorites": [
+                                2,
+                                3
+                            ],
+                            "least": 0
+                        },
+                        "KT-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "PB-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "PB-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "PB-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "PB-004": {
+                            "favorites": [
+                                2,
+                                0
+                            ],
+                            "least": 1
+                        },
+                        "PBT-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "PBT-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "PBT-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "PBT-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "GB-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "GB-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "GB-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "GB-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "FA-001": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "FA-002": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "FA-003": {
+                            "favorites": [
+                                3,
+                                2
+                            ],
+                            "least": 0
+                        },
+                        "FA-004": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 3
+                        },
+                        "EA-001": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 3
+                        },
+                        "EA-002": {
+                            "favorites": [
+                                0,
+                                3
+                            ],
+                            "least": 2
+                        },
+                        "EA-003": {
+                            "favorites": [
+                                2,
+                                1
+                            ],
+                            "least": 0
+                        },
+                        "EA-004": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 3
+                        },
+                        "OL-001": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 2
+                        },
+                        "OL-002": {
+                            "favorites": [
+                                0,
+                                3
+                            ],
+                            "least": 1
+                        },
+                        "OL-003": {
+                            "favorites": [
+                                2,
+                                3
+                            ],
+                            "least": 0
+                        },
+                        "OL-004": {
+                            "favorites": [
+                                1,
+                                0
+                            ],
+                            "least": 3
+                        }
+                    }
+                }
+            },
+            "lifestyleLiving": {
+                "dailyRoutinesSummary": "",
+                "workFromHome": "sometimes",
+                "wfhPeopleCount": 1,
+                "hobbies": [
+                    "fitness",
+                    "yoga",
+                    "wine",
+                    "reading",
+                    "gaming",
+                    "spa",
+                    "cooking"
+                ],
+                "hobbyDetails": "",
+                "entertainingFrequency": "monthly",
+                "typicalGuestCount": "12 for Dinner, 30 for Parties",
+                "entertainingStyle": "casual",
+                "wellnessPriorities": [
+                    "gym",
+                    "pool",
+                    "spa",
+                    "yoga",
+                    "massage",
+                    "meditation",
+                    "cold-plunge"
+                ],
+                "lateNightMediaUse": true,
+                "privacyLevelRequired": 4,
+                "noiseSensitivity": 4,
+                "indoorOutdoorLiving": 5,
+                "luxeBriefStatus": "not_sent",
+                "luxeBriefSessionId": null,
+                "luxeBriefSentAt": null,
+                "luxeBriefSubdomain": "sthornwood",
+                "luxeLivingStatus": "completed",
+                "luxeLivingSessionId": 28,
+                "luxeLivingSentAt": "2026-01-23T17:28:44.938Z",
+                "luxeLivingSubdomain": "sthornwood",
+                "luxeLivingCompletedAt": "2026-01-23T18:43:07.000Z",
+                "luxeBriefCompletedAt": null
+            },
+            "spaceRequirements": {
+                "mustHaveSpaces": [
+                    "primary-suite",
+                    "secondary-suites",
+                    "kids-bedrooms",
+                    "great-room",
+                    "casual-dining",
+                    "formal-dining",
+                    "family-room",
+                    "home-office",
+                    "sauna",
+                    "steam-room",
+                    "laundry"
+                ],
+                "niceToHaveSpaces": [
+                    "media-room",
+                    "safe-room"
+                ],
+                "currentSpacePainPoints": "Husband",
+                "viewPriorityRooms": [
+                    "primary-suite",
+                    "living-room",
+                    "dining-room",
+                    "family-room"
+                ],
+                "adjacencyRequirements": "Home office with exterior access close to Primary Bedroom",
+                "storageNeeds": "standard",
+                "accessibilityRequirements": "",
+                "technologyRequirements": [
+                    "smart-home",
+                    "av-integration",
+                    "lighting-control"
+                ],
+                "sustainabilityPriorities": [
+                    "solar",
+                    "passive-house"
+                ],
+                "wantsSeparateFamilyRoom": true,
+                "wantsSecondFormalLiving": false,
+                "wantsBar": true,
+                "wantsBunkRoom": true,
+                "wantsBreakfastNook": true,
+                "garageSize": "8-car",
+                "garageFeatures": [
+                    "ev-charging"
+                ],
+                "mustHavePoolWater": [
+                    "swimming-pool",
+                    "pool-house"
+                ],
+                "mustHaveSport": [
+                    "pickleball-court"
+                ],
+                "wouldLikeSport": [
+                    "playground"
+                ],
+                "mustHaveOutdoorLiving": [
+                    "outdoor-kitchen",
+                    "covered-outdoor",
+                    "outdoor-dining"
+                ],
+                "wouldLikeOutdoorLiving": [
+                    "pergola-pavilion"
+                ],
+                "mustHaveGarden": [
+                    "vegetable-garden"
+                ],
+                "mustHaveStructures": [
+                    "workshop-studio"
+                ],
+                "mustHaveAccess": [
+                    "porte-cochere"
+                ],
+                "wouldLikeAccess": [
+                    "security-gate"
+                ],
+                "privacyNoNeighbors": "preferred",
+                "privacyPerimeter": "preferred",
+                "minimumSetback": 100,
+                "minimumLotSize": 2,
+                "wouldLikePoolWater": [
+                    "spa-hot-tub"
+                ]
+            },
+            "culturalContext": {
+                "culturalBackground": "American",
+                "regionalSensibilities": [
+                    "american"
+                ],
+                "religiousObservances": "",
+                "entertainingCulturalNorms": "",
+                "crossCulturalRequirements": "",
+                "languagesPreferred": []
+            },
+            "workingPreferences": {
+                "communicationStyle": "direct",
+                "decisionCadence": "milestone",
+                "collaborationStyle": "directive",
+                "principalInvolvementRequired": "must-have",
+                "presentationFormat": "hybrid",
+                "previousDesignerExperience": "",
+                "redFlagsToAvoid": "",
+                "existingIndustryConnections": "",
+                "celebrityVsQuietProfessional": 3,
+                "caRequirement": "full",
+                "contractorRelationshipPreference": "design-build",
+                "earlyContractorInvolvement": true,
+                "starchitectPreference": 3,
+                "architectCelebrityPreference": 4,
+                "interiorDesignerCelebrityPreference": 4
+            },
+            "advisorAssessed": {
+                "visionFlexibilityIndex": null,
+                "profileCompleteness": 0,
+                "dataConfidenceScore": null,
+                "divergenceLog": [],
+                "sessionNotes": ""
+            }
+        },
+        "advisor": {
+            "portfolioContext": {
+                "principalFirstName": "",
+                "principalLastName": "",
+                "principalEmail": "",
+                "principalPhone": "",
+                "secondaryFirstName": "",
+                "secondaryLastName": "",
+                "secondaryEmail": "",
+                "familyOfficeContact": "",
+                "familyOfficeAuthorityLevel": null,
+                "authorityLevelConfirmed": false,
+                "domainDelegationNotes": "",
+                "currentPropertyCount": null,
+                "primaryResidences": [],
+                "thisPropertyRole": "",
+                "investmentHorizon": "",
+                "exitStrategy": "",
+                "lifeStage": "",
+                "decisionTimeline": ""
+            },
+            "familyHousehold": {
+                "familyMembers": [],
+                "pets": "",
+                "petGroomingRoom": false,
+                "petDogRun": false,
+                "staffingLevel": "",
+                "liveInStaff": null,
+                "staffAccommodationRequired": false,
+                "multigenerationalNeeds": false,
+                "anticipatedFamilyChanges": ""
+            },
+            "projectParameters": {
+                "projectCity": "",
+                "projectCountry": "",
+                "specificAddress": "",
+                "propertyType": "",
+                "targetGSF": null,
+                "bedroomCount": null,
+                "bathroomCount": null,
+                "floors": null,
+                "hasBasement": false,
+                "sfCapConstraint": null,
+                "timeline": "",
+                "complexityFactors": [],
+                "architecturalIntegration": "",
+                "localKnowledgeCritical": ""
+            },
+            "budgetFramework": {
+                "totalProjectBudget": null,
+                "interiorBudget": null,
+                "perSFExpectation": null,
+                "budgetFlexibility": "",
+                "architectFeeStructure": "",
+                "interiorDesignerFeeStructure": "",
+                "interiorQualityTier": "",
+                "artBudgetSeparate": false,
+                "artBudgetAmount": null
+            },
+            "designIdentity": {
+                "axisContemporaryTraditional": 5,
+                "axisMinimalLayered": 5,
+                "axisWarmCool": 5,
+                "axisOrganicGeometric": 5,
+                "axisRefinedEclectic": 5,
+                "axisArchMinimalOrnate": 5,
+                "axisArchRegionalInternational": 5,
+                "inspirationImages": [],
+                "aspirationKeywords": [],
+                "antiInspiration": "",
+                "benchmarkProperties": [],
+                "architectureStyleTags": [],
+                "interiorStyleTags": [],
+                "materialAffinities": [],
+                "materialAversions": [],
+                "colorPreferences": "",
+                "exteriorMaterialPreferences": [],
+                "massingPreference": "",
+                "roofFormPreference": "",
+                "structuralAmbition": ""
+            },
+            "lifestyleLiving": {
+                "dailyRoutinesSummary": "",
+                "workFromHome": "",
+                "wfhPeopleCount": null,
+                "hobbies": [],
+                "hobbyDetails": "",
+                "entertainingFrequency": "",
+                "typicalGuestCount": "",
+                "entertainingStyle": "",
+                "wellnessPriorities": [],
+                "lateNightMediaUse": false,
+                "privacyLevelRequired": 3,
+                "noiseSensitivity": 3,
+                "indoorOutdoorLiving": 3
+            },
+            "spaceRequirements": {
+                "mustHaveSpaces": [],
+                "niceToHaveSpaces": [],
+                "currentSpacePainPoints": "",
+                "viewPriorityRooms": [],
+                "adjacencyRequirements": "",
+                "storageNeeds": "",
+                "accessibilityRequirements": "",
+                "technologyRequirements": [],
+                "sustainabilityPriorities": [],
+                "wantsSeparateFamilyRoom": false,
+                "wantsSecondFormalLiving": false,
+                "wantsBar": false,
+                "wantsBunkRoom": false,
+                "wantsBreakfastNook": false
+            },
+            "culturalContext": {
+                "culturalBackground": "",
+                "regionalSensibilities": [],
+                "religiousObservances": "",
+                "entertainingCulturalNorms": "",
+                "crossCulturalRequirements": "",
+                "languagesPreferred": []
+            },
+            "workingPreferences": {
+                "communicationStyle": "",
+                "decisionCadence": "",
+                "collaborationStyle": "",
+                "principalInvolvementRequired": "",
+                "presentationFormat": "",
+                "previousDesignerExperience": "",
+                "redFlagsToAvoid": "",
+                "existingIndustryConnections": "",
+                "celebrityVsQuietProfessional": 3,
+                "caRequirement": "",
+                "contractorRelationshipPreference": "",
+                "earlyContractorInvolvement": false,
+                "starchitectPreference": 3
+            },
+            "advisorAssessed": {
+                "visionFlexibilityIndex": null,
+                "profileCompleteness": 0,
+                "dataConfidenceScore": null,
+                "divergenceLog": [],
+                "sessionNotes": ""
+            }
+        },
+        "consolidated": {
+            "portfolioContext": {
+                "principalFirstName": "",
+                "principalLastName": "",
+                "principalEmail": "",
+                "principalPhone": "",
+                "secondaryFirstName": "",
+                "secondaryLastName": "",
+                "secondaryEmail": "",
+                "familyOfficeContact": "",
+                "familyOfficeAuthorityLevel": null,
+                "authorityLevelConfirmed": false,
+                "domainDelegationNotes": "",
+                "currentPropertyCount": null,
+                "primaryResidences": [],
+                "thisPropertyRole": "",
+                "investmentHorizon": "",
+                "exitStrategy": "",
+                "lifeStage": "",
+                "decisionTimeline": ""
+            },
+            "familyHousehold": {
+                "familyMembers": [],
+                "pets": "",
+                "petGroomingRoom": false,
+                "petDogRun": false,
+                "staffingLevel": "",
+                "liveInStaff": null,
+                "staffAccommodationRequired": false,
+                "multigenerationalNeeds": false,
+                "anticipatedFamilyChanges": ""
+            },
+            "projectParameters": {
+                "projectCity": "",
+                "projectCountry": "",
+                "specificAddress": "",
+                "propertyType": "",
+                "targetGSF": null,
+                "bedroomCount": null,
+                "bathroomCount": null,
+                "floors": null,
+                "hasBasement": false,
+                "sfCapConstraint": null,
+                "timeline": "",
+                "complexityFactors": [],
+                "architecturalIntegration": "",
+                "localKnowledgeCritical": ""
+            },
+            "budgetFramework": {
+                "totalProjectBudget": null,
+                "interiorBudget": null,
+                "perSFExpectation": null,
+                "budgetFlexibility": "",
+                "architectFeeStructure": "",
+                "interiorDesignerFeeStructure": "",
+                "interiorQualityTier": "",
+                "artBudgetSeparate": false,
+                "artBudgetAmount": null
+            },
+            "designIdentity": {
+                "axisContemporaryTraditional": 5,
+                "axisMinimalLayered": 5,
+                "axisWarmCool": 5,
+                "axisOrganicGeometric": 5,
+                "axisRefinedEclectic": 5,
+                "axisArchMinimalOrnate": 5,
+                "axisArchRegionalInternational": 5,
+                "inspirationImages": [],
+                "aspirationKeywords": [],
+                "antiInspiration": "",
+                "benchmarkProperties": [],
+                "architectureStyleTags": [],
+                "interiorStyleTags": [],
+                "materialAffinities": [],
+                "materialAversions": [],
+                "colorPreferences": "",
+                "exteriorMaterialPreferences": [],
+                "massingPreference": "",
+                "roofFormPreference": "",
+                "structuralAmbition": ""
+            },
+            "lifestyleLiving": {
+                "dailyRoutinesSummary": "",
+                "workFromHome": "",
+                "wfhPeopleCount": null,
+                "hobbies": [],
+                "hobbyDetails": "",
+                "entertainingFrequency": "",
+                "typicalGuestCount": "",
+                "entertainingStyle": "",
+                "wellnessPriorities": [],
+                "lateNightMediaUse": false,
+                "privacyLevelRequired": 3,
+                "noiseSensitivity": 3,
+                "indoorOutdoorLiving": 3
+            },
+            "spaceRequirements": {
+                "mustHaveSpaces": [],
+                "niceToHaveSpaces": [],
+                "currentSpacePainPoints": "",
+                "viewPriorityRooms": [],
+                "adjacencyRequirements": "",
+                "storageNeeds": "",
+                "accessibilityRequirements": "",
+                "technologyRequirements": [],
+                "sustainabilityPriorities": [],
+                "wantsSeparateFamilyRoom": false,
+                "wantsSecondFormalLiving": false,
+                "wantsBar": false,
+                "wantsBunkRoom": false,
+                "wantsBreakfastNook": false
+            },
+            "culturalContext": {
+                "culturalBackground": "",
+                "regionalSensibilities": [],
+                "religiousObservances": "",
+                "entertainingCulturalNorms": "",
+                "crossCulturalRequirements": "",
+                "languagesPreferred": []
+            },
+            "workingPreferences": {
+                "communicationStyle": "",
+                "decisionCadence": "",
+                "collaborationStyle": "",
+                "principalInvolvementRequired": "",
+                "presentationFormat": "",
+                "previousDesignerExperience": "",
+                "redFlagsToAvoid": "",
+                "existingIndustryConnections": "",
+                "celebrityVsQuietProfessional": 3,
+                "caRequirement": "",
+                "contractorRelationshipPreference": "",
+                "earlyContractorInvolvement": false,
+                "starchitectPreference": 3
+            },
+            "advisorAssessed": {
+                "visionFlexibilityIndex": null,
+                "profileCompleteness": 0,
+                "dataConfidenceScore": null,
+                "divergenceLog": [],
+                "sessionNotes": ""
+            }
+        }
+    },
+    "lcdData": {
+        "portalActive": true,
+        "portalSlug": "thornwood-estate",
+        "activatedAt": "2026-01-25T22:44:16.244Z",
+        "clientPasswordHash": "Kittyhawk90",
+        "advisorPasswordHash": "Rosebud82",
+        "clientPasswordPlain": "Kittyhawk90",
+        "advisorPasswordPlain": "Rosebud82",
+        "clientEmail": "",
+        "secondaryEmail": "",
+        "visibility": {
+            "kyc": {
+                "enabled": true,
+                "profileReport": true,
+                "luxebriefPrincipal": true,
+                "luxebriefSecondary": true,
+                "partnerAlignment": true
+            },
+            "fyi": {
+                "enabled": true,
+                "spaceProgram": true,
+                "zoneBreakdown": true
+            },
+            "mvp": {
+                "enabled": true,
+                "validationResults": true,
+                "designBrief": true
+            },
+            "kym": {
+                "enabled": true,
+                "propertyShortlist": true,
+                "marketSnapshot": true
+            },
+            "kys": {
+                "enabled": true,
+                "recommendedSites": true,
+                "siteComparison": true
+            },
+            "vmx": {
+                "enabled": true,
+                "budgetSummary": true
+            }
+        },
+        "milestones": {
+            "kyc": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            },
+            "fyi": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            },
+            "mvp": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            },
+            "kym": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            },
+            "kys": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            },
+            "vmx": {
+                "signed": false,
+                "signedAt": null,
+                "signedBy": null
+            }
+        },
+        "phases": {
+            "p1Complete": false,
+            "p2Unlocked": false,
+            "p3Unlocked": false
+        },
+        "notifications": {
+            "onNewDocument": true,
+            "onMilestoneReady": true,
+            "onQuestionnaireReminder": true,
+            "weeklyProgress": false
+        },
+        "parker": {
+            "greetingStyle": "professional",
+            "customWelcome": ""
+        },
+        "clientActivity": [
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as client",
+                "timestamp": "2026-02-03T04:19:32.890Z"
+            },
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as client",
+                "timestamp": "2026-02-03T04:18:09.778Z"
+            },
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as client",
+                "timestamp": "2026-02-03T04:18:05.707Z"
+            },
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as client",
+                "timestamp": "2026-02-03T04:17:56.576Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-02-02T15:46:55.854Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-02-02T15:46:55.555Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-02-02T15:08:51.786Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/secondary-living PDF",
+                "timestamp": "2026-02-02T15:07:27.475Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-02-02T15:07:08.632Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-02-02T15:06:26.253Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-02-02T15:04:57.212Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-02-02T15:04:47.720Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-02-02T15:04:47.443Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-02-02T04:38:29.093Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-02-02T04:38:20.604Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-02-02T04:38:20.311Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-02-02T04:32:04.301Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-02-02T04:20:02.747Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-02-02T04:20:02.161Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-27T19:17:03.311Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T19:16:23.334Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T19:16:23.087Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T19:14:03.990Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T19:14:03.672Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T17:07:25.369Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T17:07:25.093Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T17:06:43.587Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T17:06:43.303Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-27T16:57:43.793Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T16:57:38.841Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T16:57:38.433Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-27T16:49:14.632Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T16:49:08.233Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T16:49:07.813Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-27T16:19:33.885Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T16:19:26.678Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T16:19:26.410Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-27T16:18:47.356Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-27T16:17:47.204Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-27T16:17:46.919Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-01-26T17:17:25.134Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-01-26T17:15:10.935Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T17:14:16.244Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T17:14:15.910Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-01-26T16:22:24.466Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-26T16:21:15.593Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T16:20:24.667Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T16:20:24.327Z"
+            },
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as client",
+                "timestamp": "2026-01-26T16:19:24.699Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/profile-report PDF",
+                "timestamp": "2026-01-26T16:15:12.491Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T16:15:05.122Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T16:15:04.843Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/secondary-living PDF",
+                "timestamp": "2026-01-26T15:18:47.998Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-01-26T15:18:37.346Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-01-26T15:18:15.021Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T15:17:58.711Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T15:17:58.434Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T01:54:56.552Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T01:54:56.255Z"
+            },
+            {
+                "action": "login_failed",
+                "details": "Failed login attempt as advisor",
+                "timestamp": "2026-01-26T01:41:13.275Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/secondary-living PDF",
+                "timestamp": "2026-01-26T00:34:13.913Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-01-26T00:33:51.145Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-01-26T00:33:13.309Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T00:31:59.993Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T00:31:59.712Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/secondary-living PDF",
+                "timestamp": "2026-01-26T00:20:36.343Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-01-26T00:19:59.084Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-living PDF",
+                "timestamp": "2026-01-26T00:18:03.674Z"
+            },
+            {
+                "action": "view_document",
+                "details": "Viewed kyc/principal-lifestyle PDF",
+                "timestamp": "2026-01-26T00:17:29.897Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-26T00:17:09.875Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-26T00:17:09.581Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:56:50.512Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:56:50.253Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:41:52.846Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:41:52.625Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:41:11.171Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:41:10.923Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:33:42.838Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:33:42.558Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:18:39.478Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:18:39.200Z"
+            },
+            {
+                "action": "view_dashboard",
+                "details": "Viewed dashboard as client",
+                "timestamp": "2026-01-25T23:12:11.167Z"
+            },
+            {
+                "action": "login",
+                "details": "Logged in as client",
+                "timestamp": "2026-01-25T23:12:10.823Z"
+            }
+        ]
+    }
+}
+root@ubuntu:/var/www/luxebrief# 

@@ -24,81 +24,6 @@ import {
 import { modulesData } from '../../mansion-program/server/modules-data';
 
 // ============================================
-// DEPLOYMENT WORKFLOW COMPONENT
-// ============================================
-
-const DeploymentWorkflow = ({ currentGate, gateStatus }) => {
-  const gates = [
-    { 
-      id: 'A', 
-      name: 'Profile Complete', 
-      description: 'KYC sections filled',
-      shortDesc: 'Capture operating model, lifestyle priorities, and target thresholds'
-    },
-    { 
-      id: 'B', 
-      name: 'Space Program', 
-      description: 'FYI selections done',
-      shortDesc: 'Draft 8-zone concept zoning and run Master Adjacency Gate'
-    },
-    { 
-      id: 'C', 
-      name: 'Module Validation', 
-      description: 'Rules reviewed',
-      shortDesc: 'Run module-level checklists and confirm circulation overlays'
-    },
-    { 
-      id: 'D', 
-      name: 'Adjacency Lock', 
-      description: 'Decisions made',
-      shortDesc: 'Translate intent into dimensioned plans, freeze adjacency logic'
-    },
-    { 
-      id: 'E', 
-      name: 'Brief Ready', 
-      description: 'Export available',
-      shortDesc: 'Final validation complete, ready for architect handoff'
-    }
-  ];
-
-  const getGateStatus = (gateId) => {
-    if (gateStatus[gateId] === 'complete') return 'complete';
-    if (gateStatus[gateId] === 'current') return 'current';
-    if (gateStatus[gateId] === 'warning') return 'warning';
-    return 'locked';
-  };
-
-  return (
-    <div className="module-workflow">
-      <h3 className="module-workflow__title">Deployment Workflow</h3>
-      <p className="module-workflow__subtitle">
-        Deploy the modules as a staged validation process. Lock zoning, adjacencies, and operating loops early, then refine dimensions, detailing, and materiality.
-      </p>
-      
-      <div className="module-workflow__gates">
-        {gates.map((gate, index) => {
-          const status = getGateStatus(gate.id);
-          return (
-            <div key={gate.id} className={`module-gate module-gate--${status}`}>
-              <div className="module-gate__badge">{gate.id}</div>
-              <div className="module-gate__content">
-                <div className="module-gate__name">{gate.name}</div>
-                <div className="module-gate__desc">{gate.shortDesc}</div>
-              </div>
-              {index < gates.length - 1 && (
-                <div className="module-gate__arrow">
-                  <ChevronRight size={16} />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ============================================
 // MODULE CARD COMPONENT
 // ============================================
 
@@ -295,12 +220,6 @@ const ModuleLibraryView = ({
           />
         ))}
       </div>
-
-      {/* Deployment Workflow */}
-      <DeploymentWorkflow 
-        currentGate="C" 
-        gateStatus={gateStatus}
-      />
 
       {/* Action Button */}
       <div className="module-library__actions">

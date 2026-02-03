@@ -4153,6 +4153,227 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   color: var(--gray-300);
 }
 
+/* ============================================ */
+/* DEPLOYMENT WORKFLOW - MVP LANDING PAGE */
+/* ============================================ */
+
+.deployment-workflow {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.deployment-workflow__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+}
+
+.deployment-workflow__subtitle {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.deployment-workflow__gates {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.deployment-workflow__gate-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.deployment-workflow__gate {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.deployment-workflow__gate:hover {
+  border-color: var(--navy);
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.1);
+}
+
+.deployment-workflow__gate--complete {
+  border-color: var(--success);
+  background: #f0fdf4;
+}
+
+.deployment-workflow__gate--current {
+  border-color: var(--navy);
+  background: #eff6ff;
+}
+
+.deployment-workflow__gate--warning {
+  border-color: var(--warning);
+  background: #fffbeb;
+}
+
+.deployment-workflow__gate--locked {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.deployment-workflow__gate--locked:hover {
+  border-color: var(--gray-200);
+  box-shadow: none;
+}
+
+.deployment-workflow__gate--expanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.deployment-workflow__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gray-600);
+  flex-shrink: 0;
+}
+
+.deployment-workflow__gate--complete .deployment-workflow__badge {
+  background: var(--success);
+  color: var(--white);
+}
+
+.deployment-workflow__gate--current .deployment-workflow__badge {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.deployment-workflow__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.deployment-workflow__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.deployment-workflow__arrow {
+  color: var(--gray-300);
+  flex-shrink: 0;
+}
+
+/* Expandable Explanation */
+.deployment-workflow__explanation {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.deployment-workflow__explanation--complete {
+  background: #f0fdf4;
+  border-color: var(--success);
+}
+
+.deployment-workflow__explanation--current {
+  background: #eff6ff;
+  border-color: var(--navy);
+}
+
+.deployment-workflow__explanation--warning {
+  background: #fffbeb;
+  border-color: var(--warning);
+}
+
+.deployment-workflow__explanation-content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.deployment-workflow__explanation-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--navy);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.deployment-workflow__explanation-text {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.deployment-workflow__collapse-icon {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .deployment-workflow__gates {
+    flex-wrap: wrap;
+  }
+
+  .deployment-workflow__gate-wrapper {
+    flex: 0 0 calc(50% - 4px);
+  }
+
+  .deployment-workflow__arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .deployment-workflow__gate-wrapper {
+    flex: 0 0 100%;
+  }
+}
+
 /* Module Library Actions */
 .module-library__actions {
   display: flex;

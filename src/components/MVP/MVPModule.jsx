@@ -3,7 +3,8 @@ import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
   Building, Layers, ArrowRight, Sparkles, BookOpen,
-  GitCompare, Play, Database, List, FileText
+  GitCompare, Play, Database, List, FileText,
+  ChevronRight, ChevronDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
@@ -20,6 +21,109 @@ import {
   transformFYIToMVPProgram,
   getFYIProgramSummary
 } from '../../lib/mvp-bridge';
+
+// ============================================
+// DEPLOYMENT WORKFLOW COMPONENT (with expandable stages)
+// ============================================
+
+const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
+  const [expandedGate, setExpandedGate] = useState(null);
+
+  const gates = [
+    {
+      id: 'A',
+      name: 'Profile Complete',
+      explanation: 'Go to KYC and enter your Target GSF in Project Parameters. This defines the scope of your mansion program and unlocks the space planning tools.',
+      action: 'Go to KYC',
+      actionTarget: 'kyc'
+    },
+    {
+      id: 'B',
+      name: 'Space Program',
+      explanation: 'Go to FYI and select your spaces. Choose from 10 zones across 66+ space types to build your personalized program. Changes sync live to MVP.',
+      action: 'Go to FYI',
+      actionTarget: 'fyi'
+    },
+    {
+      id: 'C',
+      name: 'Module Validation',
+      explanation: 'Review the 8 validation modules and check applicable items. Each module covers a critical mansion subsystem — from kitchen flow to staff operations. Complete 60% (24 of 40 items) to advance.',
+      action: 'Open Module Library',
+      actionTarget: 'modules'
+    },
+    {
+      id: 'D',
+      name: 'Adjacency Lock',
+      explanation: 'Answer 10 layout questions to personalize how your spaces connect. These decisions shape the adjacency matrix that drives your floor plan logic.',
+      action: 'Answer Layout Questions',
+      actionTarget: 'personalization'
+    },
+    {
+      id: 'E',
+      name: 'Brief Ready',
+      explanation: 'Run validation to check for red flags and confirm all required bridges are present. A passing score (≥80) with no critical issues means your brief is ready for architect handoff.',
+      action: 'Run Validation',
+      actionTarget: 'validation'
+    }
+  ];
+
+  const getGateStatus = (gateId) => {
+    if (gateStatus[gateId] === 'complete') return 'complete';
+    if (gateStatus[gateId] === 'current') return 'current';
+    if (gateStatus[gateId] === 'warning') return 'warning';
+    return 'locked';
+  };
+
+  const handleGateClick = (gateId) => {
+    setExpandedGate(expandedGate === gateId ? null : gateId);
+  };
+
+  return (
+    <div className="deployment-workflow">
+      <h3 className="deployment-workflow__title">Deployment Workflow</h3>
+      <p className="deployment-workflow__subtitle">
+        Progress through five stages to complete your mansion validation. Click any stage to see what's required.
+      </p>
+
+      <div className="deployment-workflow__gates">
+        {gates.map((gate, index) => {
+          const status = getGateStatus(gate.id);
+          const isExpanded = expandedGate === gate.id;
+          return (
+            <div key={gate.id} className="deployment-workflow__gate-wrapper">
+              <div
+                className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
+                onClick={() => handleGateClick(gate.id)}
+              >
+                <div className="deployment-workflow__badge">{gate.id}</div>
+                <div className="deployment-workflow__content">
+                  <div className="deployment-workflow__name">{gate.name}</div>
+                </div>
+                {index < gates.length - 1 && (
+                  <div className="deployment-workflow__arrow">
+                    <ChevronRight size={16} />
+                  </div>
+                )}
+              </div>
+
+              {/* Expandable Explanation */}
+              {isExpanded && (
+                <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
+                  <div className="deployment-workflow__explanation-content">
+                    <span className="deployment-workflow__explanation-badge">{gate.id}</span>
+                    <span className="deployment-workflow__explanation-text">{gate.explanation}</span>
+                  </div>
+                  <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ============================================
 // FYI SPACE PROGRAM DISPLAY COMPONENT
 // ============================================
@@ -456,6 +560,14 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
           <span className="mvp-tier-badge__label">{estimatedTier.label}</span>
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* DEPLOYMENT WORKFLOW - TOP OF PAGE */}
+      {/* ============================================ */}
+      <DeploymentWorkflow
+        gateStatus={gateStatus}
+        onNavigate={onNavigate}
+      />
 
       {/* ============================================ */}
       {/* FYI SPACE PROGRAM - LIVE DATA */}
