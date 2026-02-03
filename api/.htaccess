@@ -1,26 +1,15 @@
-# Allow access to PHP API files
+# Enable PHP processing
+AddHandler application/x-httpd-php .php
+Options +ExecCGI
+DirectoryIndex portal.php
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-KEY"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # Allow all requests to this directory
-    Allow from all
-</IfModule>
-
-# PHP 8.4 handler for IONOS
-# Removed explicit SetHandler - let IONOS handle PHP automatically
-# If PHP still doesn't execute, try uncommenting one of these:
-# SetHandler "proxy:fcgi://localhost"
-# AddHandler php84-cgi .php
-
-# CORS headers
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-KEY"
-</IfModule>
-
-# Handle OPTIONS preflight requests
-<IfModule mod_rewrite.c>
     RewriteCond %{REQUEST_METHOD} OPTIONS
     RewriteRule ^(.*)$ $1 [R=200,L]
 </IfModule>

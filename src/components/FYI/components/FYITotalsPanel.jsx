@@ -334,7 +334,7 @@ const FYITotalsPanel = ({
           onClick={onProceedToMVP}
           disabled={!validation.valid}
         >
-          Proceed to MVP →
+          Accept FYI Program
         </button>
       </div>
       
