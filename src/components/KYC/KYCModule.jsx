@@ -229,18 +229,19 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
       </div>
 
       {/* Respondent Status Display (non-clickable) */}
-      <div className="kyc-module__respondent-status">
+      <div className="kyc-module__respondent-tabs">
         {respondentTabs.map(tab => (
           <div
             key={tab.id}
-            className={`respondent-status respondent-status--${tab.color}`}
+            className={`respondent-tab respondent-tab--${tab.color}`}
+            style={{ cursor: 'default' }}
           >
-            <User size={18} />
-            <div className="respondent-status__content">
-              <span className="respondent-status__label">{tab.label}</span>
-              <span className="respondent-status__description">{tab.description}</span>
+            <User size={20} />
+            <div className="respondent-tab__content">
+              <span className="respondent-tab__label">{tab.label}</span>
+              <span className="respondent-tab__description">{tab.description}</span>
             </div>
-            <span className="respondent-status__progress">
+            <span className="respondent-tab__progress">
               {calculateCompleteness(tab.id)}%
             </span>
           </div>
