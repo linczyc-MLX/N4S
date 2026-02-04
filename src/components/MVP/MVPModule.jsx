@@ -86,23 +86,14 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
           const isExpanded = expandedGate === gate.id;
           return (
             <React.Fragment key={gate.id}>
-              <div className="deployment-workflow__gate-wrapper">
-                <div
-                  className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
-                  onClick={() => handleGateClick(gate.id)}
-                >
-                  <div className="deployment-workflow__badge">{gate.id}</div>
-                  <div className="deployment-workflow__content">
-                    <div className="deployment-workflow__name">{gate.name}</div>
-                  </div>
+              <div
+                className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
+                onClick={() => handleGateClick(gate.id)}
+              >
+                <div className="deployment-workflow__badge">{gate.id}</div>
+                <div className="deployment-workflow__content">
+                  <div className="deployment-workflow__name">{gate.name}</div>
                 </div>
-
-                {/* Expandable Description - Simple horizontal bar */}
-                {isExpanded && (
-                  <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
-                    {gate.description}
-                  </div>
-                )}
               </div>
               {index < gates.length - 1 && (
                 <div className="deployment-workflow__connector">
@@ -113,6 +104,17 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
           );
         })}
       </div>
+
+      {/* Full-width explanation bar below gates */}
+      {expandedGate && (
+        <div className={`deployment-workflow__explanation deployment-workflow__explanation--${getGateStatus(expandedGate)}`}>
+          <div className="deployment-workflow__explanation-badge">{expandedGate}</div>
+          <div className="deployment-workflow__explanation-text">
+            {gates.find(g => g.id === expandedGate)?.description}
+          </div>
+          <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
+        </div>
+      )}
     </div>
   );
 };
