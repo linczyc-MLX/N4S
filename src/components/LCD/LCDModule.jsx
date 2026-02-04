@@ -232,16 +232,14 @@ const LCDModule = () => {
             <p className="lcd-module__subtitle">Client Dashboard Control Panel</p>
           </div>
         </div>
-        {hasUnsavedChanges && (
-          <button
-            className="btn btn--primary"
-            onClick={saveNow}
-            disabled={isSaving}
-          >
-            <Save size={16} />
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
-        )}
+        <button
+          className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+          onClick={saveNow}
+          disabled={isSaving || !hasUnsavedChanges}
+        >
+          <Save size={16} />
+          {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+        </button>
       </div>
 
       {/* Portal Status Section */}

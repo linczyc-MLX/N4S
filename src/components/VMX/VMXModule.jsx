@@ -115,6 +115,8 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     vmxData,
     updateVMXData,
     saveNow,
+    hasUnsavedChanges,
+    isSaving,
     updateFYISelection,
     updateFYISettings,
     initializeFYISelections,
@@ -312,6 +314,8 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           vmxData={vmxData}
           updateVMXData={updateVMXData}
           saveNow={saveNow}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
         />
       </div>
 

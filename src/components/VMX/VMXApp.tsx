@@ -463,10 +463,12 @@ type VMXAppProps = {
   };
   updateVMXData?: (updates: Record<string, any>) => void;
   saveNow?: () => Promise<boolean>;
+  hasUnsavedChanges?: boolean;
+  isSaving?: boolean;
 };
 
 export default function VMXApp(props: VMXAppProps = {}) {
-  const { vmxData, updateVMXData, saveNow } = props;
+  const { vmxData, updateVMXData, saveNow, hasUnsavedChanges = false, isSaving = false } = props;
   const [areaSqft, setAreaSqft] = useState<number>(15000);
   // Keep a string input for Lite view so users can type commas etc (syncs to numeric areaSqft)
   const [areaSqftInput, setAreaSqftInput] = useState<string>(() => String(areaSqft));
@@ -1817,53 +1819,30 @@ export default function VMXApp(props: VMXAppProps = {}) {
             )}
           </div>
 
-          <button type="button" className="vmxSaveBtn" onClick={async () => {
-            // Save to localStorage (for standalone VMX use)
-            saveLibrary(library);
-            saveSelection(regionAId, tier);
+          <button 
+            type="button" 
+            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+            disabled={isSaving || !hasUnsavedChanges}
+            onClick={async () => {
+              // Save to localStorage (for standalone VMX use)
+              saveLibrary(library);
+              saveSelection(regionAId, tier);
 
-            // Save to server via AppContext (for N4S integration)
-            const btn = document.querySelector('.vmxSaveBtn') as HTMLButtonElement;
-            if (saveNow) {
-              try {
-                if (btn) {
-                  btn.textContent = '⏳ Saving...';
-                  btn.disabled = true;
-                }
-                const success = await saveNow();
-                if (btn) {
-                  btn.textContent = success ? '✓ Saved' : '✗ Failed';
-                  btn.classList.add(success ? 'saved' : '');
-                  btn.disabled = false;
-                  setTimeout(() => {
-                    btn.textContent = '💾 SAVE';
-                    btn.classList.remove('saved');
-                  }, 2000);
-                }
-              } catch (err) {
-                console.error('[VMX] Save failed:', err);
-                if (btn) {
-                  btn.textContent = '✗ Failed';
-                  btn.disabled = false;
-                  setTimeout(() => {
-                    btn.textContent = '💾 SAVE';
-                  }, 2000);
+              // Save to server via AppContext (for N4S integration)
+              if (saveNow) {
+                try {
+                  await saveNow();
+                } catch (err) {
+                  console.error('[VMX] Save failed:', err);
                 }
               }
-            } else {
-              // Standalone mode - just show localStorage save feedback
-              if (btn) {
-                const origText = btn.textContent;
-                btn.textContent = '✓ Saved';
-                btn.classList.add('saved');
-                setTimeout(() => {
-                  btn.textContent = origText;
-                  btn.classList.remove('saved');
-                }, 2000);
-              }
-            }
-          }}>
-            💾 SAVE
+            }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
           </button>
 
           <button type="button" className="docsBtn" onClick={() => setShowDocs(true)}>
