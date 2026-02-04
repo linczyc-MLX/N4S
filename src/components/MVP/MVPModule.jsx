@@ -23,39 +23,41 @@ import {
 } from '../../lib/mvp-bridge';
 
 // ============================================
-// DEPLOYMENT WORKFLOW COMPONENT (horizontal layout with descriptions)
+// DEPLOYMENT WORKFLOW COMPONENT (horizontal expandable)
 // ============================================
 
 const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
+  const [expandedGate, setExpandedGate] = useState(null);
+
   const gates = [
     {
       id: 'A',
       name: 'Profile Complete',
-      shortDesc: 'Capture operating parameters in KYC',
+      description: 'Capture operating parameters in KYC',
       actionTarget: 'kyc'
     },
     {
       id: 'B',
       name: 'Space Program',
-      shortDesc: 'Draft 8-zone configuration in FYI',
+      description: 'Draft 8-zone configuration in FYI',
       actionTarget: 'fyi'
     },
     {
       id: 'C',
       name: 'Module Validation',
-      shortDesc: 'Run module-level validation checks',
+      description: 'Run module-level validation checks',
       actionTarget: 'modules'
     },
     {
       id: 'D',
       name: 'Adjacency Lock',
-      shortDesc: 'Translate intent into spatial logic',
+      description: 'Translate intent into spatial logic',
       actionTarget: 'personalization'
     },
     {
       id: 'E',
       name: 'Brief Ready',
-      shortDesc: 'Final validation complete for handoff',
+      description: 'Final validation complete for handoff',
       actionTarget: 'validation'
     }
   ];
@@ -67,36 +69,44 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
     return 'locked';
   };
 
-  const handleGateClick = (gate) => {
-    if (onNavigate && gate.actionTarget) {
-      onNavigate(gate.actionTarget);
-    }
+  const handleGateClick = (gateId) => {
+    setExpandedGate(expandedGate === gateId ? null : gateId);
   };
 
   return (
     <div className="deployment-workflow">
       <h3 className="deployment-workflow__title">Deployment Workflow</h3>
       <p className="deployment-workflow__subtitle">
-        Deploy the modules as a staged validation process. Lock zoning, adjacencies, and operating loops early, then refine dimensions, detailing, and materiality.
+        Progress through five stages to complete your mansion validation. Click any stage to see what's required.
       </p>
 
       <div className="deployment-workflow__gates">
         {gates.map((gate, index) => {
           const status = getGateStatus(gate.id);
+          const isExpanded = expandedGate === gate.id;
           return (
             <React.Fragment key={gate.id}>
-              <div
-                className={`deployment-workflow__gate deployment-workflow__gate--${status}`}
-                onClick={() => handleGateClick(gate)}
-              >
-                <div className="deployment-workflow__badge">{gate.id}</div>
-                <div className="deployment-workflow__content">
-                  <div className="deployment-workflow__name">{gate.name}</div>
-                  <div className="deployment-workflow__desc">{gate.shortDesc}</div>
+              <div className="deployment-workflow__gate-wrapper">
+                <div
+                  className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
+                  onClick={() => handleGateClick(gate.id)}
+                >
+                  <div className="deployment-workflow__badge">{gate.id}</div>
+                  <div className="deployment-workflow__content">
+                    <div className="deployment-workflow__name">{gate.name}</div>
+                  </div>
                 </div>
-                <div className="deployment-workflow__arrow">
-                  <ChevronRight size={16} />
-                </div>
+
+                {/* Expandable Description */}
+                {isExpanded && (
+                  <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
+                    <div className="deployment-workflow__explanation-content">
+                      <span className="deployment-workflow__explanation-badge">{gate.id}</span>
+                      <span className="deployment-workflow__explanation-text">{gate.description}</span>
+                    </div>
+                    <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
+                  </div>
+                )}
               </div>
               {index < gates.length - 1 && (
                 <div className="deployment-workflow__connector">
