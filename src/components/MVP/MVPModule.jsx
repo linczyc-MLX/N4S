@@ -4,7 +4,7 @@ import {
   Home, Users, Dumbbell, LayoutGrid, RefreshCw,
   Building, Layers, ArrowRight, Sparkles, BookOpen,
   GitCompare, Play, Database, List, FileText,
-  ChevronRight, ChevronDown
+  ChevronRight, ChevronDown, Save
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
@@ -540,11 +540,12 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
         
         {/* Save Status */}
         <div className="mvp-module__save-area">
-          <button 
-            className={`n4s-btn ${hasUnsavedChanges ? 'n4s-btn--primary' : 'n4s-btn--secondary'}`}
+          <button
+            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
             onClick={saveNow}
             disabled={isSaving || !hasUnsavedChanges}
           >
+            <Save size={16} />
             {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
           </button>
           {lastSaved && !hasUnsavedChanges && (

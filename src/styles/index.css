@@ -197,6 +197,8 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn--primary { background: var(--navy); color: var(--white); }
 .btn--primary:hover:not(:disabled) { background: var(--navy-light); }
+.btn--success { background: var(--success); color: var(--white); }
+.btn--success:hover:not(:disabled) { background: #15803d; }
 .btn--secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
 .btn--secondary:hover:not(:disabled) { background: var(--gray-200); }
 .btn--ghost { background: transparent; color: var(--gray-600); }
@@ -4187,10 +4189,10 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 .deployment-workflow__gate-wrapper {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 140px;
 }
 
 .deployment-workflow__gate {
