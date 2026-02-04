@@ -4189,10 +4189,11 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 .deployment-workflow__gate-wrapper {
-  flex: 1 1 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 140px;
+  width: 0;
+  min-width: 120px;
 }
 
 .deployment-workflow__gate {
