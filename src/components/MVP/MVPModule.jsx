@@ -23,46 +23,39 @@ import {
 } from '../../lib/mvp-bridge';
 
 // ============================================
-// DEPLOYMENT WORKFLOW COMPONENT (with expandable stages)
+// DEPLOYMENT WORKFLOW COMPONENT (horizontal layout with descriptions)
 // ============================================
 
 const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
-  const [expandedGate, setExpandedGate] = useState(null);
-
   const gates = [
     {
       id: 'A',
       name: 'Profile Complete',
-      explanation: 'Go to KYC and enter your Target GSF in Project Parameters. This defines the scope of your mansion program and unlocks the space planning tools.',
-      action: 'Go to KYC',
+      shortDesc: 'Capture operating parameters in KYC',
       actionTarget: 'kyc'
     },
     {
       id: 'B',
       name: 'Space Program',
-      explanation: 'Go to FYI and select your spaces. Choose from 10 zones across 66+ space types to build your personalized program. Changes sync live to MVP.',
-      action: 'Go to FYI',
+      shortDesc: 'Draft 8-zone configuration in FYI',
       actionTarget: 'fyi'
     },
     {
       id: 'C',
       name: 'Module Validation',
-      explanation: 'Review the 8 validation modules and check applicable items. Each module covers a critical mansion subsystem — from kitchen flow to staff operations. Complete 60% (24 of 40 items) to advance.',
-      action: 'Open Module Library',
+      shortDesc: 'Run module-level validation checks',
       actionTarget: 'modules'
     },
     {
       id: 'D',
       name: 'Adjacency Lock',
-      explanation: 'Answer 10 layout questions to personalize how your spaces connect. These decisions shape the adjacency matrix that drives your floor plan logic.',
-      action: 'Answer Layout Questions',
+      shortDesc: 'Translate intent into spatial logic',
       actionTarget: 'personalization'
     },
     {
       id: 'E',
       name: 'Brief Ready',
-      explanation: 'Run validation to check for red flags and confirm all required bridges are present. A passing score (≥80) with no critical issues means your brief is ready for architect handoff.',
-      action: 'Run Validation',
+      shortDesc: 'Final validation complete for handoff',
       actionTarget: 'validation'
     }
   ];
@@ -74,49 +67,43 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
     return 'locked';
   };
 
-  const handleGateClick = (gateId) => {
-    setExpandedGate(expandedGate === gateId ? null : gateId);
+  const handleGateClick = (gate) => {
+    if (onNavigate && gate.actionTarget) {
+      onNavigate(gate.actionTarget);
+    }
   };
 
   return (
     <div className="deployment-workflow">
       <h3 className="deployment-workflow__title">Deployment Workflow</h3>
       <p className="deployment-workflow__subtitle">
-        Progress through five stages to complete your mansion validation. Click any stage to see what's required.
+        Deploy the modules as a staged validation process. Lock zoning, adjacencies, and operating loops early, then refine dimensions, detailing, and materiality.
       </p>
 
       <div className="deployment-workflow__gates">
         {gates.map((gate, index) => {
           const status = getGateStatus(gate.id);
-          const isExpanded = expandedGate === gate.id;
           return (
-            <div key={gate.id} className="deployment-workflow__gate-wrapper">
+            <React.Fragment key={gate.id}>
               <div
-                className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
-                onClick={() => handleGateClick(gate.id)}
+                className={`deployment-workflow__gate deployment-workflow__gate--${status}`}
+                onClick={() => handleGateClick(gate)}
               >
                 <div className="deployment-workflow__badge">{gate.id}</div>
                 <div className="deployment-workflow__content">
                   <div className="deployment-workflow__name">{gate.name}</div>
+                  <div className="deployment-workflow__desc">{gate.shortDesc}</div>
                 </div>
-                {index < gates.length - 1 && (
-                  <div className="deployment-workflow__arrow">
-                    <ChevronRight size={16} />
-                  </div>
-                )}
+                <div className="deployment-workflow__arrow">
+                  <ChevronRight size={16} />
+                </div>
               </div>
-
-              {/* Expandable Explanation */}
-              {isExpanded && (
-                <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
-                  <div className="deployment-workflow__explanation-content">
-                    <span className="deployment-workflow__explanation-badge">{gate.id}</span>
-                    <span className="deployment-workflow__explanation-text">{gate.explanation}</span>
-                  </div>
-                  <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
+              {index < gates.length - 1 && (
+                <div className="deployment-workflow__connector">
+                  <ChevronRight size={20} />
                 </div>
               )}
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
