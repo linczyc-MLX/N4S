@@ -350,12 +350,18 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .tier-tab__label { font-weight: 600; font-size: 0.9rem; color: var(--gray-700); }
 .tier-tab__duration { font-size: 0.75rem; color: var(--gray-500); }
 
-/* KYC Save Button */
+/* KYC Top Bar and Save Buttons */
+.kyc-module__top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0 1.5rem 0;
+}
+
 .kyc-module__save-area {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: auto;
 }
 .kyc-save-btn {
   display: flex;
