@@ -1,0 +1,347 @@
+From f21bf1b4ab855bfc4744fe987e9e9f635442b174 Mon Sep 17 00:00:00 2001
+From: Michael <linczyc@gmail.com>
+Date: Wed, 4 Feb 2026 17:04:26 +0000
+Subject: [PATCH] Fix MVP Deployment Workflow: restore click-to-expand dropdown
+
+- Change click-to-navigate back to click-to-expand
+- Hide descriptions by default, show only when expanded
+- All gates clickable regardless of status (informational only)
+- Fix locked gates to show pointer cursor and hover effect
+- Keep horizontal layout from previous commit
+- Gate status uses server data (no localStorage)
+---
+ src/components/MVP/MVPModule.jsx |  54 +++++++-----
+ src/styles/index.css             | 142 +++++++++++++++++++++++--------
+ 2 files changed, 137 insertions(+), 59 deletions(-)
+
+diff --git a/src/components/MVP/MVPModule.jsx b/src/components/MVP/MVPModule.jsx
+index 28463f5..e990cc7 100644
+--- a/src/components/MVP/MVPModule.jsx
++++ b/src/components/MVP/MVPModule.jsx
+@@ -23,39 +23,41 @@ import {
+ } from '../../lib/mvp-bridge';
+ 
+ // ============================================
+-// DEPLOYMENT WORKFLOW COMPONENT (horizontal layout with descriptions)
++// DEPLOYMENT WORKFLOW COMPONENT (horizontal expandable)
+ // ============================================
+ 
+ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
++  const [expandedGate, setExpandedGate] = useState(null);
++
+   const gates = [
+     {
+       id: 'A',
+       name: 'Profile Complete',
+-      shortDesc: 'Capture operating parameters in KYC',
++      description: 'Capture operating parameters in KYC',
+       actionTarget: 'kyc'
+     },
+     {
+       id: 'B',
+       name: 'Space Program',
+-      shortDesc: 'Draft 8-zone configuration in FYI',
++      description: 'Draft 8-zone configuration in FYI',
+       actionTarget: 'fyi'
+     },
+     {
+       id: 'C',
+       name: 'Module Validation',
+-      shortDesc: 'Run module-level validation checks',
++      description: 'Run module-level validation checks',
+       actionTarget: 'modules'
+     },
+     {
+       id: 'D',
+       name: 'Adjacency Lock',
+-      shortDesc: 'Translate intent into spatial logic',
++      description: 'Translate intent into spatial logic',
+       actionTarget: 'personalization'
+     },
+     {
+       id: 'E',
+       name: 'Brief Ready',
+-      shortDesc: 'Final validation complete for handoff',
++      description: 'Final validation complete for handoff',
+       actionTarget: 'validation'
+     }
+   ];
+@@ -67,36 +69,44 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
+     return 'locked';
+   };
+ 
+-  const handleGateClick = (gate) => {
+-    if (onNavigate && gate.actionTarget) {
+-      onNavigate(gate.actionTarget);
+-    }
++  const handleGateClick = (gateId) => {
++    setExpandedGate(expandedGate === gateId ? null : gateId);
+   };
+ 
+   return (
+     <div className="deployment-workflow">
+       <h3 className="deployment-workflow__title">Deployment Workflow</h3>
+       <p className="deployment-workflow__subtitle">
+-        Deploy the modules as a staged validation process. Lock zoning, adjacencies, and operating loops early, then refine dimensions, detailing, and materiality.
++        Progress through five stages to complete your mansion validation. Click any stage to see what's required.
+       </p>
+ 
+       <div className="deployment-workflow__gates">
+         {gates.map((gate, index) => {
+           const status = getGateStatus(gate.id);
++          const isExpanded = expandedGate === gate.id;
+           return (
+             <React.Fragment key={gate.id}>
+-              <div
+-                className={`deployment-workflow__gate deployment-workflow__gate--${status}`}
+-                onClick={() => handleGateClick(gate)}
+-              >
+-                <div className="deployment-workflow__badge">{gate.id}</div>
+-                <div className="deployment-workflow__content">
+-                  <div className="deployment-workflow__name">{gate.name}</div>
+-                  <div className="deployment-workflow__desc">{gate.shortDesc}</div>
+-                </div>
+-                <div className="deployment-workflow__arrow">
+-                  <ChevronRight size={16} />
++              <div className="deployment-workflow__gate-wrapper">
++                <div
++                  className={`deployment-workflow__gate deployment-workflow__gate--${status} ${isExpanded ? 'deployment-workflow__gate--expanded' : ''}`}
++                  onClick={() => handleGateClick(gate.id)}
++                >
++                  <div className="deployment-workflow__badge">{gate.id}</div>
++                  <div className="deployment-workflow__content">
++                    <div className="deployment-workflow__name">{gate.name}</div>
++                  </div>
+                 </div>
++
++                {/* Expandable Description */}
++                {isExpanded && (
++                  <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
++                    <div className="deployment-workflow__explanation-content">
++                      <span className="deployment-workflow__explanation-badge">{gate.id}</span>
++                      <span className="deployment-workflow__explanation-text">{gate.description}</span>
++                    </div>
++                    <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
++                  </div>
++                )}
+               </div>
+               {index < gates.length - 1 && (
+                 <div className="deployment-workflow__connector">
+diff --git a/src/styles/index.css b/src/styles/index.css
+index 0b1f62b..b73c0ab 100644
+--- a/src/styles/index.css
++++ b/src/styles/index.css
+@@ -4181,17 +4181,25 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+   line-height: 1.5;
+ }
+ 
+-/* CSS Grid layout for guaranteed equal-width boxes */
++/* Horizontal layout with flex */
+ .deployment-workflow__gates {
+-  display: grid;
+-  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+-  gap: 0;
+-  align-items: stretch;
++  display: flex;
++  flex-wrap: nowrap;
++  gap: 12px;
++  align-items: flex-start;
++}
++
++.deployment-workflow__gate-wrapper {
++  flex: 1;
++  display: flex;
++  flex-direction: column;
++  width: 0;
++  min-width: 120px;
+ }
+ 
+ .deployment-workflow__gate {
+   display: flex;
+-  align-items: flex-start;
++  align-items: center;
+   gap: 12px;
+   background: var(--white);
+   border: 1px solid var(--gray-200);
+@@ -4199,7 +4207,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+   padding: 16px;
+   cursor: pointer;
+   transition: all 0.15s ease;
+-  min-height: 80px;
++  position: relative;
+ }
+ 
+ .deployment-workflow__gate:hover {
+@@ -4223,13 +4231,19 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+ }
+ 
+ .deployment-workflow__gate--locked {
+-  opacity: 0.6;
+-  cursor: default;
++  opacity: 0.5;
++  cursor: pointer;
+ }
+ 
+ .deployment-workflow__gate--locked:hover {
+-  border-color: var(--gray-200);
+-  box-shadow: none;
++  border-color: var(--navy);
++  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.1);
++}
++
++.deployment-workflow__gate--expanded {
++  border-bottom-left-radius: 0;
++  border-bottom-right-radius: 0;
++  border-bottom-color: transparent;
+ }
+ 
+ .deployment-workflow__badge {
+@@ -4239,7 +4253,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+   width: 32px;
+   height: 32px;
+   background: var(--gray-100);
+-  border-radius: var(--radius-md);
++  border-radius: var(--radius-full);
+   font-size: 0.85rem;
+   font-weight: 700;
+   color: var(--gray-600);
+@@ -4259,48 +4273,102 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+ .deployment-workflow__content {
+   flex: 1;
+   min-width: 0;
+-  display: flex;
+-  flex-direction: column;
+-  gap: 4px;
+ }
+ 
+ .deployment-workflow__name {
+   font-size: 0.9rem;
+   font-weight: 600;
+   color: var(--gray-800);
+-  line-height: 1.2;
+-}
+-
+-.deployment-workflow__desc {
+-  font-size: 0.8rem;
+-  color: var(--gray-500);
+-  line-height: 1.3;
+-  overflow: hidden;
+-  text-overflow: ellipsis;
+-  display: -webkit-box;
+-  -webkit-line-clamp: 2;
+-  -webkit-box-orient: vertical;
+ }
+ 
+-.deployment-workflow__arrow {
++.deployment-workflow__connector {
+   color: var(--gray-300);
+   flex-shrink: 0;
+-  margin-top: 4px;
++  display: flex;
++  align-items: center;
++  padding: 0 4px;
+ }
+ 
+-.deployment-workflow__connector {
++/* Expandable Explanation */
++.deployment-workflow__explanation {
++  background: var(--gray-50);
++  border: 1px solid var(--gray-200);
++  border-top: none;
++  border-radius: 0 0 var(--radius-md) var(--radius-md);
++  padding: 16px;
++  display: flex;
++  align-items: flex-start;
++  gap: 12px;
++  animation: slideDown 0.2s ease;
++}
++
++@keyframes slideDown {
++  from {
++    opacity: 0;
++    transform: translateY(-8px);
++  }
++  to {
++    opacity: 1;
++    transform: translateY(0);
++  }
++}
++
++.deployment-workflow__explanation--complete {
++  background: #f0fdf4;
++  border-color: var(--success);
++}
++
++.deployment-workflow__explanation--current {
++  background: #eff6ff;
++  border-color: var(--navy);
++}
++
++.deployment-workflow__explanation--warning {
++  background: #fffbeb;
++  border-color: var(--warning);
++}
++
++.deployment-workflow__explanation-content {
++  flex: 1;
++  display: flex;
++  align-items: flex-start;
++  gap: 12px;
++}
++
++.deployment-workflow__explanation-badge {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  color: var(--gray-300);
+-  padding: 0 4px;
++  width: 24px;
++  height: 24px;
++  background: var(--navy);
++  border-radius: var(--radius-full);
++  font-size: 0.75rem;
++  font-weight: 700;
++  color: var(--white);
++  flex-shrink: 0;
++}
++
++.deployment-workflow__explanation-text {
++  font-size: 0.875rem;
++  color: var(--gray-700);
++  line-height: 1.5;
++}
++
++.deployment-workflow__collapse-icon {
++  color: var(--gray-400);
++  flex-shrink: 0;
++  cursor: pointer;
+ }
+ 
+ /* Responsive */
+-@media (max-width: 1100px) {
++@media (max-width: 900px) {
+   .deployment-workflow__gates {
+-    grid-template-columns: 1fr 1fr;
+-    gap: 12px;
++    flex-wrap: wrap;
++  }
++
++  .deployment-workflow__gate-wrapper {
++    flex: 0 0 calc(50% - 6px);
+   }
+ 
+   .deployment-workflow__connector {
+@@ -4309,8 +4377,8 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
+ }
+ 
+ @media (max-width: 600px) {
+-  .deployment-workflow__gates {
+-    grid-template-columns: 1fr;
++  .deployment-workflow__gate-wrapper {
++    flex: 0 0 100%;
+   }
+ }
+ 
+-- 
+2.43.0
+

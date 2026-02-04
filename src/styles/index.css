@@ -4231,7 +4231,6 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 .deployment-workflow__gate--locked {
-  opacity: 0.5;
   cursor: pointer;
 }
 
@@ -4252,7 +4251,8 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: var(--gray-100);
+  background: var(--white);
+  border: 1px solid var(--gray-300);
   border-radius: var(--radius-full);
   font-size: 0.85rem;
   font-weight: 700;
@@ -4263,11 +4263,13 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 .deployment-workflow__gate--complete .deployment-workflow__badge {
   background: var(--success);
   color: var(--white);
+  border-color: var(--success);
 }
 
 .deployment-workflow__gate--current .deployment-workflow__badge {
   background: var(--navy);
   color: var(--white);
+  border-color: var(--navy);
 }
 
 .deployment-workflow__content {
@@ -4289,16 +4291,16 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   padding: 0 4px;
 }
 
-/* Expandable Explanation */
+/* Expandable Explanation - Simple horizontal bar */
 .deployment-workflow__explanation {
-  background: var(--gray-50);
+  background: #f0fdf4;
   border: 1px solid var(--gray-200);
   border-top: none;
   border-radius: 0 0 var(--radius-md) var(--radius-md);
-  padding: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  line-height: 1.5;
   animation: slideDown 0.2s ease;
 }
 
@@ -4328,37 +4330,9 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   border-color: var(--warning);
 }
 
-.deployment-workflow__explanation-content {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.deployment-workflow__explanation-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: var(--navy);
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--white);
-  flex-shrink: 0;
-}
-
-.deployment-workflow__explanation-text {
-  font-size: 0.875rem;
-  color: var(--gray-700);
-  line-height: 1.5;
-}
-
-.deployment-workflow__collapse-icon {
-  color: var(--gray-400);
-  flex-shrink: 0;
-  cursor: pointer;
+.deployment-workflow__explanation--locked {
+  background: var(--gray-50);
+  border-color: var(--gray-200);
 }
 
 /* Responsive */

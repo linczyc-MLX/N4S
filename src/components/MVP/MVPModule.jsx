@@ -97,14 +97,10 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
                   </div>
                 </div>
 
-                {/* Expandable Description */}
+                {/* Expandable Description - Simple horizontal bar */}
                 {isExpanded && (
                   <div className={`deployment-workflow__explanation deployment-workflow__explanation--${status}`}>
-                    <div className="deployment-workflow__explanation-content">
-                      <span className="deployment-workflow__explanation-badge">{gate.id}</span>
-                      <span className="deployment-workflow__explanation-text">{gate.description}</span>
-                    </div>
-                    <ChevronDown size={20} className="deployment-workflow__collapse-icon" />
+                    {gate.description}
                   </div>
                 )}
               </div>
