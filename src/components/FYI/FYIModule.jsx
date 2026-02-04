@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Save } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState, { initializeSelectionsForTier } from './hooks/useFYIState';
 import { generateMVPFromFYI } from './utils/fyiBridges';
@@ -354,41 +355,16 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
           {/* SAVE BUTTON */}
           <div className="fyi-module__save-area">
             <button
-              className={`fyi-module__save-btn ${hasUnsavedChanges ? 'fyi-module__save-btn--unsaved' : ''} ${isSaving ? 'fyi-module__save-btn--saving' : ''}`}
+              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || !hasUnsavedChanges}
             >
-              {isSaving ? (
-                <>
-                  <svg className="fyi-module__save-spinner" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.4" strokeDashoffset="10">
-                      <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
-                    </circle>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                  </svg>
-                  SAVE
-                </>
-              )}
+              <Save size={16} />
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </button>
-            {hasUnsavedChanges && !isSaving && (
-              <span className="fyi-module__unsaved-indicator">Unsaved changes</span>
-            )}
-            {saveMessage && (
-              <span className={`fyi-module__save-message ${saveMessage.includes('failed') ? 'fyi-module__save-message--error' : 'fyi-module__save-message--success'}`}>
-                {saveMessage}
-              </span>
-            )}
-            {lastSaved && !saveMessage && !hasUnsavedChanges && (
+            {lastSaved && !hasUnsavedChanges && (
               <span className="fyi-module__last-saved">
-                Saved: {lastSaved.toLocaleTimeString()}
+                Last saved: {new Date(lastSaved).toLocaleTimeString()}
               </span>
             )}
           </div>

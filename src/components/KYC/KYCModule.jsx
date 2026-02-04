@@ -203,12 +203,12 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
       <div className="kyc-module__top-bar">
         <div className="kyc-module__save-area">
           <button
-            className={`kyc-save-btn ${hasUnsavedChanges ? 'kyc-save-btn--unsaved' : ''} ${isSaving ? 'kyc-save-btn--saving' : ''}`}
+            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !hasUnsavedChanges}
           >
             <Save size={16} />
-            {isSaving ? 'Saving...' : 'SAVE'}
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
           </button>
           {/* Export Report only shows on P1.A.1 Portfolio Context - master report for entire module */}
           {visibleSections[currentKYCSection]?.id === 'portfolioContext' && (
@@ -222,16 +222,8 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
               {isExporting ? 'Exporting...' : 'Export Report'}
             </button>
           )}
-          {hasUnsavedChanges && !isSaving && (
-            <span className="kyc-save-indicator">Unsaved</span>
-          )}
-          {saveMessage && (
-            <span className={`kyc-save-message ${saveMessage.includes('failed') ? 'kyc-save-message--error' : 'kyc-save-message--success'}`}>
-              {saveMessage}
-            </span>
-          )}
-          {lastSaved && !saveMessage && !hasUnsavedChanges && (
-            <span className="kyc-save-time">Saved: {lastSaved.toLocaleTimeString()}</span>
+          {lastSaved && !hasUnsavedChanges && (
+            <span className="kyc-save-time">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
           )}
         </div>
       </div>

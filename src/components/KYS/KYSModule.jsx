@@ -840,7 +840,7 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
         
         <div className="kys-module__save-area">
           <button
-            className={`kys-btn ${hasUnsavedChanges ? 'kys-btn--primary' : 'kys-btn--secondary'}`}
+            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
             onClick={saveNow}
             disabled={isSaving || !hasUnsavedChanges}
           >
