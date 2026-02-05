@@ -7,8 +7,8 @@ import {
 import { useAppContext } from '../../contexts/AppContext';
 import './SettingsModule.css';
 
-// Taste Exploration App URL - update this when deployed
-const TASTE_EXPLORATION_URL = 'http://localhost:3001';
+// Taste Exploration App URL
+const TASTE_EXPLORATION_URL = 'https://tasteexploration.not-4.sale';
 
 /**
  * SettingsModule - Global Configuration Hub
@@ -63,8 +63,12 @@ const SettingsModule = () => {
   const currentProjectName = currentProject?.name || 'Unknown Project';
 
   // Launch Taste Exploration with project context
-  const launchTasteExploration = () => {
-    const url = `${TASTE_EXPLORATION_URL}?projectId=${encodeURIComponent(activeProjectId)}&projectName=${encodeURIComponent(currentProjectName)}`;
+  const launchTasteExploration = (respondentType = 'principal') => {
+    const clientName = respondentType === 'secondary'
+      ? `${stakeholderData.secondaryFirstName || ''} ${stakeholderData.secondaryLastName || ''}`.trim()
+      : `${stakeholderData.principalFirstName || ''} ${stakeholderData.principalLastName || ''}`.trim();
+
+    const url = `${TASTE_EXPLORATION_URL}?projectId=${encodeURIComponent(activeProjectId)}&projectName=${encodeURIComponent(currentProjectName)}&respondentType=${encodeURIComponent(respondentType)}&clientName=${encodeURIComponent(clientName || 'Client')}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 

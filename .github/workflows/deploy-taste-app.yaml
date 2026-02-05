@@ -1,0 +1,49 @@
+name: Deploy Taste Exploration App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'taste-app/**'
+      - 'src/data/tasteQuads.js'
+      - '.github/workflows/deploy-taste-app.yaml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./taste-app
+        run: npm install
+
+      - name: Build
+        working-directory: ./taste-app
+        run: npm run build
+
+      - name: Copy .htaccess to dist
+        run: |
+          cp taste-app/public/.htaccess taste-app/dist/.htaccess 2>/dev/null || true
+          echo "Build output:"
+          ls -la taste-app/dist/
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_TASTE_APP_SERVER }}
+          username: ${{ secrets.FTP_TASTE_APP_USERNAME }}
+          password: ${{ secrets.FTP_TASTE_APP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          local-dir: ./taste-app/dist/
+          dangerous-clean-slate: true

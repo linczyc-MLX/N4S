@@ -5,3 +5,7 @@ node_modules/
 .env.development.local
 build/
 dist/
+
+# Taste app
+taste-app/node_modules/
+taste-app/dist/
