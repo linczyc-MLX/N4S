@@ -311,6 +311,14 @@ const FYITotalsPanel = ({
           <span className="fyi-totals-panel__export-label">Export PDF:</span>
           <div className="fyi-totals-panel__export-buttons">
             <button
+              className="fyi-totals-panel__btn fyi-totals-panel__btn--primary fyi-totals-panel__btn--small"
+              onClick={() => onExportPDF('full')}
+              disabled={isExporting}
+              title="Full report: spaces by level, then by zone"
+            >
+              {isExporting ? '...' : 'Full Report'}
+            </button>
+            <button
               className="fyi-totals-panel__btn fyi-totals-panel__btn--secondary fyi-totals-panel__btn--small"
               onClick={() => onExportPDF('zone')}
               disabled={isExporting}
