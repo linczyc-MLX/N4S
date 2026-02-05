@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import {
   Settings, FolderPlus, Users, Building2, Trash2, CheckCircle2,
   ChevronDown, ChevronRight, AlertTriangle, Save, UserPlus, Briefcase,
-  ClipboardList
+  ClipboardList, ExternalLink, Palette
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import './SettingsModule.css';
+
+// Taste Exploration App URL - update this when deployed
+const TASTE_EXPLORATION_URL = 'http://localhost:3001';
 
 /**
  * SettingsModule - Global Configuration Hub
@@ -54,6 +57,16 @@ const SettingsModule = () => {
   };
 
   const stakeholderConfig = getStakeholderConfig();
+
+  // Get current project details for external app integration
+  const currentProject = projects.find(p => p.id === activeProjectId);
+  const currentProjectName = currentProject?.name || 'Unknown Project';
+
+  // Launch Taste Exploration with project context
+  const launchTasteExploration = () => {
+    const url = `${TASTE_EXPLORATION_URL}?projectId=${encodeURIComponent(activeProjectId)}&projectName=${encodeURIComponent(currentProjectName)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   // Handle stakeholder field changes
   const handleStakeholderChange = (field, value) => {
@@ -573,6 +586,69 @@ const SettingsModule = () => {
                 </div>
               </>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Admin Tools Section */}
+      <section className="settings-section">
+        <div
+          className="settings-section__header settings-section__header--clickable"
+          onClick={() => toggleSection('admin-tools')}
+        >
+          <div className="settings-section__header-left">
+            <Palette size={20} />
+            <h2>Admin Tools</h2>
+          </div>
+          {expandedSection === 'admin-tools' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+        </div>
+
+        {expandedSection === 'admin-tools' && (
+          <div className="settings-section__content">
+            <div className="settings-section__notice settings-section__notice--info">
+              <AlertTriangle size={16} />
+              <span>
+                External applications for advanced project configuration. Changes made in these tools
+                are project-specific and stored on the server.
+              </span>
+            </div>
+
+            {/* Taste Exploration Manager */}
+            <div className="admin-tool-card">
+              <div className="admin-tool-card__header">
+                <Palette size={24} className="admin-tool-card__icon" />
+                <div>
+                  <h3>Taste Exploration Manager</h3>
+                  <p className="admin-tool-card__description">
+                    Configure image quads and manage client taste exploration sessions for {currentProjectName}
+                  </p>
+                </div>
+              </div>
+              <div className="admin-tool-card__details">
+                <ul className="admin-tool-card__features">
+                  <li>Enable/disable specific design quads</li>
+                  <li>Review client selections and taste profiles</li>
+                  <li>Export design preference reports</li>
+                  <li>Manage Principal and Secondary assessments</li>
+                </ul>
+                <p className="admin-tool-card__note">
+                  <strong>Note:</strong> All configurations are specific to {currentProjectName} and won't affect other projects.
+                </p>
+              </div>
+              <div className="admin-tool-card__actions">
+                <button
+                  className="btn btn--primary"
+                  onClick={launchTasteExploration}
+                  disabled={!activeProjectId}
+                >
+                  <ExternalLink size={16} />
+                  Launch Taste Exploration Manager
+                </button>
+                {!activeProjectId && (
+                  <p className="admin-tool-card__warning">Please select a project first</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </section>
