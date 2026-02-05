@@ -4,6 +4,8 @@
  * In-app documentation for the KYM (Know Your Market) module.
  * Updated for BAM v3.0 Dual Scoring System.
  *
+ * REFORMATTED to match N4S standard documentation pattern (KYC, FYI style).
+ *
  * Tabs:
  * - Overview: BAM explanation, Portfolio Context, Feature Classification
  * - Workflow: Step-by-step guide including Buyer Alignment
@@ -12,663 +14,684 @@
  */
 
 import React, { useState } from 'react';
-import './KYMDocumentation.css';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  AlertTriangle,
+  Target,
+  Users,
+  TrendingUp,
+  Info
+} from 'lucide-react';
 
-// =============================================================================
-// COLLAPSIBLE SECTION COMPONENT
-// =============================================================================
+// N4S Brand Colors
+const COLORS = {
+  navy: '#1e3a5f',
+  gold: '#c9a227',
+  background: '#fafaf8',
+  surface: '#ffffff',
+  border: '#e5e5e0',
+  text: '#1a1a1a',
+  textMuted: '#6b6b6b',
+  success: '#2e7d32',
+  warning: '#f57c00',
+  error: '#d32f2f',
+};
 
-const CollapsibleSection = ({ title, defaultOpen = false, children }) => {
+/**
+ * Expandable Section Component (matches KYC/FYI pattern)
+ */
+function ExpandableSection({ title, children, defaultOpen = false }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={`kym-doc-collapsible ${isOpen ? 'kym-doc-collapsible--open' : ''}`}>
+    <div className="doc-expandable">
       <button
-        className="kym-doc-collapsible__header"
+        className="doc-expandable-header"
         onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
       >
-        <span className="kym-doc-collapsible__title">{title}</span>
-        <span className="kym-doc-collapsible__icon">
-          {isOpen ? '−' : '+'}
-        </span>
+        {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        <span>{title}</span>
       </button>
       {isOpen && (
-        <div className="kym-doc-collapsible__content">
+        <div className="doc-expandable-content">
           {children}
         </div>
       )}
     </div>
   );
-};
+}
 
-// =============================================================================
-// STATUS BADGE COMPONENT
-// =============================================================================
-
-const StatusBadge = ({ status }) => {
+/**
+ * Status Badge Component
+ */
+function StatusBadge({ status }) {
   const statusClass = status.toLowerCase().replace(/\s+/g, '-');
   return (
-    <span className={`kym-doc-status kym-doc-status--${statusClass}`}>
+    <span className={`doc-status doc-status--${statusClass}`}>
       {status}
     </span>
   );
-};
+}
 
 // =============================================================================
 // OVERVIEW TAB
 // =============================================================================
 
-const OverviewTab = () => (
-  <div className="kym-doc-tab-content">
-    <p className="kym-doc-intro">
-      The KYM (Know Your Market) module provides market intelligence and buyer alignment
-      analysis to ensure your design decisions serve both your needs and future resale value.
-    </p>
-
-    <CollapsibleSection title="Buyer Alignment Matrix (BAM)" defaultOpen={true}>
-      <p>
-        BAM v3.0 provides a <strong>dual-lens analysis</strong> of your property design decisions:
-      </p>
-
-      <div className="kym-doc-dual-score">
-        <div className="kym-doc-score-box kym-doc-score-box--client">
-          <h4>Client Satisfaction Score</h4>
-          <p className="kym-doc-score-question">
-            "Does this design serve YOUR needs and vision?"
-          </p>
-          <ul>
-            <li>Spatial requirements met</li>
-            <li>Lifestyle needs fulfilled</li>
-            <li>Design aesthetic match</li>
-            <li>Location context fit</li>
-            <li>Future-proofing provisions</li>
-          </ul>
-          <p className="kym-doc-score-source">
-            <strong>Source:</strong> KYC + FYI + MVP modules
-          </p>
-        </div>
-
-        <div className="kym-doc-score-box kym-doc-score-box--market">
-          <h4>Market Appeal Score</h4>
-          <p className="kym-doc-score-question">
-            "Will BUYERS want this when you sell?"
-          </p>
-          <ul>
-            <li>Buyer archetype alignment</li>
-            <li>Must Have / Nice to Have / Avoid matching</li>
-            <li>Market-specific preferences</li>
-            <li>Resale positioning</li>
-            <li>Competitive differentiation</li>
-          </ul>
-          <p className="kym-doc-score-source">
-            <strong>Source:</strong> KYM + Archetype Profiles
-          </p>
-        </div>
-      </div>
-
-      <div className="kym-doc-threshold-table">
-        <h5>Pass/Fail Thresholds</h5>
-        <table>
-          <thead>
-            <tr>
-              <th>Score Type</th>
-              <th>≥80%</th>
-              <th>65-79%</th>
-              <th>&lt;65%</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Client Satisfaction</td>
-              <td><StatusBadge status="PASS" /> Strong Fit</td>
-              <td><StatusBadge status="CAUTION" /> Compromises Exist</td>
-              <td><StatusBadge status="FAIL" /> Misaligned</td>
-            </tr>
-            <tr>
-              <td>Market Appeal</td>
-              <td><StatusBadge status="PASS" /> Strong Appeal</td>
-              <td><StatusBadge status="CAUTION" /> Limited Pool</td>
-              <td><StatusBadge status="FAIL" /> Hard to Sell</td>
-            </tr>
-            <tr>
-              <td>Combined Score</td>
-              <td><StatusBadge status="PASS" /> PASS</td>
-              <td><StatusBadge status="CAUTION" /> CAUTION</td>
-              <td><StatusBadge status="FAIL" /> FAIL</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </CollapsibleSection>
-
-    <CollapsibleSection title="Portfolio Context">
-      <p>
-        Not all clients have the same investment horizon. Portfolio Context adjusts
-        the weighting between Client Satisfaction and Market Appeal scores based on
-        your intended hold period.
-      </p>
-
-      <table className="kym-doc-table">
-        <thead>
-          <tr>
-            <th>Context</th>
-            <th>Client Weight</th>
-            <th>Market Weight</th>
-            <th>Use Case</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Forever Home</strong></td>
-            <td>70%</td>
-            <td>30%</td>
-            <td>Legacy property, 15+ years</td>
-          </tr>
-          <tr>
-            <td><strong>Primary Residence</strong></td>
-            <td>60%</td>
-            <td>40%</td>
-            <td>Long-term home, 10-15 years</td>
-          </tr>
-          <tr>
-            <td><strong>Medium Term</strong></td>
-            <td>50%</td>
-            <td>50%</td>
-            <td>Balanced hold, 5-10 years</td>
-          </tr>
-          <tr>
-            <td><strong>Investment</strong></td>
-            <td>30%</td>
-            <td>70%</td>
-            <td>Investment property, &lt;5 years</td>
-          </tr>
-          <tr>
-            <td><strong>Spec Build</strong></td>
-            <td>10%</td>
-            <td>90%</td>
-            <td>Build to sell immediately</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="kym-doc-formula">
-        <strong>Combined Score Formula:</strong>
-        <code>
-          Combined = (Client Score × Client Weight) + (Market Score × Market Weight)
-        </code>
-        <p className="kym-doc-example">
-          Example: 82% Client × 60% + 65% Market × 40% = 49.2 + 26.0 = <strong>75.2%</strong>
+function OverviewTab() {
+  return (
+    <div className="doc-tab-content">
+      <div className="doc-card">
+        <h2 className="doc-section-title">What is KYM?</h2>
+        <p className="doc-paragraph">
+          The KYM (Know Your Market) module provides market intelligence and buyer alignment
+          analysis to ensure your design decisions serve both your needs and future resale value.
         </p>
       </div>
-    </CollapsibleSection>
 
-    <CollapsibleSection title="Feature Classification">
-      <p>
-        Every design feature is classified into one of four quadrants based on its
-        value to you (client) versus its value to future buyers (market).
-      </p>
+      <ExpandableSection title="Buyer Alignment Matrix (BAM)" defaultOpen={true}>
+        <p className="doc-paragraph">
+          BAM v3.0 provides a <strong>dual-lens analysis</strong> of your property design decisions:
+        </p>
 
-      <div className="kym-doc-quadrants">
-        <div className="kym-doc-quadrant kym-doc-quadrant--essential">
-          <h5>Essential</h5>
-          <p className="kym-doc-quadrant-desc">High Client + High Market</p>
-          <p><strong>Action:</strong> Must include</p>
-          <ul>
-            <li>Quality construction</li>
-            <li>Smart home basics</li>
-            <li>Modern kitchen</li>
-            <li>Primary suite excellence</li>
-          </ul>
+        <div className="doc-dual-score">
+          <div className="doc-score-box doc-score-box--client">
+            <h4>Client Satisfaction Score</h4>
+            <p className="doc-score-question">
+              "Does this design serve YOUR needs and vision?"
+            </p>
+            <ul className="doc-score-list">
+              <li>Spatial requirements met</li>
+              <li>Lifestyle needs fulfilled</li>
+              <li>Design aesthetic match</li>
+              <li>Location context fit</li>
+              <li>Future-proofing provisions</li>
+            </ul>
+            <p className="doc-score-source">
+              <strong>Source:</strong> KYC + FYI + MVP modules
+            </p>
+          </div>
+
+          <div className="doc-score-box doc-score-box--market">
+            <h4>Market Appeal Score</h4>
+            <p className="doc-score-question">
+              "Will BUYERS want this when you sell?"
+            </p>
+            <ul className="doc-score-list">
+              <li>Buyer archetype alignment</li>
+              <li>Must Have / Nice to Have / Avoid matching</li>
+              <li>Market-specific preferences</li>
+              <li>Resale positioning</li>
+              <li>Competitive differentiation</li>
+            </ul>
+            <p className="doc-score-source">
+              <strong>Source:</strong> KYM + Archetype Profiles
+            </p>
+          </div>
         </div>
 
-        <div className="kym-doc-quadrant kym-doc-quadrant--differentiating">
-          <h5>Differentiating</h5>
-          <p className="kym-doc-quadrant-desc">Medium Client + High Market</p>
-          <p><strong>Action:</strong> Include if budget allows</p>
-          <ul>
-            <li>Home theater</li>
-            <li>Wine cellar</li>
-            <li>Pool house</li>
-            <li>Guest house</li>
-          </ul>
+        <div className="doc-threshold-section">
+          <h5>Pass/Fail Thresholds</h5>
+          <div className="doc-threshold-table">
+            <div className="doc-threshold-row doc-threshold-row--header">
+              <span>Score Type</span>
+              <span>≥80%</span>
+              <span>65-79%</span>
+              <span>&lt;65%</span>
+            </div>
+            <div className="doc-threshold-row">
+              <span>Client Satisfaction</span>
+              <span><StatusBadge status="PASS" /> Strong Fit</span>
+              <span><StatusBadge status="CAUTION" /> Compromises Exist</span>
+              <span><StatusBadge status="FAIL" /> Misaligned</span>
+            </div>
+            <div className="doc-threshold-row">
+              <span>Market Appeal</span>
+              <span><StatusBadge status="PASS" /> Strong Appeal</span>
+              <span><StatusBadge status="CAUTION" /> Limited Pool</span>
+              <span><StatusBadge status="FAIL" /> Hard to Sell</span>
+            </div>
+            <div className="doc-threshold-row">
+              <span>Combined Score</span>
+              <span><StatusBadge status="PASS" /> PASS</span>
+              <span><StatusBadge status="CAUTION" /> CAUTION</span>
+              <span><StatusBadge status="FAIL" /> FAIL</span>
+            </div>
+          </div>
+        </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="Portfolio Context">
+        <p className="doc-paragraph">
+          Not all clients have the same investment horizon. Portfolio Context adjusts
+          the weighting between Client Satisfaction and Market Appeal scores based on
+          your intended hold period.
+        </p>
+
+        <div className="doc-context-table">
+          <div className="doc-context-row doc-context-row--header">
+            <span>Context</span>
+            <span>Client Weight</span>
+            <span>Market Weight</span>
+            <span>Use Case</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>Forever Home</strong></span>
+            <span>70%</span>
+            <span>30%</span>
+            <span>Legacy property, 15+ years</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>Primary Residence</strong></span>
+            <span>60%</span>
+            <span>40%</span>
+            <span>Long-term home, 10-15 years</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>Medium Term</strong></span>
+            <span>50%</span>
+            <span>50%</span>
+            <span>Balanced hold, 5-10 years</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>Investment</strong></span>
+            <span>30%</span>
+            <span>70%</span>
+            <span>Investment property, &lt;5 years</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>Spec Build</strong></span>
+            <span>10%</span>
+            <span>90%</span>
+            <span>Build to sell immediately</span>
+          </div>
         </div>
 
-        <div className="kym-doc-quadrant kym-doc-quadrant--personal">
-          <h5>Personal</h5>
-          <p className="kym-doc-quadrant-desc">High Client + Low Market</p>
-          <p><strong>Action:</strong> Include with awareness</p>
-          <ul>
-            <li>Hobby-specific rooms</li>
-            <li>Religious spaces</li>
-            <li>Pet facilities</li>
-            <li>Collection display</li>
-          </ul>
+        <div className="doc-formula">
+          <strong>Combined Score Formula:</strong>
+          <code>
+            Combined = (Client Score × Client Weight) + (Market Score × Market Weight)
+          </code>
+          <p className="doc-example">
+            Example: 82% Client × 60% + 65% Market × 40% = 49.2 + 26.0 = <strong>75.2%</strong>
+          </p>
         </div>
+      </ExpandableSection>
 
-        <div className="kym-doc-quadrant kym-doc-quadrant--risky">
-          <h5>Risky</h5>
-          <p className="kym-doc-quadrant-desc">Low Client + Low Market</p>
-          <p><strong>Action:</strong> Avoid or reconsider</p>
-          <ul>
-            <li>Highly unusual style</li>
-            <li>Over-personalization</li>
-            <li>Excessive scale</li>
-            <li>Dated design choices</li>
-          </ul>
+      <ExpandableSection title="Feature Classification">
+        <p className="doc-paragraph">
+          Every design feature is classified into one of four quadrants based on its
+          value to you (client) versus its value to future buyers (market).
+        </p>
+
+        <div className="doc-quadrants">
+          <div className="doc-quadrant doc-quadrant--essential">
+            <h5>Essential</h5>
+            <p className="doc-quadrant-desc">High Client + High Market</p>
+            <p><strong>Action:</strong> Must include</p>
+            <ul>
+              <li>Quality construction</li>
+              <li>Smart home basics</li>
+              <li>Modern kitchen</li>
+              <li>Primary suite excellence</li>
+            </ul>
+          </div>
+
+          <div className="doc-quadrant doc-quadrant--differentiating">
+            <h5>Differentiating</h5>
+            <p className="doc-quadrant-desc">Medium Client + High Market</p>
+            <p><strong>Action:</strong> Include if budget allows</p>
+            <ul>
+              <li>Home theater</li>
+              <li>Wine cellar</li>
+              <li>Pool house</li>
+              <li>Guest house</li>
+            </ul>
+          </div>
+
+          <div className="doc-quadrant doc-quadrant--personal">
+            <h5>Personal</h5>
+            <p className="doc-quadrant-desc">High Client + Low Market</p>
+            <p><strong>Action:</strong> Include with awareness</p>
+            <ul>
+              <li>Hobby-specific rooms</li>
+              <li>Religious spaces</li>
+              <li>Pet facilities</li>
+              <li>Collection display</li>
+            </ul>
+          </div>
+
+          <div className="doc-quadrant doc-quadrant--risky">
+            <h5>Risky</h5>
+            <p className="doc-quadrant-desc">Low Client + Low Market</p>
+            <p><strong>Action:</strong> Avoid or reconsider</p>
+            <ul>
+              <li>Highly unusual style</li>
+              <li>Over-personalization</li>
+              <li>Excessive scale</li>
+              <li>Dated design choices</li>
+            </ul>
+          </div>
         </div>
-      </div>
-    </CollapsibleSection>
-  </div>
-);
+      </ExpandableSection>
+    </div>
+  );
+}
 
 // =============================================================================
 // WORKFLOW TAB
 // =============================================================================
 
-const WorkflowTab = () => (
-  <div className="kym-doc-tab-content">
-    <p className="kym-doc-intro">
-      Follow these steps to complete the KYM module and validate buyer alignment.
-    </p>
-
-    <CollapsibleSection title="Step 1: Enter Location" defaultOpen={true}>
-      <ol className="kym-doc-steps">
-        <li>Enter the project address or ZIP code</li>
-        <li>Confirm the market area is correct</li>
-        <li>Review initial market data loading</li>
-      </ol>
-    </CollapsibleSection>
-
-    <CollapsibleSection title="Step 2: Review Market Data">
-      <ol className="kym-doc-steps">
-        <li>Examine comparable property listings</li>
-        <li>Review median prices and price/SF metrics</li>
-        <li>Note inventory levels and days on market</li>
-        <li>Identify market trends</li>
-      </ol>
-    </CollapsibleSection>
-
-    <CollapsibleSection title="Step 3: Analyze Comparables">
-      <ol className="kym-doc-steps">
-        <li>Filter properties by relevant criteria</li>
-        <li>Compare features across listings</li>
-        <li>Identify market expectations for luxury segment</li>
-        <li>Note common amenities and features</li>
-      </ol>
-    </CollapsibleSection>
-
-    <CollapsibleSection title="Step 4: Review Demographics">
-      <ol className="kym-doc-steps">
-        <li>Examine buyer pool characteristics</li>
-        <li>Review income and wealth distributions</li>
-        <li>Understand buyer preferences in this market</li>
-      </ol>
-    </CollapsibleSection>
-
-    <CollapsibleSection title="Step 5: Review Buyer Alignment (BAM v3.0)" defaultOpen={true}>
-      <p className="kym-doc-step-intro">
-        This critical step validates that your design serves both your needs
-        and future resale potential.
-      </p>
-
-      <div className="kym-doc-substeps">
-        <div className="kym-doc-substep">
-          <span className="kym-doc-substep-num">5.1</span>
-          <div className="kym-doc-substep-content">
-            <strong>Set Portfolio Context slider</strong>
-            <p>
-              Select your intended hold period (Forever Home → Spec Build) to
-              set appropriate score weighting.
-            </p>
-          </div>
-        </div>
-
-        <div className="kym-doc-substep">
-          <span className="kym-doc-substep-num">5.2</span>
-          <div className="kym-doc-substep-content">
-            <strong>Review dual scores</strong>
-            <p>
-              Check both Client Satisfaction and Market Appeal scores.
-              Both should be ≥80% for PASS status.
-            </p>
-          </div>
-        </div>
-
-        <div className="kym-doc-substep">
-          <span className="kym-doc-substep-num">5.3</span>
-          <div className="kym-doc-substep-content">
-            <strong>Examine Buyer Pool breakdown</strong>
-            <p>
-              Review the top 3 buyer archetypes for your market. Check Must Have /
-              Nice to Have / Avoid tables for each archetype.
-            </p>
-          </div>
-        </div>
-
-        <div className="kym-doc-substep">
-          <span className="kym-doc-substep-num">5.4</span>
-          <div className="kym-doc-substep-content">
-            <strong>Check Feature Classification quadrants</strong>
-            <p>
-              Verify Essential features are included. Review any Risky features
-              that may limit buyer pool.
-            </p>
-          </div>
-        </div>
-
-        <div className="kym-doc-substep">
-          <span className="kym-doc-substep-num">5.5</span>
-          <div className="kym-doc-substep-content">
-            <strong>Follow Path to 80% recommendations</strong>
-            <p>
-              For any archetype below 80%, review specific recommendations to
-              improve alignment and maximize market appeal.
-            </p>
-          </div>
-        </div>
+function WorkflowTab() {
+  return (
+    <div className="doc-tab-content">
+      <div className="doc-card">
+        <h2 className="doc-section-title">KYM Workflow</h2>
+        <p className="doc-paragraph">
+          Follow these steps to complete the KYM module and validate buyer alignment.
+        </p>
       </div>
-    </CollapsibleSection>
 
-    <CollapsibleSection title="Step 6: Generate Report">
-      <ol className="kym-doc-steps">
-        <li>Click "Generate PDF Report"</li>
-        <li>Review all sections for accuracy</li>
-        <li>Share with stakeholders as needed</li>
-      </ol>
-    </CollapsibleSection>
-  </div>
-);
+      <ExpandableSection title="Step 1: Enter Location" defaultOpen={true}>
+        <ol className="doc-steps">
+          <li>Enter the project address or ZIP code</li>
+          <li>Confirm the market area is correct</li>
+          <li>Review initial market data loading</li>
+        </ol>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 2: Review Market Data">
+        <ol className="doc-steps">
+          <li>Examine comparable property listings</li>
+          <li>Review median prices and price/SF metrics</li>
+          <li>Note inventory levels and days on market</li>
+          <li>Identify market trends</li>
+        </ol>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 3: Analyze Comparables">
+        <ol className="doc-steps">
+          <li>Filter properties by relevant criteria</li>
+          <li>Compare features across listings</li>
+          <li>Identify market expectations for luxury segment</li>
+          <li>Note common amenities and features</li>
+        </ol>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 4: Review Demographics">
+        <ol className="doc-steps">
+          <li>Examine buyer pool characteristics</li>
+          <li>Review income and wealth distributions</li>
+          <li>Understand buyer preferences in this market</li>
+        </ol>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 5: Review Buyer Alignment (BAM v3.0)" defaultOpen={true}>
+        <div className="doc-step-intro">
+          <Info size={16} />
+          <span>This critical step validates that your design serves both your needs
+          and future resale potential.</span>
+        </div>
+
+        <div className="doc-substeps">
+          <div className="doc-substep">
+            <span className="doc-substep-num">5.1</span>
+            <div className="doc-substep-content">
+              <strong>Set Portfolio Context slider</strong>
+              <p>
+                Select your intended hold period (Forever Home → Spec Build) to
+                set appropriate score weighting.
+              </p>
+            </div>
+          </div>
+
+          <div className="doc-substep">
+            <span className="doc-substep-num">5.2</span>
+            <div className="doc-substep-content">
+              <strong>Review dual scores</strong>
+              <p>
+                Check both Client Satisfaction and Market Appeal scores.
+                Both should be ≥80% for PASS status.
+              </p>
+            </div>
+          </div>
+
+          <div className="doc-substep">
+            <span className="doc-substep-num">5.3</span>
+            <div className="doc-substep-content">
+              <strong>Examine Buyer Pool breakdown</strong>
+              <p>
+                Review the top 3 buyer archetypes for your market. Check Must Have /
+                Nice to Have / Avoid tables for each archetype.
+              </p>
+            </div>
+          </div>
+
+          <div className="doc-substep">
+            <span className="doc-substep-num">5.4</span>
+            <div className="doc-substep-content">
+              <strong>Check Feature Classification quadrants</strong>
+              <p>
+                Verify Essential features are included. Review any Risky features
+                that may limit buyer pool.
+              </p>
+            </div>
+          </div>
+
+          <div className="doc-substep">
+            <span className="doc-substep-num">5.5</span>
+            <div className="doc-substep-content">
+              <strong>Follow Path to 80% recommendations</strong>
+              <p>
+                For any archetype below 80%, review specific recommendations to
+                improve alignment and maximize market appeal.
+              </p>
+            </div>
+          </div>
+        </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 6: Generate Report">
+        <ol className="doc-steps">
+          <li>Click "Generate PDF Report"</li>
+          <li>Review all sections for accuracy</li>
+          <li>Share with stakeholders as needed</li>
+        </ol>
+      </ExpandableSection>
+    </div>
+  );
+}
 
 // =============================================================================
 // GATES TAB
 // =============================================================================
 
-const GatesTab = () => (
-  <div className="kym-doc-tab-content">
-    <p className="kym-doc-intro">
-      Validation gates ensure the design meets minimum thresholds before
-      progressing to subsequent phases.
-    </p>
-
-    <CollapsibleSection title="BAM Validation Gates" defaultOpen={true}>
-      <p>
-        These gates validate buyer alignment before Phase 2 (FYI) progression.
-      </p>
-
-      <table className="kym-doc-table kym-doc-table--gates">
-        <thead>
-          <tr>
-            <th>Gate</th>
-            <th>Threshold</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Client Satisfaction</strong></td>
-            <td>≥80%</td>
-            <td>
-              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
-            </td>
-            <td>Review KYC/FYI alignment</td>
-          </tr>
-          <tr>
-            <td><strong>Market Appeal</strong></td>
-            <td>≥80%</td>
-            <td>
-              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
-            </td>
-            <td>Follow archetype recommendations</td>
-          </tr>
-          <tr>
-            <td><strong>Combined Score</strong></td>
-            <td>≥80%</td>
-            <td>
-              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
-            </td>
-            <td>Balance client/market priorities</td>
-          </tr>
-          <tr>
-            <td><strong>Essential Features</strong></td>
-            <td>8/10 minimum</td>
-            <td>Required</td>
-            <td>Add missing essentials</td>
-          </tr>
-          <tr>
-            <td><strong>Risky Features</strong></td>
-            <td>0-1 maximum</td>
-            <td>Warning</td>
-            <td>Review or remove risky items</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="kym-doc-warning">
-        <strong>Warning:</strong> A Combined Score below 65% blocks Phase 2
-        progression. Address critical gaps before continuing.
+function GatesTab() {
+  return (
+    <div className="doc-tab-content">
+      <div className="doc-card">
+        <h2 className="doc-section-title">Validation Gates</h2>
+        <p className="doc-paragraph">
+          Validation gates ensure the design meets minimum thresholds before
+          progressing to subsequent phases.
+        </p>
       </div>
-    </CollapsibleSection>
 
-    <CollapsibleSection title="Score Status Definitions">
-      <div className="kym-doc-status-defs">
-        <div className="kym-doc-status-def">
-          <StatusBadge status="PASS" />
-          <p>Score ≥80% — Design strongly aligned with requirements</p>
-        </div>
-        <div className="kym-doc-status-def">
-          <StatusBadge status="CAUTION" />
-          <p>Score 65-79% — Some compromises exist, review recommended</p>
-        </div>
-        <div className="kym-doc-status-def">
-          <StatusBadge status="FAIL" />
-          <p>Score &lt;65% — Significant misalignment, action required</p>
-        </div>
-      </div>
-    </CollapsibleSection>
+      <ExpandableSection title="BAM Validation Gates" defaultOpen={true}>
+        <p className="doc-paragraph">
+          These gates validate buyer alignment before Phase 2 (FYI) progression.
+        </p>
 
-    <CollapsibleSection title="Gate Override Policy">
-      <p>
-        Gates can be overridden by authorized advisors in specific circumstances:
-      </p>
-      <ul className="kym-doc-list">
-        <li>Client explicitly acknowledges trade-offs in writing</li>
-        <li>Portfolio Context is "Forever Home" with minimal resale concern</li>
-        <li>Market-specific factors justify deviation (documented)</li>
-        <li>Senior advisor approval obtained</li>
-      </ul>
-      <p className="kym-doc-note">
-        All overrides are logged and included in the final report.
-      </p>
-    </CollapsibleSection>
-  </div>
-);
+        <div className="doc-gates-table">
+          <div className="doc-gates-row doc-gates-row--header">
+            <span>Gate</span>
+            <span>Threshold</span>
+            <span>Status</span>
+            <span>Action</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Client Satisfaction</strong></span>
+            <span>≥80%</span>
+            <span>
+              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
+            </span>
+            <span>Review KYC/FYI alignment</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Market Appeal</strong></span>
+            <span>≥80%</span>
+            <span>
+              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
+            </span>
+            <span>Follow archetype recommendations</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Combined Score</strong></span>
+            <span>≥80%</span>
+            <span>
+              <StatusBadge status="PASS" /> / <StatusBadge status="CAUTION" /> / <StatusBadge status="FAIL" />
+            </span>
+            <span>Balance client/market priorities</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Essential Features</strong></span>
+            <span>8/10 minimum</span>
+            <span>Required</span>
+            <span>Add missing essentials</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Risky Features</strong></span>
+            <span>0-1 maximum</span>
+            <span>Warning</span>
+            <span>Review or remove risky items</span>
+          </div>
+        </div>
+
+        <div className="doc-warning">
+          <AlertTriangle size={16} />
+          <span><strong>Warning:</strong> A Combined Score below 65% blocks Phase 2
+          progression. Address critical gaps before continuing.</span>
+        </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="Score Status Definitions">
+        <div className="doc-status-defs">
+          <div className="doc-status-def">
+            <StatusBadge status="PASS" />
+            <p>Score ≥80% — Design strongly aligned with requirements</p>
+          </div>
+          <div className="doc-status-def">
+            <StatusBadge status="CAUTION" />
+            <p>Score 65-79% — Some compromises exist, review recommended</p>
+          </div>
+          <div className="doc-status-def">
+            <StatusBadge status="FAIL" />
+            <p>Score &lt;65% — Significant misalignment, action required</p>
+          </div>
+        </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="Gate Override Policy">
+        <p className="doc-paragraph">
+          Gates can be overridden by authorized advisors in specific circumstances:
+        </p>
+        <ul className="doc-list-plain">
+          <li>Client explicitly acknowledges trade-offs in writing</li>
+          <li>Portfolio Context is "Forever Home" with minimal resale concern</li>
+          <li>Market-specific factors justify deviation (documented)</li>
+          <li>Senior advisor approval obtained</li>
+        </ul>
+        <p className="doc-note">
+          All overrides are logged and included in the final report.
+        </p>
+      </ExpandableSection>
+    </div>
+  );
+}
 
 // =============================================================================
 // REFERENCE TAB
 // =============================================================================
 
-const ReferenceTab = () => (
-  <div className="kym-doc-tab-content">
-    <p className="kym-doc-intro">
-      Key terminology and definitions used in the BAM v3.0 dual scoring system.
-    </p>
+function ReferenceTab() {
+  return (
+    <div className="doc-tab-content">
+      <div className="doc-card">
+        <h2 className="doc-section-title">Reference Guide</h2>
+        <p className="doc-paragraph">
+          Key terminology and definitions used in the BAM v3.0 dual scoring system.
+        </p>
+      </div>
 
-    <CollapsibleSection title="BAM Terminology" defaultOpen={true}>
-      <dl className="kym-doc-definitions">
-        <dt>Client Satisfaction Score</dt>
-        <dd>
-          A score (0-100) measuring how well the planned design serves the client's
-          stated needs, preferences, and lifestyle requirements. Answers: "Will YOU
-          be happy living here?"
-        </dd>
+      <ExpandableSection title="BAM Terminology" defaultOpen={true}>
+        <dl className="doc-glossary">
+          <dt>Client Satisfaction Score</dt>
+          <dd>
+            A score (0-100) measuring how well the planned design serves the client's
+            stated needs, preferences, and lifestyle requirements. Answers: "Will YOU
+            be happy living here?"
+          </dd>
 
-        <dt>Market Appeal Score</dt>
-        <dd>
-          A score (0-100) measuring how well the planned design will appeal to likely
-          buyers in the target market. Answers: "Will this SELL when the time comes?"
-        </dd>
+          <dt>Market Appeal Score</dt>
+          <dd>
+            A score (0-100) measuring how well the planned design will appeal to likely
+            buyers in the target market. Answers: "Will this SELL when the time comes?"
+          </dd>
 
-        <dt>Combined Score</dt>
-        <dd>
-          The weighted average of Client Satisfaction and Market Appeal scores,
-          calculated based on Portfolio Context. Formula: (Client × Client Weight) +
-          (Market × Market Weight).
-        </dd>
+          <dt>Combined Score</dt>
+          <dd>
+            The weighted average of Client Satisfaction and Market Appeal scores,
+            calculated based on Portfolio Context. Formula: (Client × Client Weight) +
+            (Market × Market Weight).
+          </dd>
 
-        <dt>Portfolio Context</dt>
-        <dd>
-          The client's intended hold period and investment strategy, which determines
-          the weighting between Client Satisfaction and Market Appeal in the Combined Score.
-        </dd>
+          <dt>Portfolio Context</dt>
+          <dd>
+            The client's intended hold period and investment strategy, which determines
+            the weighting between Client Satisfaction and Market Appeal in the Combined Score.
+          </dd>
 
-        <dt>Buyer Archetype</dt>
-        <dd>
-          A profile representing a typical buyer segment in the luxury market
-          (e.g., Tech Executive, Entertainment Executive, Finance Executive).
-          Each archetype has specific Must Haves, Nice to Haves, and Avoids.
-        </dd>
+          <dt>Buyer Archetype</dt>
+          <dd>
+            A profile representing a typical buyer segment in the luxury market
+            (e.g., Tech Executive, Entertainment Executive, Finance Executive).
+            Each archetype has specific Must Haves, Nice to Haves, and Avoids.
+          </dd>
 
-        <dt>Must Haves (50 points)</dt>
-        <dd>
-          Required features for each buyer archetype. 5 requirements × 10 points each.
-          Full match = 10 pts, Partial = 5 pts, None = 0 pts.
-        </dd>
+          <dt>Must Haves (50 points)</dt>
+          <dd>
+            Required features for each buyer archetype. 5 requirements × 10 points each.
+            Full match = 10 pts, Partial = 5 pts, None = 0 pts.
+          </dd>
 
-        <dt>Nice to Haves (35 points)</dt>
-        <dd>
-          Desirable but not required features. 5 features × 7 points each.
-          Full match = 7 pts, Partial = 3.5 pts, None = 0 pts.
-        </dd>
+          <dt>Nice to Haves (35 points)</dt>
+          <dd>
+            Desirable but not required features. 5 features × 7 points each.
+            Full match = 7 pts, Partial = 3.5 pts, None = 0 pts.
+          </dd>
 
-        <dt>Avoids (Penalties)</dt>
-        <dd>
-          Features or characteristics that negatively impact appeal to an archetype.
-          Each triggered avoid applies a penalty of -5 to -15 points.
-        </dd>
+          <dt>Avoids (Penalties)</dt>
+          <dd>
+            Features or characteristics that negatively impact appeal to an archetype.
+            Each triggered avoid applies a penalty of -5 to -15 points.
+          </dd>
 
-        <dt>Path to 80%</dt>
-        <dd>
-          Specific recommendations to improve an archetype score from current level
-          to the 80% PASS threshold. Shows required point gains and suggested actions.
-        </dd>
+          <dt>Path to 80%</dt>
+          <dd>
+            Specific recommendations to improve an archetype score from current level
+            to the 80% PASS threshold. Shows required point gains and suggested actions.
+          </dd>
 
-        <dt>Feature Classification</dt>
-        <dd>
-          A system categorizing design features into four quadrants based on client
-          value vs. market value: Essential, Differentiating, Personal, and Risky.
-        </dd>
-      </dl>
-    </CollapsibleSection>
+          <dt>Feature Classification</dt>
+          <dd>
+            A system categorizing design features into four quadrants based on client
+            value vs. market value: Essential, Differentiating, Personal, and Risky.
+          </dd>
+        </dl>
+      </ExpandableSection>
 
-    <CollapsibleSection title="Buyer Archetype Reference">
-      <table className="kym-doc-table">
-        <thead>
-          <tr>
-            <th>Archetype</th>
-            <th>Key Must Haves</th>
-            <th>Key Avoids</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Tech Executive</strong></td>
-            <td>Smart Home, Office, Contemporary</td>
-            <td>Traditional, HOA restrictions</td>
-          </tr>
-          <tr>
-            <td><strong>Entertainment Executive</strong></td>
-            <td>Screening Room, Privacy, Chef's Kitchen</td>
-            <td>Minimalist, Compact footprint</td>
-          </tr>
-          <tr>
-            <td><strong>Finance Executive</strong></td>
-            <td>Library, Traditional, Formal Dining</td>
-            <td>Modern/Minimalist, Remote location</td>
-          </tr>
-          <tr>
-            <td><strong>International Investor</strong></td>
-            <td>Security, Staff Quarters, Guest Suites</td>
-            <td>Compact size, Limited privacy</td>
-          </tr>
-          <tr>
-            <td><strong>Sports Professional</strong></td>
-            <td>Gym 1000+ SF, Recovery Suite, Privacy</td>
-            <td>Traditional, Small gym</td>
-          </tr>
-          <tr>
-            <td><strong>Generational Wealth</strong></td>
-            <td>Guest House, Estate, 6+ Bedrooms</td>
-            <td>Modern, Single structure</td>
-          </tr>
-          <tr>
-            <td><strong>Wellness Pioneer</strong></td>
-            <td>Spa Suite, Natural Materials</td>
-            <td>Urban location, Artificial materials</td>
-          </tr>
-        </tbody>
-      </table>
-    </CollapsibleSection>
+      <ExpandableSection title="Buyer Archetype Reference">
+        <div className="doc-archetype-table">
+          <div className="doc-archetype-row doc-archetype-row--header">
+            <span>Archetype</span>
+            <span>Key Must Haves</span>
+            <span>Key Avoids</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Tech Executive</strong></span>
+            <span>Smart Home, Office, Contemporary</span>
+            <span>Traditional, HOA restrictions</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Entertainment Executive</strong></span>
+            <span>Screening Room, Privacy, Chef's Kitchen</span>
+            <span>Minimalist, Compact footprint</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Finance Executive</strong></span>
+            <span>Library, Traditional, Formal Dining</span>
+            <span>Modern/Minimalist, Remote location</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>International Investor</strong></span>
+            <span>Security, Staff Quarters, Guest Suites</span>
+            <span>Compact size, Limited privacy</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Sports Professional</strong></span>
+            <span>Gym 1000+ SF, Recovery Suite, Privacy</span>
+            <span>Traditional, Small gym</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Generational Wealth</strong></span>
+            <span>Guest House, Estate, 6+ Bedrooms</span>
+            <span>Modern, Single structure</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Wellness Pioneer</strong></span>
+            <span>Spa Suite, Natural Materials</span>
+            <span>Urban location, Artificial materials</span>
+          </div>
+        </div>
+      </ExpandableSection>
 
-    <CollapsibleSection title="Market Buyer Pool Reference">
-      <table className="kym-doc-table kym-doc-table--compact">
-        <thead>
-          <tr>
-            <th>Market</th>
-            <th>#1 Archetype</th>
-            <th>#2 Archetype</th>
-            <th>#3 Archetype</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Malibu, CA</td>
-            <td>Entertainment (35%)</td>
-            <td>Tech (28%)</td>
-            <td>Sports (18%)</td>
-          </tr>
-          <tr>
-            <td>Beverly Hills, CA</td>
-            <td>Entertainment (30%)</td>
-            <td>Tech (25%)</td>
-            <td>International (20%)</td>
-          </tr>
-          <tr>
-            <td>Aspen, CO</td>
-            <td>Generational (30%)</td>
-            <td>Finance (25%)</td>
-            <td>Sports (20%)</td>
-          </tr>
-          <tr>
-            <td>Greenwich, CT</td>
-            <td>Finance (40%)</td>
-            <td>Family Office (25%)</td>
-            <td>Generational (20%)</td>
-          </tr>
-          <tr>
-            <td>Palm Beach, FL</td>
-            <td>International (35%)</td>
-            <td>Finance (30%)</td>
-            <td>Generational (25%)</td>
-          </tr>
-          <tr>
-            <td>Hamptons, NY</td>
-            <td>Finance (35%)</td>
-            <td>Entertainment (25%)</td>
-            <td>Tech (20%)</td>
-          </tr>
-        </tbody>
-      </table>
-    </CollapsibleSection>
-  </div>
-);
+      <ExpandableSection title="Market Buyer Pool Reference">
+        <div className="doc-market-table">
+          <div className="doc-market-row doc-market-row--header">
+            <span>Market</span>
+            <span>#1 Archetype</span>
+            <span>#2 Archetype</span>
+            <span>#3 Archetype</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Malibu, CA</span>
+            <span>Entertainment (35%)</span>
+            <span>Tech (28%)</span>
+            <span>Sports (18%)</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Beverly Hills, CA</span>
+            <span>Entertainment (30%)</span>
+            <span>Tech (25%)</span>
+            <span>International (20%)</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Aspen, CO</span>
+            <span>Generational (30%)</span>
+            <span>Finance (25%)</span>
+            <span>Sports (20%)</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Greenwich, CT</span>
+            <span>Finance (40%)</span>
+            <span>Family Office (25%)</span>
+            <span>Generational (20%)</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Palm Beach, FL</span>
+            <span>International (35%)</span>
+            <span>Finance (30%)</span>
+            <span>Generational (25%)</span>
+          </div>
+          <div className="doc-market-row">
+            <span>Hamptons, NY</span>
+            <span>Finance (35%)</span>
+            <span>Entertainment (25%)</span>
+            <span>Tech (20%)</span>
+          </div>
+        </div>
+      </ExpandableSection>
+    </div>
+  );
+}
 
 // =============================================================================
 // MAIN DOCUMENTATION COMPONENT
 // =============================================================================
 
-const KYMDocumentation = ({ onClose }) => {
+export default function KYMDocumentation({ onClose }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
@@ -678,60 +701,759 @@ const KYMDocumentation = ({ onClose }) => {
     { id: 'reference', label: 'Reference' },
   ];
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return <OverviewTab />;
-      case 'workflow':
-        return <WorkflowTab />;
-      case 'gates':
-        return <GatesTab />;
-      case 'reference':
-        return <ReferenceTab />;
-      default:
-        return <OverviewTab />;
-    }
-  };
-
   return (
-    <div className="kym-doc-overlay" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="kym-doc-panel">
-        <div className="kym-doc-header">
-          <div className="kym-doc-header__title">
-            <h2>KYM Documentation</h2>
-            <span className="kym-doc-header__subtitle">
-              Know Your Market — BAM v3.0 Dual Scoring
-            </span>
-          </div>
+    <div className="doc-container">
+      {/* Header */}
+      <div className="doc-header">
+        <div className="doc-header-top">
           {onClose && (
-            <button className="kym-doc-close" onClick={onClose} aria-label="Close">
-              ×
+            <button className="doc-close-btn" onClick={onClose}>
+              <ArrowLeft size={16} />
+              Back to KYM
             </button>
           )}
         </div>
+        <h1 className="doc-title">Documentation</h1>
+        <p className="doc-subtitle">N4S KYM — Know Your Market Guide</p>
 
-        <div className="kym-doc-tabs">
-          {tabs.map((tab) => (
+        {/* Tabs */}
+        <div className="doc-tabs">
+          {tabs.map(tab => (
             <button
               key={tab.id}
-              className={`kym-doc-tab ${activeTab === tab.id ? 'kym-doc-tab--active' : ''}`}
+              className={`doc-tab ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
             </button>
           ))}
         </div>
-
-        <div className="kym-doc-body">
-          {renderTabContent()}
-        </div>
-
-        <div className="kym-doc-footer">
-          <span className="kym-doc-version">BAM v3.0 — January 2026</span>
-        </div>
       </div>
+
+      {/* Content */}
+      <div className="doc-content">
+        {activeTab === 'overview' && <OverviewTab />}
+        {activeTab === 'workflow' && <WorkflowTab />}
+        {activeTab === 'gates' && <GatesTab />}
+        {activeTab === 'reference' && <ReferenceTab />}
+      </div>
+
+      <style>{kymDocumentationStyles}</style>
     </div>
   );
-};
+}
 
-export default KYMDocumentation;
+// =============================================================================
+// EMBEDDED STYLES (matches KYC/FYI pattern)
+// =============================================================================
+
+const kymDocumentationStyles = `
+/* Base Container */
+.doc-container {
+  min-height: 100vh;
+  background-color: ${COLORS.background};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Header */
+.doc-header {
+  background-color: ${COLORS.surface};
+  border-bottom: 1px solid ${COLORS.border};
+  padding: 1rem 1.5rem 0;
+}
+
+.doc-header-top {
+  margin-bottom: 1rem;
+}
+
+.doc-close-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: ${COLORS.textMuted};
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doc-close-btn:hover {
+  border-color: ${COLORS.navy};
+  color: ${COLORS.navy};
+}
+
+.doc-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: ${COLORS.text};
+  margin: 0 0 0.25rem 0;
+}
+
+.doc-subtitle {
+  font-size: 0.9375rem;
+  color: ${COLORS.textMuted};
+  margin: 0 0 1.5rem 0;
+}
+
+/* Tabs */
+.doc-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid ${COLORS.border};
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  background-color: ${COLORS.background};
+}
+
+.doc-tab {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  background-color: transparent;
+  border: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: ${COLORS.textMuted};
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-right: 1px solid ${COLORS.border};
+}
+
+.doc-tab:last-child {
+  border-right: none;
+}
+
+.doc-tab:hover {
+  background-color: ${COLORS.surface};
+  color: ${COLORS.text};
+}
+
+.doc-tab.active {
+  background-color: ${COLORS.surface};
+  color: ${COLORS.navy};
+  box-shadow: inset 0 -2px 0 ${COLORS.navy};
+}
+
+/* Content */
+.doc-content {
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.doc-tab-content {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards */
+.doc-card {
+  background-color: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.doc-section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 500;
+  color: ${COLORS.text};
+  margin: 0 0 1rem 0;
+}
+
+.doc-paragraph {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: ${COLORS.text};
+  margin: 0 0 1rem 0;
+}
+
+.doc-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Expandable Sections */
+.doc-expandable {
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.doc-expandable-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: ${COLORS.background};
+  border: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: ${COLORS.text};
+  cursor: pointer;
+  text-align: left;
+}
+
+.doc-expandable-header:hover {
+  background-color: #f0f0eb;
+}
+
+.doc-expandable-content {
+  padding: 1rem;
+  border-top: 1px solid ${COLORS.border};
+}
+
+/* Status Badges */
+.doc-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doc-status--pass {
+  background: rgba(46, 125, 50, 0.15);
+  color: ${COLORS.success};
+}
+
+.doc-status--caution {
+  background: rgba(245, 124, 0, 0.15);
+  color: ${COLORS.warning};
+}
+
+.doc-status--fail {
+  background: rgba(211, 47, 47, 0.15);
+  color: ${COLORS.error};
+}
+
+/* Dual Score Display */
+.doc-dual-score {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.doc-score-box {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid ${COLORS.border};
+}
+
+.doc-score-box h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.doc-score-box--client {
+  background: linear-gradient(135deg, rgba(30, 58, 95, 0.05), rgba(30, 58, 95, 0.1));
+  border-color: ${COLORS.navy};
+}
+
+.doc-score-box--client h4 {
+  color: ${COLORS.navy};
+}
+
+.doc-score-box--market {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.05), rgba(201, 162, 39, 0.15));
+  border-color: ${COLORS.gold};
+}
+
+.doc-score-box--market h4 {
+  color: #8a7020;
+}
+
+.doc-score-question {
+  font-style: italic;
+  color: ${COLORS.textMuted};
+  font-size: 0.8125rem;
+  margin-bottom: 0.75rem;
+}
+
+.doc-score-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.125rem;
+}
+
+.doc-score-list li {
+  font-size: 0.8125rem;
+  margin-bottom: 0.25rem;
+}
+
+.doc-score-source {
+  font-size: 0.75rem;
+  color: ${COLORS.textMuted};
+  margin: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid ${COLORS.border};
+}
+
+/* Threshold Table */
+.doc-threshold-section {
+  margin-top: 1.25rem;
+}
+
+.doc-threshold-section h5 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: ${COLORS.text};
+}
+
+.doc-threshold-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.doc-threshold-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.8125rem;
+  align-items: center;
+}
+
+.doc-threshold-row:last-child {
+  border-bottom: none;
+}
+
+.doc-threshold-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Context Table */
+.doc-context-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.doc-context-row {
+  display: grid;
+  grid-template-columns: 140px 100px 100px 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.875rem;
+  align-items: center;
+}
+
+.doc-context-row:last-child {
+  border-bottom: none;
+}
+
+.doc-context-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Formula Box */
+.doc-formula {
+  background: ${COLORS.background};
+  border: 1px solid ${COLORS.border};
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.doc-formula strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: ${COLORS.navy};
+  font-size: 0.875rem;
+}
+
+.doc-formula code {
+  display: block;
+  background: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 4px;
+  padding: 0.625rem 0.75rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.8125rem;
+  color: ${COLORS.text};
+}
+
+.doc-example {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+}
+
+/* Quadrants */
+.doc-quadrants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.doc-quadrant {
+  padding: 0.875rem;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.doc-quadrant h5 {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.doc-quadrant-desc {
+  font-size: 0.6875rem;
+  color: ${COLORS.textMuted};
+  margin: 0 0 0.5rem;
+}
+
+.doc-quadrant p {
+  font-size: 0.8125rem;
+  margin: 0 0 0.5rem;
+}
+
+.doc-quadrant ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.doc-quadrant li {
+  font-size: 0.75rem;
+  margin-bottom: 0.125rem;
+}
+
+.doc-quadrant--essential {
+  background: rgba(46, 125, 50, 0.08);
+  border-color: ${COLORS.success};
+}
+
+.doc-quadrant--essential h5 {
+  color: ${COLORS.success};
+}
+
+.doc-quadrant--differentiating {
+  background: rgba(30, 58, 95, 0.08);
+  border-color: ${COLORS.navy};
+}
+
+.doc-quadrant--differentiating h5 {
+  color: ${COLORS.navy};
+}
+
+.doc-quadrant--personal {
+  background: rgba(245, 124, 0, 0.08);
+  border-color: ${COLORS.warning};
+}
+
+.doc-quadrant--personal h5 {
+  color: ${COLORS.warning};
+}
+
+.doc-quadrant--risky {
+  background: rgba(211, 47, 47, 0.08);
+  border-color: ${COLORS.error};
+}
+
+.doc-quadrant--risky h5 {
+  color: ${COLORS.error};
+}
+
+/* Workflow Steps */
+.doc-steps {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.doc-steps li {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.doc-step-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f5f0e8;
+  border-radius: 6px;
+  border-left: 3px solid ${COLORS.gold};
+  font-size: 0.875rem;
+  color: ${COLORS.text};
+  margin-bottom: 1rem;
+}
+
+.doc-step-intro svg {
+  flex-shrink: 0;
+  color: ${COLORS.gold};
+  margin-top: 2px;
+}
+
+.doc-substeps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.doc-substep {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.doc-substep-num {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${COLORS.navy};
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.doc-substep-content {
+  flex: 1;
+}
+
+.doc-substep-content strong {
+  display: block;
+  font-size: 0.875rem;
+  color: ${COLORS.text};
+  margin-bottom: 0.25rem;
+}
+
+.doc-substep-content p {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Gates Table */
+.doc-gates-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.doc-gates-row {
+  display: grid;
+  grid-template-columns: 140px 100px 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.8125rem;
+  align-items: center;
+}
+
+.doc-gates-row:last-child {
+  border-bottom: none;
+}
+
+.doc-gates-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Warning Box */
+.doc-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(211, 47, 47, 0.1);
+  border: 1px solid ${COLORS.error};
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: ${COLORS.error};
+}
+
+.doc-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Status Definitions */
+.doc-status-defs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.doc-status-def {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.doc-status-def p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: ${COLORS.text};
+}
+
+/* List Styles */
+.doc-list-plain {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.doc-list-plain li {
+  font-size: 0.875rem;
+  margin-bottom: 0.375rem;
+  line-height: 1.5;
+}
+
+.doc-note {
+  font-size: 0.8125rem;
+  color: ${COLORS.textMuted};
+  font-style: italic;
+  margin-top: 0.75rem;
+}
+
+/* Glossary */
+.doc-glossary {
+  margin: 0;
+}
+
+.doc-glossary dt {
+  font-weight: 600;
+  color: ${COLORS.text};
+  margin-top: 1rem;
+}
+
+.doc-glossary dt:first-child {
+  margin-top: 0;
+}
+
+.doc-glossary dd {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: ${COLORS.textMuted};
+  line-height: 1.5;
+}
+
+/* Archetype Table */
+.doc-archetype-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.doc-archetype-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.8125rem;
+  align-items: center;
+}
+
+.doc-archetype-row:last-child {
+  border-bottom: none;
+}
+
+.doc-archetype-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Market Table */
+.doc-market-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.doc-market-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.75rem;
+  align-items: center;
+}
+
+.doc-market-row:last-child {
+  border-bottom: none;
+}
+
+.doc-market-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .doc-dual-score,
+  .doc-quadrants {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-threshold-row,
+  .doc-context-row,
+  .doc-gates-row,
+  .doc-archetype-row,
+  .doc-market-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .doc-tabs {
+    flex-wrap: wrap;
+  }
+
+  .doc-tab {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+  }
+}
+`;
