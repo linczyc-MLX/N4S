@@ -66,7 +66,11 @@ export class FYIReportGenerator {
     this.addClientInfo();
     this.addSummaryBox();
 
-    if (this.mode === 'level') {
+    if (this.mode === 'full') {
+      // Full report: Part 1 (By Level) then Part 2 (By Zone)
+      this.addSpacesByLevel();
+      this.addSpacesByZone();
+    } else if (this.mode === 'level') {
       this.addSpacesByLevel();
     } else {
       this.addSpacesByZone();
@@ -571,7 +575,7 @@ export class FYIReportGenerator {
     this.doc.setLineWidth(0.5);
     this.doc.line(this.margin, y + 12, this.margin + this.contentWidth, y + 12);
 
-    this.y += 18;
+    this.y += 24;
   }
 
   addTableHeaderForLevel() {
@@ -597,7 +601,7 @@ export class FYIReportGenerator {
     this.doc.setLineWidth(0.5);
     this.doc.line(this.margin, y + 12, this.margin + this.contentWidth, y + 12);
 
-    this.y += 18;
+    this.y += 24;
   }
 
   addSpaceRow(space) {
