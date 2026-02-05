@@ -1,26 +1,28 @@
 // ============================================
 // N4S FYI SPACE PROGRAM REPORT GENERATOR
 // PDF Generation using jsPDF
-// Version: 2.0 - Class-based architecture
+// Version: 3.0 - Multi-structure, Level+Zone format
+// Updated: February 5, 2026
 // ============================================
 
 import jsPDF from 'jspdf';
 import { zones } from '../../../shared/space-registry';
 
 // ============================================
-// CONSTANTS
+// CONSTANTS (N4S Brand Guide compliant)
 // ============================================
 
 // N4S Brand Colors (RGB values for jsPDF)
-const NAVY = { r: 30, g: 58, b: 95 };
-const GOLD = { r: 201, g: 162, b: 39 };
-const BACKGROUND = { r: 250, g: 250, b: 248 };
-const LIGHT_GRAY = { r: 100, g: 116, b: 139 };
-const DARK_TEXT = { r: 45, g: 55, b: 72 };
+const NAVY = { r: 30, g: 58, b: 95 };           // #1e3a5f
+const GOLD = { r: 201, g: 162, b: 39 };         // #c9a227
+const BACKGROUND = { r: 250, g: 250, b: 248 };  // #fafaf8
+const TABLE_HEADER = { r: 245, g: 240, b: 232 }; // #f5f0e8 - per brand guide
+const LIGHT_GRAY = { r: 107, g: 107, b: 107 };  // #6b6b6b - text muted
+const DARK_TEXT = { r: 26, g: 26, b: 26 };      // #1a1a1a - primary text
 const WHITE = { r: 255, g: 255, b: 255 };
-const SUCCESS_GREEN = { r: 46, g: 125, b: 50 };
-const ERROR_RED = { r: 211, g: 47, b: 47 };
-const BORDER = { r: 229, g: 229, b: 224 };
+const SUCCESS_GREEN = { r: 46, g: 125, b: 50 }; // #2e7d32
+const ERROR_RED = { r: 211, g: 47, b: 47 };     // #d32f2f
+const BORDER = { r: 229, g: 229, b: 224 };      // #e5e5e0
 
 // ============================================
 // HELPER FUNCTIONS
@@ -40,9 +42,9 @@ function formatNumber(num) {
 // ============================================
 
 export class FYIReportGenerator {
-  constructor(data, mode = 'zone') {
+  constructor(data, mode = 'full') {
     this.data = data;
-    this.mode = mode; // 'zone' or 'level'
+    this.mode = mode; // 'full' (Level+Zone), 'zone', or 'level'
     this.doc = null;
 
     // Page dimensions (letter size in points)
@@ -51,27 +53,36 @@ export class FYIReportGenerator {
     this.margin = 40;
     this.contentWidth = this.pageWidth - (this.margin * 2);
 
+    // Tighter spacing per brand guide - limit white space
+    this.sectionGap = 15;  // Reduced from 20
+    this.rowHeight = 12;   // Compact rows
+
     // Pagination
     this.currentPage = 1;
-    this.totalPages = 1; // Will be calculated
+    this.totalPages = 1;
     this.y = 0;
   }
 
   async generate() {
     this.doc = new jsPDF('p', 'pt', 'letter');
 
-    // Generate report content first (without footers)
+    // Generate report content (without footers)
     this.addHeader();
     this.addClientInfo();
     this.addSummaryBox();
 
-    if (this.mode === 'level') {
+    // FULL MODE: Level view first, then Zone view (matching FYI UI)
+    if (this.mode === 'full') {
+      this.addSpacesByLevel();
+      this.checkPageBreak(100);
+      this.addSpacesByZone();
+    } else if (this.mode === 'level') {
       this.addSpacesByLevel();
     } else {
       this.addSpacesByZone();
     }
 
-    // Now we know the actual total pages
+    // Calculate total pages
     this.totalPages = this.currentPage;
 
     // Add footers to all pages
@@ -146,14 +157,19 @@ export class FYIReportGenerator {
   // ============================================
 
   addSummaryBox() {
-    const boxHeight = 110;
+    // Check if we have multiple structures
+    const hasGuestHouse = this.data.structures?.guestHouse?.enabled;
+    const hasPoolHouse = this.data.structures?.poolHouse?.enabled;
+    const hasMultiStructure = hasGuestHouse || hasPoolHouse;
+
+    const boxHeight = hasMultiStructure ? 145 : 100; // Tighter height
     const boxY = this.y;
 
     // Background with gold left border
     this.doc.setFillColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b);
     this.doc.roundedRect(this.margin, boxY, this.contentWidth, boxHeight, 4, 4, 'F');
 
-    // Gold left border
+    // Gold left border (4px)
     this.doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
     this.doc.rect(this.margin, boxY, 4, boxHeight, 'F');
 
@@ -162,78 +178,134 @@ export class FYIReportGenerator {
     this.doc.setLineWidth(0.5);
     this.doc.roundedRect(this.margin, boxY, this.contentWidth, boxHeight, 4, 4, 'S');
 
-    // Two columns
-    const col1X = this.margin + 20;
-    const col2X = this.margin + this.contentWidth / 2 + 10;
-    let rowY = boxY + 20;
+    // Three columns for compact layout
+    const col1X = this.margin + 15;
+    const col2X = this.margin + 180;
+    const col3X = this.margin + 360;
+    let rowY = boxY + 16;
 
     // Column 1: Program Settings
-    this.doc.setFontSize(9);
+    this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     this.doc.text('PROGRAM SETTINGS', col1X, rowY);
-    rowY += 15;
+    rowY += 12;
 
     this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
+    this.doc.setFontSize(9);
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
     const settings = this.data.settings;
-    this.addSummaryRow(col1X, rowY, 'Target SF', formatNumber(settings.targetSF));
-    rowY += 14;
-    this.addSummaryRow(col1X, rowY, 'Program Tier', settings.programTier.toUpperCase());
-    rowY += 14;
-    this.addSummaryRow(col1X, rowY, 'Size Delta', `±${settings.deltaPct}%`);
-    rowY += 14;
-    this.addSummaryRow(col1X, rowY, 'Basement', settings.hasBasement ? 'Yes' : 'No');
+    this.addSummaryRow(col1X, rowY, 'Target SF', formatNumber(settings.targetSF), 140);
+    rowY += 11;
+    this.addSummaryRow(col1X, rowY, 'Program Tier', settings.programTier.toUpperCase(), 140);
+    rowY += 11;
+    this.addSummaryRow(col1X, rowY, 'Size Delta', `±${settings.deltaPct}%`, 140);
+    rowY += 11;
+    this.addSummaryRow(col1X, rowY, 'Basement', settings.hasBasement ? 'Yes' : 'No', 140);
 
-    // Column 2: Totals
-    rowY = boxY + 20;
-    this.doc.setFontSize(9);
+    // Column 2: Main Residence Totals
+    rowY = boxY + 16;
+    this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.text('TOTALS', col2X, rowY);
-    rowY += 15;
+    this.doc.text('MAIN RESIDENCE', col2X, rowY);
+    rowY += 12;
 
     this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
+    this.doc.setFontSize(9);
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
     const totals = this.data.totals;
-    this.addSummaryRow(col2X, rowY, 'Net Conditioned', `${formatNumber(totals.net)} SF`);
-    rowY += 14;
-    this.addSummaryRow(col2X, rowY, `Circulation (${totals.circulationPct}%)`, `${formatNumber(totals.circulation)} SF`);
-    rowY += 14;
+    const mainTotal = this.data.structures?.main?.total || totals.total;
+    const mainNet = this.data.structures?.main?.net || totals.net;
+    const mainCirc = this.data.structures?.main?.circulation || totals.circulation;
 
-    // Total row (bold)
+    this.addSummaryRow(col2X, rowY, 'Net Program', `${formatNumber(mainNet)} SF`, 150);
+    rowY += 11;
+    this.addSummaryRow(col2X, rowY, `Circulation (${totals.circulationPct}%)`, `${formatNumber(mainCirc)} SF`, 150);
+    rowY += 11;
     this.doc.setFont('helvetica', 'bold');
-    this.addSummaryRow(col2X, rowY, 'Total', `${formatNumber(totals.total)} SF`);
-    rowY += 14;
+    this.addSummaryRow(col2X, rowY, 'Total', `${formatNumber(mainTotal)} SF`, 150);
+
+    // Column 3: Grand Total + Delta
+    rowY = boxY + 16;
+    this.doc.setFontSize(8);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text('GRAND TOTAL', col3X, rowY);
+    rowY += 12;
+
+    // Calculate grand total across all structures
+    const ghTotal = hasGuestHouse ? (this.data.structures.guestHouse.total || 0) : 0;
+    const phTotal = hasPoolHouse ? (this.data.structures.poolHouse.total || 0) : 0;
+    const grandTotal = mainTotal + ghTotal + phTotal;
+    const delta = grandTotal - settings.targetSF;
+
+    this.doc.setFontSize(14);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text(`${formatNumber(grandTotal)} SF`, col3X, rowY + 4);
+    rowY += 18;
 
     // Delta from target (colored)
-    const delta = totals.deltaFromTarget;
-    const deltaText = `${delta >= 0 ? '+' : ''}${formatNumber(delta)} SF`;
+    this.doc.setFontSize(10);
+    const deltaText = `${delta >= 0 ? '+' : ''}${formatNumber(delta)} SF from target`;
     if (delta > 0) {
       this.doc.setTextColor(ERROR_RED.r, ERROR_RED.g, ERROR_RED.b);
     } else if (delta < 0) {
       this.doc.setTextColor(SUCCESS_GREEN.r, SUCCESS_GREEN.g, SUCCESS_GREEN.b);
+    } else {
+      this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
     }
     this.doc.setFont('helvetica', 'normal');
-    this.addSummaryRow(col2X, rowY, 'Delta from Target', deltaText);
+    this.doc.text(deltaText, col3X, rowY);
+
+    // Structure Breakdown row (if multiple structures)
+    if (hasMultiStructure) {
+      rowY = boxY + 90;
+
+      // Divider line
+      this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
+      this.doc.setLineWidth(0.5);
+      this.doc.line(this.margin + 10, rowY, this.margin + this.contentWidth - 10, rowY);
+      rowY += 12;
+
+      this.doc.setFontSize(8);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+      this.doc.text('STRUCTURE BREAKDOWN:', col1X, rowY);
+
+      this.doc.setFont('helvetica', 'normal');
+      this.doc.setFontSize(9);
+      this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
+
+      let structX = col1X + 120;
+      this.doc.text(`Main: ${formatNumber(mainTotal)} SF`, structX, rowY);
+      structX += 100;
+
+      if (hasGuestHouse) {
+        this.doc.text(`Guest House: ${formatNumber(ghTotal)} SF`, structX, rowY);
+        structX += 120;
+      }
+      if (hasPoolHouse) {
+        this.doc.text(`Pool House: ${formatNumber(phTotal)} SF`, structX, rowY);
+      }
+    }
 
     // Outdoor total if applicable
     if (totals.outdoorTotal > 0) {
-      rowY += 14;
+      this.doc.setFontSize(8);
       this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-      this.addSummaryRow(col2X, rowY, 'Outdoor (exterior)', `${formatNumber(totals.outdoorTotal)} SF`);
+      this.doc.text(`+ ${formatNumber(totals.outdoorTotal)} SF outdoor (not conditioned)`, col3X, boxY + boxHeight - 10);
     }
 
-    this.y = boxY + boxHeight + 20;
+    this.y = boxY + boxHeight + this.sectionGap;
   }
 
-  addSummaryRow(x, y, label, value) {
+  addSummaryRow(x, y, label, value, width = 180) {
     this.doc.text(label, x, y);
-    this.doc.text(value, x + 180, y, { align: 'right' });
+    this.doc.text(String(value), x + width, y, { align: 'right' });
   }
 
   // ============================================
@@ -241,46 +313,100 @@ export class FYIReportGenerator {
   // ============================================
 
   addSpacesByZone() {
-    // Section header
-    this.addSectionHeader('Spaces by Zone');
+    // Part 2 header
+    this.addSectionHeader('PART 2: SPACES BY ZONE');
 
+    // Main Residence zones
+    this.addStructureSubheader('Main Residence');
     this.data.zonesData.forEach(zone => {
       if (zone.spaces.length === 0) return;
-
-      this.checkPageBreak(80);
+      this.checkPageBreak(60);
       this.addZoneSection(zone);
     });
+
+    // Guest House (if enabled)
+    if (this.data.structures?.guestHouse?.enabled && this.data.guestHouseZonesData?.length > 0) {
+      const ghHasSpaces = this.data.guestHouseZonesData.some(z => z.spaces.length > 0);
+      if (ghHasSpaces) {
+        this.checkPageBreak(80);
+        this.addStructureSubheader('Guest House');
+        this.data.guestHouseZonesData.forEach(zone => {
+          if (zone.spaces.length === 0) return;
+          this.checkPageBreak(60);
+          this.addZoneSection(zone);
+        });
+      }
+    }
+
+    // Pool House (if enabled)
+    if (this.data.structures?.poolHouse?.enabled && this.data.poolHouseZonesData?.length > 0) {
+      const phHasSpaces = this.data.poolHouseZonesData.some(z => z.spaces.length > 0);
+      if (phHasSpaces) {
+        this.checkPageBreak(80);
+        this.addStructureSubheader('Pool House');
+        this.data.poolHouseZonesData.forEach(zone => {
+          if (zone.spaces.length === 0) return;
+          this.checkPageBreak(60);
+          this.addZoneSection(zone);
+        });
+      }
+    }
   }
 
-  addZoneSection(zone) {
-    // Zone header bar
-    const headerHeight = 24;
+  addStructureSubheader(title) {
+    // Navy bar for structure divider
     this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.roundedRect(this.margin, this.y, this.contentWidth, headerHeight, 3, 3, 'F');
+    this.doc.rect(this.margin, this.y, this.contentWidth, 20, 'F');
 
-    // Zone name
     this.doc.setFontSize(11);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    this.doc.text(zone.name, this.margin + 10, this.y + 16);
+    this.doc.text(title.toUpperCase(), this.margin + 10, this.y + 14);
 
-    // Zone total SF
-    this.doc.setFont('helvetica', 'normal');
+    // Show structure total on right
+    let structTotal = 0;
+    if (title === 'Main Residence') {
+      structTotal = this.data.structures?.main?.total || 0;
+    } else if (title === 'Guest House') {
+      structTotal = this.data.structures?.guestHouse?.total || 0;
+    } else if (title === 'Pool House') {
+      structTotal = this.data.structures?.poolHouse?.total || 0;
+    }
+
     this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.text(`${formatNumber(zone.totalSF)} SF`, this.pageWidth - this.margin - 10, this.y + 16, { align: 'right' });
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.text(`${formatNumber(structTotal)} SF`, this.pageWidth - this.margin - 10, this.y + 14, { align: 'right' });
 
-    this.y += headerHeight + 8;
+    this.y += 25;
+  }
+
+  addZoneSection(zone) {
+    // Zone header - lighter styling (not full navy bar)
+    this.doc.setFillColor(TABLE_HEADER.r, TABLE_HEADER.g, TABLE_HEADER.b);
+    this.doc.rect(this.margin, this.y, this.contentWidth, 18, 'F');
+
+    // Zone name
+    this.doc.setFontSize(10);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text(zone.name, this.margin + 8, this.y + 12);
+
+    // Zone total SF in gold
+    this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+    this.doc.text(`${formatNumber(zone.totalSF)} SF`, this.pageWidth - this.margin - 8, this.y + 12, { align: 'right' });
+
+    this.y += 20;
 
     // Table header
     this.addTableHeader();
 
     // Spaces
     zone.spaces.forEach(space => {
-      this.checkPageBreak(20);
+      this.checkPageBreak(16);
       this.addSpaceRow(space);
     });
 
-    this.y += 15;
+    this.y += 10; // Reduced gap between zones
   }
 
   // ============================================
@@ -288,31 +414,69 @@ export class FYIReportGenerator {
   // ============================================
 
   addSpacesByLevel() {
-    // Section header
-    this.addSectionHeader('Spaces by Level');
+    // Part 1 header
+    this.addSectionHeader('PART 1: SPACES BY LEVEL');
 
-    // Group spaces by level
-    const levelGroups = this.groupSpacesByLevel();
-
-    // Sort levels: L2, L1, B (basement)
+    // Main Residence by level
+    this.addStructureSubheader('Main Residence');
+    const mainLevelGroups = this.groupSpacesByLevel(this.data.zonesData);
     const levelOrder = [2, 1, -1, 0];
-    const sortedLevels = Object.keys(levelGroups)
+    const mainSortedLevels = Object.keys(mainLevelGroups)
       .map(Number)
       .sort((a, b) => levelOrder.indexOf(a) - levelOrder.indexOf(b));
 
-    sortedLevels.forEach(level => {
-      const spaces = levelGroups[level];
+    mainSortedLevels.forEach(level => {
+      const spaces = mainLevelGroups[level];
       if (!spaces || spaces.length === 0) return;
-
-      this.checkPageBreak(80);
+      this.checkPageBreak(60);
       this.addLevelSection(level, spaces);
     });
+
+    // Guest House by level (if enabled)
+    if (this.data.structures?.guestHouse?.enabled && this.data.guestHouseZonesData?.length > 0) {
+      const ghHasSpaces = this.data.guestHouseZonesData.some(z => z.spaces.length > 0);
+      if (ghHasSpaces) {
+        this.checkPageBreak(80);
+        this.addStructureSubheader('Guest House');
+        const ghLevelGroups = this.groupSpacesByLevel(this.data.guestHouseZonesData);
+        const ghSortedLevels = Object.keys(ghLevelGroups)
+          .map(Number)
+          .sort((a, b) => levelOrder.indexOf(a) - levelOrder.indexOf(b));
+
+        ghSortedLevels.forEach(level => {
+          const spaces = ghLevelGroups[level];
+          if (!spaces || spaces.length === 0) return;
+          this.checkPageBreak(60);
+          this.addLevelSection(level, spaces);
+        });
+      }
+    }
+
+    // Pool House by level (if enabled)
+    if (this.data.structures?.poolHouse?.enabled && this.data.poolHouseZonesData?.length > 0) {
+      const phHasSpaces = this.data.poolHouseZonesData.some(z => z.spaces.length > 0);
+      if (phHasSpaces) {
+        this.checkPageBreak(80);
+        this.addStructureSubheader('Pool House');
+        const phLevelGroups = this.groupSpacesByLevel(this.data.poolHouseZonesData);
+        const phSortedLevels = Object.keys(phLevelGroups)
+          .map(Number)
+          .sort((a, b) => levelOrder.indexOf(a) - levelOrder.indexOf(b));
+
+        phSortedLevels.forEach(level => {
+          const spaces = phLevelGroups[level];
+          if (!spaces || spaces.length === 0) return;
+          this.checkPageBreak(60);
+          this.addLevelSection(level, spaces);
+        });
+      }
+    }
   }
 
-  groupSpacesByLevel() {
+  groupSpacesByLevel(zonesData) {
     const groups = {};
 
-    this.data.zonesData.forEach(zone => {
+    zonesData.forEach(zone => {
       zone.spaces.forEach(space => {
         const level = space.level || 1;
         if (!groups[level]) {
@@ -333,37 +497,35 @@ export class FYIReportGenerator {
     const levelName = level === -1 ? 'Basement' :
                       level === 0 ? 'Lower Level' :
                       `Level ${level}`;
-    const levelLabel = level === 1 ? '(Arrival Level)' : '';
+    const levelLabel = level === 1 ? ' (Arrival)' : '';
     const totalSF = spaces.reduce((sum, s) => sum + s.area, 0);
 
-    // Level header bar
-    const headerHeight = 24;
-    this.doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
-    this.doc.roundedRect(this.margin, this.y, this.contentWidth, headerHeight, 3, 3, 'F');
+    // Level header - lighter styling (not full navy bar)
+    this.doc.setFillColor(TABLE_HEADER.r, TABLE_HEADER.g, TABLE_HEADER.b);
+    this.doc.rect(this.margin, this.y, this.contentWidth, 18, 'F');
 
     // Level name
-    this.doc.setFontSize(11);
+    this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    this.doc.text(`${levelName} ${levelLabel}`, this.margin + 10, this.y + 16);
+    this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    this.doc.text(`${levelName}${levelLabel}`, this.margin + 8, this.y + 12);
 
-    // Level total SF
-    this.doc.setFont('helvetica', 'normal');
+    // Level total SF in gold
     this.doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
-    this.doc.text(`${formatNumber(totalSF)} SF`, this.pageWidth - this.margin - 10, this.y + 16, { align: 'right' });
+    this.doc.text(`${formatNumber(totalSF)} SF`, this.pageWidth - this.margin - 8, this.y + 12, { align: 'right' });
 
-    this.y += headerHeight + 8;
+    this.y += 20;
 
     // Table header (with Zone column for level view)
     this.addTableHeaderForLevel();
 
     // Spaces
     spaces.forEach(space => {
-      this.checkPageBreak(20);
+      this.checkPageBreak(16);
       this.addSpaceRowForLevel(space);
     });
 
-    this.y += 15;
+    this.y += 10; // Reduced gap between levels
   }
 
   // ============================================
@@ -371,141 +533,144 @@ export class FYIReportGenerator {
   // ============================================
 
   addSectionHeader(title) {
-    this.doc.setFontSize(14);
+    // 14pt SemiBold per brand guide for Section Header
+    this.doc.setFontSize(13);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     this.doc.text(title, this.margin, this.y);
-    this.y += 20;
+    this.y += 16; // Reduced gap
   }
 
   addTableHeader() {
     const y = this.y;
 
-    // Header background
-    this.doc.setFillColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b);
-    this.doc.rect(this.margin, y - 4, this.contentWidth, 16, 'F');
+    // Header background - per brand guide #f5f0e8
+    this.doc.setFillColor(TABLE_HEADER.r, TABLE_HEADER.g, TABLE_HEADER.b);
+    this.doc.rect(this.margin, y - 4, this.contentWidth, 14, 'F');
 
-    // Header text
-    this.doc.setFontSize(8);
+    // Header text - 10pt SemiBold per brand guide
+    this.doc.setFontSize(9);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
-    this.doc.text('SPACE', this.margin + 5, y + 6);
-    this.doc.text('SIZE', this.margin + 200, y + 6);
-    this.doc.text('AREA', this.margin + 250, y + 6);
-    this.doc.text('LEVEL', this.margin + 310, y + 6);
-    this.doc.text('NOTES', this.margin + 360, y + 6);
+    this.doc.text('SPACE', this.margin + 5, y + 5);
+    this.doc.text('SIZE', this.margin + 220, y + 5);
+    this.doc.text('AREA', this.margin + 270, y + 5);
+    this.doc.text('LEVEL', this.margin + 340, y + 5);
+    this.doc.text('NOTES', this.margin + 390, y + 5);
 
     // Bottom border
     this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
     this.doc.setLineWidth(0.5);
-    this.doc.line(this.margin, y + 12, this.margin + this.contentWidth, y + 12);
+    this.doc.line(this.margin, y + 10, this.margin + this.contentWidth, y + 10);
 
-    this.y += 18;
+    this.y += 14;
   }
 
   addTableHeaderForLevel() {
     const y = this.y;
 
-    // Header background
-    this.doc.setFillColor(BACKGROUND.r, BACKGROUND.g, BACKGROUND.b);
-    this.doc.rect(this.margin, y - 4, this.contentWidth, 16, 'F');
+    // Header background - per brand guide #f5f0e8
+    this.doc.setFillColor(TABLE_HEADER.r, TABLE_HEADER.g, TABLE_HEADER.b);
+    this.doc.rect(this.margin, y - 4, this.contentWidth, 14, 'F');
 
-    // Header text
-    this.doc.setFontSize(8);
+    // Header text - 10pt SemiBold per brand guide
+    this.doc.setFontSize(9);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
+    this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
-    this.doc.text('SPACE', this.margin + 5, y + 6);
-    this.doc.text('ZONE', this.margin + 180, y + 6);
-    this.doc.text('SIZE', this.margin + 280, y + 6);
-    this.doc.text('AREA', this.margin + 330, y + 6);
-    this.doc.text('NOTES', this.margin + 400, y + 6);
+    this.doc.text('SPACE', this.margin + 5, y + 5);
+    this.doc.text('ZONE', this.margin + 200, y + 5);
+    this.doc.text('SIZE', this.margin + 300, y + 5);
+    this.doc.text('AREA', this.margin + 350, y + 5);
+    this.doc.text('NOTES', this.margin + 420, y + 5);
 
     // Bottom border
     this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
     this.doc.setLineWidth(0.5);
-    this.doc.line(this.margin, y + 12, this.margin + this.contentWidth, y + 12);
+    this.doc.line(this.margin, y + 10, this.margin + this.contentWidth, y + 10);
 
-    this.y += 18;
+    this.y += 14;
   }
 
   addSpaceRow(space) {
     const y = this.y;
 
-    this.doc.setFontSize(9);
+    // 10pt body text per brand guide
+    this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
     // Space name (truncate if too long)
-    const name = space.name.length > 28 ? space.name.substring(0, 26) + '...' : space.name;
+    const name = space.name.length > 32 ? space.name.substring(0, 30) + '...' : space.name;
     this.doc.text(name, this.margin + 5, y);
 
     // Size
-    this.doc.text(space.size, this.margin + 200, y);
+    this.doc.text(space.size, this.margin + 220, y);
 
     // Area
-    this.doc.text(`${formatNumber(space.area)} SF`, this.margin + 250, y);
+    this.doc.text(`${formatNumber(space.area)} SF`, this.margin + 270, y);
 
     // Level
     const levelText = space.level === -1 ? 'B' : `L${space.level}`;
-    this.doc.text(levelText, this.margin + 310, y);
+    this.doc.text(levelText, this.margin + 340, y);
 
     // Notes (truncate if too long)
     if (space.notes) {
       this.doc.setFontSize(8);
       this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-      const notes = space.notes.length > 25 ? space.notes.substring(0, 23) + '...' : space.notes;
-      this.doc.text(notes, this.margin + 360, y);
+      const notes = space.notes.length > 20 ? space.notes.substring(0, 18) + '...' : space.notes;
+      this.doc.text(notes, this.margin + 390, y);
     }
 
-    // Row separator
-    this.doc.setDrawColor(240, 240, 240);
-    this.doc.setLineWidth(0.3);
-    this.doc.line(this.margin, y + 6, this.margin + this.contentWidth, y + 6);
+    // Row separator - per brand guide 1px #e5e5e0
+    this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
+    this.doc.setLineWidth(0.5);
+    this.doc.line(this.margin, y + 5, this.margin + this.contentWidth, y + 5);
 
-    this.y += 14;
+    this.y += 12; // Compact row height
   }
 
   addSpaceRowForLevel(space) {
     const y = this.y;
 
-    this.doc.setFontSize(9);
+    // 10pt body text per brand guide
+    this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
 
     // Space name
-    const name = space.name.length > 24 ? space.name.substring(0, 22) + '...' : space.name;
+    const name = space.name.length > 28 ? space.name.substring(0, 26) + '...' : space.name;
     this.doc.text(name, this.margin + 5, y);
 
     // Zone (abbreviated)
-    this.doc.setFontSize(8);
+    this.doc.setFontSize(9);
     this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-    const zoneName = space.zoneName.length > 15 ? space.zoneName.substring(0, 13) + '...' : space.zoneName;
-    this.doc.text(zoneName, this.margin + 180, y);
+    const zoneName = space.zoneName.length > 14 ? space.zoneName.substring(0, 12) + '...' : space.zoneName;
+    this.doc.text(zoneName, this.margin + 200, y);
 
     // Size
-    this.doc.setFontSize(9);
+    this.doc.setFontSize(10);
     this.doc.setTextColor(DARK_TEXT.r, DARK_TEXT.g, DARK_TEXT.b);
-    this.doc.text(space.size, this.margin + 280, y);
+    this.doc.text(space.size, this.margin + 300, y);
 
     // Area
-    this.doc.text(`${formatNumber(space.area)} SF`, this.margin + 330, y);
+    this.doc.text(`${formatNumber(space.area)} SF`, this.margin + 350, y);
 
     // Notes
     if (space.notes) {
       this.doc.setFontSize(8);
       this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-      const notes = space.notes.length > 20 ? space.notes.substring(0, 18) + '...' : space.notes;
-      this.doc.text(notes, this.margin + 400, y);
+      const notes = space.notes.length > 15 ? space.notes.substring(0, 13) + '...' : space.notes;
+      this.doc.text(notes, this.margin + 420, y);
     }
 
-    // Row separator
-    this.doc.setDrawColor(240, 240, 240);
-    this.doc.setLineWidth(0.3);
-    this.doc.line(this.margin, y + 6, this.margin + this.contentWidth, y + 6);
+    // Row separator - per brand guide 1px #e5e5e0
+    this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
+    this.doc.setLineWidth(0.5);
+    this.doc.line(this.margin, y + 5, this.margin + this.contentWidth, y + 5);
 
-    this.y += 14;
+    this.y += 12; // Compact row height
   }
 
   // ============================================
@@ -549,21 +714,20 @@ export class FYIReportGenerator {
   addFooterToPage(pageNum) {
     const footerY = this.pageHeight - 25;
 
-    // Footer line
+    // Footer line per brand guide
     this.doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
     this.doc.setLineWidth(0.5);
-    this.doc.line(this.margin, footerY - 10, this.pageWidth - this.margin, footerY - 10);
+    this.doc.line(this.margin, footerY - 8, this.pageWidth - this.margin, footerY - 8);
 
-    // Date (left)
+    // Footer text - 8pt per brand guide
     this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-    this.doc.text(formatDate(new Date()), this.margin, footerY);
 
-    // N4S branding (center)
-    this.doc.text('N4S - Not For Sale | Luxury Residential Advisory', this.pageWidth / 2, footerY, { align: 'center' });
+    // Left: Copyright per brand guide format
+    this.doc.text(`© 2026 N4S Luxury Residential Advisory`, this.margin, footerY);
 
-    // Page number (right)
+    // Right: Page number per brand guide format
     this.doc.text(`Page ${pageNum} of ${this.totalPages}`, this.pageWidth - this.margin, footerY, { align: 'right' });
   }
 
@@ -572,10 +736,11 @@ export class FYIReportGenerator {
   // ============================================
 
   save() {
-    const modeLabel = this.mode === 'level' ? 'ByLevel' : 'ByZone';
+    const modeLabel = this.mode === 'full' ? 'Complete' : (this.mode === 'level' ? 'ByLevel' : 'ByZone');
+    const dateStr = new Date().toISOString().split('T')[0];
     const filename = this.data.projectName
-      ? `FYI-Space-Program-${modeLabel}-${this.data.projectName.replace(/\s+/g, '-')}.pdf`
-      : `FYI-Space-Program-${modeLabel}.pdf`;
+      ? `FYI-Space-Program-${this.data.projectName.replace(/\s+/g, '-')}-${dateStr}.pdf`
+      : `FYI-Space-Program-${modeLabel}-${dateStr}.pdf`;
     this.doc.save(filename);
   }
 }
@@ -587,9 +752,9 @@ export class FYIReportGenerator {
 /**
  * Generate FYI Space Program PDF
  * @param {Object} data - PDF data from buildFYIPDFData
- * @param {string} mode - 'zone' or 'level'
+ * @param {string} mode - 'full' (Level+Zone), 'zone', or 'level'
  */
-export async function generateFYIPDF(data, mode = 'zone') {
+export async function generateFYIPDF(data, mode = 'full') {
   try {
     const generator = new FYIReportGenerator(data, mode);
     await generator.generate();
@@ -602,7 +767,7 @@ export async function generateFYIPDF(data, mode = 'zone') {
 }
 
 /**
- * Build PDF data from FYI state
+ * Build PDF data from FYI state (Enhanced for multi-structure support)
  */
 export function buildFYIPDFData(
   settings,
@@ -615,31 +780,45 @@ export function buildFYIPDFData(
   projectName,
   clientName
 ) {
-  // Only include Main Residence zones (exclude Guest House Z9_GH and Pool House Z10_PH)
+  // Helper to build zone data for a set of zones
+  const buildZoneData = (zoneList) => {
+    return zoneList.map(zone => {
+      const zoneSpaces = getSpacesForZone(zone.code);
+      const includedSpaces = zoneSpaces
+        .filter(s => selections[s.code]?.included)
+        .map(s => ({
+          code: s.code,
+          name: s.name,
+          size: selections[s.code].size,
+          area: calculateArea(s.code),
+          level: selections[s.code].level || s.defaultLevel,
+          notes: selections[s.code].notes
+        }));
+
+      return {
+        code: zone.code,
+        name: zone.name,
+        spaces: includedSpaces,
+        totalSF: includedSpaces.reduce((sum, s) => sum + s.area, 0)
+      };
+    });
+  };
+
+  // Main Residence zones (exclude Z9_GH and Z10_PH)
   const mainResidenceZones = zones.filter(z =>
     z.code !== 'Z9_GH' && z.code !== 'Z10_PH'
   );
+  const zonesData = buildZoneData(mainResidenceZones);
 
-  const zonesData = mainResidenceZones.map(zone => {
-    const zoneSpaces = getSpacesForZone(zone.code);
-    const includedSpaces = zoneSpaces
-      .filter(s => selections[s.code]?.included)
-      .map(s => ({
-        code: s.code,
-        name: s.name,
-        size: selections[s.code].size,
-        area: calculateArea(s.code),
-        level: selections[s.code].level || s.defaultLevel,
-        notes: selections[s.code].notes
-      }));
+  // Guest House zones
+  const guestHouseZones = zones.filter(z => z.code === 'Z9_GH');
+  const guestHouseZonesData = buildZoneData(guestHouseZones);
+  const hasGuestHouseSpaces = guestHouseZonesData.some(z => z.spaces.length > 0);
 
-    return {
-      code: zone.code,
-      name: zone.name,
-      spaces: includedSpaces,
-      totalSF: includedSpaces.reduce((sum, s) => sum + s.area, 0)
-    };
-  });
+  // Pool House zones
+  const poolHouseZones = zones.filter(z => z.code === 'Z10_PH');
+  const poolHouseZonesData = buildZoneData(poolHouseZones);
+  const hasPoolHouseSpaces = poolHouseZonesData.some(z => z.spaces.length > 0);
 
   // Use Main Residence totals from structureTotals
   const mainTotals = structureTotals?.main || totals;
@@ -656,13 +835,39 @@ export function buildFYIPDFData(
     targetSF: settings.targetSF
   };
 
+  // Build structures object with enabled flags based on actual data
+  const structures = {
+    main: {
+      enabled: true,
+      net: mainTotals.net || 0,
+      circulation: mainTotals.circulation || 0,
+      total: mainTotals.total || 0,
+      spaceCount: structureTotals?.main?.spaceCount || 0
+    },
+    guestHouse: {
+      enabled: hasGuestHouseSpaces || (structureTotals?.guestHouse?.spaceCount || 0) > 0,
+      net: structureTotals?.guestHouse?.net || 0,
+      total: structureTotals?.guestHouse?.total || 0,
+      spaceCount: structureTotals?.guestHouse?.spaceCount || 0
+    },
+    poolHouse: {
+      enabled: hasPoolHouseSpaces || (structureTotals?.poolHouse?.spaceCount || 0) > 0,
+      net: structureTotals?.poolHouse?.net || 0,
+      total: structureTotals?.poolHouse?.total || 0,
+      spaceCount: structureTotals?.poolHouse?.spaceCount || 0
+    }
+  };
+
   return {
     settings,
     selections,
     totals: pdfTotals,
     structureTotals,
+    structures,
     availableLevels,
     zonesData,
+    guestHouseZonesData,
+    poolHouseZonesData,
     projectName,
     clientName,
     generatedAt: new Date().toLocaleDateString('en-US', {
