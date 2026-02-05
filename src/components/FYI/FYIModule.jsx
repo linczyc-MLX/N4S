@@ -88,16 +88,6 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
     return buildAvailableLevels(levelsAbove, levelsBelow);
   }, [consolidatedKYC]);
 
-  // Structure config
-  const structureConfig = useMemo(() => {
-    const projectParams = consolidatedKYC?.projectParameters || {};
-    return {
-      main: { enabled: true },
-      guestHouse: { enabled: projectParams.hasGuestHouse || false },
-      poolHouse: { enabled: projectParams.hasPoolHouse || false }
-    };
-  }, [consolidatedKYC]);
-
   // ---------------------------------------------------------------------------
   // USE FYI STATE (CALCULATION ONLY - NO LOCAL STATE)
   // ---------------------------------------------------------------------------
@@ -300,17 +290,17 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
         spaceCount: structureTotals?.main?.spaceCount || 0
       },
       guestHouse: {
-        enabled: structureConfig.guestHouse.enabled,
+        enabled: (structureTotals?.guestHouse?.spaceCount || 0) > 0,
         total: structureTotals?.guestHouse?.total || 0,
         spaceCount: structureTotals?.guestHouse?.spaceCount || 0
       },
       poolHouse: {
-        enabled: structureConfig.poolHouse.enabled,
+        enabled: (structureTotals?.poolHouse?.spaceCount || 0) > 0,
         total: structureTotals?.poolHouse?.total || 0,
         spaceCount: structureTotals?.poolHouse?.spaceCount || 0
       }
     };
-  }, [structureTotals, totals, structureConfig]);
+  }, [structureTotals, totals]);
 
   const sfByLevel = useMemo(() => {
     const byLevel = {};
@@ -408,7 +398,7 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
             structure={activeStructure}
           />
 
-          {(structureConfig.guestHouse.enabled || structureConfig.poolHouse.enabled) && (
+          {(displayStructureTotals.guestHouse.enabled || displayStructureTotals.poolHouse.enabled) && (
             <StructureSelector
               activeStructure={activeStructure}
               onStructureChange={handleStructureChange}
