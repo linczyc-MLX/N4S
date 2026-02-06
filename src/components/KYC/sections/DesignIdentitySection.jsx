@@ -742,7 +742,7 @@ const CompletedView = ({
 // ============================================
 
 const DesignIdentitySection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, calculateCompleteness, saveNow, clientData } = useAppContext();
+  const { kycData, updateKYCData, calculateCompleteness, saveNow, clientData, activeProjectId } = useAppContext();
   const data = kycData[respondent]?.designIdentity || {};
 
   // Calculate KYC completion for report button styling
@@ -1066,6 +1066,21 @@ const DesignIdentitySection = ({ respondent, tier }) => {
         <h3>Architectural Style Spectrum</h3>
         <p>The 9-point scale from Avant-Contemporary (AS1) to Heritage Estate (AS9):</p>
         <ArchStyleCarousel />
+      </div>
+
+      {/* Demo Button - allows viewing questionnaire without saving data */}
+      <div className="demo-questionnaire-panel">
+        <button
+          className="demo-questionnaire-btn"
+          onClick={() => {
+            const demoUrl = `https://tasteexploration.not-4.sale?projectId=${encodeURIComponent(activeProjectId || '')}&projectName=${encodeURIComponent(projectName)}&demo=true`;
+            window.open(demoUrl, '_blank', 'noopener,noreferrer');
+          }}
+        >
+          <ExternalLink size={16} />
+          Demonstrate Questionnaire
+        </button>
+        <span className="demo-questionnaire-note">Preview only — does not save data</span>
       </div>
 
       {/* Taste Exploration Panel (mirrors LuXeBrief panel) */}

@@ -2,10 +2,11 @@
  * Taste Exploration Standalone App - Main Wrapper
  *
  * Reads project context from URL query params:
- * - projectId (required)
+ * - projectId (required, unless demo mode)
  * - projectName (optional, for display)
  * - respondentType ('principal' | 'secondary')
  * - clientName (optional, for personalization)
+ * - demo (optional, 'true' = demo mode, no data loading/saving)
  *
  * Handles session persistence via API calls to website.not-4.sale/api/taste.php
  */
@@ -21,6 +22,7 @@ function App() {
   const projectName = params.get('projectName') || 'Project';
   const respondentType = params.get('respondentType') || 'principal';
   const clientName = params.get('clientName') || projectName;
+  const isDemo = params.get('demo') === 'true';
 
   // State
   const [loading, setLoading] = useState(true);
@@ -35,8 +37,15 @@ function App() {
   // Debounce ref for auto-save
   const saveTimeoutRef = useRef(null);
 
-  // Load existing session on mount
+  // Load existing session on mount (skip in demo mode)
   useEffect(() => {
+    // Demo mode: skip validation and loading, start fresh
+    if (isDemo) {
+      console.log('[TasteApp] Demo mode - skipping session load');
+      setLoading(false);
+      return;
+    }
+
     if (!projectId) {
       setError('Missing projectId parameter. This link may be invalid.');
       setLoading(false);
@@ -58,10 +67,16 @@ function App() {
       }
     }
     init();
-  }, [projectId, clientId]);
+  }, [projectId, clientId, isDemo]);
 
-  // Handle progress updates (debounced auto-save)
+  // Handle progress updates (debounced auto-save, skip in demo mode)
   const handleProgress = useCallback((progressData) => {
+    // Demo mode: skip all saves
+    if (isDemo) {
+      console.log('[TasteApp] Demo mode - skipping session save');
+      return;
+    }
+
     if (!projectId || !clientId) return;
 
     // Clear previous timeout
@@ -83,9 +98,9 @@ function App() {
         console.error('[TasteApp] Failed to save session:', err);
       }
     }, 2000);
-  }, [projectId, clientId, respondentType, clientName]);
+  }, [projectId, clientId, respondentType, clientName, isDemo]);
 
-  // Handle completion
+  // Handle completion (skip profile save in demo mode)
   const handleComplete = useCallback(async (result) => {
     // Clear any pending save
     if (saveTimeoutRef.current) {
@@ -93,6 +108,13 @@ function App() {
     }
 
     setIsComplete(true);
+
+    // Demo mode: show demo completion message, don't save
+    if (isDemo) {
+      console.log('[TasteApp] Demo mode - skipping profile save');
+      setCompletionMessage('Demo complete! In a live session, the taste profile would be saved here.');
+      return;
+    }
 
     try {
       await saveProfile(projectId, clientId, {
@@ -109,18 +131,21 @@ function App() {
       console.error('[TasteApp] Failed to save profile:', err);
       setCompletionMessage('Your exploration is complete. There was an issue saving, but your results have been recorded locally.');
     }
-  }, [projectId, clientId, respondentType, clientName]);
+  }, [projectId, clientId, respondentType, clientName, isDemo]);
 
   // Handle back/exit
   const handleBack = useCallback(() => {
-    if (window.confirm('Exit the taste exploration? Your progress has been saved.')) {
+    const message = isDemo
+      ? 'Exit the demo? No data has been saved.'
+      : 'Exit the taste exploration? Your progress has been saved.';
+    if (window.confirm(message)) {
       window.close();
       // Fallback if window.close() doesn't work (not opened by script)
       setTimeout(() => {
         window.location.href = 'about:blank';
       }, 100);
     }
-  }, []);
+  }, [isDemo]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -163,16 +188,23 @@ function App() {
   }
 
   return (
-    <TasteExploration
-      clientName={clientName}
-      respondentType={respondentType}
-      onComplete={handleComplete}
-      onBack={handleBack}
-      onProgress={handleProgress}
-      initialSelections={initialSession?.selections}
-      initialSkipped={initialSession?.skipped}
-      initialIndex={initialSession?.currentIndex}
-    />
+    <>
+      {isDemo && (
+        <div className="demo-banner">
+          Demo Mode — No data will be saved
+        </div>
+      )}
+      <TasteExploration
+        clientName={isDemo ? 'Demo User' : clientName}
+        respondentType={respondentType}
+        onComplete={handleComplete}
+        onBack={handleBack}
+        onProgress={handleProgress}
+        initialSelections={initialSession?.selections}
+        initialSkipped={initialSession?.skipped}
+        initialIndex={initialSession?.currentIndex}
+      />
+    </>
   );
 }
 
