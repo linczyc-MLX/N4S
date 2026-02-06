@@ -1079,3 +1079,474 @@
   background: #c9a227;
   color: white;
 }
+
+/* ============================================
+   LUXEBRIEF QUESTIONNAIRE PANELS
+   Used by P1.A.5 (Taste Exploration) and P1.A.6 (Lifestyle & Living)
+   ============================================ */
+
+/* --- Panel Container --- */
+.luxebrief-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #c9a227;
+  border-radius: 0 10px 10px 0;
+  padding: 24px;
+  margin: 8px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.luxebrief-panel:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.luxebrief-panel--living {
+  border-left-color: #1e3a5f;
+}
+
+/* --- Panel Header --- */
+.luxebrief-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.luxebrief-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.luxebrief-panel__title svg {
+  color: #c9a227;
+  flex-shrink: 0;
+}
+
+.luxebrief-panel__title h3 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+.luxebrief-panel__mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #f5f0e1;
+  color: #1e3a5f;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid #c9a227;
+  white-space: nowrap;
+}
+
+.luxebrief-panel__mode-badge svg {
+  color: #c9a227;
+}
+
+/* --- Description --- */
+.luxebrief-panel__description {
+  font-size: 0.875rem;
+  color: #718096;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* --- Dual Card Layout --- */
+.luxebrief-panel__dual-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .luxebrief-panel__dual-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Individual Card --- */
+.luxebrief-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2a5080 100%);
+  border-radius: 8px 8px 0 0;
+  color: #ffffff;
+}
+
+.luxebrief-card__role {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.luxebrief-card__meta {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.luxebrief-card__content {
+  padding: 16px;
+  background: #fafbfc;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.luxebrief-card__recipient {
+  margin-bottom: 12px;
+}
+
+.luxebrief-card__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.luxebrief-card__email {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 2px;
+}
+
+.luxebrief-card__placeholder {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* --- Actions --- */
+.luxebrief-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* --- Recipient Info --- */
+.luxebrief-panel__recipient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.luxebrief-panel__recipient-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  white-space: nowrap;
+}
+
+.luxebrief-panel__recipient-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.luxebrief-panel__recipient-email {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-left: 4px;
+}
+
+/* --- Send Button --- */
+.luxebrief-panel__send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2a5080 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.luxebrief-panel__send-btn:hover {
+  background: linear-gradient(135deg, #16304f 0%, #1e3a5f 100%);
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.3);
+  transform: translateY(-1px);
+}
+
+.luxebrief-panel__send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* --- Notice / Warning --- */
+.luxebrief-panel__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.luxebrief-panel__notice svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.luxebrief-panel__notice--sm {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+/* --- Error --- */
+.luxebrief-panel__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #991b1b;
+  line-height: 1.4;
+}
+
+.luxebrief-panel__error svg {
+  color: #ef4444;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.luxebrief-panel__error--sm {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+}
+
+/* --- Status Display --- */
+.luxebrief-panel__status {
+  padding: 16px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.luxebrief-panel__status--complete {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.luxebrief-panel__status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.luxebrief-panel__status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.luxebrief-panel__status-label {
+  font-weight: 600;
+  color: #718096;
+  min-width: 85px;
+  font-size: 0.8rem;
+}
+
+/* --- Badges --- */
+.luxebrief-panel__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.luxebrief-panel__badge--ready {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.luxebrief-panel__badge--pending {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.luxebrief-panel__badge--complete {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.luxebrief-panel__badge--toggle {
+  background: #f5f0e1;
+  color: #1e3a5f;
+  border: 1px solid #c9a227;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.luxebrief-panel__badge--toggle:hover {
+  background: #c9a227;
+  color: #ffffff;
+}
+
+/* --- Link --- */
+.luxebrief-panel__link {
+  color: #1e3a5f;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.85rem;
+  border-bottom: 1px dashed #c9a227;
+  transition: color 0.15s ease;
+}
+
+.luxebrief-panel__link:hover {
+  color: #c9a227;
+}
+
+.luxebrief-panel__link-placeholder {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* --- Toggle Circle (Secondary confirmation) --- */
+.toggle-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-circle:hover {
+  border-color: #c9a227;
+  background: #f5f0e1;
+}
+
+.toggle-circle.active {
+  background: #c9a227;
+  border-color: #c9a227;
+  color: #ffffff;
+}
+
+/* --- Manual Entry Section (P1.A.6) --- */
+.kyc-section__manual-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 16px;
+}
+
+.kyc-section__manual-toggle-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #718096;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.kyc-section__manual-entry {
+  padding: 20px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.kyc-section__manual-entry-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.kyc-section__manual-entry-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #991b1b;
+  margin-top: 8px;
+}
+
+/* --- Spin Animation for loading states --- */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* --- Compact card variant (used in P1.A.5 & P1.A.6) --- */
+.luxebrief-card--compact {
+  max-width: 100%;
+}
+
+.luxebrief-card--compact .luxebrief-card__header {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+}
+
+.luxebrief-card--compact .luxebrief-card__content {
+  padding: 12px 16px;
+}
+
+.luxebrief-card--compact .luxebrief-card__status-row {
+  font-size: 0.8rem;
+  padding: 6px 0;
+}
+
+.luxebrief-card--compact .luxebrief-panel__send-btn {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+}
