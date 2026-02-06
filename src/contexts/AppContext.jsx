@@ -1036,7 +1036,7 @@ export const AppProvider = ({ children }) => {
     if (requiredFields.length === 0) {
       const values = Object.values(sectionData);
       const hasAnyData = values.some(v =>
-        v !== '' && v !== null && v !== undefined &&
+        v !== '' && v !== null && v !== undefined && v !== false &&
         !(Array.isArray(v) && v.length === 0) &&
         v !== 3 && v !== 5
       );
@@ -1102,7 +1102,7 @@ export const AppProvider = ({ children }) => {
       } else {
         const values = Object.values(sectionData);
         const hasData = values.some(v =>
-          v !== '' && v !== null && v !== undefined &&
+          v !== '' && v !== null && v !== undefined && v !== false &&
           !(Array.isArray(v) && v.length === 0) &&
           v !== 3 && v !== 5 && v !== 'moderate'
         );
