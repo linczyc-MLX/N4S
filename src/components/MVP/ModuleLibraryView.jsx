@@ -17,7 +17,8 @@ import {
   FileText,
   CheckCircle,
   Circle,
-  Play
+  Play,
+  ShieldCheck
 } from 'lucide-react';
 
 // Import modules data
@@ -27,15 +28,16 @@ import { modulesData } from '../../mansion-program/server/modules-data';
 // MODULE CARD COMPONENT
 // ============================================
 
-const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistChange }) => {
+const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistChange, reviewStatus, onReviewComplete }) => {
   const completedCount = checklistState 
     ? module.checklistItems.filter(item => checklistState[item.id]).length 
     : 0;
   const totalCount = module.checklistItems.length;
   const isComplete = completedCount === totalCount;
+  const isReviewed = reviewStatus?.reviewed;
 
   return (
-    <div className={`module-card ${isExpanded ? 'module-card--expanded' : ''}`}>
+    <div className={`module-card ${isExpanded ? 'module-card--expanded' : ''} ${isReviewed ? 'module-card--reviewed' : ''}`}>
       {/* Card Header - Always Visible */}
       <div className="module-card__header" onClick={onToggle}>
         <div className="module-card__number">{String(module.number).padStart(2, '0')}</div>
@@ -44,6 +46,11 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
           <p className="module-card__focus">{module.primaryFocus}</p>
         </div>
         <div className="module-card__meta">
+          {isReviewed && (
+            <span className="module-card__reviewed-badge">
+              <ShieldCheck size={14} /> Reviewed
+            </span>
+          )}
           <span className={`module-card__progress ${isComplete ? 'module-card__progress--complete' : ''}`}>
             {completedCount}/{totalCount} items
           </span>
@@ -111,6 +118,27 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
               ))}
             </div>
           </div>
+
+          {/* Review Complete Button */}
+          <div className="module-review-action">
+            {isReviewed ? (
+              <button className="n4s-btn n4s-btn--success module-review-btn module-review-btn--done" disabled>
+                <ShieldCheck size={16} />
+                Review Complete
+              </button>
+            ) : (
+              <button
+                className="n4s-btn n4s-btn--primary module-review-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReviewComplete(module.id, true);
+                }}
+              >
+                <ShieldCheck size={16} />
+                Mark Review Complete
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -127,6 +155,8 @@ const ModuleLibraryView = ({
   gateStatus = {},
   checklistState = {},
   onChecklistChange,
+  moduleReviewStatus = {},
+  onModuleReviewComplete,
   hasUnsavedChanges = false,
   isSaving = false,
   onSave
@@ -193,7 +223,25 @@ const ModuleLibraryView = ({
           8 deployable modules for mansion program validation
         </p>
         
-        {/* Progress Bar */}
+        {/* Review Progress */}
+        {(() => {
+          const reviewedCount = Object.values(moduleReviewStatus).filter(s => s?.reviewed).length;
+          return (
+            <div className="module-library__review-progress">
+              <span className="module-library__review-text">
+                {reviewedCount} of 8 modules reviewed
+              </span>
+              <div className="module-library__progress-bar">
+                <div 
+                  className="module-library__progress-fill module-library__progress-fill--review"
+                  style={{ width: `${(reviewedCount / 8) * 100}%` }}
+                />
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Checklist Progress */}
         <div className="module-library__progress">
           <div className="module-library__progress-bar">
             <div 
@@ -217,6 +265,8 @@ const ModuleLibraryView = ({
             onToggle={() => handleToggleModule(module.id)}
             checklistState={checklistState}
             onChecklistChange={handleChecklistItemChange}
+            reviewStatus={moduleReviewStatus[module.id]}
+            onReviewComplete={onModuleReviewComplete}
           />
         ))}
       </div>

@@ -102,6 +102,7 @@ const initialFYIData = {
   selections: {},  // { [spaceCode]: { included, size, level, customSF, imageUrl, notes } }
   // MVP data stored here because PHP backend only saves known fields (clientData, kycData, fyiData)
   mvpChecklistState: {},  // { [checklistItemId]: boolean }
+  mvpModuleReviewStatus: {},  // { [moduleId]: { reviewed: boolean, reviewedAt: timestamp } }
   mvpAdjacencyDecisions: {},  // DEPRECATED - use mvpAdjacencyConfig
   // Full MVP adjacency configuration
   mvpAdjacencyConfig: {
@@ -814,6 +815,22 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update module review status (mark individual modules as reviewed)
+  const updateMVPModuleReviewStatus = useCallback((moduleId, reviewed) => {
+    console.log('[APP] updateMVPModuleReviewStatus:', moduleId, reviewed);
+    setProjectData(prev => ({
+      ...prev,
+      fyiData: {
+        ...prev.fyiData,
+        mvpModuleReviewStatus: {
+          ...prev.fyiData?.mvpModuleReviewStatus,
+          [moduleId]: { reviewed, reviewedAt: reviewed ? new Date().toISOString() : null },
+        },
+      },
+    }));
+    markChanged();
+  }, [markChanged]);
+
   // Update MVP adjacency configuration (decisions, validation results, etc.)
   // NOTE: Stored in fyiData because PHP backend only saves clientData, kycData, fyiData
   const updateMVPAdjacencyConfig = useCallback((updates) => {
@@ -1178,6 +1195,7 @@ export const AppProvider = ({ children }) => {
     initializeFYISelections,
     updateMVPData,
     updateMVPChecklistItem,
+    updateMVPModuleReviewStatus,
     updateMVPAdjacencyConfig,
     updateMVPDecisionAnswer,
     updateKYSData,

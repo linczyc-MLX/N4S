@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   ClipboardCheck, CheckCircle2, XCircle,
-  Home, Users, Dumbbell, LayoutGrid, RefreshCw,
+  Home, Users, Dumbbell, LayoutGrid,
   Building, Layers, ArrowRight, Sparkles, BookOpen,
   GitCompare, Play, Database, List, FileText,
   ChevronRight, ChevronDown, Save
@@ -21,6 +21,54 @@ import {
   transformFYIToMVPProgram,
   getFYIProgramSummary
 } from '../../lib/mvp-bridge';
+
+// ============================================
+// TIER BENCHMARK DROPDOWN COMPONENT
+// ============================================
+
+const TierBenchmarkDropdown = ({ estimatedTier, isOpen, onToggle }) => {
+  const tiers = [
+    { id: '5K', label: '5K', range: '< 7,500 SF' },
+    { id: '10K', label: '10K', range: '7,500 - 12,500 SF' },
+    { id: '15K', label: '15K', range: '12,500 - 17,500 SF' },
+    { id: '20K', label: '20K', range: '17,500+ SF' },
+  ];
+
+  return (
+    <div className="tier-benchmark" style={{ position: 'relative' }}>
+      <div
+        className={`mvp-tier-badge mvp-tier-badge--${estimatedTier.color}`}
+        onClick={onToggle}
+        style={{ cursor: 'pointer' }}
+      >
+        <span className="mvp-tier-badge__overline">Benchmark Tier</span>
+        <span className="mvp-tier-badge__tier">{estimatedTier.tier}</span>
+        <span className="mvp-tier-badge__label">{estimatedTier.label}</span>
+      </div>
+      {isOpen && (
+        <div className="tier-benchmark__dropdown">
+          <h4 className="tier-benchmark__title">Tiered Benchmarks</h4>
+          <p className="tier-benchmark__desc">
+            MVP automatically detects your project tier based on target square footage and applies the appropriate
+            benchmark relationships. Larger homes require more sophisticated adjacency logic to maintain privacy
+            and operational efficiency at scale.
+          </p>
+          <div className="tier-benchmark__cards">
+            {tiers.map(tier => (
+              <div
+                key={tier.id}
+                className={`tier-benchmark__card ${estimatedTier.tier === tier.id ? 'tier-benchmark__card--active' : ''}`}
+              >
+                <span className="tier-benchmark__card-tier">{tier.label}</span>
+                <span className="tier-benchmark__card-range">{tier.range}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ============================================
 // DEPLOYMENT WORKFLOW COMPONENT (horizontal expandable)
@@ -125,7 +173,7 @@ const DeploymentWorkflow = ({ gateStatus, onNavigate }) => {
 
 const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
   const [expanded, setExpanded] = useState(false);
-  const showStructures = true;
+  const [zonesExpanded, setZonesExpanded] = useState(false);
 
   if (!fyiProgram || !fyiSummary) return null;
 
@@ -134,14 +182,15 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
 
   return (
     <div className="mvp-card mvp-card--full mvp-card--fyi">
-      <div className="mvp-card__header">
+      <div className="mvp-card__header" onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer' }}>
         <LayoutGrid size={20} className="mvp-card__icon" />
         <h3 className="mvp-card__title">FYI Space Program</h3>
-        <span className="mvp-card__status mvp-card__status--live">
-          <RefreshCw size={12} className="animate-spin-slow" />
-          LIVE
+        <span className="mvp-card__summary-text">
+          {fyiSummary.totals.totalSF.toLocaleString()} SF · {fyiSummary.counts.bedrooms} Bed · {fyiSummary.structures.length} Structure{fyiSummary.structures.length > 1 ? 's' : ''}
         </span>
+        {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       </div>
+      {expanded && (
       <div className="mvp-card__content">
         {/* Structure Breakdown - matches FYI sidebar exactly */}
         <div className="fyi-structures">
@@ -162,7 +211,7 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
                     <span>{structure.circulationSF.toLocaleString()} SF</span>
                   </div>
                 )}
-                {structure.byLevel && showStructures && Object.keys(structure.byLevel).length > 0 && (
+                {structure.byLevel && Object.keys(structure.byLevel).length > 0 && (
                   <div className="fyi-structure__levels">
                     <div className="fyi-structure__levels-label">BY LEVEL</div>
                     {Object.entries(structure.byLevel)
@@ -213,13 +262,13 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
         {/* Zone Breakdown (expandable) */}
         <button 
           className="n4s-btn n4s-btn--secondary"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => setZonesExpanded(!zonesExpanded)}
           style={{ marginTop: '12px' }}
         >
-          {expanded ? 'Hide' : 'Show'} Zone Details ({fyiSummary.zones.length} zones)
+          {zonesExpanded ? 'Hide' : 'Show'} Zone Details ({fyiSummary.zones.length} zones)
         </button>
         
-        {expanded && (
+        {zonesExpanded && (
           <div className="fyi-program-zones">
             {fyiSummary.zones.map(zone => (
               <div key={zone.name} className="fyi-zone-row">
@@ -231,6 +280,7 @@ const FYISpaceProgramCard = ({ fyiProgram, fyiSummary }) => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
@@ -246,10 +296,15 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   // CRITICAL: Both kycData and fyiData come directly from context.
   // Any changes to these in other modules trigger re-render here.
   // MVP checklist state is stored in fyiData (PHP backend only saves clientData, kycData, fyiData)
-  const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
+  const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, updateMVPModuleReviewStatus, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
   
-  const [showRawData, setShowRawData] = useState(false);
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin'
+  const [tierDropdownOpen, setTierDropdownOpen] = useState(false);
+  
+  // Module review status from fyiData (persisted)
+  const moduleReviewStatus = useMemo(() => {
+    return fyiData?.mvpModuleReviewStatus || {};
+  }, [fyiData?.mvpModuleReviewStatus]);
   
   // Module checklist state comes from fyiData (persisted)
   // Memoize to avoid re-renders
@@ -271,11 +326,10 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
     // Stage B: FYI Space Program has selections
     const fyiComplete = fyiData?.selections && Object.keys(fyiData.selections).length > 0;
 
-    // Stage C: Module checklists reviewed (40 items total across 8 modules)
-    // Require at least 24 items (60%) for completion, any checked items for 'current'
-    const checklistCount = Object.values(moduleChecklistState).filter(Boolean).length;
-    const modulesComplete = checklistCount >= 24;  // 60% threshold for full completion
-    const modulesReviewed = checklistCount > 0;
+    // Stage C: Module reviews completed (8 modules)
+    const reviewedCount = Object.values(moduleReviewStatus).filter(s => s?.reviewed).length;
+    const modulesComplete = reviewedCount >= 8;
+    const modulesReviewed = reviewedCount > 0;
 
     // Stage D: All 10 adjacency decisions answered
     const decisionAnswers = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
@@ -299,7 +353,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
       D: decisionsComplete ? 'complete' : (decisionsStarted || modulesComplete ? 'current' : (modulesReviewed ? 'current' : 'locked')),
       E: validationPassed ? 'complete' : (validationWarning ? 'warning' : (decisionsComplete ? 'current' : 'locked'))
     };
-  }, [kycData, fyiData, moduleChecklistState]);
+  }, [kycData, fyiData, moduleChecklistState, moduleReviewStatus]);
   
   // Get design identity config from KYC
   const designIdentity = kycData[activeRespondent]?.designIdentity || {};
@@ -396,433 +450,392 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   const projectId = clientBaseName || 'project-001';
   const projectName = kycData[activeRespondent]?.projectParameters?.projectName || 'New Project';
 
-  // If in modules mode, show Module Library
-  if (viewMode === 'modules') {
-    return (
-      <ModuleLibraryView
-        onBack={() => setViewMode('overview')}
-        onProceedToValidation={() => setViewMode('personalization')}
-        gateStatus={gateStatus}
-        checklistState={moduleChecklistState}
-        onChecklistChange={handleModuleChecklistChange}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        onSave={saveNow}
-      />
-    );
-  }
+  // ============================================
+  // CONTENT RENDERER (enables split-screen docs)
+  // ============================================
+  const renderContent = () => {
+    if (viewMode === 'modules') {
+      return (
+        <ModuleLibraryView
+          onBack={() => setViewMode('overview')}
+          onProceedToValidation={() => setViewMode('personalization')}
+          gateStatus={gateStatus}
+          checklistState={moduleChecklistState}
+          onChecklistChange={handleModuleChecklistChange}
+          moduleReviewStatus={moduleReviewStatus}
+          onModuleReviewComplete={updateMVPModuleReviewStatus}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
+          onSave={saveNow}
+        />
+      );
+    }
 
-  // If in personalization mode, show Adjacency Personalization
-  if (viewMode === 'personalization') {
-    return (
-      <AdjacencyPersonalizationView
-        kycData={kycData}
-        mvpData={briefInputs}
-        fyiProgram={fyiProgram}
-        tasteProfile={tasteProfileP}
-        projectId={projectId}
-        projectName={projectName}
-        onBack={() => setViewMode('overview')}
-        onGoToKYC={() => onNavigate && onNavigate('kyc')}
-        onComplete={(result) => {
-          console.log('Personalization result:', result);
-          setViewMode('overview');
-        }}
-        onViewDiagram={() => {
-          setViewMode('builder');
-        }}
-      />
-    );
-  }
+    if (viewMode === 'personalization') {
+      return (
+        <AdjacencyPersonalizationView
+          kycData={kycData}
+          mvpData={briefInputs}
+          fyiProgram={fyiProgram}
+          tasteProfile={tasteProfileP}
+          projectId={projectId}
+          projectName={projectName}
+          onBack={() => setViewMode('overview')}
+          onGoToKYC={() => onNavigate && onNavigate('kyc')}
+          onComplete={(result) => {
+            console.log('Personalization result:', result);
+            setViewMode('overview');
+          }}
+          onViewDiagram={() => {
+            setViewMode('builder');
+          }}
+        />
+      );
+    }
 
-  // If in program summary mode, show Program Summary View
-  if (viewMode === 'program') {
-    return (
-      <ProgramSummaryView
-        onBack={() => setViewMode('overview')}
-      />
-    );
-  }
+    if (viewMode === 'program') {
+      return <ProgramSummaryView onBack={() => setViewMode('overview')} />;
+    }
 
-  // If in comparison mode, show read-only Adjacency Comparison Grid
-  if (viewMode === 'comparison') {
-    return (
-      <AdjacencyComparisonGrid
-        onBack={() => setViewMode('overview')}
-        onRunValidation={() => setViewMode('validation')}
-      />
-    );
-  }
+    if (viewMode === 'comparison') {
+      return (
+        <AdjacencyComparisonGrid
+          onBack={() => setViewMode('overview')}
+          onRunValidation={() => setViewMode('validation')}
+        />
+      );
+    }
 
-  // If in validation mode, show Validation Results Panel
-  if (viewMode === 'validation') {
-    return (
-      <ValidationResultsPanel
-        onBack={() => setViewMode('overview')}
-        onViewMatrix={() => setViewMode('comparison')}
-        onEditDecisions={() => setViewMode('personalization')}
-      />
-    );
-  }
+    if (viewMode === 'validation') {
+      return (
+        <ValidationResultsPanel
+          onBack={() => setViewMode('overview')}
+          onViewMatrix={() => setViewMode('comparison')}
+          onEditDecisions={() => setViewMode('personalization')}
+        />
+      );
+    }
 
-  // If in admin mode, show Tier Data Admin
-  if (viewMode === 'admin') {
-    return (
-      <TierDataAdmin
-        onBack={() => setViewMode('overview')}
-      />
-    );
-  }
+    if (viewMode === 'admin') {
+      return <TierDataAdmin onBack={() => setViewMode('overview')} />;
+    }
 
-  // If in docs mode, show MVP Documentation
-  if (showDocs) {
-    return (
-      <MVPDocumentation
-        onClose={onCloseDocs}
-      />
-    );
-  }
+    if (!briefInputs) {
+      return (
+        <div className="mvp-module">
+          <div className="mvp-module__empty">
+            <ClipboardCheck size={48} className="mvp-module__empty-icon" />
+            <h2>No KYC Data Available</h2>
+            <p>Complete the KYC module first to generate your MVP brief.</p>
+          </div>
+        </div>
+      );
+    }
 
-  if (!briefInputs) {
+    const StatusBadge = ({ active, label }) => (
+      <span className={`status-badge ${active ? 'status-badge--active' : 'status-badge--inactive'}`}>
+        {active ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+        {label}
+      </span>
+    );
+
+    const SectionCard = ({ title, icon: Icon, children, status, fullWidth }) => (
+      <div className={`mvp-card ${fullWidth ? 'mvp-card--full' : ''}`}>
+        <div className="mvp-card__header">
+          <Icon size={20} className="mvp-card__icon" />
+          <h3 className="mvp-card__title">{title}</h3>
+          {status && <span className={`mvp-card__status mvp-card__status--${status}`}>{status}</span>}
+        </div>
+        <div className="mvp-card__content">
+          {children}
+        </div>
+      </div>
+    );
+
+    // Module review progress for overview display
+    const reviewedModuleCount = Object.values(moduleReviewStatus).filter(s => s?.reviewed).length;
+
+    // ============================================
+    // OVERVIEW (default view)
+    // ============================================
     return (
       <div className="mvp-module">
-        <div className="mvp-module__empty">
-          <ClipboardCheck size={48} className="mvp-module__empty-icon" />
-          <h2>No KYC Data Available</h2>
-          <p>Complete the KYC module first to generate your MVP brief.</p>
+        {/* Header — ITR #2: LIVE removed, Save + Tier badge right-aligned */}
+        <div className="mvp-module__header">
+          <div className="mvp-module__title-group">
+            <h1 className="mvp-module__title">
+              <ClipboardCheck size={28} />
+              Mansion Validation Program
+            </h1>
+            <p className="mvp-module__subtitle">
+              {hasFYIData ? (
+                <>Space program from FYI</>
+              ) : (
+                <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
+              )}
+            </p>
+          </div>
+
+          {/* Right side: Save + Tier Badge */}
+          <div className="mvp-module__header-right">
+            <div className="mvp-module__save-area">
+              <button
+                className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+                onClick={saveNow}
+                disabled={isSaving || !hasUnsavedChanges}
+              >
+                <Save size={16} />
+                {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+              </button>
+              {lastSaved && !hasUnsavedChanges && (
+                <span className="mvp-module__save-time">
+                  Last saved: {new Date(lastSaved).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            <TierBenchmarkDropdown
+              estimatedTier={estimatedTier}
+              isOpen={tierDropdownOpen}
+              onToggle={() => setTierDropdownOpen(!tierDropdownOpen)}
+            />
+          </div>
+        </div>
+
+        {/* DEPLOYMENT WORKFLOW */}
+        <DeploymentWorkflow gateStatus={gateStatus} onNavigate={onNavigate} />
+
+        {/* ITR #7: MVP Workflow — moved up, renamed */}
+        <div className="mvp-workflow">
+          <h3 className="mvp-workflow__title">
+            <ArrowRight size={20} />
+            MVP Workflow
+          </h3>
+          <p className="mvp-workflow__desc">
+            Review modules, answer layout questions, review the adjacency matrix, and run validation.
+          </p>
+          {reviewedModuleCount > 0 && (
+            <div className="mvp-workflow__review-tracker">
+              <span className="mvp-workflow__review-count">
+                {reviewedModuleCount} of 8 Modules Reviewed
+              </span>
+              <div className="mvp-workflow__review-bar">
+                <div className="mvp-workflow__review-fill" style={{ width: `${(reviewedModuleCount / 8) * 100}%` }} />
+              </div>
+            </div>
+          )}
+          <div className="mvp-workflow__buttons">
+            <button onClick={() => setViewMode('modules')} className="n4s-btn n4s-btn--secondary">
+              <BookOpen size={16} /> Module Library
+            </button>
+            <button onClick={() => setViewMode('personalization')} className="n4s-btn n4s-btn--primary">
+              <Sparkles size={16} /> Answer Layout Questions
+            </button>
+            <button onClick={() => setViewMode('comparison')} className="n4s-btn n4s-btn--secondary">
+              <GitCompare size={16} /> View Adjacency Matrix
+            </button>
+            <button onClick={() => setViewMode('validation')} className="n4s-btn n4s-btn--secondary">
+              <Play size={16} /> Run Validation
+            </button>
+            <button onClick={() => setViewMode('program')} className="n4s-btn n4s-btn--secondary">
+              <List size={16} /> Program Summary
+            </button>
+            <button onClick={() => setViewMode('admin')} className="n4s-btn n4s-btn--ghost">
+              <Database size={16} /> Tier Data Admin
+            </button>
+          </div>
+        </div>
+
+        {/* ITR #3: FYI SPACE PROGRAM — collapsible */}
+        {hasFYIData ? (
+          <FYISpaceProgramCard fyiProgram={fyiProgram} fyiSummary={fyiSummary} />
+        ) : (
+          <div className="mvp-card mvp-card--full mvp-card--fyi-empty">
+            <div className="mvp-card__header">
+              <LayoutGrid size={20} className="mvp-card__icon" />
+              <h3 className="mvp-card__title">Space Program</h3>
+              <span className="mvp-card__status mvp-card__status--pending">Not Started</span>
+            </div>
+            <div className="mvp-card__content">
+              <div className="fyi-empty-prompt">
+                <p>Complete the FYI module to confirm your space program.</p>
+                <p className="fyi-empty-hint">
+                  The space program will appear here as you make selections in FYI.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Summary Stats */}
+        <div className="mvp-stats-row">
+          <div className="mvp-stat">
+            <span className="mvp-stat__value">
+              {hasFYIData ? fyiSummary.counts.bedrooms : (summary?.household.totalBedrooms || 0)}
+            </span>
+            <span className="mvp-stat__label">Bedrooms</span>
+          </div>
+          <div className="mvp-stat">
+            <span className="mvp-stat__value">
+              {hasFYIData ? fyiSummary.totals.spaces : (summary?.household.guestBedrooms || 0)}
+            </span>
+            <span className="mvp-stat__label">{hasFYIData ? 'Total Spaces' : 'Guest Suites'}</span>
+          </div>
+          <div className="mvp-stat">
+            <span className="mvp-stat__value">
+              {hasFYIData ? fyiSummary.counts.wellness : amenityCount}
+            </span>
+            <span className="mvp-stat__label">{hasFYIData ? 'Wellness' : 'Amenities'}</span>
+          </div>
+          <div className="mvp-stat">
+            <span className="mvp-stat__value">{summary?.propertyConfig.levels || 2}</span>
+            <span className="mvp-stat__label">Levels</span>
+          </div>
+          <div className="mvp-stat">
+            <span className="mvp-stat__value">{summary?.propertyConfig.basement === 'Yes' ? '+B' : '—'}</span>
+            <span className="mvp-stat__label">Basement</span>
+          </div>
+        </div>
+
+        {/* KYC Summary Cards */}
+        <div className="mvp-grid">
+          <SectionCard title="Property Configuration" icon={Building}>
+            <div className="mvp-field-list">
+              <div className="mvp-field">
+                <span className="mvp-field__label">SF Constraint</span>
+                <span className="mvp-field__value">{summary?.propertyConfig.sfCap}</span>
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Basement</span>
+                <span className="mvp-field__value">{summary?.propertyConfig.basement}</span>
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Levels</span>
+                <span className="mvp-field__value">{summary?.propertyConfig.levels}</span>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Household Composition" icon={Users}>
+            <div className="mvp-field-list">
+              <div className="mvp-field">
+                <span className="mvp-field__label">Bedrooms</span>
+                <span className="mvp-field__value">{summary?.household.totalBedrooms} total ({summary?.household.guestBedrooms} guest)</span>
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Children</span>
+                <span className="mvp-field__value">
+                  {summary?.household.childrenCount > 0 ? summary.household.childrenCount : 'None'}
+                </span>
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">School-Age</span>
+                <StatusBadge active={summary?.household.hasSchoolAge} label={summary?.household.hasSchoolAge ? 'Yes' : 'No'} />
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Pets</span>
+                {summary?.household.hasPets ? (
+                  <span className="mvp-field__value mvp-field__value--small">{summary?.household.petsDescription}</span>
+                ) : (
+                  <StatusBadge active={false} label="None" />
+                )}
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Staffing</span>
+                <span className="mvp-field__value mvp-field__value--small">
+                  {(summary?.household.staffing || 'none').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                </span>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Lifestyle" icon={Home}>
+            <div className="mvp-field-list">
+              <div className="mvp-field">
+                <span className="mvp-field__label">Entertaining</span>
+                <span className="mvp-field__value">{summary?.lifestyle.entertaining || 'Rare'}</span>
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Formal Dining</span>
+                <StatusBadge active={summary?.lifestyle.formalEntertaining} label={summary?.lifestyle.formalEntertaining ? 'Required' : 'Optional'} />
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Work From Home</span>
+                <StatusBadge active={summary?.lifestyle.workFromHome} label={summary?.lifestyle.workFromHome ? 'Yes' : 'No'} />
+              </div>
+              <div className="mvp-field">
+                <span className="mvp-field__label">Late Night Media</span>
+                <StatusBadge active={summary?.lifestyle.lateNightMedia} label={summary?.lifestyle.lateNightMedia ? 'Yes' : 'No'} />
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Wellness Program" icon={Dumbbell}>
+            <div className="mvp-field-list">
+              <div className="mvp-field">
+                <span className="mvp-field__label">Program Tier</span>
+                <span className="mvp-field__value mvp-field__value--highlight">{summary?.wellness.program || 'None'}</span>
+              </div>
+            </div>
+            <div className="mvp-badge-row">
+              <StatusBadge active={summary?.wellness.gym} label="Gym" />
+              <StatusBadge active={summary?.wellness.spa} label="Spa" />
+              <StatusBadge active={summary?.wellness.pool} label="Pool" />
+            </div>
+          </SectionCard>
+
+          <div className="mvp-card mvp-card--full">
+            <div className="mvp-card__header">
+              <Layers size={20} className="mvp-card__icon" />
+              <h3 className="mvp-card__title">Selected Amenities</h3>
+              <span className="mvp-card__count">{amenityCount} selected</span>
+            </div>
+            <div className="mvp-card__content">
+              <div className="mvp-amenity-grid">
+                <StatusBadge active={summary?.amenities.wine} label="Wine Room" />
+                <StatusBadge active={summary?.amenities.media} label="Media Room" />
+                <StatusBadge active={summary?.amenities.library} label="Library" />
+                <StatusBadge active={summary?.amenities.familyRoom} label="Family Room" />
+                <StatusBadge active={summary?.amenities.salon} label="Salon" />
+                <StatusBadge active={summary?.amenities.gameRoom} label="Game Room" />
+                <StatusBadge active={summary?.amenities.bar} label="Bar" />
+                <StatusBadge active={summary?.amenities.bunkRoom} label="Bunk Room" />
+                <StatusBadge active={summary?.amenities.breakfastNook} label="Breakfast Nook" />
+                <StatusBadge active={summary?.amenities.outdoorEntertaining} label="Outdoor Entertaining" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
-  }
+  };
 
-  const StatusBadge = ({ active, label }) => (
-    <span className={`status-badge ${active ? 'status-badge--active' : 'status-badge--inactive'}`}>
-      {active ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-      {label}
-    </span>
-  );
-
-  const SectionCard = ({ title, icon: Icon, children, status, fullWidth }) => (
-    <div className={`mvp-card ${fullWidth ? 'mvp-card--full' : ''}`}>
-      <div className="mvp-card__header">
-        <Icon size={20} className="mvp-card__icon" />
-        <h3 className="mvp-card__title">{title}</h3>
-        {status && <span className={`mvp-card__status mvp-card__status--${status}`}>{status}</span>}
-      </div>
-      <div className="mvp-card__content">
-        {children}
-      </div>
-    </div>
-  );
+  // ============================================
+  // ITR #5: SPLIT-SCREEN LAYOUT — docs panel on right
+  // ============================================
+  // Context-aware docs tab based on current view
+  const docsTab = (() => {
+    switch (viewMode) {
+      case 'modules': return 'reference';
+      case 'personalization': return 'workflow';
+      case 'comparison': return 'gates';
+      case 'validation': return 'gates';
+      default: return 'overview';
+    }
+  })();
 
   return (
-    <div className="mvp-module">
-      {/* Header */}
-      <div className="mvp-module__header">
-        <div className="mvp-module__title-group">
-          <h1 className="mvp-module__title">
-            <ClipboardCheck size={28} />
-            Mansion Validation Program
-          </h1>
-          <p className="mvp-module__subtitle">
-            {hasFYIData ? (
-              <>Space program from FYI • <span className="text-green-600 font-medium">LIVE</span></>
-            ) : (
-              <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
-            )}
-          </p>
-        </div>
-        
-        {/* Save Status */}
-        <div className="mvp-module__save-area">
-          <button
-            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-            onClick={saveNow}
-            disabled={isSaving || !hasUnsavedChanges}
-          >
-            <Save size={16} />
-            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-          </button>
-          {lastSaved && !hasUnsavedChanges && (
-            <span className="mvp-module__save-time">
-              Last saved: {new Date(lastSaved).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        
-        {/* Tier Estimate Badge */}
-        <div className={`mvp-tier-badge mvp-tier-badge--${estimatedTier.color}`}>
-          <span className="mvp-tier-badge__tier">{estimatedTier.tier}</span>
-          <span className="mvp-tier-badge__label">{estimatedTier.label}</span>
-        </div>
+    <div className={`mvp-layout ${showDocs ? 'mvp-layout--with-docs' : ''}`}>
+      <div className="mvp-layout__main">
+        {renderContent()}
       </div>
-
-      {/* ============================================ */}
-      {/* DEPLOYMENT WORKFLOW - TOP OF PAGE */}
-      {/* ============================================ */}
-      <DeploymentWorkflow
-        gateStatus={gateStatus}
-        onNavigate={onNavigate}
-      />
-
-      {/* ============================================ */}
-      {/* FYI SPACE PROGRAM - LIVE DATA */}
-      {/* ============================================ */}
-      {hasFYIData ? (
-        <FYISpaceProgramCard fyiProgram={fyiProgram} fyiSummary={fyiSummary} />
-      ) : (
-        /* No FYI Data - Show prompt */
-        <div className="mvp-card mvp-card--full mvp-card--fyi-empty">
-          <div className="mvp-card__header">
-            <LayoutGrid size={20} className="mvp-card__icon" />
-            <h3 className="mvp-card__title">Space Program</h3>
-            <span className="mvp-card__status mvp-card__status--pending">Not Started</span>
-          </div>
-          <div className="mvp-card__content">
-            <div className="fyi-empty-prompt">
-              <p>Complete the FYI module to confirm your space program.</p>
-              <p className="fyi-empty-hint">
-                The space program will appear here with LIVE updates as you make selections in FYI.
-              </p>
-            </div>
-          </div>
+      {showDocs && (
+        <div className="mvp-layout__docs">
+          <MVPDocumentation
+            onClose={onCloseDocs}
+            initialTab={docsTab}
+          />
         </div>
       )}
-
-      {/* Summary Stats - Show FYI or KYC-derived */}
-      <div className="mvp-stats-row">
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">
-            {hasFYIData ? fyiSummary.counts.bedrooms : (summary?.household.totalBedrooms || 0)}
-          </span>
-          <span className="mvp-stat__label">Bedrooms</span>
-        </div>
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">
-            {hasFYIData ? fyiSummary.totals.spaces : (summary?.household.guestBedrooms || 0)}
-          </span>
-          <span className="mvp-stat__label">{hasFYIData ? 'Total Spaces' : 'Guest Suites'}</span>
-        </div>
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">
-            {hasFYIData ? fyiSummary.counts.wellness : amenityCount}
-          </span>
-          <span className="mvp-stat__label">{hasFYIData ? 'Wellness' : 'Amenities'}</span>
-        </div>
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">{summary?.propertyConfig.levels || 2}</span>
-          <span className="mvp-stat__label">Levels</span>
-        </div>
-        <div className="mvp-stat">
-          <span className="mvp-stat__value">{summary?.propertyConfig.basement === 'Yes' ? '+B' : '—'}</span>
-          <span className="mvp-stat__label">Basement</span>
-        </div>
-      </div>
-
-      {/* Main Content Grid - KYC Summary (shown regardless of FYI status) */}
-      <div className="mvp-grid">
-        {/* Property Configuration */}
-        <SectionCard title="Property Configuration" icon={Building}>
-          <div className="mvp-field-list">
-            <div className="mvp-field">
-              <span className="mvp-field__label">SF Constraint</span>
-              <span className="mvp-field__value">{summary?.propertyConfig.sfCap}</span>
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Basement</span>
-              <span className="mvp-field__value">{summary?.propertyConfig.basement}</span>
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Levels</span>
-              <span className="mvp-field__value">{summary?.propertyConfig.levels}</span>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Household */}
-        <SectionCard title="Household Composition" icon={Users}>
-          <div className="mvp-field-list">
-            <div className="mvp-field">
-              <span className="mvp-field__label">Bedrooms</span>
-              <span className="mvp-field__value">{summary?.household.totalBedrooms} total ({summary?.household.guestBedrooms} guest)</span>
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Children</span>
-              <span className="mvp-field__value">
-                {summary?.household.childrenCount > 0 ? summary.household.childrenCount : 'None'}
-              </span>
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">School-Age</span>
-              <StatusBadge active={summary?.household.hasSchoolAge} label={summary?.household.hasSchoolAge ? 'Yes' : 'No'} />
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Pets</span>
-              {summary?.household.hasPets ? (
-                <span className="mvp-field__value mvp-field__value--small">{summary?.household.petsDescription}</span>
-              ) : (
-                <StatusBadge active={false} label="None" />
-              )}
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Staffing</span>
-              <span className="mvp-field__value mvp-field__value--small">
-                {(summary?.household.staffing || 'none').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-              </span>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Lifestyle */}
-        <SectionCard title="Lifestyle" icon={Home}>
-          <div className="mvp-field-list">
-            <div className="mvp-field">
-              <span className="mvp-field__label">Entertaining</span>
-              <span className="mvp-field__value">{summary?.lifestyle.entertaining || 'Rare'}</span>
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Formal Dining</span>
-              <StatusBadge active={summary?.lifestyle.formalEntertaining} label={summary?.lifestyle.formalEntertaining ? 'Required' : 'Optional'} />
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Work From Home</span>
-              <StatusBadge active={summary?.lifestyle.workFromHome} label={summary?.lifestyle.workFromHome ? 'Yes' : 'No'} />
-            </div>
-            <div className="mvp-field">
-              <span className="mvp-field__label">Late Night Media</span>
-              <StatusBadge active={summary?.lifestyle.lateNightMedia} label={summary?.lifestyle.lateNightMedia ? 'Yes' : 'No'} />
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Wellness */}
-        <SectionCard title="Wellness Program" icon={Dumbbell}>
-          <div className="mvp-field-list">
-            <div className="mvp-field">
-              <span className="mvp-field__label">Program Tier</span>
-              <span className="mvp-field__value mvp-field__value--highlight">{summary?.wellness.program || 'None'}</span>
-            </div>
-          </div>
-          <div className="mvp-badge-row">
-            <StatusBadge active={summary?.wellness.gym} label="Gym" />
-            <StatusBadge active={summary?.wellness.spa} label="Spa" />
-            <StatusBadge active={summary?.wellness.pool} label="Pool" />
-          </div>
-        </SectionCard>
-
-        {/* Amenities - Full Width */}
-        <div className="mvp-card mvp-card--full">
-          <div className="mvp-card__header">
-            <Layers size={20} className="mvp-card__icon" />
-            <h3 className="mvp-card__title">Selected Amenities</h3>
-            <span className="mvp-card__count">{amenityCount} selected</span>
-          </div>
-          <div className="mvp-card__content">
-            <div className="mvp-amenity-grid">
-              <StatusBadge active={summary?.amenities.wine} label="Wine Room" />
-              <StatusBadge active={summary?.amenities.media} label="Media Room" />
-              <StatusBadge active={summary?.amenities.library} label="Library" />
-              <StatusBadge active={summary?.amenities.familyRoom} label="Family Room" />
-              <StatusBadge active={summary?.amenities.salon} label="Salon" />
-              <StatusBadge active={summary?.amenities.gameRoom} label="Game Room" />
-              <StatusBadge active={summary?.amenities.bar} label="Bar" />
-              <StatusBadge active={summary?.amenities.bunkRoom} label="Bunk Room" />
-              <StatusBadge active={summary?.amenities.breakfastNook} label="Breakfast Nook" />
-              <StatusBadge active={summary?.amenities.outdoorEntertaining} label="Outdoor Entertaining" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Raw Data Toggle (for debugging) */}
-      <div className="mvp-debug">
-        <button 
-          className="n4s-btn n4s-btn--ghost"
-          onClick={() => setShowRawData(!showRawData)}
-        >
-          {showRawData ? 'Hide' : 'Show'} Raw Data
-        </button>
-        
-        {showRawData && (
-          <pre className="mvp-debug__code">
-            {JSON.stringify({
-              dataSource: hasFYIData ? 'FYI (LIVE)' : 'KYC (derived)',
-              fyiProgram: fyiProgram ? {
-                source: fyiProgram.source,
-                timestamp: fyiProgram.timestamp,
-                spaceCount: fyiProgram.totals?.spaceCount,
-                totalSF: fyiProgram.totals?.totalConditionedSF
-              } : null,
-              briefInputs,
-              tasteProfileP: tasteProfileP ? {
-                clientId: tasteProfileP.clientId,
-                completedAt: tasteProfileP.completedAt,
-                profile: tasteProfileP.profile
-              } : null,
-              tasteProfileS: tasteProfileS ? {
-                clientId: tasteProfileS.clientId,
-                completedAt: tasteProfileS.completedAt,
-                profile: tasteProfileS.profile
-              } : null
-            }, null, 2)}
-          </pre>
-        )}
-      </div>
-
-      {/* Next Steps - MVP Workflow */}
-      <div className="mvp-next-steps">
-        <h3>
-          <ArrowRight size={20} />
-          MVP P1-M Workflow
-        </h3>
-        <p>
-          Answer layout questions, review the adjacency matrix comparison, run validation, then generate your brief.
-        </p>
-        <div className="mvp-next-steps__buttons">
-          <button
-            onClick={() => setViewMode('modules')}
-            className="n4s-btn n4s-btn--secondary"
-          >
-            <BookOpen />
-            Module Library
-          </button>
-          <button
-            onClick={() => setViewMode('personalization')}
-            className="n4s-btn n4s-btn--primary"
-          >
-            <Sparkles />
-            Answer Layout Questions
-          </button>
-          <button
-            onClick={() => setViewMode('comparison')}
-            className="n4s-btn n4s-btn--secondary"
-          >
-            <GitCompare />
-            View Adjacency Matrix
-          </button>
-          <button
-            onClick={() => setViewMode('validation')}
-            className="n4s-btn n4s-btn--secondary"
-          >
-            <Play />
-            Run Validation
-          </button>
-          <button
-            onClick={() => setViewMode('program')}
-            className="n4s-btn n4s-btn--secondary"
-          >
-            <List />
-            Program Summary
-          </button>
-          <button
-            onClick={() => setViewMode('admin')}
-            className="n4s-btn n4s-btn--ghost"
-          >
-            <Database />
-            Tier Data Admin
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

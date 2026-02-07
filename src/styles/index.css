@@ -4553,6 +4553,290 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 /* ============================================
+   ITR #2: Header right-aligned group
+   ============================================ */
+.mvp-module__header-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* ============================================
+   ITR #1: Tier Benchmark Dropdown
+   ============================================ */
+.tier-benchmark {
+  position: relative;
+}
+
+.mvp-tier-badge__overline {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+  font-weight: 600;
+}
+
+.tier-benchmark__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  width: 320px;
+  margin-top: 8px;
+  padding: 1.25rem;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.tier-benchmark__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.5rem;
+}
+
+.tier-benchmark__desc {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.tier-benchmark__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tier-benchmark__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--gray-50);
+}
+
+.tier-benchmark__card--active {
+  border-color: var(--navy);
+  background: rgba(30, 58, 95, 0.05);
+}
+
+.tier-benchmark__card-tier {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.tier-benchmark__card-range {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* ============================================
+   ITR #3: FYI card summary text (collapsed header)
+   ============================================ */
+.mvp-card__summary-text {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  margin-left: auto;
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+/* ============================================
+   ITR #4: Module Review Button & Badge
+   ============================================ */
+.module-review-action {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.module-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.module-review-btn--done {
+  background: var(--success) !important;
+  color: white !important;
+  border: none !important;
+  opacity: 1 !important;
+  cursor: default !important;
+}
+
+.module-card--reviewed {
+  border-color: var(--success);
+  border-left: 3px solid var(--success);
+}
+
+.module-card__reviewed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--success);
+  background: rgba(46, 125, 50, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-right: 8px;
+}
+
+.module-library__review-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.module-library__review-text {
+  font-size: 0.8125rem;
+  color: var(--navy);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.module-library__progress-fill--review {
+  background: var(--success);
+}
+
+/* ============================================
+   ITR #5: Split-screen docs layout
+   ============================================ */
+.mvp-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+}
+
+.mvp-layout__main {
+  flex: 1;
+  min-width: 0;
+  transition: all 0.2s ease;
+}
+
+.mvp-layout--with-docs .mvp-layout__main {
+  flex: 0 0 60%;
+  max-width: 60%;
+}
+
+.mvp-layout__docs {
+  flex: 0 0 40%;
+  max-width: 40%;
+  border-left: 1px solid var(--gray-200);
+  background: var(--white);
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+}
+
+@media (max-width: 1024px) {
+  .mvp-layout--with-docs .mvp-layout__main {
+    flex: 0 0 55%;
+    max-width: 55%;
+  }
+  .mvp-layout__docs {
+    flex: 0 0 45%;
+    max-width: 45%;
+  }
+}
+
+@media (max-width: 768px) {
+  .mvp-layout {
+    flex-direction: column;
+  }
+  .mvp-layout--with-docs .mvp-layout__main {
+    flex: 1;
+    max-width: 100%;
+  }
+  .mvp-layout__docs {
+    flex: 1;
+    max-width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--gray-200);
+    position: static;
+    max-height: none;
+  }
+}
+
+/* ============================================
+   ITR #7: MVP Workflow section (relocated)
+   ============================================ */
+.mvp-workflow {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+}
+
+.mvp-workflow__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.mvp-workflow__desc {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.mvp-workflow__review-tracker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.mvp-workflow__review-count {
+  font-size: 0.8125rem;
+  color: var(--navy);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mvp-workflow__review-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mvp-workflow__review-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.mvp-workflow__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mvp-workflow__buttons .n4s-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================
    COMBINED DESIGN DNA SECTION (KYC)
    ============================================ */
 .completed-view__combined {

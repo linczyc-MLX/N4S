@@ -998,8 +998,8 @@ function ReferenceTab() {
 /**
  * Main MVPDocumentation Component
  */
-export default function MVPDocumentation({ onClose }) {
-  const [activeTab, setActiveTab] = useState('overview');
+export default function MVPDocumentation({ onClose, initialTab = 'overview' }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   const tabs = [
     { id: 'overview', label: 'Overview' },
