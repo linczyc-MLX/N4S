@@ -309,6 +309,21 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
             </div>
           )}
 
+          {/* Abbreviation Index */}
+          <div className="acg-legend">
+            <span className="acg-legend__title">Abbreviation Index</span>
+            <div className="acg-legend__grid">
+              {filteredSpaces.map(code => {
+                const space = presetData?.spaces?.find(s => s.code === code);
+                return (
+                  <span key={code} className="acg-legend__item">
+                    <strong>{code}</strong> {space?.name || code}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Action Row */}
           <div className="acg-action-row">
             <span className="acg-note">
@@ -608,6 +623,43 @@ const componentStyles = `
 
 .acg-deviation-more {
   color: ${COLORS.textMuted} !important;
+}
+
+.acg-legend {
+  margin-top: 1.5rem;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid ${COLORS.border};
+}
+
+.acg-legend__title {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: ${COLORS.textMuted};
+  margin-bottom: 8px;
+}
+
+.acg-legend__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.acg-legend__item {
+  font-size: 0.75rem;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.acg-legend__item strong {
+  color: ${COLORS.navy};
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.7rem;
+  margin-right: 3px;
 }
 
 .acg-action-row {
