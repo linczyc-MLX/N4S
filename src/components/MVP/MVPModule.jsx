@@ -624,20 +624,25 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
             </div>
           )}
           <div className="mvp-workflow__buttons">
-            <button onClick={() => setViewMode('modules')} className="n4s-btn n4s-btn--secondary">
+            <button onClick={() => setViewMode('modules')} className={`n4s-btn n4s-btn--secondary ${gateStatus.C === 'complete' ? 'n4s-btn--done' : ''}`}>
               <BookOpen size={16} /> Module Library
+              {gateStatus.C === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
-            <button onClick={() => setViewMode('personalization')} className="n4s-btn n4s-btn--primary">
+            <button onClick={() => setViewMode('personalization')} className={`n4s-btn n4s-btn--primary ${gateStatus.D === 'complete' ? 'n4s-btn--done' : ''}`}>
               <Sparkles size={16} /> Answer Layout Questions
+              {gateStatus.D === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
-            <button onClick={() => setViewMode('comparison')} className="n4s-btn n4s-btn--secondary">
+            <button onClick={() => setViewMode('comparison')} className={`n4s-btn n4s-btn--secondary ${gateStatus.D === 'complete' ? 'n4s-btn--done' : ''}`}>
               <GitCompare size={16} /> View Adjacency Matrix
+              {gateStatus.D === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
-            <button onClick={() => setViewMode('validation')} className="n4s-btn n4s-btn--secondary">
+            <button onClick={() => setViewMode('validation')} className={`n4s-btn n4s-btn--secondary ${gateStatus.E === 'complete' ? 'n4s-btn--done' : ''}`}>
               <Play size={16} /> Run Validation
+              {gateStatus.E === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
-            <button onClick={() => setViewMode('program')} className="n4s-btn n4s-btn--secondary">
+            <button onClick={() => setViewMode('program')} className={`n4s-btn n4s-btn--secondary ${gateStatus.B === 'complete' ? 'n4s-btn--done' : ''}`}>
               <List size={16} /> Program Summary
+              {gateStatus.B === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
             <button onClick={() => setViewMode('admin')} className="n4s-btn n4s-btn--ghost">
               <Database size={16} /> Tier Data Admin

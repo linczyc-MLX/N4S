@@ -327,6 +327,47 @@ export function PersonalizationResult({
                 )}
               </div>
             )}
+
+            {/* Abbreviation Index */}
+            {showDiagram && diagramReady && (
+              <div className="diagram-legend">
+                <p className="diagram-legend__title">Abbreviation Index</p>
+                <div className="diagram-legend__grid">
+                  {(() => {
+                    // Build unique abbreviation map from the diagram nodes
+                    const ABBREV_MAP: Record<string, string> = {
+                      OFF: 'Home Office', FOY: 'Foyer / Gallery', KIT: 'Kitchen',
+                      FR: 'Family Room', DR: 'Dining Room', GR: 'Great Room',
+                      MEDIA: 'Media Room', PRI: 'Primary Bedroom', GSL1: 'Guest Suite L1',
+                      GYM: 'Gym / Exercise', MUD: 'Mudroom', WINE: 'Wine Storage',
+                      SEC1: 'Secondary Bed 1', SEC2: 'Secondary Bed 2',
+                      OPSCORE: 'Operations Core', SCUL: 'Scullery',
+                      POOL: 'Pool', SPA: 'Spa', BAR: 'Bar',
+                      LIB: 'Library', TERR: 'Terrace', GAR: 'Garage',
+                      STAIR: 'Staircase', PRIHALL: 'Primary Hall',
+                      PRIBATH: 'Primary Bath', PRICL: 'Primary Closets',
+                      PRILNG: 'Primary Lounge'
+                    };
+                    // Only show abbreviations that appear in the current diagram
+                    const usedCodes = new Set<string>();
+                    result.choices.forEach(choice => {
+                      const decision = decisions.find(d => d.id === choice.decisionId);
+                      const option = decision?.options.find(o => o.id === choice.selectedOptionId);
+                      if (decision) usedCodes.add(decision.primarySpace);
+                      if (option) usedCodes.add(option.targetSpace);
+                    });
+                    return Array.from(usedCodes)
+                      .filter(code => ABBREV_MAP[code])
+                      .sort()
+                      .map(code => (
+                        <span key={code} className="diagram-legend__item">
+                          <strong>{code}</strong> {ABBREV_MAP[code]}
+                        </span>
+                      ));
+                  })()}
+                </div>
+              </div>
+            )}
           </section>
         )}
         

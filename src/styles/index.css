@@ -3832,6 +3832,8 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .module-card:hover {
@@ -4692,6 +4694,7 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   display: flex;
   justify-content: center;
   padding: 0 20px 16px 20px;
+  margin-top: auto;
   cursor: pointer;
 }
 
@@ -4840,6 +4843,25 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.mvp-workflow__check {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.mvp-workflow__buttons .n4s-btn--done {
+  border-color: var(--success);
+  position: relative;
+}
+
+.mvp-workflow__buttons .n4s-btn--done.n4s-btn--primary {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.mvp-workflow__buttons .n4s-btn--done.n4s-btn--primary:hover {
+  background: #2e6b2e;
 }
 
 /* ============================================
