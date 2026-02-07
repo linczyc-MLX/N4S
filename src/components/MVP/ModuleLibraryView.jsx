@@ -46,17 +46,21 @@ const ModuleCard = ({ module, isExpanded, onToggle, checklistState, onChecklistC
           <p className="module-card__focus">{module.primaryFocus}</p>
         </div>
         <div className="module-card__meta">
-          {isReviewed && (
-            <span className="module-card__reviewed-badge">
-              <ShieldCheck size={14} /> Reviewed
-            </span>
-          )}
           <span className={`module-card__progress ${isComplete ? 'module-card__progress--complete' : ''}`}>
             {completedCount}/{totalCount} items
           </span>
           {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
         </div>
       </div>
+
+      {/* Reviewed badge - below header, centered */}
+      {isReviewed && !isExpanded && (
+        <div className="module-card__reviewed-row" onClick={onToggle}>
+          <span className="module-card__reviewed-badge">
+            <ShieldCheck size={14} /> Reviewed
+          </span>
+        </div>
+      )}
 
       {/* Expanded Content */}
       {isExpanded && (
@@ -241,18 +245,7 @@ const ModuleLibraryView = ({
           );
         })()}
 
-        {/* Checklist Progress */}
-        <div className="module-library__progress">
-          <div className="module-library__progress-bar">
-            <div 
-              className="module-library__progress-fill"
-              style={{ width: `${overallProgress.percentage}%` }}
-            />
-          </div>
-          <span className="module-library__progress-text">
-            {overallProgress.completed} of {overallProgress.total} checklist items complete ({overallProgress.percentage}%)
-          </span>
-        </div>
+        {/* Checklist progress removed — module review tracker above is sufficient */}
       </div>
 
       {/* Module Grid */}

@@ -4686,7 +4686,13 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   background: rgba(46, 125, 50, 0.08);
   padding: 2px 8px;
   border-radius: 999px;
-  margin-right: 8px;
+}
+
+.module-card__reviewed-row {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px 16px 20px;
+  cursor: pointer;
 }
 
 .module-library__review-progress {
