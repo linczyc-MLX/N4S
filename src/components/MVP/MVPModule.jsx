@@ -331,10 +331,11 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
     const modulesComplete = reviewedCount >= 8;
     const modulesReviewed = reviewedCount > 0;
 
-    // Stage D: All 10 adjacency decisions answered
+    // Stage D: All adjacency decisions answered (or questionnaire marked complete)
     const decisionAnswers = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
     const decisionCount = Object.keys(decisionAnswers).length;
-    const decisionsComplete = decisionCount >= 10;
+    const questionnaireCompleted = !!fyiData?.mvpAdjacencyConfig?.questionnaireCompletedAt;
+    const decisionsComplete = questionnaireCompleted || decisionCount >= 10;
     const decisionsStarted = decisionCount > 0;
 
     // Stage E: Validation passed (no critical red flags and score >= 80)
@@ -628,7 +629,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
               <BookOpen size={16} /> Module Library
               {gateStatus.C === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>
-            <button onClick={() => setViewMode('personalization')} className={`n4s-btn n4s-btn--primary ${gateStatus.D === 'complete' ? 'n4s-btn--done' : ''}`}>
+            <button onClick={() => setViewMode('personalization')} className={`n4s-btn n4s-btn--secondary ${gateStatus.D === 'complete' ? 'n4s-btn--done' : ''}`}>
               <Sparkles size={16} /> Answer Layout Questions
               {gateStatus.D === 'complete' && <CheckCircle2 size={14} className="mvp-workflow__check" />}
             </button>

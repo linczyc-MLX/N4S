@@ -4855,15 +4855,6 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   position: relative;
 }
 
-.mvp-workflow__buttons .n4s-btn--done.n4s-btn--primary {
-  background: var(--success);
-  border-color: var(--success);
-}
-
-.mvp-workflow__buttons .n4s-btn--done.n4s-btn--primary:hover {
-  background: #2e6b2e;
-}
-
 /* ============================================
    COMBINED DESIGN DNA SECTION (KYC)
    ============================================ */
