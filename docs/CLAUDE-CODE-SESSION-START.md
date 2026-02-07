@@ -1,7 +1,20 @@
 # N4S Claude Code Session Startup Guide
 
 > **CRITICAL**: Read this ENTIRE document before making ANY changes to the codebase.
-> Last Updated: 2026-01-12
+> Last Updated: 2026-02-07
+
+## ⚡ NEXT TASK (as of Feb 7, 2026)
+
+**Relationship Diagram Enhancement** — Transform the Mermaid.js adjacency diagram from a simple layout questions result into a first-class MVP visualization tool.
+
+Scope:
+- Relocate from PersonalizationResult screen to AdjacencyComparisonGrid (matrix screen)
+- Implement Desired vs Proposed dual-mode (matching matrix toggle)
+- Highlight deviations between desired and proposed adjacencies
+- Improve spatial layout (group by zone, meaningful positioning)
+- Integrate with validation red flags (overlay conflicts)
+
+See: `docs/SESSION-LOG.md` → "Session: February 7, 2026" → "Next Task" for full details and key files.
 
 ---
 

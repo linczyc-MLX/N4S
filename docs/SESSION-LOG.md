@@ -1,6 +1,97 @@
 # N4S Session Log
 
-## Session: January 16, 2026 - BAM v3.0 Gap Analysis & Trade-off Completion
+## Session: February 7, 2026 - MVP ITR Batch Implementation
+
+### User Request
+Collect and implement a batch of MVP refinement items (Items to Resolve). User wanted all issues identified first, then implemented in a single batch rather than iteratively.
+
+### Implementation — 7 ITR Items + Follow-up Tweaks
+
+#### ITR #1 — Tier Badge Enhancement (MVPModule.jsx)
+- Added "Benchmark Tier" label above tier display
+- Made badge clickable → opens dropdown panel with all 4 tiers (5K/10K/15K/20K)
+- Active tier highlighted, click outside to close
+
+#### ITR #2 — Header Cleanup (MVPModule.jsx)
+- Removed LIVE spinner indicator
+- Moved Save button right, adjacent to Tier badge
+- Matches layout pattern of other modules
+
+#### ITR #3 — FYI Space Program Collapsible (MVPModule.jsx)
+- Converted to collapsible roll-up panel, collapsed by default
+- Shows summary line: total SF, bedrooms, structure count
+- Expanded shows full breakdown with structures, grand total, zones
+
+#### ITR #4 — Module Library Review Workflow (ModuleLibraryView.jsx, AppContext.jsx)
+- Added "Review Complete" button per module card
+- Tracks completion in fyiData.mvpModuleReviewStatus
+- Feeds Gate C logic: all 8 reviewed = Gate C complete
+- Overview shows "X of 8 Modules Reviewed" with progress bar
+
+#### ITR #5 — Documentation Split-Screen (MVPModule.jsx, MVPDocumentation.jsx)
+- BUG FIX: Docs were opening on main page regardless of current screen
+- SOLUTION: Slide-in right panel (~40% width), main content compresses left
+- Context-aware: auto-selects relevant docs tab based on active screen
+
+#### ITR #6 — Remove Debug Button (MVPModule.jsx)
+- Removed "Show Raw Data" toggle from overview
+
+#### ITR #7 — Relocate Workflow Buttons (MVPModule.jsx)
+- Moved from bottom of page to directly below Deployment Workflow
+- Renamed from "MVP P1-M Workflow" to "MVP Workflow"
+
+### Follow-up Tweaks (same session)
+
+1. **Checklist progress removed** — "X of 40 checklist items" bar removed from Module Library (review tracker sufficient)
+2. **Reviewed badge positioning** — Moved from cramped header meta to centered row below header using flex column + margin-top:auto for consistent placement
+3. **Abbreviation index on Relationship Diagram** — Compact legend below mermaid diagram showing codes used (PersonalizationResult.tsx, AdjacencyPersonalization.css)
+4. **MVP Workflow checkmarks** — Each button shows green ✓ when corresponding gate is complete
+5. **Answer Layout Questions button** — Changed from primary (navy) to secondary to match all other buttons
+6. **Gate D detection fix** — Now checks `questionnaireCompletedAt` timestamp, not just `decisionCount >= 10`
+7. **Abbreviation index on Adjacency Matrix** — Same legend pattern added to AdjacencyComparisonGrid.jsx using presetData.spaces for name lookup
+
+### Files Changed
+- `src/components/MVP/MVPModule.jsx` — Major restructure (header, gates, workflow, docs layout)
+- `src/components/MVP/ModuleLibraryView.jsx` — Review complete buttons, badge positioning
+- `src/components/MVP/MVPDocumentation.jsx` — onClose prop for split-screen
+- `src/components/MVP/AdjacencyComparisonGrid.jsx` — Abbreviation legend
+- `src/mansion-program/client/components/PersonalizationResult.tsx` — Diagram abbreviation legend
+- `src/mansion-program/client/components/AdjacencyPersonalization.css` — Legend CSS
+- `src/contexts/AppContext.jsx` — updateMVPModuleReviewStatus function
+- `src/styles/index.css` — Tier dropdown, collapsible, workflow, reviewed badge CSS
+
+### Commits
+- `8d72239` — MVP ITR batch: 7 items implemented
+- `b8ce2b7` — Module Library tweaks: remove checklist progress, fix Reviewed badge overlap
+- `517cacd` — Three UI tweaks: reviewed badge fix, diagram legend, workflow checkmarks
+- `56b5861` — Fix workflow buttons: uniform styling + Gate D completion detection
+- `773450f` — Add abbreviation index to adjacency comparison grid
+
+### Next Task: Relationship Diagram Enhancement
+**STATUS: READY TO START IN NEW CHAT**
+
+The Relationship Diagram (Mermaid.js flowchart in PersonalizationResult.tsx) needs to become a first-class visual tool in MVP:
+
+1. **Relocate** — Currently appears at bottom of Layout Questions results screen. Should move to the Adjacency Validation Matrix screen where it serves as a companion visualization.
+
+2. **Dual-mode visualization** — Show both Desired (benchmark) and Proposed (after decisions) diagrams side by side or with toggle, mirroring the matrix toggle.
+
+3. **Deviation highlighting** — When viewing Proposed, highlight edges that deviate from Desired (different line style, color, or annotation). Makes spatial conflicts immediately visible.
+
+4. **Improved layout** — Current Mermaid flowchart is a simple linear layout with disconnected clusters. Needs proper spatial grouping by zone with meaningful node positioning.
+
+5. **Integration with validation** — Red flags from validation could be overlaid on the diagram (highlight conflicting adjacencies in red).
+
+Key files:
+- `src/mansion-program/client/components/PersonalizationResult.tsx` (current diagram)
+- `src/mansion-program/client/utils/mermaid-generator.ts` (code generation)
+- `src/components/MVP/AdjacencyComparisonGrid.jsx` (target location)
+- `src/components/MVP/ValidationResultsPanel.jsx` (red flags data)
+- `src/mansion-program/client/data/program-presets.ts` (space definitions)
+- `src/mansion-program/shared/adjacency-decisions.ts` (decision definitions)
+
+---
+
 
 ### User Request
 Complete KYM/BAM v3.0 implementation - finish report generation and add missing features.
