@@ -131,7 +131,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
           helpText="Include type, quantity, and indoor/outdoor status"
         />
         
-        {data.pets && data.pets.trim() !== '' && (
+        {data.pets && (typeof data.pets !== 'string' || data.pets.trim() !== '') && (
           <div className="form-grid form-grid--2col" style={{ marginTop: '1rem' }}>
             <div className="form-field">
               <label className="form-field__label">Pet Grooming/Washing Room?</label>

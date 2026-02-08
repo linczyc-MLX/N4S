@@ -484,8 +484,8 @@ export function transformKYCToMVPBrief(kycData, respondent = 'principal') {
     hasSchoolAgeChildren: hasSchoolAgeChildren(familyHousehold.familyMembers),
 
     // Pets
-    hasPets: !!(familyHousehold.pets && familyHousehold.pets.trim()),
-    petsDescription: familyHousehold.pets || '',
+    hasPets: !!(familyHousehold.pets && (typeof familyHousehold.pets === 'string' ? familyHousehold.pets.trim() : familyHousehold.pets)),
+    petsDescription: (typeof familyHousehold.pets === 'string' ? familyHousehold.pets : '') || '',
 
     // Staffing
     staffingLevel: mapStaffingLevel(familyHousehold),
