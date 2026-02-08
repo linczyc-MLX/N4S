@@ -343,8 +343,9 @@ export const generateKYMReport = async (data) => {
     doc.setFont(FONTS.body, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.textMuted);
-    doc.text('© 2026 N4S Luxury Residential Advisory', margin, footerY + 5);
-    doc.text(`Page ${pageNum}`, pageWidth - margin, footerY + 5, { align: 'right' });
+    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, footerY + 5);
+    doc.text(`Page ${pageNum}`, pageWidth / 2, footerY + 5, { align: 'center' });
+    doc.text(new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }), pageWidth - margin, footerY + 5, { align: 'right' });
   };
 
   const addNewPage = () => {

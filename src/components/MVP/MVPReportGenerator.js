@@ -88,13 +88,13 @@ const EDGE_DRAW = {
 
 // Red flag definitions
 const RED_FLAGS = [
-  { id: 'rf-1', name: 'Guest → Primary Suite', desc: 'Primary suite directly accessible from guest areas',
+  { id: 'rf-1', name: 'Guest > Primary Suite', desc: 'Primary suite directly accessible from guest areas',
     check: m => { const r = m['GUEST1-PRI']||m['PRI-GUEST1']||m['GST1-PRI']||m['PRI-GST1']; return r==='A'||r==='N'; },
     edges: [['GUEST1','PRI'],['GST1','PRI']] },
-  { id: 'rf-2', name: 'Delivery → Front of House', desc: 'Service connects through formal areas',
+  { id: 'rf-2', name: 'Delivery > Front of House', desc: 'Service connects through formal areas',
     check: m => { const a=m['GAR-FOY']||m['FOY-GAR'], b=m['GAR-GR']||m['GR-GAR']; return a==='A'||a==='N'||b==='A'; },
     edges: [['GAR','FOY'],['GAR','GR']] },
-  { id: 'rf-3', name: 'Media → Bedroom Bleed', desc: 'Media not acoustically separated from bedrooms',
+  { id: 'rf-3', name: 'Media > Bedroom Bleed', desc: 'Media not acoustically separated from bedrooms',
     check: m => { const a=m['MEDIA-PRI']||m['PRI-MEDIA'], b=m['MEDIA-GUEST1']||m['GUEST1-MEDIA']||m['MEDIA-GST1']||m['GST1-MEDIA']; return a==='A'||a==='N'||b==='A'||b==='N'; },
     edges: [['MEDIA','PRI'],['MEDIA','GUEST1']] },
   { id: 'rf-4', name: 'Kitchen at Entry', desc: 'Kitchen visible from entry',
@@ -447,7 +447,7 @@ export async function generateMVPReport(config) {
   const moduleScores = computeModuleScores(deviations, benchmarkMatrix);
   const overallScore = computeOverallScore(moduleScores, triggeredFlags);
   const allPassed = triggeredFlags.length === 0 && overallScore >= 80;
-  const statusLabel = allPassed ? 'PASS — Brief Ready' : overallScore >= 60 ? 'REVIEW RECOMMENDED' : 'ATTENTION REQUIRED';
+  const statusLabel = allPassed ? 'PASS - Brief Ready' : overallScore >= 60 ? 'REVIEW RECOMMENDED' : 'ATTENTION REQUIRED';
   const statusColor = allPassed ? C.success : overallScore >= 60 ? C.warning : C.error;
 
   // ── Header / Footer helpers ─────────────────────────────────────────────
@@ -470,7 +470,7 @@ export async function generateMVPReport(config) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
     doc.setTextColor(...C.textMuted);
-    doc.text(`${clientName} — ${projectName}`, margin, fy);
+    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, fy);
     doc.text(`Page ${pn}`, pw / 2, fy, { align: 'center' });
     doc.text(fmtDate(new Date()), pw - margin, fy, { align: 'right' });
   };
@@ -529,15 +529,15 @@ export async function generateMVPReport(config) {
 
   // Tier badge
   doc.setFillColor(...C.navy);
-  doc.roundedRect(pw - margin - 35, y + 6, 30, 10, 2, 2, 'F');
+  doc.roundedRect(pw - margin - 38, y + 6, 33, 14, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setTextColor(...C.white);
-  doc.text(estimatedTier.tier, pw - margin - 20, y + 13, { align: 'center' });
+  doc.text(`${estimatedTier.tier} TIER`, pw - margin - 21.5, y + 14, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
   doc.setTextColor(...C.textMuted);
-  doc.text(estimatedTier.label, pw - margin - 20, y + 21, { align: 'center' });
+  doc.text(estimatedTier.label, pw - margin - 21.5, y + 25, { align: 'center' });
 
   y += 56;
 
@@ -629,7 +629,7 @@ export async function generateMVPReport(config) {
   if (triggeredFlags.length > 0) {
     summary += `${triggeredFlags.length} red flag${triggeredFlags.length !== 1 ? 's' : ''} require attention before handoff. `;
   } else {
-    summary += 'No red flags were triggered — the layout passes all critical adjacency checks. ';
+    summary += 'No red flags were triggered - the layout passes all critical adjacency checks. ';
   }
   summary += `Overall validation score: ${overallScore}/100 (${statusLabel}).`;
 
@@ -692,7 +692,7 @@ export async function generateMVPReport(config) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(...C.navy);
-  doc.text(`Total: ${spaces.length} spaces — ${fmtNum(totalSF)} SF`, margin + 2, y);
+  doc.text(`Total: ${spaces.length} spaces - ${fmtNum(totalSF)} SF`, margin + 2, y);
   y += 8;
 
 
@@ -710,8 +710,8 @@ export async function generateMVPReport(config) {
     return [
       d.title || d.id,
       selectedOpt?.label || 'Not answered',
-      selectedOpt ? `${d.primarySpace} → ${selectedOpt.targetSpace} (${selectedOpt.relationship})` : '—',
-      isNonDefault ? '◆ Custom' : '✓ Default',
+      selectedOpt ? `${d.primarySpace} > ${selectedOpt.targetSpace} (${selectedOpt.relationship})` : '-',
+      isNonDefault ? '* Custom' : 'Default',
     ];
   });
 
@@ -732,7 +732,7 @@ export async function generateMVPReport(config) {
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 3) {
         const val = data.cell.raw;
-        if (val.startsWith('◆')) {
+        if (val.startsWith('*')) {
           data.cell.styles.textColor = C.warning;
           data.cell.styles.fontStyle = 'bold';
         } else {
@@ -753,7 +753,7 @@ export async function generateMVPReport(config) {
 
   y = newPage();
 
-  sectionHeader('Relationship Diagram — Desired (Benchmark)');
+  sectionHeader('Relationship Diagram - Desired (Benchmark)');
 
   const diagH = 95;
   const benchLayout = layoutNodes(spaces, benchmarkMatrix, cw, diagH, margin, y);
@@ -765,7 +765,7 @@ export async function generateMVPReport(config) {
   drawDiagramLegend(doc, margin + 2, y, cw);
   y += 8;
 
-  sectionHeader('Relationship Diagram — Proposed (Client)', 95);
+  sectionHeader('Relationship Diagram - Proposed (Client)', 95);
 
   const propLayout = layoutNodes(spaces, proposedMatrix, cw, diagH, margin, y);
   drawDiagram(doc, propLayout, proposedMatrix, {
@@ -855,8 +855,8 @@ export async function generateMVPReport(config) {
   const scoreRows = moduleScores.map(m => [
     m.name,
     `${m.score} / 100`,
-    m.passed ? '✓ Pass' : '⚠ Review',
-    m.deviationCount > 0 ? `${m.deviationCount} deviation${m.deviationCount !== 1 ? 's' : ''}` : '—',
+    m.passed ? 'Pass' : 'Review',
+    m.deviationCount > 0 ? `${m.deviationCount} deviation${m.deviationCount !== 1 ? 's' : ''}` : '-',
   ]);
 
   autoTable(doc, {
@@ -875,7 +875,7 @@ export async function generateMVPReport(config) {
     },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 2) {
-        data.cell.styles.textColor = data.cell.raw.startsWith('✓') ? C.success : C.warning;
+        data.cell.styles.textColor = data.cell.raw === 'Pass' ? C.success : C.warning;
         data.cell.styles.fontStyle = 'bold';
       }
     },
@@ -913,14 +913,20 @@ export async function generateMVPReport(config) {
   RED_FLAGS.forEach(flag => {
     y = checkBreak(10);
     const triggered = triggeredFlags.some(t => t.id === flag.id);
-    const icon = triggered ? '✗' : '✓';
     const color = triggered ? C.error : C.success;
+    // Draw status circle
+    doc.setFillColor(...color);
+    doc.circle(margin + 3.5, y - 1.2, 1.8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(4);
+    doc.setTextColor(...C.white);
+    doc.text(triggered ? 'X' : 'OK', margin + 3.5, y - 0.8, { align: 'center' });
+    // Flag name
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
-    doc.setTextColor(...color);
-    doc.text(icon, margin + 2, y);
     doc.setTextColor(...C.text);
-    doc.text(flag.name, margin + 7, y);
+    doc.text(flag.name, margin + 8, y);
+    // Description
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.setTextColor(...C.textMuted);

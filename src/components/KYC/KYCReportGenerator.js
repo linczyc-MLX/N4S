@@ -289,7 +289,7 @@ export const generateKYCReport = async (kycData) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
     doc.setTextColor(...COLORS.textMuted);
-    doc.text(`${clientName} — ${projectName}`, margin, footerY);
+    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, footerY);
     doc.text(`Page ${pageNum}`, pageWidth / 2, footerY, { align: 'center' });
     doc.text(formatDate(new Date()), pageWidth - margin, footerY, { align: 'right' });
   };

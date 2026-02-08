@@ -728,17 +728,17 @@ export class FYIReportGenerator {
     this.doc.setLineWidth(0.5);
     this.doc.line(this.margin, footerY - 10, this.pageWidth - this.margin, footerY - 10);
 
-    // Date (left)
+    // Copyright (left)
     this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-    this.doc.text(formatDate(new Date()), this.margin, footerY);
+    this.doc.text('(C) 2026 Not4Sale LLC - Confidential', this.margin, footerY);
 
-    // N4S branding (center)
-    this.doc.text('© 2026 Not4Sale LLC - Luxury Residential Advisory', this.pageWidth / 2, footerY, { align: 'center' });
+    // Page number (center)
+    this.doc.text(`Page ${pageNum} of ${this.totalPages}`, this.pageWidth / 2, footerY, { align: 'center' });
 
-    // Page number (right)
-    this.doc.text(`Page ${pageNum} of ${this.totalPages}`, this.pageWidth - this.margin, footerY, { align: 'right' });
+    // Date (right)
+    this.doc.text(formatDate(new Date()), this.pageWidth - this.margin, footerY, { align: 'right' });
   }
 
   // ============================================

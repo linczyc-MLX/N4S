@@ -70,13 +70,13 @@ const EDGE_DRAW = {
 };
 
 const RED_FLAGS = [
-  { id: 'rf-1', name: 'Guest → Primary Suite', desc: 'Primary suite directly accessible from guest areas',
+  { id: 'rf-1', name: 'Guest > Primary Suite', desc: 'Primary suite directly accessible from guest areas',
     check: m => { const r = m['GUEST1-PRI']||m['PRI-GUEST1']||m['GST1-PRI']||m['PRI-GST1']; return r==='A'||r==='N'; },
     edges: [['GUEST1','PRI'],['GST1','PRI']] },
-  { id: 'rf-2', name: 'Delivery → Front of House', desc: 'Service connects through formal areas',
+  { id: 'rf-2', name: 'Delivery > Front of House', desc: 'Service connects through formal areas',
     check: m => { const a=m['GAR-FOY']||m['FOY-GAR'], b=m['GAR-GR']||m['GR-GAR']; return a==='A'||a==='N'||b==='A'; },
     edges: [['GAR','FOY'],['GAR','GR']] },
-  { id: 'rf-3', name: 'Media → Bedroom Bleed', desc: 'Media not acoustically separated from bedrooms',
+  { id: 'rf-3', name: 'Media > Bedroom Bleed', desc: 'Media not acoustically separated from bedrooms',
     check: m => { const a=m['MEDIA-PRI']||m['PRI-MEDIA'], b=m['MEDIA-GUEST1']||m['GUEST1-MEDIA']||m['MEDIA-GST1']||m['GST1-MEDIA']; return a==='A'||a==='N'||b==='A'||b==='N'; },
     edges: [['MEDIA','PRI'],['MEDIA','GUEST1']] },
   { id: 'rf-4', name: 'Kitchen at Entry', desc: 'Kitchen visible from entry',
@@ -338,7 +338,7 @@ export async function generateMVPValidationReport(config) {
     doc.setDrawColor(...C.border); doc.setLineWidth(0.2);
     doc.line(margin, fy-2, pw-margin, fy-2);
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.textMuted);
-    doc.text(`${clientName} — ${projectName}`, margin, fy);
+    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, fy);
     doc.text(`Page ${pn}`, pw/2, fy, { align:'center' });
     doc.text(fmtDate(new Date()), pw-margin, fy, { align:'right' });
   };
@@ -442,15 +442,15 @@ export async function generateMVPValidationReport(config) {
   } else {
     sectionHead('Adjacency Deviations');
     doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(...C.success);
-    doc.text('No deviations from benchmark — all relationships match the N4S standard.', margin + 2, y);
+    doc.text('No deviations from benchmark - all relationships match the N4S standard.', margin + 2, y);
     y += 8;
   }
 
   // Scorecard
   sectionHead('Module Scores');
   const scoreRows = moduleScores.map(m => [
-    m.name, `${m.score} / 100`, m.passed ? '✓ Pass' : '⚠ Review',
-    m.deviationCount > 0 ? `${m.deviationCount}` : '—',
+    m.name, `${m.score} / 100`, m.passed ? 'Pass' : 'Review',
+    m.deviationCount > 0 ? `${m.deviationCount}` : '-',
   ]);
   autoTable(doc, {
     startY: y,
@@ -461,7 +461,7 @@ export async function generateMVPValidationReport(config) {
     bodyStyles: { fontSize: 7, cellPadding: 2, textColor: C.text },
     alternateRowStyles: { fillColor: [248,248,246] },
     columnStyles: { 0: { cellWidth: 55, fontStyle:'bold' }, 1: { cellWidth: 25, halign:'center' }, 2: { cellWidth: 25, halign:'center' }, 3: { cellWidth: 18, halign:'center' } },
-    didParseCell: (data) => { if (data.section==='body' && data.column.index===2) { data.cell.styles.textColor = data.cell.raw.startsWith('✓') ? C.success : C.warning; data.cell.styles.fontStyle = 'bold'; } },
+    didParseCell: (data) => { if (data.section==='body' && data.column.index===2) { data.cell.styles.textColor = data.cell.raw === 'Pass' ? C.success : C.warning; data.cell.styles.fontStyle = 'bold'; } },
     margin: { left: margin, right: margin }, tableWidth: cw,
   });
   y = doc.lastAutoTable.finalY + 5;
@@ -483,11 +483,15 @@ export async function generateMVPValidationReport(config) {
   RED_FLAGS.forEach(flag => {
     y = checkBreak(8);
     const triggered = triggeredFlags.some(t => t.id === flag.id);
+    const color = triggered ? C.error : C.success;
+    doc.setFillColor(...color);
+    doc.circle(margin + 3.5, y - 1.2, 1.8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(4);
+    doc.setTextColor(...C.white);
+    doc.text(triggered ? 'X' : 'OK', margin + 3.5, y - 0.8, { align: 'center' });
     doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.setTextColor(...(triggered ? C.error : C.success));
-    doc.text(triggered ? '✗' : '✓', margin+2, y);
     doc.setTextColor(...C.text);
-    doc.text(flag.name, margin+7, y);
+    doc.text(flag.name, margin+8, y);
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.textMuted);
     doc.text(flag.desc, margin+55, y);
     y += 5;
