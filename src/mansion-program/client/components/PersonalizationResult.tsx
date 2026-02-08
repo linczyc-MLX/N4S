@@ -85,8 +85,8 @@ export function PersonalizationResult({
     if (!baseMatrix) return {};
     const m: Record<string, string> = {};
     baseMatrix.forEach((req: any) => {
-      m[`${req.from}-${req.to}`] = req.relationship;
-      m[`${req.to}-${req.from}`] = req.relationship;
+      m[`${req.fromSpaceCode}-${req.toSpaceCode}`] = req.relationship;
+      m[`${req.toSpaceCode}-${req.fromSpaceCode}`] = req.relationship;
     });
     return m;
   }, [baseMatrix]);
@@ -97,8 +97,8 @@ export function PersonalizationResult({
     const updatedMatrix = applyDecisionsToMatrix(baseMatrix, result.choices);
     const m: Record<string, string> = {};
     updatedMatrix.forEach((req: any) => {
-      m[`${req.from}-${req.to}`] = req.relationship;
-      m[`${req.to}-${req.from}`] = req.relationship;
+      m[`${req.fromSpaceCode}-${req.toSpaceCode}`] = req.relationship;
+      m[`${req.toSpaceCode}-${req.fromSpaceCode}`] = req.relationship;
     });
     return m;
   }, [baseMatrix, result.choices]);
