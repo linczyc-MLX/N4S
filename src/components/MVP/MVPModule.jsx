@@ -661,7 +661,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
             </p>
           </div>
 
-          {/* Right side: Save + Tier Badge */}
+          {/* Right side: Save + Export + Tier Badge */}
           <div className="mvp-module__header-right">
             <div className="mvp-module__save-area">
               <button
@@ -671,6 +671,15 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
               >
                 <Save size={16} />
                 {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+              </button>
+              <button
+                onClick={handleExportReport}
+                disabled={isExporting || !preset}
+                className="btn btn--primary"
+                title="Export comprehensive MVP Report PDF"
+              >
+                <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+                {isExporting ? 'Exporting...' : 'Export Report'}
               </button>
               {lastSaved && !hasUnsavedChanges && (
                 <span className="mvp-module__save-time">
@@ -731,15 +740,6 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
             </button>
             <button onClick={() => setViewMode('admin')} className="n4s-btn n4s-btn--ghost">
               <Database size={16} /> Tier Data Admin
-            </button>
-            <button
-              onClick={handleExportReport}
-              disabled={isExporting || !preset}
-              className="n4s-btn n4s-btn--secondary"
-              title="Export comprehensive MVP Report PDF"
-            >
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
             </button>
           </div>
         </div>

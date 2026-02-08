@@ -328,6 +328,7 @@ export default function AdjacencyPersonalizationView({
         preset={preset}
         baseSF={baseSF}
         baseMatrix={baseMatrix}
+        presetSpaces={presetData?.spaces}
         savedDecisions={savedDecisions}
         onDecisionChange={handleDecisionChange}
         onComplete={handleComplete}

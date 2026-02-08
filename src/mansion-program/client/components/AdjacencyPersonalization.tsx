@@ -29,6 +29,7 @@ export interface AdjacencyPersonalizationProps {
   preset: '5k' | '10k' | '15k' | '20k';
   baseSF: number;
   baseMatrix: AdjacencyRequirement[];
+  presetSpaces?: any[];  // Preset space definitions for RelationshipDiagram
   savedDecisions?: Record<string, string>;  // Previously saved decisions to restore
   onDecisionChange?: (decisionId: string, optionId: string) => void;  // Called on each change
   onComplete: (result: PersonalizationOutput) => void;
@@ -51,6 +52,7 @@ export function AdjacencyPersonalization({
   preset,
   baseSF,
   baseMatrix,
+  presetSpaces,
   savedDecisions,
   onDecisionChange,
   onComplete,
@@ -249,6 +251,8 @@ export function AdjacencyPersonalization({
             decisions={ADJACENCY_DECISIONS}
             presetName={presetName}
             baseSF={baseSF}
+            presetSpaces={presetSpaces}
+            baseMatrix={baseMatrix}
             onBack={handleBackToSummary}
             onViewDiagram={onViewDiagram || (() => {})}
             onExport={handleExport}

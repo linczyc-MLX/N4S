@@ -1,13 +1,11 @@
 /**
  * PersonalizationResult Component (Phase 5D Update)
  * 
- * Screen 3: Shows final validation summary with Mermaid diagram preview
+ * Screen 3: Shows final validation summary with v2 RelationshipDiagram
  * and PDF export capability.
- * 
- * REPLACES: src/mansion-program/client/components/PersonalizationResult.tsx
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -15,7 +13,6 @@ import {
   FileText,
   Download,
   Eye,
-  EyeOff,
   Briefcase,
   ChefHat,
   Tv,
@@ -24,17 +21,21 @@ import {
   Wine,
   Dumbbell,
   Home,
-  Maximize2,
-  Minimize2
+  GitBranch,
+  LayoutGrid
 } from 'lucide-react';
 import type { PersonalizationResult as PersonalizationResultType } from '../../shared/adjacency-decisions';
 import type { AdjacencyDecision } from '../../shared/adjacency-decisions';
+import { applyDecisionsToMatrix } from '../../server/adjacency-recommender';
+import RelationshipDiagram from '../../../components/MVP/RelationshipDiagram';
 
 export interface PersonalizationResultProps {
   result: PersonalizationResultType;
   decisions: AdjacencyDecision[];
   presetName: string;
   baseSF: number;
+  presetSpaces?: any[];
+  baseMatrix?: any[];
   onBack: () => void;
   onViewDiagram: () => void;
   onExport: () => void;
@@ -58,6 +59,8 @@ export function PersonalizationResult({
   decisions,
   presetName,
   baseSF,
+  presetSpaces,
+  baseMatrix,
   onBack,
   onViewDiagram,
   onExport,
@@ -68,92 +71,58 @@ export function PersonalizationResult({
   const hasRedFlags = result.redFlagCount > 0;
   const status = hasRedFlags ? 'warning' : hasWarnings ? 'advisory' : 'pass';
   
-  // Diagram state
-  const [showDiagram, setShowDiagram] = useState(true);
-  const [diagramExpanded, setDiagramExpanded] = useState(false);
-  const [diagramReady, setDiagramReady] = useState(false);
-  const diagramRef = useRef<HTMLDivElement>(null);
+  // v2 Diagram state
+  const [displayMode, setDisplayMode] = useState<'diagram' | 'matrix'>('diagram');
+  const [view, setView] = useState<'desired' | 'proposed'>('desired');
   
   // Group choices
   const recommendedChoices = result.choices.filter(c => c.isDefault);
   const customChoices = result.choices.filter(c => !c.isDefault);
   const choicesWithWarnings = result.choices.filter(c => c.warnings.length > 0);
-  
-  // Generate Mermaid diagram
-  const mermaidCode = React.useMemo(() => {
-    try {
-      // Build simple flowchart from choices
-      const lines = ['flowchart LR'];
-      const addedNodes = new Set<string>();
 
-      result.choices.forEach(choice => {
-        const decision = decisions.find(d => d.id === choice.decisionId);
-        const option = decision?.options.find(o => o.id === choice.selectedOptionId);
-        if (!decision || !option) return;
+  // Compute benchmark matrix as lookup
+  const benchmarkMatrix = useMemo(() => {
+    if (!baseMatrix) return {};
+    const m: Record<string, string> = {};
+    baseMatrix.forEach((req: any) => {
+      m[`${req.from}-${req.to}`] = req.relationship;
+      m[`${req.to}-${req.from}`] = req.relationship;
+    });
+    return m;
+  }, [baseMatrix]);
 
-        const from = decision.primarySpace;
-        const to = option.targetSpace;
+  // Compute proposed matrix from choices
+  const proposedMatrix = useMemo(() => {
+    if (!baseMatrix) return {};
+    const updatedMatrix = applyDecisionsToMatrix(baseMatrix, result.choices);
+    const m: Record<string, string> = {};
+    updatedMatrix.forEach((req: any) => {
+      m[`${req.from}-${req.to}`] = req.relationship;
+      m[`${req.to}-${req.from}`] = req.relationship;
+    });
+    return m;
+  }, [baseMatrix, result.choices]);
 
-        // Add node definitions
-        if (!addedNodes.has(from)) {
-          lines.push(`  ${from}[${from}]`);
-          addedNodes.add(from);
+  // Compute deviations
+  const deviations = useMemo(() => {
+    if (!baseMatrix) return [];
+    const devs: any[] = [];
+    Object.keys(proposedMatrix).forEach(key => {
+      if (proposedMatrix[key] !== benchmarkMatrix[key] && benchmarkMatrix[key]) {
+        const [from, to] = key.split('-');
+        // Avoid duplicates (A-B and B-A)
+        if (from < to) {
+          devs.push({
+            fromSpace: from,
+            toSpace: to,
+            desired: benchmarkMatrix[key],
+            proposed: proposedMatrix[key]
+          });
         }
-        if (!addedNodes.has(to)) {
-          lines.push(`  ${to}[${to}]`);
-          addedNodes.add(to);
-        }
-
-        // Add edge based on relationship
-        const rel = option.relationship;
-        if (rel === 'A') {
-          lines.push(`  ${from} === ${to}`);
-        } else if (rel === 'B') {
-          lines.push(`  ${from} --- ${to}`);
-        } else if (rel === 'S') {
-          lines.push(`  ${from} -.- ${to}`);
-        }
-      });
-
-      return lines.join('\n');
-    } catch (e) {
-      console.error('Failed to generate diagram:', e);
-      return null;
-    }
-  }, [result.choices, decisions]);
-  
-  // Render Mermaid diagram
-  useEffect(() => {
-    if (!mermaidCode || !diagramRef.current || !showDiagram) return;
-    
-    const renderDiagram = async () => {
-      try {
-        // Check if mermaid is available
-        const mermaid = (window as any).mermaid;
-        if (!mermaid) {
-          console.warn('Mermaid not loaded');
-          return;
-        }
-        
-        // Clear previous
-        diagramRef.current!.innerHTML = '';
-        
-        // Create container
-        const container = document.createElement('div');
-        container.className = 'mermaid';
-        container.textContent = mermaidCode;
-        diagramRef.current!.appendChild(container);
-        
-        // Render
-        await mermaid.init(undefined, container);
-        setDiagramReady(true);
-      } catch (e) {
-        console.error('Mermaid render error:', e);
       }
-    };
-    
-    renderDiagram();
-  }, [mermaidCode, showDiagram]);
+    });
+    return devs;
+  }, [baseMatrix, benchmarkMatrix, proposedMatrix]);
   
   // PDF Export
   const handleExportPDF = async () => {
@@ -165,7 +134,7 @@ export function PersonalizationResult({
         presetName,
         baseSF,
         totalSF,
-        mermaidCode
+        mermaidCode: null
       });
     } catch (e) {
       console.error('PDF export failed:', e);
@@ -289,85 +258,157 @@ export function PersonalizationResult({
           </div>
         </div>
         
-        {/* Mermaid Diagram Section */}
-        {mermaidCode && (
+        {/* v2 Relationship Diagram + Matrix with Toggle */}
+        {presetSpaces && presetSpaces.length > 0 && (
           <section className="diagram-section">
             <div className="section-header">
               <h3>
                 <Eye className="section-icon" />
-                Relationship Diagram
+                Adjacency Visualization
               </h3>
               <div className="diagram-controls">
-                <button 
-                  className="control-btn"
-                  onClick={() => setShowDiagram(!showDiagram)}
-                >
-                  {showDiagram ? <EyeOff className="btn-icon" /> : <Eye className="btn-icon" />}
-                  {showDiagram ? 'Hide' : 'Show'}
-                </button>
-                {showDiagram && (
-                  <button 
+                {/* Display Mode Toggle */}
+                <div className="acg-toggle" style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e5e5e0' }}>
+                  <button
                     className="control-btn"
-                    onClick={() => setDiagramExpanded(!diagramExpanded)}
+                    onClick={() => setDisplayMode('diagram')}
+                    style={{ 
+                      backgroundColor: displayMode === 'diagram' ? '#1e3a5f' : '#fff',
+                      color: displayMode === 'diagram' ? '#fff' : '#1a1a1a',
+                      border: 'none', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}
                   >
-                    {diagramExpanded ? <Minimize2 className="btn-icon" /> : <Maximize2 className="btn-icon" />}
-                    {diagramExpanded ? 'Collapse' : 'Expand'}
+                    <GitBranch size={14} /> Diagram
                   </button>
-                )}
-              </div>
-            </div>
-            
-            {showDiagram && (
-              <div className={`diagram-container ${diagramExpanded ? 'expanded' : ''}`}>
-                <div ref={diagramRef} className="mermaid-diagram" />
-                {!diagramReady && (
-                  <div className="diagram-loading">
-                    Loading diagram...
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Abbreviation Index */}
-            {showDiagram && diagramReady && (
-              <div className="diagram-legend">
-                <p className="diagram-legend__title">Abbreviation Index</p>
-                <div className="diagram-legend__grid">
-                  {(() => {
-                    // Build unique abbreviation map from the diagram nodes
-                    const ABBREV_MAP: Record<string, string> = {
-                      OFF: 'Home Office', FOY: 'Foyer / Gallery', KIT: 'Kitchen',
-                      FR: 'Family Room', DR: 'Dining Room', GR: 'Great Room',
-                      MEDIA: 'Media Room', PRI: 'Primary Bedroom', GSL1: 'Guest Suite L1',
-                      GYM: 'Gym / Exercise', MUD: 'Mudroom', WINE: 'Wine Storage',
-                      SEC1: 'Secondary Bed 1', SEC2: 'Secondary Bed 2',
-                      OPSCORE: 'Operations Core', SCUL: 'Scullery',
-                      POOL: 'Pool', SPA: 'Spa', BAR: 'Bar',
-                      LIB: 'Library', TERR: 'Terrace', GAR: 'Garage',
-                      STAIR: 'Staircase', PRIHALL: 'Primary Hall',
-                      PRIBATH: 'Primary Bath', PRICL: 'Primary Closets',
-                      PRILNG: 'Primary Lounge'
-                    };
-                    // Only show abbreviations that appear in the current diagram
-                    const usedCodes = new Set<string>();
-                    result.choices.forEach(choice => {
-                      const decision = decisions.find(d => d.id === choice.decisionId);
-                      const option = decision?.options.find(o => o.id === choice.selectedOptionId);
-                      if (decision) usedCodes.add(decision.primarySpace);
-                      if (option) usedCodes.add(option.targetSpace);
-                    });
-                    return Array.from(usedCodes)
-                      .filter(code => ABBREV_MAP[code])
-                      .sort()
-                      .map(code => (
-                        <span key={code} className="diagram-legend__item">
-                          <strong>{code}</strong> {ABBREV_MAP[code]}
-                        </span>
-                      ));
-                  })()}
+                  <button
+                    className="control-btn"
+                    onClick={() => setDisplayMode('matrix')}
+                    style={{ 
+                      backgroundColor: displayMode === 'matrix' ? '#1e3a5f' : '#fff',
+                      color: displayMode === 'matrix' ? '#fff' : '#1a1a1a',
+                      border: 'none', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}
+                  >
+                    <LayoutGrid size={14} /> Matrix
+                  </button>
+                </div>
+                {/* Desired/Proposed Toggle */}
+                <div className="acg-toggle" style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e5e5e0', marginLeft: '8px' }}>
+                  <button
+                    className="control-btn"
+                    onClick={() => setView('desired')}
+                    style={{ 
+                      backgroundColor: view === 'desired' ? '#1e3a5f' : '#fff',
+                      color: view === 'desired' ? '#fff' : '#1a1a1a',
+                      border: 'none', padding: '4px 10px', fontSize: '12px', cursor: 'pointer'
+                    }}
+                  >
+                    Desired
+                  </button>
+                  <button
+                    className="control-btn"
+                    onClick={() => setView('proposed')}
+                    style={{ 
+                      backgroundColor: view === 'proposed' ? '#1e3a5f' : '#fff',
+                      color: view === 'proposed' ? '#fff' : '#1a1a1a',
+                      border: 'none', padding: '4px 10px', fontSize: '12px', cursor: 'pointer'
+                    }}
+                  >
+                    Achieved
+                  </button>
                 </div>
               </div>
+            </div>
+
+            {/* Diagram View */}
+            {displayMode === 'diagram' && (
+              <RelationshipDiagram
+                spaces={presetSpaces}
+                benchmarkMatrix={benchmarkMatrix}
+                proposedMatrix={proposedMatrix}
+                deviations={deviations}
+                view={view}
+              />
             )}
+
+            {/* Matrix View */}
+            {displayMode === 'matrix' && (() => {
+              const currentMatrix = view === 'desired' ? benchmarkMatrix : proposedMatrix;
+              const spaceCodes = presetSpaces.map((s: any) => s.code);
+              const REL_COLORS: Record<string, string> = {
+                A: '#4caf50', N: '#2196f3', B: '#ff9800', S: '#f44336'
+              };
+              return (
+                <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+                  <table style={{ borderCollapse: 'collapse', fontSize: '11px', width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '4px 6px', fontSize: '10px', color: '#6b6b6b' }}></th>
+                        {spaceCodes.map((code: string) => (
+                          <th key={code} style={{ padding: '4px 2px', fontSize: '9px', color: '#1e3a5f', fontWeight: 600, textAlign: 'center', writingMode: 'vertical-lr', height: '60px' }}>{code}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {spaceCodes.map((fromCode: string) => (
+                        <tr key={fromCode}>
+                          <th style={{ padding: '4px 6px', fontSize: '10px', color: '#1e3a5f', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>{fromCode}</th>
+                          {spaceCodes.map((toCode: string) => {
+                            if (fromCode === toCode) {
+                              return <td key={`${fromCode}-${toCode}`} style={{ padding: '2px', textAlign: 'center', background: '#f5f5f5', color: '#ccc', fontSize: '10px' }}>-</td>;
+                            }
+                            const rel = currentMatrix[`${fromCode}-${toCode}`];
+                            const isDev = view === 'proposed' && deviations.some((d: any) => 
+                              (d.fromSpace === fromCode && d.toSpace === toCode) || (d.fromSpace === toCode && d.toSpace === fromCode)
+                            );
+                            return (
+                              <td key={`${fromCode}-${toCode}`} style={{
+                                padding: '2px', textAlign: 'center', fontSize: '10px', fontWeight: 600,
+                                backgroundColor: rel ? REL_COLORS[rel] : 'transparent',
+                                color: rel ? '#fff' : '#ddd',
+                                border: isDev ? '2px solid #f57c00' : '1px solid #eee',
+                              }}>
+                                {rel || '\u00b7'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Legend */}
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '11px', color: '#6b6b6b' }}>
+                    {Object.entries(REL_COLORS).map(([key, color]) => (
+                      <span key={key} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '14px', height: '14px', borderRadius: '3px', backgroundColor: color, display: 'inline-block' }}></span>
+                        {key === 'A' ? 'Adjacent' : key === 'N' ? 'Near' : key === 'B' ? 'Buffered' : 'Separate'}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Deviations */}
+                  {view === 'proposed' && deviations.length > 0 && (
+                    <div style={{ marginTop: '12px', padding: '10px', background: '#fff8e1', borderRadius: '6px', border: '1px solid #ffe082' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '13px', color: '#f57c00', marginBottom: '6px' }}>
+                        <AlertTriangle size={16} />
+                        {deviations.length} Deviation{deviations.length !== 1 ? 's' : ''} from N4S Standard
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#6b6b6b' }}>
+                        {deviations.slice(0, 5).map((dev: any, idx: number) => (
+                          <li key={idx}>
+                            <strong>{dev.fromSpace} → {dev.toSpace}:</strong> Desired {dev.desired}, Proposed {dev.proposed}
+                          </li>
+                        ))}
+                        {deviations.length > 5 && <li>...and {deviations.length - 5} more</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </section>
         )}
         
