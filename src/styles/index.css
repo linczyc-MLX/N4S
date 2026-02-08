@@ -4559,8 +4559,8 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
    ============================================ */
 .mvp-module__header-right {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
 }
 
 /* ============================================

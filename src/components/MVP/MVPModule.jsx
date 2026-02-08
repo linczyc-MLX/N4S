@@ -645,7 +645,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
     // ============================================
     return (
       <div className="mvp-module">
-        {/* Top Action Bar — Save + Export on right, matching KYC pattern */}
+        {/* Top Action Bar — Save on right, matching KYC pattern */}
         <div className="kyc-module__top-bar">
           <div className="kyc-module__save-area">
             <button
@@ -656,15 +656,6 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
               <Save size={16} />
               {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </button>
-            <button
-              onClick={handleExportReport}
-              disabled={isExporting || !preset}
-              className="kyc-export-btn"
-              title="Export comprehensive MVP Report PDF"
-            >
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </button>
             {lastSaved && !hasUnsavedChanges && (
               <span className="kyc-save-time">
                 Last saved: {new Date(lastSaved).toLocaleTimeString()}
@@ -673,7 +664,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
           </div>
         </div>
 
-        {/* Module Header — title + Tier badge */}
+        {/* Module Header — title + Export + Tier badge */}
         <div className="mvp-module__header">
           <div className="mvp-module__title-group">
             <h1 className="mvp-module__title">
@@ -690,6 +681,15 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
           </div>
 
           <div className="mvp-module__header-right">
+            <button
+              onClick={handleExportReport}
+              disabled={isExporting || !preset}
+              className="kyc-export-btn"
+              title="Export comprehensive MVP Report PDF"
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </button>
             <TierBenchmarkDropdown
               estimatedTier={estimatedTier}
               isOpen={tierDropdownOpen}
