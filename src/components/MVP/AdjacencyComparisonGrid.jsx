@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useMemo, useContext } from 'react';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, LayoutGrid, GitBranch } from 'lucide-react';
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
 import { 
@@ -18,6 +18,7 @@ import {
   applyDecisionsToMatrix,
   getDecisionsForPreset
 } from '../../mansion-program';
+import RelationshipDiagram from './RelationshipDiagram';
 
 // N4S Brand Colors (from Brand Guide)
 const COLORS = {
@@ -47,6 +48,7 @@ const RELATIONSHIP_CONFIG = {
 export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
   // State
   const [view, setView] = useState('desired'); // 'desired' | 'proposed'
+  const [displayMode, setDisplayMode] = useState('diagram'); // 'matrix' | 'diagram'
   const [filterZone, setFilterZone] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
 
@@ -207,8 +209,28 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
               ))}
             </div>
 
-            {/* Toggle Switch - Matching Image 4 style */}
-            <div className="acg-toggle-wrapper">
+            <div className="acg-toggle-group">
+              {/* Display Mode Toggle */}
+              <div className="acg-toggle">
+                <button
+                  className={`acg-toggle-option ${displayMode === 'diagram' ? 'active' : ''}`}
+                  onClick={() => setDisplayMode('diagram')}
+                  title="Relationship Diagram"
+                >
+                  <GitBranch size={14} style={{ marginRight: '4px' }} />
+                  Diagram
+                </button>
+                <button
+                  className={`acg-toggle-option ${displayMode === 'matrix' ? 'active' : ''}`}
+                  onClick={() => setDisplayMode('matrix')}
+                  title="Adjacency Matrix"
+                >
+                  <LayoutGrid size={14} style={{ marginRight: '4px' }} />
+                  Matrix
+                </button>
+              </div>
+
+              {/* Desired/Achieved Toggle */}
               <div className="acg-toggle">
                 <button
                   className={`acg-toggle-option ${view === 'desired' ? 'active' : ''}`}
@@ -226,6 +248,20 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
             </div>
           </div>
 
+          {/* DIAGRAM VIEW */}
+          {displayMode === 'diagram' && presetData?.spaces && (
+            <RelationshipDiagram
+              spaces={presetData.spaces}
+              benchmarkMatrix={benchmarkMatrix}
+              proposedMatrix={proposedMatrix}
+              deviations={deviations}
+              view={view}
+            />
+          )}
+
+          {/* MATRIX VIEW */}
+          {displayMode === 'matrix' && (
+            <>
           {/* Filters */}
           <div className="acg-filters-row">
             <label className="acg-filter">
@@ -309,7 +345,11 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
             </div>
           )}
 
+          </>
+          )}
+
           {/* Abbreviation Index */}
+          {displayMode === 'matrix' && (
           <div className="acg-legend">
             <span className="acg-legend__title">Abbreviation Index</span>
             <div className="acg-legend__grid">
@@ -323,6 +363,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
               })}
             </div>
           </div>
+          )}
 
           {/* Action Row */}
           <div className="acg-action-row">
@@ -467,6 +508,12 @@ const componentStyles = `
   align-items: center;
 }
 
+.acg-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .acg-toggle {
   display: flex;
   background-color: ${COLORS.border};
@@ -484,6 +531,8 @@ const componentStyles = `
   border: none;
   background-color: transparent;
   color: ${COLORS.textMuted};
+  display: flex;
+  align-items: center;
 }
 
 .acg-toggle-option.active {
