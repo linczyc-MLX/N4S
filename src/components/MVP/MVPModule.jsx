@@ -675,7 +675,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
               <button
                 onClick={handleExportReport}
                 disabled={isExporting || !preset}
-                className="btn btn--primary"
+                className="kyc-export-btn"
                 title="Export comprehensive MVP Report PDF"
               >
                 <FileDown size={16} className={isExporting ? 'spinning' : ''} />
