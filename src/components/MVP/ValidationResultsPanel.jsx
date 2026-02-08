@@ -17,9 +17,10 @@
  */
 
 import React, { useState, useMemo, useContext, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, AlertTriangle, Play, XCircle, Info } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, Play, XCircle, Info, FileDown } from 'lucide-react';
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
+import { generateMVPValidationReport } from './MVPValidationReport';
 import { 
   getPreset,
   applyDecisionsToMatrix,
@@ -358,9 +359,10 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
   const [activeTab, setActiveTab] = useState('modules');
   const [hasRun, setHasRun] = useState(false);
   const [validationTime, setValidationTime] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Context
-  const { fyiData, updateMVPAdjacencyConfig } = useContext(AppContext);
+  const { fyiData, kycData, updateMVPAdjacencyConfig } = useContext(AppContext);
   const { preset, baseSF } = useKYCData();
   
   // Get preset data
@@ -522,6 +524,39 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
     }
   }, [overallScore, moduleScores, redFlagStatus, enabledBridges, updateMVPAdjacencyConfig]);
 
+  // Export compact validation PDF
+  const handleExportValidation = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const pc = kycData?.principal?.portfolioContext || {};
+      const clientName = [pc.principalFirstName, pc.principalLastName].filter(Boolean).join(' ') || 'Client';
+      const projectName = kycData?.principal?.projectParameters?.projectName || 'Project';
+
+      // Determine tier label
+      const tierLabel = preset === '20k' ? { tier: '20K', label: 'Estate' }
+        : preset === '15k' ? { tier: '15K', label: 'Grand' }
+        : preset === '10k' ? { tier: '10K', label: 'Signature' }
+        : { tier: preset || 'Custom', label: 'Custom' };
+
+      await generateMVPValidationReport({
+        clientName,
+        projectName,
+        estimatedTier: tierLabel,
+        presetData,
+        benchmarkMatrix,
+        proposedMatrix,
+        deviations,
+        bridgeConfig: presetData?.bridgeConfig || {},
+        enabledBridges,
+      });
+    } catch (err) {
+      console.error('[Validation Report] Export failed:', err);
+      alert('Validation report export failed. Check console for details.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [kycData, preset, presetData, benchmarkMatrix, proposedMatrix, deviations, enabledBridges]);
+
   const triggeredRedFlags = redFlagStatus.filter(rf => rf.triggered);
   const missingBridges = bridgeStatus.filter(b => b.required && !b.present);
   const allPassed = triggeredRedFlags.length === 0 && overallScore >= 80;
@@ -682,6 +717,15 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
 
             {/* Action Buttons */}
             <div className="vrp-actions">
+              <button
+                className="vrp-secondary-btn"
+                onClick={handleExportValidation}
+                disabled={isExporting}
+                title="Export Validation Summary PDF"
+              >
+                <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+                {isExporting ? 'Exporting...' : 'Export Validation PDF'}
+              </button>
               {onViewMatrix && (
                 <button className="vrp-secondary-btn" onClick={onViewMatrix}>
                   View Adjacency Matrix

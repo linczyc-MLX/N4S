@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   ClipboardCheck, CheckCircle2, XCircle,
   Home, Users, Dumbbell, LayoutGrid,
   Building, Layers, ArrowRight, Sparkles, BookOpen,
-  GitCompare, Play, Database, List, FileText,
+  GitCompare, Play, Database, List, FileText, FileDown,
   ChevronRight, ChevronDown, Save
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useKYCData } from '../../hooks/useKYCData';
 import AdjacencyPersonalizationView from './AdjacencyPersonalizationView';
 import ModuleLibraryView from './ModuleLibraryView';
 import AdjacencyComparisonGrid from './AdjacencyComparisonGrid';
@@ -14,6 +15,12 @@ import ValidationResultsPanel from './ValidationResultsPanel';
 import TierDataAdmin from './TierDataAdmin';
 import ProgramSummaryView from './ProgramSummaryView';
 import MVPDocumentation from './MVPDocumentation';
+import { generateMVPReport } from './MVPReportGenerator';
+import { 
+  getPreset,
+  applyDecisionsToMatrix,
+  ADJACENCY_DECISIONS,
+} from '../../mansion-program';
 import { 
   transformKYCToMVPBrief, 
   getMVPBriefSummary, 
@@ -297,9 +304,11 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   // Any changes to these in other modules trigger re-render here.
   // MVP checklist state is stored in fyiData (PHP backend only saves clientData, kycData, fyiData)
   const { kycData, fyiData, activeRespondent, updateMVPChecklistItem, updateMVPModuleReviewStatus, hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
+  const { preset, baseSF } = useKYCData();
   
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'modules' | 'personalization' | 'comparison' | 'validation' | 'program' | 'admin'
   const [tierDropdownOpen, setTierDropdownOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Module review status from fyiData (persisted)
   const moduleReviewStatus = useMemo(() => {
@@ -316,6 +325,82 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
   const handleModuleChecklistChange = (itemId, checked) => {
     updateMVPChecklistItem(itemId, checked);
   };
+
+  // ── Export MVP Report ─────────────────────────────────────────────────
+  const handleExportReport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      // Resolve preset data
+      const presetData = preset ? getPreset(preset) : null;
+      if (!presetData) { alert('No tier data available. Please set a program tier in FYI.'); return; }
+
+      // Build matrices
+      const benchmarkMatrix = {};
+      (presetData.adjacencyMatrix || []).forEach(adj => {
+        if (adj.fromSpaceCode && adj.toSpaceCode) benchmarkMatrix[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
+      });
+
+      const savedDecisions = fyiData?.mvpAdjacencyConfig?.decisionAnswers || {};
+      let proposedMatrix = { ...benchmarkMatrix };
+      if (Object.keys(savedDecisions).length > 0) {
+        const choices = Object.entries(savedDecisions).map(([decisionId, optionId]) => ({
+          decisionId, selectedOptionId: optionId, isDefault: false, warnings: []
+        }));
+        const applied = applyDecisionsToMatrix(presetData.adjacencyMatrix, choices);
+        proposedMatrix = {};
+        applied.forEach(adj => {
+          if (adj.fromSpaceCode && adj.toSpaceCode) proposedMatrix[`${adj.fromSpaceCode}-${adj.toSpaceCode}`] = adj.relationship;
+        });
+      }
+
+      // Deviations
+      const deviations = [];
+      Object.keys(benchmarkMatrix).forEach(key => {
+        const bm = benchmarkMatrix[key], pm = proposedMatrix[key];
+        if (bm && pm && bm !== pm) {
+          const [from, to] = key.split('-');
+          deviations.push({ fromSpace: from, toSpace: to, desired: bm, proposed: pm });
+        }
+      });
+
+      // Enabled bridges
+      const enabledBridges = new Set();
+      Object.entries(savedDecisions).forEach(([decisionId, optionId]) => {
+        const dec = ADJACENCY_DECISIONS?.find(d => d.id === decisionId);
+        if (dec) {
+          const opt = dec.options.find(o => o.id === optionId);
+          if (opt?.bridgeRequired) enabledBridges.add(opt.bridgeRequired);
+        }
+      });
+
+      // Client info
+      const pc = kycData?.principal?.portfolioContext || {};
+      const clientName = [pc.principalFirstName, pc.principalLastName].filter(Boolean).join(' ') || 'Client';
+      const secondaryName = [pc.secondaryFirstName, pc.secondaryLastName].filter(Boolean).join(' ') || null;
+      const projectName = kycData[activeRespondent]?.projectParameters?.projectName || 'New Project';
+
+      await generateMVPReport({
+        clientName,
+        secondaryName,
+        projectName,
+        estimatedTier,
+        presetData,
+        benchmarkMatrix,
+        proposedMatrix,
+        deviations,
+        decisionAnswers: savedDecisions,
+        decisions: ADJACENCY_DECISIONS || [],
+        bridgeConfig: presetData.bridgeConfig || {},
+        enabledBridges,
+        fyiSummary: {},
+      });
+    } catch (err) {
+      console.error('[MVP Report] Export failed:', err);
+      alert('Report export failed. Check console for details.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [preset, fyiData, kycData, activeRespondent, estimatedTier]);
   
   // Calculate gate status based on completion
   // Deployment Workflow: A (Profile) → B (Space Program) → C (Module Validation) → D (Adjacency Lock) → E (Brief Ready)
@@ -647,6 +732,15 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
             </button>
             <button onClick={() => setViewMode('admin')} className="n4s-btn n4s-btn--ghost">
               <Database size={16} /> Tier Data Admin
+            </button>
+            <button
+              onClick={handleExportReport}
+              disabled={isExporting || !preset}
+              className="n4s-btn n4s-btn--secondary"
+              title="Export comprehensive MVP Report PDF"
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
             </button>
           </div>
         </div>
