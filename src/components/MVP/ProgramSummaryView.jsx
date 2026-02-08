@@ -25,6 +25,7 @@ import {
 import AppContext from '../../contexts/AppContext';
 import { useKYCData } from '../../hooks/useKYCData';
 import { getPreset } from '../../mansion-program';
+import { transformFYIToMVPProgram, getFYIProgramSummary } from '../../lib/mvp-bridge';
 
 // N4S Brand Colors
 const COLORS = {
@@ -147,7 +148,7 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
   const { fyiData } = useContext(AppContext);
   const { preset, baseSF } = useKYCData();
   
-  // Get preset data
+  // Get preset data (fallback when no FYI)
   const presetData = useMemo(() => {
     try {
       return preset ? getPreset(preset) : null;
@@ -157,11 +158,32 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
     }
   }, [preset]);
 
-  // Get spaces from preset
-  const spaces = presetData?.spaces || [];
+  // FYI data — source of truth when available
+  const fyiProgram = useMemo(() => {
+    return transformFYIToMVPProgram(fyiData);
+  }, [fyiData]);
+
+  const fyiSummary = useMemo(() => {
+    return getFYIProgramSummary(fyiProgram);
+  }, [fyiProgram]);
+
+  const hasFYIData = !!fyiProgram;
+
+  // Get spaces: prefer FYI, fall back to preset benchmark
+  const spaces = hasFYIData ? fyiProgram.spaces : (presetData?.spaces || []);
   
   // Group spaces by zone
   const spacesByZone = useMemo(() => {
+    if (hasFYIData && fyiProgram.spacesByZone) {
+      // Use FYI's zone grouping (preserves zone names and order)
+      return Object.values(fyiProgram.spacesByZone).sort((a, b) => {
+        const configA = getZoneConfig(a.name);
+        const configB = getZoneConfig(b.name);
+        return configA.order - configB.order;
+      });
+    }
+
+    // Fallback: group preset spaces by zone
     const groups = {};
     spaces.forEach(space => {
       const zone = space.zone || 'Unassigned';
@@ -171,7 +193,6 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
       groups[zone].push(space);
     });
     
-    // Sort zones by config order
     const sortedZones = Object.keys(groups).sort((a, b) => {
       const configA = getZoneConfig(a);
       const configB = getZoneConfig(b);
@@ -183,15 +204,18 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
       spaces: groups[zone],
       totalSF: groups[zone].reduce((sum, s) => sum + (s.targetSF || s.baseSF || 0), 0)
     }));
-  }, [spaces]);
+  }, [spaces, hasFYIData, fyiProgram]);
 
-  // Calculate totals
-  const totalSF = spaces.reduce((sum, s) => sum + (s.targetSF || s.baseSF || 0), 0);
-  const uniqueLevels = [...new Set(spaces.map(s => s.level))].length;
+  // Calculate totals — use FYI totals when available (includes circulation)
+  const totalSF = hasFYIData ? fyiSummary.totals.totalSF : spaces.reduce((sum, s) => sum + (s.targetSF || s.baseSF || 0), 0);
+  const targetSF = hasFYIData ? fyiSummary.targetSF : baseSF;
+  const uniqueLevels = hasFYIData 
+    ? (fyiSummary.levels?.length || [...new Set(spaces.map(s => s.level))].length)
+    : [...new Set(spaces.map(s => s.level))].length;
   const uniqueZones = spacesByZone.length;
 
   // No data state
-  if (!presetData || spaces.length === 0) {
+  if ((!hasFYIData && !presetData) || spaces.length === 0) {
     return (
       <div className="psv-container">
         <div className="psv-header">
@@ -258,11 +282,11 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
         />
 
         {/* Target vs Actual */}
-        {baseSF && (
+        {targetSF && (
           <div className="psv-target-card">
             <div className="psv-target-row">
               <span className="psv-target-label">Target SF (from KYC):</span>
-              <span className="psv-target-value">{baseSF.toLocaleString()} SF</span>
+              <span className="psv-target-value">{targetSF.toLocaleString()} SF</span>
             </div>
             <div className="psv-target-row">
               <span className="psv-target-label">Program Total:</span>
@@ -270,9 +294,9 @@ export default function ProgramSummaryView({ onBack, onGoToFYI }) {
             </div>
             <div className="psv-target-row">
               <span className="psv-target-label">Variance:</span>
-              <span className={`psv-target-value ${totalSF > baseSF ? 'over' : 'under'}`}>
-                {totalSF > baseSF ? '+' : ''}{(totalSF - baseSF).toLocaleString()} SF
-                ({((totalSF - baseSF) / baseSF * 100).toFixed(1)}%)
+              <span className={`psv-target-value ${totalSF > targetSF ? 'over' : 'under'}`}>
+                {totalSF > targetSF ? '+' : ''}{(totalSF - targetSF).toLocaleString()} SF
+                ({((totalSF - targetSF) / targetSF * 100).toFixed(1)}%)
               </span>
             </div>
           </div>
