@@ -1,27 +1,28 @@
 /**
- * RelationshipDiagram
+ * RelationshipDiagram — N4S Architectural Bubble Diagram (v2)
  * 
- * Interactive force-directed bubble diagram for adjacency visualization.
- * Uses D3 force simulation for physics-based layout with React SVG rendering.
+ * Interactive force-directed visualization of spatial adjacency relationships.
+ * D3 force simulation for physics layout, React SVG for rendering.
  * 
- * Features:
- * - Bubble sizing by square footage (architectural convention)
- * - Zone clustering with soft background hulls
- * - Edge styling by relationship type (A/N/B/S)
- * - Dual-mode: Desired (benchmark) vs Proposed (client decisions)
- * - Deviation highlighting with animated transitions
- * - Red flag overlay on violated adjacencies
- * - Interactive hover to highlight connections
+ * v2 Improvements:
+ * - Simulation pre-computed (no flicker) and stable across view toggle
+ * - Sqrt-scaled bubble sizing proportional to space SF
+ * - Zone clustering with convex hull backgrounds + zone tinted nodes
+ * - Deviation diamonds with benchmark→proposed annotation on hover
+ * - Red flag halos, badges, and summary panel
+ * - Rich tooltips with zone badge, SF, and connection list
+ * - Abbreviation index
  * 
- * Follows N4S Brand Guide styling.
+ * Follows N4S Brand Guide — no gradients, no drop shadows, warm palette.
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import * as d3 from 'd3';
 
-// ============================================================================
-// N4S BRAND COLORS
-// ============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
+// BRAND & CONFIG
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const COLORS = {
   navy: '#1e3a5f',
   gold: '#c9a227',
@@ -30,460 +31,357 @@ const COLORS = {
   border: '#e5e5e0',
   text: '#1a1a1a',
   textMuted: '#6b6b6b',
+  accentLight: '#f5f0e8',
   success: '#2e7d32',
   warning: '#f57c00',
   error: '#d32f2f',
 };
 
-// Zone color palette - soft, sophisticated, distinct
+// Zone visual styling — soft, warm, distinct per zone
 const ZONE_COLORS = {
-  'Entry + Formal':    { fill: '#e8edf3', stroke: '#8da4c4', text: '#3a5a8a' },
-  'Arrival + Formal':  { fill: '#e8edf3', stroke: '#8da4c4', text: '#3a5a8a' },
-  'Family Hub':        { fill: '#eef3e8', stroke: '#a4c48d', text: '#4a6a3a' },
-  'Service':           { fill: '#f0ece4', stroke: '#c4b48d', text: '#6a5a3a' },
-  'Service Core':      { fill: '#f0ece4', stroke: '#c4b48d', text: '#6a5a3a' },
-  'Wellness':          { fill: '#e4f0ef', stroke: '#8dc4bd', text: '#3a6a64' },
-  'Outdoor':           { fill: '#e8f2e4', stroke: '#8dc48d', text: '#3a6a3a' },
-  'Primary Wing':      { fill: '#f0e8ef', stroke: '#c48dbc', text: '#6a3a64' },
-  'Guest Wing':        { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a' },
-  'Guest Wing Node':   { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a' },
-  'Hospitality':       { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a' },
-  'Circulation':       { fill: '#ececec', stroke: '#b0b0b0', text: '#6b6b6b' },
-  'Support':           { fill: '#ececec', stroke: '#b0b0b0', text: '#6b6b6b' },
+  'Entry + Formal':   { fill: '#e8edf3', stroke: '#8da4c4', text: '#3a5a8a', node: '#d4dde9' },
+  'Arrival + Formal': { fill: '#e8edf3', stroke: '#8da4c4', text: '#3a5a8a', node: '#d4dde9' },
+  'Family Hub':       { fill: '#eef3e8', stroke: '#a4c48d', text: '#4a6a3a', node: '#dde9d4' },
+  'Service':          { fill: '#f0ece4', stroke: '#c4b48d', text: '#6a5a3a', node: '#e5ddd0' },
+  'Service Core':     { fill: '#f0ece4', stroke: '#c4b48d', text: '#6a5a3a', node: '#e5ddd0' },
+  'Wellness':         { fill: '#e4f0ef', stroke: '#8dc4bd', text: '#3a6a64', node: '#d0e5e2' },
+  'Outdoor':          { fill: '#e8f2e4', stroke: '#8dc48d', text: '#3a6a3a', node: '#d4e9d0' },
+  'Primary Wing':     { fill: '#f0e8ef', stroke: '#c48dbc', text: '#6a3a64', node: '#e5d4e2' },
+  'Guest Wing':       { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a', node: '#e5ddd4' },
+  'Guest Wing Node':  { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a', node: '#e5ddd4' },
+  'Hospitality':      { fill: '#f0ece8', stroke: '#c4a48d', text: '#6a5a4a', node: '#e5ddd4' },
+  'Circulation':      { fill: '#ececec', stroke: '#b0b0b0', text: '#6b6b6b', node: '#e0e0e0' },
+  'Support':          { fill: '#ececec', stroke: '#b0b0b0', text: '#6b6b6b', node: '#e0e0e0' },
 };
+const DEFAULT_ZONE = { fill: '#f0f0f0', stroke: '#b0b0b0', text: '#6b6b6b', node: '#e8e8e8' };
 
-const DEFAULT_ZONE_COLOR = { fill: '#f0f0f0', stroke: '#b0b0b0', text: '#6b6b6b' };
-
-// Relationship edge styles
+// Edge rendering per relationship type
 const EDGE_STYLES = {
-  A: { color: '#4caf50', width: 3, dash: 'none',    label: 'Adjacent',  opacity: 0.8 },
-  N: { color: '#2196f3', width: 2, dash: 'none',    label: 'Near',      opacity: 0.6 },
-  B: { color: '#ff9800', width: 2, dash: '6,4',     label: 'Buffered',  opacity: 0.5 },
-  S: { color: '#f44336', width: 1.5, dash: '3,3',   label: 'Separate',  opacity: 0.4 },
+  A: { color: '#4caf50', width: 3,   dash: 'none', label: 'Adjacent',  baseOpacity: 0.8 },
+  N: { color: '#2196f3', width: 2,   dash: 'none', label: 'Near',      baseOpacity: 0.55 },
+  B: { color: '#ff9800', width: 1.5, dash: '6,4',  label: 'Buffered',  baseOpacity: 0.5 },
+  S: { color: '#f44336', width: 1.5, dash: '3,3',  label: 'Separate',  baseOpacity: 0.35 },
 };
 
-// ============================================================================
-// ZONE LAYOUT POSITIONS - semantic spatial arrangement
-// ============================================================================
+// Semantic zone anchor positions — approximate where zones sit in a real mansion plan
 const ZONE_POSITIONS = {
-  'Entry + Formal':    { x: 0.25, y: 0.2 },
-  'Arrival + Formal':  { x: 0.25, y: 0.2 },
-  'Family Hub':        { x: 0.55, y: 0.3 },
-  'Service':           { x: 0.85, y: 0.55 },
-  'Service Core':      { x: 0.85, y: 0.55 },
-  'Wellness':          { x: 0.7, y: 0.75 },
-  'Outdoor':           { x: 0.45, y: 0.85 },
-  'Primary Wing':      { x: 0.15, y: 0.6 },
-  'Guest Wing':        { x: 0.35, y: 0.75 },
-  'Guest Wing Node':   { x: 0.35, y: 0.75 },
-  'Hospitality':       { x: 0.35, y: 0.75 },
-  'Circulation':       { x: 0.5, y: 0.5 },
-  'Support':           { x: 0.75, y: 0.8 },
+  'Entry + Formal':   { x: 0.22, y: 0.18 },
+  'Arrival + Formal': { x: 0.22, y: 0.18 },
+  'Family Hub':       { x: 0.52, y: 0.30 },
+  'Service':          { x: 0.85, y: 0.50 },
+  'Service Core':     { x: 0.85, y: 0.50 },
+  'Wellness':         { x: 0.72, y: 0.75 },
+  'Outdoor':          { x: 0.48, y: 0.82 },
+  'Primary Wing':     { x: 0.15, y: 0.60 },
+  'Guest Wing':       { x: 0.38, y: 0.72 },
+  'Guest Wing Node':  { x: 0.38, y: 0.72 },
+  'Hospitality':      { x: 0.38, y: 0.72 },
+  'Circulation':      { x: 0.50, y: 0.50 },
+  'Support':          { x: 0.78, y: 0.78 },
 };
 
-// ============================================================================
-// UTILITY: Convex hull with padding
-// ============================================================================
+// Red flag definitions — matching ValidationResultsPanel
+const RED_FLAG_CHECKS = [
+  {
+    id: 'rf-1', name: 'Guest → Primary Suite',
+    description: 'Guest areas directly access primary suite',
+    edges: [['GUEST1', 'PRI'], ['GST1', 'PRI']],
+    check: (m) => {
+      const r = m['GUEST1-PRI'] || m['PRI-GUEST1'] || m['GST1-PRI'] || m['PRI-GST1'];
+      return r === 'A' || r === 'N';
+    },
+  },
+  {
+    id: 'rf-2', name: 'Delivery → Front of House',
+    description: 'Service connects through formal areas',
+    edges: [['GAR', 'FOY'], ['GAR', 'GR']],
+    check: (m) => {
+      const a = m['GAR-FOY'] || m['FOY-GAR'];
+      const b = m['GAR-GR'] || m['GR-GAR'];
+      return a === 'A' || a === 'N' || b === 'A';
+    },
+  },
+  {
+    id: 'rf-3', name: 'Media → Bedroom Bleed',
+    description: 'Media not acoustically separated from bedrooms',
+    edges: [['MEDIA', 'PRI'], ['MEDIA', 'GUEST1'], ['MEDIA', 'GST1']],
+    check: (m) => {
+      const a = m['MEDIA-PRI'] || m['PRI-MEDIA'];
+      const b = m['MEDIA-GUEST1'] || m['GUEST1-MEDIA'] || m['MEDIA-GST1'] || m['GST1-MEDIA'];
+      return a === 'A' || a === 'N' || b === 'A' || b === 'N';
+    },
+  },
+  {
+    id: 'rf-4', name: 'Kitchen at Entry',
+    description: 'Kitchen visible from entry',
+    edges: [['KIT', 'FOY']],
+    check: (m) => (m['KIT-FOY'] || m['FOY-KIT']) === 'A',
+  },
+  {
+    id: 'rf-5', name: 'Guest Through Kitchen',
+    description: 'Guest circulation routes through kitchen',
+    edges: [['GUEST1', 'KIT'], ['GST1', 'KIT']],
+    check: (m) => {
+      const r = m['GUEST1-KIT'] || m['KIT-GUEST1'] || m['GST1-KIT'] || m['KIT-GST1'];
+      return r === 'A' || r === 'N';
+    },
+  },
+];
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════════
+
 function computeHull(points, padding = 30) {
   if (points.length < 2) {
-    // Single point: return circle approximation
     const p = points[0];
-    const steps = 12;
-    return Array.from({ length: steps }, (_, i) => {
-      const angle = (2 * Math.PI * i) / steps;
-      return [p[0] + padding * Math.cos(angle), p[1] + padding * Math.sin(angle)];
+    return Array.from({ length: 12 }, (_, i) => {
+      const a = (2 * Math.PI * i) / 12;
+      return [p[0] + padding * Math.cos(a), p[1] + padding * Math.sin(a)];
     });
   }
   if (points.length === 2) {
-    // Two points: return capsule shape
     const [a, b] = points;
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = -dy / len * padding;
-    const ny = dx / len * padding;
-    const steps = 6;
+    const angle = Math.atan2(dy, dx);
     const result = [];
-    for (let i = 0; i <= steps; i++) {
-      const angle = Math.PI / 2 + (Math.PI * i) / steps;
-      result.push([a[0] + padding * Math.cos(angle + Math.atan2(dy, dx)), 
-                    a[1] + padding * Math.sin(angle + Math.atan2(dy, dx))]);
+    for (let i = 0; i <= 6; i++) {
+      const t = Math.PI / 2 + (Math.PI * i) / 6;
+      result.push([a[0] + padding * Math.cos(t + angle), a[1] + padding * Math.sin(t + angle)]);
     }
-    for (let i = 0; i <= steps; i++) {
-      const angle = -Math.PI / 2 + (Math.PI * i) / steps;
-      result.push([b[0] + padding * Math.cos(angle + Math.atan2(dy, dx)), 
-                    b[1] + padding * Math.sin(angle + Math.atan2(dy, dx))]);
+    for (let i = 0; i <= 6; i++) {
+      const t = -Math.PI / 2 + (Math.PI * i) / 6;
+      result.push([b[0] + padding * Math.cos(t + angle), b[1] + padding * Math.sin(t + angle)]);
     }
     return result;
   }
 
-  // For 3+ points: compute convex hull then expand
   const hull = d3.polygonHull(points);
   if (!hull) return points.map(p => [p[0], p[1]]);
-
-  // Compute centroid
   const cx = d3.mean(hull, d => d[0]);
   const cy = d3.mean(hull, d => d[1]);
-
-  // Expand hull outward from centroid
   return hull.map(([x, y]) => {
-    const dx = x - cx;
-    const dy = y - cy;
+    const dx = x - cx, dy = y - cy;
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     return [x + (dx / dist) * padding, y + (dy / dist) * padding];
   });
 }
 
-// Smooth path for hull
-function hullPath(hullPoints) {
-  if (!hullPoints || hullPoints.length < 3) return '';
-  // Use a cardinal closed curve for smoothness
-  const line = d3.line().curve(d3.curveCatmullRomClosed.alpha(0.5));
-  return line(hullPoints);
+function hullPath(pts) {
+  if (!pts || pts.length < 3) return '';
+  return d3.line().curve(d3.curveCatmullRomClosed.alpha(0.5))(pts);
 }
 
 
-// ============================================================================
-// RED FLAG DEFINITIONS (matching ValidationResultsPanel)
-// ============================================================================
-const RED_FLAG_CHECKS = [
-  {
-    id: 'rf-1',
-    name: 'Guest → Primary Suite',
-    description: 'Guest areas directly access primary suite',
-    check: (matrix) => {
-      const rel = matrix['GUEST1-PRI'] || matrix['PRI-GUEST1'] || matrix['GST1-PRI'] || matrix['PRI-GST1'];
-      return rel === 'A' || rel === 'N';
-    },
-    edges: [['GUEST1', 'PRI'], ['GST1', 'PRI']],
-  },
-  {
-    id: 'rf-2',
-    name: 'Delivery → Front of House',
-    description: 'Service connects through formal areas',
-    check: (matrix) => {
-      const garFoy = matrix['GAR-FOY'] || matrix['FOY-GAR'];
-      const garGr = matrix['GAR-GR'] || matrix['GR-GAR'];
-      return garFoy === 'A' || garFoy === 'N' || garGr === 'A';
-    },
-    edges: [['GAR', 'FOY'], ['GAR', 'GR']],
-  },
-  {
-    id: 'rf-3',
-    name: 'Media → Bedroom Bleed',
-    description: 'Media not acoustically separated from bedrooms',
-    check: (matrix) => {
-      const mediaPri = matrix['MEDIA-PRI'] || matrix['PRI-MEDIA'];
-      const mediaGuest = matrix['MEDIA-GUEST1'] || matrix['GUEST1-MEDIA'] || matrix['MEDIA-GST1'] || matrix['GST1-MEDIA'];
-      return mediaPri === 'A' || mediaPri === 'N' || mediaGuest === 'A' || mediaGuest === 'N';
-    },
-    edges: [['MEDIA', 'PRI'], ['MEDIA', 'GUEST1'], ['MEDIA', 'GST1']],
-  },
-  {
-    id: 'rf-4',
-    name: 'Kitchen at Entry',
-    description: 'Kitchen visible from entry',
-    check: (matrix) => {
-      const kitFoy = matrix['KIT-FOY'] || matrix['FOY-KIT'];
-      return kitFoy === 'A';
-    },
-    edges: [['KIT', 'FOY']],
-  },
-  {
-    id: 'rf-5',
-    name: 'Guest Through Kitchen',
-    description: 'Guest circulation routes through kitchen',
-    check: (matrix) => {
-      const guestKit = matrix['GUEST1-KIT'] || matrix['KIT-GUEST1'] || matrix['GST1-KIT'] || matrix['KIT-GST1'];
-      return guestKit === 'A' || guestKit === 'N';
-    },
-    edges: [['GUEST1', 'KIT'], ['GST1', 'KIT']],
-  },
-];
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 export default function RelationshipDiagram({
   spaces,
   benchmarkMatrix,
   proposedMatrix,
-  deviations,
+  deviations = [],
   view = 'desired',
   width = 900,
   height = 650,
 }) {
   const svgRef = useRef(null);
-  const simulationRef = useRef(null);
   const [nodes, setNodes] = useState([]);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [tooltipData, setTooltipData] = useState(null);
-  const [isSimulationReady, setIsSimulationReady] = useState(false);
 
-  // Current matrix based on view mode
   const currentMatrix = view === 'desired' ? benchmarkMatrix : proposedMatrix;
 
-  // Determine which red flags are triggered in proposed view
+  // ── Radius scale (sqrt of SF) ───────────────────────────────────────────
+  const radiusScale = useMemo(() => {
+    if (!spaces?.length) return () => 14;
+    const maxSF = Math.max(...spaces.map(s => s.targetSF || 0), 100);
+    return (sf) => {
+      if (!sf || sf <= 0) return 13;
+      return 13 + 19 * Math.sqrt(sf / maxSF);
+    };
+  }, [spaces]);
+
+  // ── Red flags (proposed view) ───────────────────────────────────────────
   const triggeredRedFlags = useMemo(() => {
-    if (view !== 'proposed') return [];
+    if (view !== 'proposed' || !proposedMatrix) return [];
     return RED_FLAG_CHECKS.filter(rf => rf.check(proposedMatrix));
   }, [view, proposedMatrix]);
 
-  // Collect red-flagged edge keys for highlighting
   const redFlagEdgeKeys = useMemo(() => {
     const keys = new Set();
     triggeredRedFlags.forEach(rf => {
-      rf.edges.forEach(([from, to]) => {
-        keys.add(`${from}-${to}`);
-        keys.add(`${to}-${from}`);
-      });
+      rf.edges.forEach(([from, to]) => { keys.add(`${from}-${to}`); keys.add(`${to}-${from}`); });
     });
     return keys;
   }, [triggeredRedFlags]);
 
-  // Build edges from current matrix
+  // ── Build edges from CURRENT matrix (re-computes on view toggle) ────────
   const edges = useMemo(() => {
-    if (!currentMatrix) return [];
-    const edgeList = [];
+    if (!currentMatrix || !spaces?.length) return [];
     const seen = new Set();
-    const spaceCodeSet = new Set(spaces.map(s => s.code));
+    const codeSet = new Set(spaces.map(s => s.code));
+    const result = [];
 
-    Object.entries(currentMatrix).forEach(([key, relationship]) => {
+    Object.entries(currentMatrix).forEach(([key, rel]) => {
       const [from, to] = key.split('-');
-      if (!spaceCodeSet.has(from) || !spaceCodeSet.has(to)) return;
+      if (!codeSet.has(from) || !codeSet.has(to)) return;
       const canonical = [from, to].sort().join('-');
       if (seen.has(canonical)) return;
       seen.add(canonical);
 
-      // Check if this edge is a deviation
       const benchRel = benchmarkMatrix[key] || benchmarkMatrix[`${to}-${from}`];
       const propRel = proposedMatrix[key] || proposedMatrix[`${to}-${from}`];
       const isDeviation = view === 'proposed' && benchRel && propRel && benchRel !== propRel;
+      const isRedFlag = (redFlagEdgeKeys.has(key) || redFlagEdgeKeys.has(`${to}-${from}`)) && view === 'proposed';
 
-      // Check if red-flagged
-      const isRedFlag = redFlagEdgeKeys.has(key) || redFlagEdgeKeys.has(`${to}-${from}`);
-
-      edgeList.push({
-        source: from,
-        target: to,
-        relationship,
-        isDeviation,
-        isRedFlag: isRedFlag && view === 'proposed',
-        benchmarkRel: benchRel,
-      });
+      result.push({ source: from, target: to, relationship: rel, isDeviation, isRedFlag, benchmarkRel: benchRel });
     });
-    return edgeList;
+    return result;
   }, [currentMatrix, benchmarkMatrix, proposedMatrix, spaces, view, redFlagEdgeKeys]);
 
-  // Build zones for hull rendering
-  const zones = useMemo(() => {
-    const zoneMap = {};
-    spaces.forEach(s => {
-      if (!zoneMap[s.zone]) zoneMap[s.zone] = [];
-      zoneMap[s.zone].push(s.code);
-    });
-    return zoneMap;
-  }, [spaces]);
-
-  // ========================================================================
-  // D3 FORCE SIMULATION
-  // ========================================================================
+  // ── SIMULATION — runs ONCE on spaces, pre-computed to completion ────────
+  // Key: does NOT depend on edges/view, so layout is stable across toggle
   useEffect(() => {
-    if (!spaces || spaces.length === 0) return;
+    if (!spaces?.length) return;
 
     const margin = 60;
-    const simWidth = width - margin * 2;
-    const simHeight = height - margin * 2;
+    const simW = width - margin * 2;
+    const simH = height - margin * 2;
 
-    // Build node objects
+    // Build nodes (skip circulation/core nodes)
+    const skipCodes = new Set(['CIRC1', 'CIRC2', 'CORE2']);
     const nodeData = spaces
-      .filter(s => s.code !== 'CIRC1' && s.code !== 'CIRC2' && s.code !== 'CORE2') // Skip circulation
+      .filter(s => !skipCodes.has(s.code))
       .map(s => {
-        const zonePos = ZONE_POSITIONS[s.zone] || { x: 0.5, y: 0.5 };
-        const radius = Math.max(14, Math.min(32, Math.sqrt(s.targetSF || 100) * 0.9));
+        const pos = ZONE_POSITIONS[s.zone] || { x: 0.5, y: 0.5 };
         return {
           id: s.code,
           name: s.name,
           zone: s.zone,
           level: s.level,
           targetSF: s.targetSF,
-          radius,
-          // Initialize near zone position with some jitter
-          x: margin + zonePos.x * simWidth + (Math.random() - 0.5) * 40,
-          y: margin + zonePos.y * simHeight + (Math.random() - 0.5) * 40,
-          fx: null,
-          fy: null,
+          radius: radiusScale(s.targetSF),
+          x: margin + pos.x * simW + (Math.random() - 0.5) * 40,
+          y: margin + pos.y * simH + (Math.random() - 0.5) * 40,
         };
       });
 
-    // Build link objects for simulation
+    // Use BENCHMARK matrix for layout links (stable regardless of view)
     const nodeIds = new Set(nodeData.map(n => n.id));
-    const linkData = edges
-      .filter(e => nodeIds.has(e.source) && nodeIds.has(e.target))
-      .map(e => ({
-        source: e.source,
-        target: e.target,
-        relationship: e.relationship,
-        // Stronger attraction for A, weaker for S
-        strength: e.relationship === 'A' ? 0.8 : 
-                  e.relationship === 'N' ? 0.4 : 
-                  e.relationship === 'B' ? 0.15 : 0.05,
-        // Shorter distance for A, longer for S
-        distance: e.relationship === 'A' ? 55 : 
-                  e.relationship === 'N' ? 90 : 
-                  e.relationship === 'B' ? 130 : 170,
-      }));
+    const seen = new Set();
+    const linkData = [];
+    Object.entries(benchmarkMatrix).forEach(([key, rel]) => {
+      const [from, to] = key.split('-');
+      if (!nodeIds.has(from) || !nodeIds.has(to)) return;
+      const can = [from, to].sort().join('-');
+      if (seen.has(can)) return;
+      seen.add(can);
+      linkData.push({
+        source: from, target: to, relationship: rel,
+        distance: rel === 'A' ? 55 : rel === 'N' ? 90 : rel === 'B' ? 130 : 170,
+        strength: rel === 'A' ? 0.7 : rel === 'N' ? 0.35 : rel === 'B' ? 0.12 : 0.05,
+      });
+    });
 
-    // Create force simulation
-    const simulation = d3.forceSimulation(nodeData)
-      .force('link', d3.forceLink(linkData)
-        .id(d => d.id)
-        .distance(d => d.distance)
-        .strength(d => d.strength)
-      )
-      .force('charge', d3.forceManyBody()
-        .strength(-200)
-        .distanceMax(300)
-      )
-      .force('collision', d3.forceCollide()
-        .radius(d => d.radius + 6)
-        .strength(0.8)
-      )
-      // Zone clustering forces - pull nodes toward their zone center
-      .force('x', d3.forceX()
-        .x(d => {
-          const pos = ZONE_POSITIONS[d.zone] || { x: 0.5 };
-          return margin + pos.x * simWidth;
-        })
-        .strength(0.12)
-      )
-      .force('y', d3.forceY()
-        .y(d => {
-          const pos = ZONE_POSITIONS[d.zone] || { y: 0.5 };
-          return margin + pos.y * simHeight;
-        })
-        .strength(0.12)
-      )
-      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.02))
-      .alphaDecay(0.02)
-      .velocityDecay(0.3);
+    const sim = d3.forceSimulation(nodeData)
+      .force('link', d3.forceLink(linkData).id(d => d.id).distance(d => d.distance).strength(d => d.strength))
+      .force('charge', d3.forceManyBody().strength(-220).distanceMax(320))
+      .force('collision', d3.forceCollide().radius(d => d.radius + 5).strength(0.8))
+      .force('x', d3.forceX(d => { const p = ZONE_POSITIONS[d.zone] || { x: 0.5 }; return margin + p.x * simW; }).strength(0.12))
+      .force('y', d3.forceY(d => { const p = ZONE_POSITIONS[d.zone] || { y: 0.5 }; return margin + p.y * simH; }).strength(0.12))
+      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.015))
+      .alphaDecay(0.025)
+      .velocityDecay(0.35)
+      .stop();
 
-    simulationRef.current = simulation;
-
-    // Run simulation ticks
-    simulation.on('tick', () => {
-      // Constrain nodes within bounds
+    // Pre-compute to completion — NO flicker
+    for (let i = 0; i < 250; i++) {
+      sim.tick();
+      // Constrain bounds
       nodeData.forEach(d => {
         d.x = Math.max(margin + d.radius, Math.min(width - margin - d.radius, d.x));
         d.y = Math.max(margin + d.radius, Math.min(height - margin - d.radius, d.y));
       });
-      setNodes([...nodeData]);
-    });
+    }
 
-    // Mark ready after simulation settles
-    simulation.on('end', () => {
-      setIsSimulationReady(true);
-    });
+    setNodes([...nodeData]);
+    return () => sim.stop();
+  }, [spaces, benchmarkMatrix, width, height, radiusScale]);
 
-    // Also mark ready after some ticks if it hasn't ended
-    setTimeout(() => setIsSimulationReady(true), 2000);
-
-    return () => {
-      simulation.stop();
-    };
-  }, [spaces, edges, width, height]);
-
-  // ========================================================================
-  // NODE LOOKUP for edge rendering
-  // ========================================================================
+  // ── Derived lookups ─────────────────────────────────────────────────────
   const nodeMap = useMemo(() => {
-    const map = {};
-    nodes.forEach(n => { map[n.id] = n; });
-    return map;
+    const m = {};
+    nodes.forEach(n => { m[n.id] = n; });
+    return m;
   }, [nodes]);
 
-  // ========================================================================
-  // ZONE HULLS
-  // ========================================================================
+  const zones = useMemo(() => {
+    const m = {};
+    (spaces || []).forEach(s => { if (!m[s.zone]) m[s.zone] = []; m[s.zone].push(s.code); });
+    return m;
+  }, [spaces]);
+
   const zoneHulls = useMemo(() => {
-    if (nodes.length === 0) return [];
-    const hulls = [];
-    Object.entries(zones).forEach(([zoneName, spaceCodes]) => {
-      const zoneNodes = spaceCodes
-        .filter(code => code !== 'CIRC1' && code !== 'CIRC2' && code !== 'CORE2')
-        .map(code => nodeMap[code])
-        .filter(Boolean);
-      if (zoneNodes.length === 0) return;
-
-      const points = zoneNodes.map(n => [n.x, n.y]);
-      const maxRadius = Math.max(...zoneNodes.map(n => n.radius));
-      const hullPoints = computeHull(points, maxRadius + 18);
-      const color = ZONE_COLORS[zoneName] || DEFAULT_ZONE_COLOR;
-
-      hulls.push({
-        zone: zoneName,
-        path: hullPath(hullPoints),
-        color,
-        labelX: d3.mean(zoneNodes, n => n.x),
-        labelY: Math.min(...zoneNodes.map(n => n.y)) - maxRadius - 22,
-      });
-    });
-    return hulls;
+    if (!nodes.length) return [];
+    const skip = new Set(['CIRC1', 'CIRC2', 'CORE2']);
+    return Object.entries(zones).map(([zone, codes]) => {
+      const zn = codes.filter(c => !skip.has(c)).map(c => nodeMap[c]).filter(Boolean);
+      if (!zn.length) return null;
+      const pts = zn.map(n => [n.x, n.y]);
+      const maxR = Math.max(...zn.map(n => n.radius));
+      const color = ZONE_COLORS[zone] || DEFAULT_ZONE;
+      return {
+        zone, path: hullPath(computeHull(pts, maxR + 18)), color,
+        labelX: d3.mean(zn, n => n.x),
+        labelY: Math.min(...zn.map(n => n.y)) - maxR - 20,
+      };
+    }).filter(Boolean);
   }, [nodes, zones, nodeMap]);
 
-  // ========================================================================
-  // HOVER INTERACTION
-  // ========================================================================
+  // ── Hover helpers ───────────────────────────────────────────────────────
   const connectedNodes = useMemo(() => {
     if (!hoveredNode) return new Set();
-    const connected = new Set([hoveredNode]);
+    const s = new Set([hoveredNode]);
     edges.forEach(e => {
       const src = typeof e.source === 'object' ? e.source.id : e.source;
       const tgt = typeof e.target === 'object' ? e.target.id : e.target;
-      if (src === hoveredNode) connected.add(tgt);
-      if (tgt === hoveredNode) connected.add(src);
+      if (src === hoveredNode) s.add(tgt);
+      if (tgt === hoveredNode) s.add(src);
     });
-    return connected;
+    return s;
   }, [hoveredNode, edges]);
 
   const handleNodeEnter = useCallback((node, event) => {
     setHoveredNode(node.id);
-    const svgRect = svgRef.current?.getBoundingClientRect();
-    if (svgRect) {
-      setTooltipData({
-        x: event.clientX - svgRect.left,
-        y: event.clientY - svgRect.top,
-        node,
-      });
-    }
+    const r = svgRef.current?.getBoundingClientRect();
+    if (r) setTooltipData({ x: event.clientX - r.left, y: event.clientY - r.top, node });
   }, []);
 
-  const handleNodeLeave = useCallback(() => {
-    setHoveredNode(null);
-    setTooltipData(null);
-  }, []);
+  const handleNodeLeave = useCallback(() => { setHoveredNode(null); setTooltipData(null); }, []);
 
-  // ========================================================================
-  // EDGE RENDERING HELPERS
-  // ========================================================================
-  const getEdgeOpacity = useCallback((edge) => {
-    if (!hoveredNode) return EDGE_STYLES[edge.relationship]?.opacity || 0.5;
-    const src = typeof edge.source === 'object' ? edge.source.id : edge.source;
-    const tgt = typeof edge.target === 'object' ? edge.target.id : edge.target;
-    if (connectedNodes.has(src) && connectedNodes.has(tgt)) return 1;
-    return 0.06;
-  }, [hoveredNode, connectedNodes]);
-
-  const getNodeOpacity = useCallback((node) => {
+  const getNodeOpacity = useCallback((id) => {
     if (!hoveredNode) return 1;
-    return connectedNodes.has(node.id) ? 1 : 0.15;
+    return connectedNodes.has(id) ? 1 : 0.15;
   }, [hoveredNode, connectedNodes]);
 
-  // ========================================================================
+  const getEdgeOpacity = useCallback((edge) => {
+    const base = EDGE_STYLES[edge.relationship]?.baseOpacity || 0.5;
+    if (!hoveredNode) return base;
+    const s = typeof edge.source === 'object' ? edge.source.id : edge.source;
+    const t = typeof edge.target === 'object' ? edge.target.id : edge.target;
+    return (connectedNodes.has(s) && connectedNodes.has(t)) ? Math.min(base + 0.35, 1) : 0.05;
+  }, [hoveredNode, connectedNodes]);
+
+  // ── Empty state ─────────────────────────────────────────────────────────
+  if (!spaces?.length || !nodes.length) return null;
+
+  // ═════════════════════════════════════════════════════════════════════════
   // RENDER
-  // ========================================================================
-  if (!spaces || spaces.length === 0) return null;
+  // ═════════════════════════════════════════════════════════════════════════
 
   return (
     <div className="rd-container" style={{ position: 'relative' }}>
@@ -491,59 +389,27 @@ export default function RelationshipDiagram({
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         className="rd-svg"
-        style={{
-          width: '100%',
-          height: 'auto',
-          maxHeight: height,
-          background: COLORS.background,
-          borderRadius: '8px',
-          border: `1px solid ${COLORS.border}`,
-        }}
+        style={{ width: '100%', height: 'auto', maxHeight: height, background: COLORS.background, borderRadius: '8px', border: `1px solid ${COLORS.border}` }}
       >
-        {/* Definitions for markers and filters */}
         <defs>
-          {/* Red flag glow filter */}
-          <filter id="red-flag-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id="rd-glow-red" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="g" /><feMerge><feMergeNode in="g" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          {/* Deviation pulse filter */}
-          <filter id="deviation-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id="rd-glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="g" /><feMerge><feMergeNode in="g" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        {/* Zone background hulls */}
-        {zoneHulls.map(hull => (
-          <g key={hull.zone} className="rd-zone-hull">
-            <path
-              d={hull.path}
-              fill={hull.color.fill}
-              stroke={hull.color.stroke}
-              strokeWidth={1}
-              opacity={hoveredNode ? 0.4 : 0.7}
-              style={{ transition: 'opacity 0.3s ease' }}
-            />
-            <text
-              x={hull.labelX}
-              y={hull.labelY}
-              textAnchor="middle"
-              fill={hull.color.text}
-              fontSize="10"
-              fontWeight="600"
-              fontFamily="Inter, -apple-system, sans-serif"
-              letterSpacing="0.04em"
-              opacity={hoveredNode ? 0.3 : 0.7}
-              style={{ textTransform: 'uppercase', transition: 'opacity 0.3s ease' }}
-            >
-              {hull.zone}
+        {/* Zone hulls */}
+        {zoneHulls.map(h => (
+          <g key={h.zone}>
+            <path d={h.path} fill={h.color.fill} stroke={h.color.stroke} strokeWidth={1}
+              opacity={hoveredNode ? 0.35 : 0.65} style={{ transition: 'opacity 0.2s ease' }} />
+            <text x={h.labelX} y={h.labelY} textAnchor="middle" fill={h.color.text}
+              fontSize="10" fontWeight="600" fontFamily="Inter, -apple-system, sans-serif"
+              letterSpacing="0.04em" opacity={hoveredNode ? 0.25 : 0.65}
+              style={{ textTransform: 'uppercase', transition: 'opacity 0.2s ease' }}>
+              {h.zone}
             </text>
           </g>
         ))}
@@ -553,66 +419,41 @@ export default function RelationshipDiagram({
           const src = nodeMap[typeof edge.source === 'object' ? edge.source.id : edge.source];
           const tgt = nodeMap[typeof edge.target === 'object' ? edge.target.id : edge.target];
           if (!src || !tgt) return null;
-
-          const style = EDGE_STYLES[edge.relationship] || EDGE_STYLES.N;
-          const opacity = getEdgeOpacity(edge);
-          const isHighlighted = edge.isDeviation || edge.isRedFlag;
+          const st = EDGE_STYLES[edge.relationship] || EDGE_STYLES.N;
+          const op = getEdgeOpacity(edge);
+          const hiSrc = typeof edge.source === 'object' ? edge.source.id : edge.source;
+          const hiTgt = typeof edge.target === 'object' ? edge.target.id : edge.target;
+          const isHoverEdge = hoveredNode && connectedNodes.has(hiSrc) && connectedNodes.has(hiTgt);
 
           return (
-            <g key={`edge-${i}`}>
-              {/* Red flag glow underlay */}
+            <g key={`e-${i}`}>
+              {/* Red flag glow */}
               {edge.isRedFlag && (
-                <line
-                  x1={src.x} y1={src.y}
-                  x2={tgt.x} y2={tgt.y}
-                  stroke={COLORS.error}
-                  strokeWidth={style.width + 6}
-                  opacity={0.25}
-                  filter="url(#red-flag-glow)"
-                  className="rd-edge-redflag-glow"
-                />
+                <line x1={src.x} y1={src.y} x2={tgt.x} y2={tgt.y}
+                  stroke={COLORS.error} strokeWidth={st.width + 6} opacity={0.25}
+                  filter="url(#rd-glow-red)" className="rd-glow-red" />
               )}
-              {/* Deviation glow underlay */}
+              {/* Deviation glow */}
               {edge.isDeviation && !edge.isRedFlag && (
-                <line
-                  x1={src.x} y1={src.y}
-                  x2={tgt.x} y2={tgt.y}
-                  stroke={COLORS.warning}
-                  strokeWidth={style.width + 4}
-                  opacity={0.2}
-                  filter="url(#deviation-glow)"
-                  className="rd-edge-deviation-glow"
-                />
+                <line x1={src.x} y1={src.y} x2={tgt.x} y2={tgt.y}
+                  stroke={COLORS.warning} strokeWidth={st.width + 4} opacity={0.2}
+                  filter="url(#rd-glow-amber)" className="rd-glow-amber" />
               )}
-              {/* Main edge */}
-              <line
-                x1={src.x} y1={src.y}
-                x2={tgt.x} y2={tgt.y}
-                stroke={edge.isRedFlag ? COLORS.error : style.color}
-                strokeWidth={isHighlighted ? style.width + 1 : style.width}
-                strokeDasharray={style.dash}
-                opacity={opacity}
-                strokeLinecap="round"
-                style={{ transition: 'opacity 0.3s ease' }}
-              />
-              {/* Deviation indicator: small diamond at midpoint */}
+              {/* Main line */}
+              <line x1={src.x} y1={src.y} x2={tgt.x} y2={tgt.y}
+                stroke={edge.isRedFlag ? COLORS.error : st.color}
+                strokeWidth={(edge.isDeviation || edge.isRedFlag) ? st.width + 1 : st.width}
+                strokeDasharray={st.dash} opacity={op} strokeLinecap="round"
+                style={{ transition: 'opacity 0.2s ease' }} />
+              {/* Deviation diamond at midpoint */}
               {edge.isDeviation && (
                 <g transform={`translate(${(src.x + tgt.x) / 2}, ${(src.y + tgt.y) / 2})`}>
-                  <polygon
-                    points="0,-5 5,0 0,5 -5,0"
-                    fill={edge.isRedFlag ? COLORS.error : COLORS.warning}
-                    opacity={opacity}
-                  />
-                  {/* Show what changed: benchmark → proposed */}
-                  {hoveredNode && connectedNodes.has(src.id) && connectedNodes.has(tgt.id) && (
-                    <text
-                      y={-10}
-                      textAnchor="middle"
-                      fontSize="9"
-                      fontWeight="600"
-                      fill={COLORS.warning}
-                      fontFamily="Inter, -apple-system, sans-serif"
-                    >
+                  <polygon points="0,-5 5,0 0,5 -5,0"
+                    fill={edge.isRedFlag ? COLORS.error : COLORS.warning} opacity={op} />
+                  {isHoverEdge && (
+                    <text y={-10} textAnchor="middle" fontSize="9" fontWeight="600"
+                      fill={edge.isRedFlag ? COLORS.error : COLORS.warning}
+                      fontFamily="Inter, -apple-system, sans-serif">
                       {edge.benchmarkRel} → {edge.relationship}
                     </text>
                   )}
@@ -624,155 +465,106 @@ export default function RelationshipDiagram({
 
         {/* Nodes */}
         {nodes.map(node => {
-          const opacity = getNodeOpacity(node);
-          const zoneColor = ZONE_COLORS[node.zone] || DEFAULT_ZONE_COLOR;
-          const isHovered = hoveredNode === node.id;
+          const op = getNodeOpacity(node.id);
+          const zc = ZONE_COLORS[node.zone] || DEFAULT_ZONE;
+          const isHov = hoveredNode === node.id;
+          const involvedInFlag = view === 'proposed' && triggeredRedFlags.some(rf =>
+            rf.edges.some(([a, b]) => a === node.id || b === node.id)
+          );
 
           return (
-            <g
-              key={node.id}
-              className="rd-node"
-              style={{ cursor: 'pointer', transition: 'opacity 0.3s ease' }}
-              opacity={opacity}
-              onMouseEnter={(e) => handleNodeEnter(node, e)}
-              onMouseLeave={handleNodeLeave}
-            >
-              {/* Hover ring */}
-              {isHovered && (
-                <circle
-                  cx={node.x} cy={node.y}
-                  r={node.radius + 5}
-                  fill="none"
-                  stroke={COLORS.gold}
-                  strokeWidth={2}
-                  opacity={0.8}
-                />
+            <g key={node.id} className="rd-node" opacity={op}
+              style={{ cursor: 'pointer', transition: 'opacity 0.2s ease' }}
+              onMouseEnter={(e) => handleNodeEnter(node, e)} onMouseLeave={handleNodeLeave}>
+              {/* Red flag halo */}
+              {involvedInFlag && (
+                <circle cx={node.x} cy={node.y} r={node.radius + 6}
+                  fill="none" stroke={COLORS.error} strokeWidth={2}
+                  opacity={0.4} className="rd-glow-red" />
               )}
-              {/* Node circle */}
-              <circle
-                cx={node.x} cy={node.y}
-                r={node.radius}
+              {/* Gold hover ring */}
+              {isHov && (
+                <circle cx={node.x} cy={node.y} r={node.radius + 4}
+                  fill="none" stroke={COLORS.gold} strokeWidth={2} opacity={0.8} />
+              )}
+              {/* Outer circle */}
+              <circle cx={node.x} cy={node.y} r={node.radius}
                 fill={COLORS.surface}
-                stroke={isHovered ? COLORS.navy : zoneColor.stroke}
-                strokeWidth={isHovered ? 2.5 : 1.5}
-              />
-              {/* Node label */}
-              <text
-                x={node.x} y={node.y}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={node.radius > 22 ? '10' : '8'}
-                fontWeight="600"
-                fill={COLORS.text}
-                fontFamily="Inter, -apple-system, sans-serif"
-                style={{ pointerEvents: 'none' }}
-              >
+                stroke={isHov ? COLORS.navy : zc.stroke}
+                strokeWidth={isHov ? 2.5 : 1.5} />
+              {/* Inner zone tint */}
+              <circle cx={node.x} cy={node.y} r={node.radius - 3}
+                fill={zc.node} opacity={0.45} />
+              {/* Label */}
+              <text x={node.x} y={node.y + 1} textAnchor="middle" dominantBaseline="central"
+                fontSize={node.radius > 22 ? '10' : '8'} fontWeight="600"
+                fill={COLORS.text} fontFamily="Inter, -apple-system, sans-serif"
+                style={{ pointerEvents: 'none' }}>
                 {node.id}
               </text>
             </g>
           );
         })}
 
-        {/* Red flag badges - show count on affected nodes */}
+        {/* Red flag badges (! markers on nodes) */}
         {view === 'proposed' && triggeredRedFlags.length > 0 && nodes.map(node => {
-          // Check if this node is involved in any red flag
-          const involvedFlags = triggeredRedFlags.filter(rf =>
-            rf.edges.some(([from, to]) => from === node.id || to === node.id)
+          const flags = triggeredRedFlags.filter(rf =>
+            rf.edges.some(([a, b]) => a === node.id || b === node.id)
           );
-          if (involvedFlags.length === 0) return null;
-
+          if (!flags.length) return null;
+          const bx = node.x + node.radius * 0.7;
+          const by = node.y - node.radius * 0.7;
           return (
-            <g key={`rf-badge-${node.id}`}>
-              <circle
-                cx={node.x + node.radius * 0.7}
-                cy={node.y - node.radius * 0.7}
-                r={7}
-                fill={COLORS.error}
-              />
-              <text
-                x={node.x + node.radius * 0.7}
-                y={node.y - node.radius * 0.7}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize="8"
-                fontWeight="700"
-                fill="#fff"
-                fontFamily="Inter, sans-serif"
-                style={{ pointerEvents: 'none' }}
-              >
-                !
-              </text>
+            <g key={`rfb-${node.id}`}>
+              <circle cx={bx} cy={by} r={7} fill={COLORS.error} />
+              <text x={bx} y={by} textAnchor="middle" dominantBaseline="central"
+                fontSize="8" fontWeight="700" fill="#fff" fontFamily="Inter, sans-serif"
+                style={{ pointerEvents: 'none' }}>!</text>
             </g>
           );
         })}
       </svg>
 
-      {/* Tooltip */}
+      {/* ── Tooltip ──────────────────────────────────────────────────────── */}
       {tooltipData && (
-        <div
-          className="rd-tooltip"
-          style={{
-            position: 'absolute',
-            left: Math.min(tooltipData.x + 12, width - 200),
-            top: Math.max(tooltipData.y - 60, 10),
-            background: COLORS.surface,
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: '6px',
-            padding: '8px 12px',
-            fontSize: '12px',
-            fontFamily: 'Inter, -apple-system, sans-serif',
-            pointerEvents: 'none',
-            zIndex: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            minWidth: '140px',
-          }}
-        >
-          <div style={{ fontWeight: 600, color: COLORS.text, marginBottom: '4px' }}>
-            {tooltipData.node.name}
-          </div>
-          <div style={{ color: COLORS.textMuted, fontSize: '11px' }}>
-            <span style={{ 
-              display: 'inline-block',
-              padding: '1px 6px',
-              borderRadius: '3px',
-              backgroundColor: (ZONE_COLORS[tooltipData.node.zone] || DEFAULT_ZONE_COLOR).fill,
-              color: (ZONE_COLORS[tooltipData.node.zone] || DEFAULT_ZONE_COLOR).text,
-              fontSize: '10px',
-              fontWeight: 500,
-              marginBottom: '3px',
+        <div className="rd-tooltip" style={{
+          position: 'absolute',
+          left: Math.min(tooltipData.x + 14, width - 210),
+          top: Math.max(tooltipData.y - 70, 8),
+        }}>
+          <div className="rd-tooltip__name">{tooltipData.node.name}</div>
+          <div className="rd-tooltip__badges">
+            <span className="rd-tooltip__zone" style={{
+              backgroundColor: (ZONE_COLORS[tooltipData.node.zone] || DEFAULT_ZONE).fill,
+              color: (ZONE_COLORS[tooltipData.node.zone] || DEFAULT_ZONE).text,
             }}>
               {tooltipData.node.zone}
             </span>
+            <span className="rd-tooltip__code">{tooltipData.node.id}</span>
           </div>
           {tooltipData.node.targetSF > 0 && (
-            <div style={{ color: COLORS.text, fontSize: '11px', marginTop: '2px' }}>
-              {tooltipData.node.targetSF.toLocaleString()} SF
-            </div>
+            <div className="rd-tooltip__sf">{tooltipData.node.targetSF.toLocaleString()} SF target</div>
           )}
-          {/* Show connections */}
-          <div style={{ marginTop: '4px', borderTop: `1px solid ${COLORS.border}`, paddingTop: '4px' }}>
+          <div className="rd-tooltip__connections">
             {edges
               .filter(e => {
-                const src = typeof e.source === 'object' ? e.source.id : e.source;
-                const tgt = typeof e.target === 'object' ? e.target.id : e.target;
-                return src === tooltipData.node.id || tgt === tooltipData.node.id;
+                const s = typeof e.source === 'object' ? e.source.id : e.source;
+                const t = typeof e.target === 'object' ? e.target.id : e.target;
+                return s === tooltipData.node.id || t === tooltipData.node.id;
               })
-              .slice(0, 5)
+              .slice(0, 6)
               .map((e, i) => {
-                const src = typeof e.source === 'object' ? e.source.id : e.source;
-                const tgt = typeof e.target === 'object' ? e.target.id : e.target;
-                const other = src === tooltipData.node.id ? tgt : src;
-                const style = EDGE_STYLES[e.relationship];
+                const s = typeof e.source === 'object' ? e.source.id : e.source;
+                const t = typeof e.target === 'object' ? e.target.id : e.target;
+                const other = s === tooltipData.node.id ? t : s;
+                const est = EDGE_STYLES[e.relationship];
                 return (
-                  <div key={i} style={{ fontSize: '10px', color: COLORS.textMuted, lineHeight: '1.6' }}>
-                    <span style={{ color: style.color, fontWeight: 600 }}>{e.relationship}</span>
-                    {' → '}
+                  <div key={i} className="rd-tooltip__conn-row">
+                    <span style={{ color: est.color, fontWeight: 600, minWidth: '12px' }}>{e.relationship}</span>
+                    <span className="rd-tooltip__conn-arrow">→</span>
                     <span style={{ fontWeight: 500 }}>{other}</span>
-                    {e.isDeviation && (
-                      <span style={{ color: COLORS.warning, marginLeft: '3px', fontSize: '9px' }}>
-                        (changed)
-                      </span>
-                    )}
+                    {e.isDeviation && <span className="rd-tooltip__changed">(changed)</span>}
+                    {e.isRedFlag && <span className="rd-tooltip__flag">⚠</span>}
                   </div>
                 );
               })}
@@ -780,96 +572,162 @@ export default function RelationshipDiagram({
         </div>
       )}
 
-      {/* Legend */}
-      <div className="rd-legend" style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '12px',
-        padding: '10px 16px',
-        marginTop: '8px',
-        background: '#f8f9fa',
-        borderRadius: '6px',
-        border: `1px solid ${COLORS.border}`,
-        alignItems: 'center',
-      }}>
-        <span style={{
-          fontSize: '10px',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          color: COLORS.textMuted,
-          marginRight: '4px',
-        }}>
-          Relationships
-        </span>
-        {Object.entries(EDGE_STYLES).map(([key, style]) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="24" height="10">
-              <line
-                x1="0" y1="5" x2="24" y2="5"
-                stroke={style.color}
-                strokeWidth={style.width}
-                strokeDasharray={style.dash}
-              />
-            </svg>
-            <span style={{ fontSize: '11px', color: COLORS.text, fontWeight: 500 }}>
-              {key}
-            </span>
-            <span style={{ fontSize: '10px', color: COLORS.textMuted }}>
-              {style.label}
-            </span>
+      {/* ── Legend Bar ────────────────────────────────────────────────────── */}
+      <div className="rd-legend">
+        <div className="rd-legend__section">
+          <span className="rd-legend__title">Relationships</span>
+          <div className="rd-legend__items">
+            {Object.entries(EDGE_STYLES).map(([key, st]) => (
+              <div key={key} className="rd-legend__item">
+                <svg width="24" height="10">
+                  <line x1="0" y1="5" x2="24" y2="5" stroke={st.color} strokeWidth={st.width} strokeDasharray={st.dash} />
+                </svg>
+                <span className="rd-legend__code">{key}</span>
+                <span className="rd-legend__label">{st.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
         {view === 'proposed' && deviations.length > 0 && (
-          <>
-            <span style={{ 
-              width: '1px', height: '16px', background: COLORS.border, 
-              display: 'inline-block', margin: '0 4px' 
-            }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <svg width="10" height="10">
-                <polygon points="5,0 10,5 5,10 0,5" fill={COLORS.warning} />
-              </svg>
-              <span style={{ fontSize: '10px', color: COLORS.warning, fontWeight: 500 }}>
-                Deviation
-              </span>
+          <div className="rd-legend__section">
+            <span className="rd-legend__divider" />
+            <div className="rd-legend__items">
+              <div className="rd-legend__item">
+                <svg width="12" height="12"><polygon points="6,1 11,6 6,11 1,6" fill={COLORS.warning} /></svg>
+                <span className="rd-legend__label" style={{ color: COLORS.warning }}>Deviation from benchmark</span>
+              </div>
+              {triggeredRedFlags.length > 0 && (
+                <div className="rd-legend__item">
+                  <svg width="12" height="12"><circle cx="6" cy="6" r="6" fill={COLORS.error} /><text x="6" y="6.5" textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="8" fontWeight="700">!</text></svg>
+                  <span className="rd-legend__label" style={{ color: COLORS.error }}>Red flag ({triggeredRedFlags.length})</span>
+                </div>
+              )}
             </div>
-          </>
-        )}
-        {triggeredRedFlags.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="10" height="10">
-              <circle cx="5" cy="5" r="5" fill={COLORS.error} />
-              <text x="5" y="5.5" textAnchor="middle" dominantBaseline="central" 
-                    fill="#fff" fontSize="7" fontWeight="700">!</text>
-            </svg>
-            <span style={{ fontSize: '10px', color: COLORS.error, fontWeight: 500 }}>
-              Red Flag ({triggeredRedFlags.length})
-            </span>
           </div>
         )}
+        <div className="rd-legend__section rd-legend__size">
+          <span className="rd-legend__title">Bubble Size</span>
+          <span className="rd-legend__note">∝ target square footage</span>
+        </div>
       </div>
 
-      {/* CSS animations */}
-      <style>{`
-        .rd-edge-redflag-glow {
-          animation: rd-pulse-red 2s ease-in-out infinite;
-        }
-        .rd-edge-deviation-glow {
-          animation: rd-pulse-amber 2.5s ease-in-out infinite;
-        }
-        @keyframes rd-pulse-red {
-          0%, 100% { opacity: 0.15; }
-          50% { opacity: 0.35; }
-        }
-        @keyframes rd-pulse-amber {
-          0%, 100% { opacity: 0.1; }
-          50% { opacity: 0.25; }
-        }
-        .rd-node:hover circle {
-          filter: brightness(0.97);
-        }
-      `}</style>
+      {/* ── Abbreviation Index ───────────────────────────────────────────── */}
+      <div className="rd-abbrev">
+        <span className="rd-abbrev__title">Abbreviation Index</span>
+        <div className="rd-abbrev__grid">
+          {nodes.slice().sort((a, b) => a.id.localeCompare(b.id)).map(n => (
+            <span key={n.id} className="rd-abbrev__item">
+              <strong>{n.id}</strong> {n.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Red Flag Summary ─────────────────────────────────────────────── */}
+      {view === 'proposed' && triggeredRedFlags.length > 0 && (
+        <div className="rd-flags">
+          <div className="rd-flags__header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.error} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>{triggeredRedFlags.length} Red Flag{triggeredRedFlags.length !== 1 ? 's' : ''} Detected</span>
+          </div>
+          <div className="rd-flags__list">
+            {triggeredRedFlags.map(f => (
+              <div key={f.id} className="rd-flags__item">
+                <span className="rd-flags__name">{f.name}</span>
+                <span className="rd-flags__desc">{f.description}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Styles ───────────────────────────────────────────────────────── */}
+      <style>{styles}</style>
     </div>
   );
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CSS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const styles = `
+/* Glow animations */
+@keyframes rd-pulse-red  { 0%,100%{opacity:0.15} 50%{opacity:0.4} }
+@keyframes rd-pulse-gold { 0%,100%{opacity:0.10} 50%{opacity:0.25} }
+.rd-glow-red  { animation: rd-pulse-red 2s ease-in-out infinite; }
+.rd-glow-amber { animation: rd-pulse-gold 2.5s ease-in-out infinite; }
+.rd-node:hover circle { filter: brightness(0.97); }
+
+/* Tooltip */
+.rd-tooltip {
+  background: ${COLORS.surface};
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  pointer-events: none;
+  z-index: 10;
+  min-width: 160px;
+  max-width: 240px;
+}
+.rd-tooltip__name { font-size: 13px; font-weight: 600; color: ${COLORS.text}; margin-bottom: 4px; }
+.rd-tooltip__badges { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.rd-tooltip__zone { padding: 1px 7px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+.rd-tooltip__code { font-family: 'SF Mono', Monaco, monospace; font-size: 10px; font-weight: 600; color: ${COLORS.navy}; }
+.rd-tooltip__sf { font-size: 11px; color: ${COLORS.textMuted}; margin-bottom: 4px; }
+.rd-tooltip__connections { border-top: 1px solid ${COLORS.border}; padding-top: 5px; margin-top: 2px; }
+.rd-tooltip__conn-row { display: flex; align-items: center; gap: 4px; font-size: 10px; color: ${COLORS.textMuted}; line-height: 1.7; }
+.rd-tooltip__conn-arrow { opacity: 0.4; }
+.rd-tooltip__changed { color: ${COLORS.warning}; font-size: 9px; }
+.rd-tooltip__flag { color: ${COLORS.error}; font-size: 10px; }
+
+/* Legend */
+.rd-legend {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+  padding: 10px 16px; margin-top: 8px;
+  background: #f8f9fa; border-radius: 6px; border: 1px solid ${COLORS.border};
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.rd-legend__section { display: flex; align-items: center; gap: 8px; }
+.rd-legend__title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: ${COLORS.textMuted}; }
+.rd-legend__items { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.rd-legend__item { display: flex; align-items: center; gap: 4px; }
+.rd-legend__code { font-size: 11px; font-weight: 600; color: ${COLORS.text}; }
+.rd-legend__label { font-size: 10px; color: ${COLORS.textMuted}; }
+.rd-legend__divider { width: 1px; height: 16px; background: ${COLORS.border}; }
+.rd-legend__size { margin-left: auto; gap: 6px; }
+.rd-legend__note { font-size: 10px; color: ${COLORS.textMuted}; font-style: italic; }
+
+/* Abbreviation Index */
+.rd-abbrev {
+  margin-top: 8px; padding: 10px 16px;
+  background: #f8f9fa; border-radius: 6px; border: 1px solid ${COLORS.border};
+}
+.rd-abbrev__title {
+  display: block; font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: ${COLORS.textMuted}; margin-bottom: 6px;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.rd-abbrev__grid { display: flex; flex-wrap: wrap; gap: 3px 14px; }
+.rd-abbrev__item { font-size: 11px; color: #495057; white-space: nowrap; font-family: 'Inter', -apple-system, sans-serif; }
+.rd-abbrev__item strong { color: ${COLORS.navy}; font-family: 'SF Mono', Monaco, monospace; font-size: 10px; margin-right: 3px; }
+
+/* Red Flag Summary */
+.rd-flags {
+  margin-top: 8px; padding: 12px 16px;
+  background: #fff5f5; border: 1px solid #f5c6c6; border-radius: 6px;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.rd-flags__header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: ${COLORS.error}; margin-bottom: 8px;
+}
+.rd-flags__list { display: flex; flex-direction: column; gap: 6px; }
+.rd-flags__item { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; background: rgba(211,47,47,0.04); border-radius: 4px; }
+.rd-flags__name { font-size: 12px; font-weight: 600; color: ${COLORS.error}; }
+.rd-flags__desc { font-size: 11px; color: ${COLORS.textMuted}; }
+`;
