@@ -645,7 +645,35 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
     // ============================================
     return (
       <div className="mvp-module">
-        {/* Header — ITR #2: LIVE removed, Save + Tier badge right-aligned */}
+        {/* Top Action Bar — Save + Export on right, matching KYC pattern */}
+        <div className="kyc-module__top-bar">
+          <div className="kyc-module__save-area">
+            <button
+              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+              onClick={saveNow}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
+              <Save size={16} />
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+            </button>
+            <button
+              onClick={handleExportReport}
+              disabled={isExporting || !preset}
+              className="kyc-export-btn"
+              title="Export comprehensive MVP Report PDF"
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </button>
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="kyc-save-time">
+                Last saved: {new Date(lastSaved).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Module Header — title + Tier badge */}
         <div className="mvp-module__header">
           <div className="mvp-module__title-group">
             <h1 className="mvp-module__title">
@@ -661,32 +689,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
             </p>
           </div>
 
-          {/* Right side: Save + Export + Tier Badge */}
           <div className="mvp-module__header-right">
-            <div className="mvp-module__save-area">
-              <button
-                className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-                onClick={saveNow}
-                disabled={isSaving || !hasUnsavedChanges}
-              >
-                <Save size={16} />
-                {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-              </button>
-              <button
-                onClick={handleExportReport}
-                disabled={isExporting || !preset}
-                className="kyc-export-btn"
-                title="Export comprehensive MVP Report PDF"
-              >
-                <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-                {isExporting ? 'Exporting...' : 'Export Report'}
-              </button>
-              {lastSaved && !hasUnsavedChanges && (
-                <span className="mvp-module__save-time">
-                  Last saved: {new Date(lastSaved).toLocaleTimeString()}
-                </span>
-              )}
-            </div>
             <TierBenchmarkDropdown
               estimatedTier={estimatedTier}
               isOpen={tierDropdownOpen}
