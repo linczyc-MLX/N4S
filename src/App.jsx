@@ -18,6 +18,43 @@ import SettingsModule from './components/Settings/SettingsModule';
 // Import context provider
 import { AppProvider, useAppContext } from './contexts/AppContext';
 
+// Error Boundary — catches runtime errors and displays them instead of white screen
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    console.error('[ErrorBoundary]', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '2rem', fontFamily: 'monospace', background: '#fff5f5', minHeight: '50vh' }}>
+          <h2 style={{ color: '#c53030', marginBottom: '1rem' }}>⚠ Module Error</h2>
+          <p style={{ color: '#742a2a', marginBottom: '0.5rem' }}>
+            <strong>{this.state.error?.toString()}</strong>
+          </p>
+          <pre style={{ fontSize: '0.75rem', color: '#666', whiteSpace: 'pre-wrap', maxHeight: '300px', overflow: 'auto' }}>
+            {this.state.errorInfo?.componentStack}
+          </pre>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+            style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#1e3a5f', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Module color mapping (SOLID backgrounds - Soft Pillow palette)
 const moduleColors = {
   dashboard: { bg: '#1e3a5f', text: '#ffffff', accent: '#c9a227' },             // Navy (brand primary) - KEEP
@@ -226,7 +263,9 @@ const AppContent = () => {
         </header>
 
         <div className="main-body">
-          {renderModule()}
+          <ErrorBoundary key={activeModule}>
+            {renderModule()}
+          </ErrorBoundary>
         </div>
       </main>
     </div>
