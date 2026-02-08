@@ -1,12 +1,17 @@
-import React from 'react';
-import { Plus, X, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, X, Info, Send, Clock, CheckCircle, RefreshCw, ClipboardList } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 
 const PortfolioContextSection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData } = useAppContext();
+  const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
   const data = kycData[respondent].portfolioContext;
+
+  // KYC Intake integration state
+  const [intakeLoading, setIntakeLoading] = useState(false);
+  const [intakeError, setIntakeError] = useState(null);
+  const [intakeRefreshing, setIntakeRefreshing] = useState(false);
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
@@ -67,6 +72,98 @@ const PortfolioContextSection = ({ respondent, tier }) => {
 
   // Only show governance fields for Principal
   const isPrincipal = respondent === 'principal';
+
+  // KYC Intake status (stored in portfolioContext)
+  const intakeStatus = data.intakeStatus || 'not_sent'; // not_sent, sent, in_progress, completed
+  const intakeSessionId = data.intakeSessionId;
+  const intakeSentAt = data.intakeSentAt;
+  const intakeCompletedAt = data.intakeCompletedAt;
+
+  // Get stakeholder info for intake send
+  const intakePrincipalName = data.principalFirstName
+    ? `${data.principalFirstName} ${data.principalLastName || ''}`.trim()
+    : null;
+  const intakePrincipalEmail = data.principalEmail;
+  const intakeProjectName = clientData?.projectName || 'Untitled Project';
+  const canSendIntake = intakePrincipalName && intakePrincipalEmail;
+
+  // Generate subdomain slug
+  const intakeSlug = data.principalFirstName && data.principalLastName
+    ? `${data.principalFirstName.charAt(0).toLowerCase()}${data.principalLastName.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+    : 'client';
+
+  // Handle sending KYC Intake invitation
+  const handleSendIntake = async () => {
+    if (!canSendIntake) return;
+
+    setIntakeLoading(true);
+    setIntakeError(null);
+
+    try {
+      // Save current data first
+      if (saveNow) await saveNow();
+
+      const response = await fetch('https://luxebrief.not-4.sale/api/sessions/from-n4s', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer luxebrief-admin-2024'
+        },
+        body: JSON.stringify({
+          sessionType: 'intake',
+          clientName: intakePrincipalName,
+          clientEmail: intakePrincipalEmail,
+          projectName: intakeProjectName,
+          principalType: 'principal',
+          subdomain: intakeSlug,
+          n4sProjectId: clientData?.id || null,
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        updateKYCData(respondent, 'portfolioContext', {
+          intakeStatus: 'sent',
+          intakeSessionId: result.sessionId,
+          intakeSentAt: new Date().toISOString(),
+          intakeInvitationUrl: result.invitationUrl,
+        });
+      } else {
+        setIntakeError(result.error || 'Failed to send invitation');
+      }
+    } catch (err) {
+      setIntakeError('Network error — please check your connection');
+    } finally {
+      setIntakeLoading(false);
+    }
+  };
+
+  // Handle refreshing intake status
+  const handleRefreshIntakeStatus = async () => {
+    if (!intakeSessionId) return;
+
+    setIntakeRefreshing(true);
+    try {
+      const response = await fetch(`https://luxebrief.not-4.sale/api/sessions/${intakeSessionId}`, {
+        headers: { 'Authorization': 'Bearer luxebrief-admin-2024' }
+      });
+
+      if (response.ok) {
+        const session = await response.json();
+        const newStatus = session.status === 'completed' ? 'completed' : 'in_progress';
+
+        updateKYCData(respondent, 'portfolioContext', {
+          intakeStatus: newStatus,
+          intakeCompletedAt: session.completedAt || null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to refresh intake status:', err);
+    } finally {
+      setIntakeRefreshing(false);
+    }
+  };
 
   // Show multiple residence inputs when count > 1
   const propertyCount = parseInt(data.currentPropertyCount) || 0;
@@ -129,6 +226,124 @@ const PortfolioContextSection = ({ respondent, tier }) => {
                   )}
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* KYC Client Intake Integration Panel */}
+      {isPrincipal && (
+        <div className="kyc-section__group kyc-section__group--integration">
+          <div className="kyc-section__group-header">
+            <h3 className="kyc-section__group-title">
+              <ClipboardList size={16} style={{ marginRight: '8px', verticalAlign: 'text-bottom' }} />
+              Client Intake Questionnaire
+            </h3>
+            <span className="kyc-section__badge" style={{
+              background: intakeStatus === 'completed' ? '#065f46' :
+                         intakeStatus === 'in_progress' ? '#92400e' :
+                         intakeStatus === 'sent' ? '#1e3a5f' : '#374151',
+              color: intakeStatus === 'completed' ? '#6ee7b7' :
+                     intakeStatus === 'in_progress' ? '#fcd34d' :
+                     intakeStatus === 'sent' ? '#93c5fd' : '#9ca3af',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: '600',
+            }}>
+              {intakeStatus === 'completed' ? 'Completed' :
+               intakeStatus === 'in_progress' ? 'In Progress' :
+               intakeStatus === 'sent' ? 'Sent' : 'Not Sent'}
+            </span>
+          </div>
+
+          <p className="kyc-section__group-description" style={{ marginBottom: '16px' }}>
+            Send the KYC sections P1.A.1–A.4 to the client as a guided questionnaire. The client completes
+            their portion through the LuXeBrief portal, and responses flow directly back here.
+          </p>
+
+          {intakeError && (
+            <div className="kyc-section__notice kyc-section__notice--error" style={{ marginBottom: '12px' }}>
+              <Info size={16} />
+              <span>{intakeError}</span>
+            </div>
+          )}
+
+          {intakeStatus === 'not_sent' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {canSendIntake ? (
+                <>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', color: '#d1d5db' }}>
+                      <strong>{intakePrincipalName}</strong>
+                      <span style={{ color: '#9ca3af', marginLeft: '8px' }}>{intakePrincipalEmail}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleSendIntake}
+                    disabled={intakeLoading}
+                    style={{ minWidth: '140px' }}
+                  >
+                    {intakeLoading ? (
+                      <><RefreshCw size={14} className="spin" /> Sending...</>
+                    ) : (
+                      <><Send size={14} /> Send Intake</>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <div className="kyc-section__notice kyc-section__notice--warning">
+                  <Info size={16} />
+                  <span>
+                    Configure the Principal's name and email in <strong>Settings</strong> before sending.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(intakeStatus === 'sent' || intakeStatus === 'in_progress') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                  <Clock size={14} style={{ color: '#fbbf24' }} />
+                  <span style={{ color: '#fbbf24' }}>
+                    {intakeStatus === 'sent' ? 'Awaiting client response' : 'Client is completing questionnaire'}
+                  </span>
+                </div>
+                {intakeSentAt && (
+                  <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px', display: 'block' }}>
+                    Sent {new Date(intakeSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+              <button
+                className="btn btn--secondary btn--sm"
+                onClick={handleRefreshIntakeStatus}
+                disabled={intakeRefreshing}
+                style={{ minWidth: '120px' }}
+              >
+                {intakeRefreshing ? (
+                  <><RefreshCw size={14} className="spin" /> Checking...</>
+                ) : (
+                  <><RefreshCw size={14} /> Refresh Status</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {intakeStatus === 'completed' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <CheckCircle size={16} style={{ color: '#34d399' }} />
+              <span style={{ color: '#34d399' }}>
+                Client intake completed
+                {intakeCompletedAt && (
+                  <span style={{ color: '#6b7280', marginLeft: '6px' }}>
+                    ({new Date(intakeCompletedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})
+                  </span>
+                )}
+              </span>
             </div>
           )}
         </div>
