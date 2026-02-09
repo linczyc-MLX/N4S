@@ -1530,3 +1530,33 @@ const spaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetDat
 - ITR-3/4: Diagram preset spaces — DONE (fixed in dca315c)
 - ITR-5: Circulation calculation alignment verification — Low
 - ITR-6: Structure breakdown display in MVP Program Summary — Low
+
+---
+
+## Next Session Start Prompt
+
+```
+Continue N4S development. Session context:
+
+LAST SESSION (Feb 8, 2026): Data integrity audit — enforced Golden Rule across all MVP consumers.
+
+COMPLETED:
+1. Fixed white screen crash (pets.trim TypeError — type guard in mvp-bridge + KYC section)
+2. Fixed PersonalizationResult diagram/matrix (fromSpaceCode/toSpaceCode, not from/to)
+3. Fixed ProgramSummaryView using preset benchmark instead of FYI live data
+4. CRITICAL: Enforced Golden Rule across ALL 6 MVP space/SF consumers + both PDF reports
+5. Added FYI zone name compatibility (Z1_APB codes → display names via s.zoneName||s.zone)
+6. Added ZONE_POS mappings for FYI zones in both report generators
+7. Added circulation as virtual zone in report when using FYI data
+8. Created docs/DATA-INTEGRITY-SF-AUDIT.md with full data flow map + ITR items
+
+REMAINING ITR ITEMS (see docs/DATA-INTEGRITY-SF-AUDIT.md):
+- ITR-1: FYI shows two different deltas (net vs total) — confusing labels — Low priority
+- ITR-2: VMX manual SF entry not connected to FYI program — Medium (address during VMX integration)
+- ITR-5: Circulation calculation alignment verification — Low
+- ITR-6: Structure breakdown (Main/GH/PH) not shown in MVP Program Summary — Low
+
+LATEST COMMITS: dca315c (Golden Rule enforcement), 052dbf6, 8d3b5d2, 5acf8fc
+
+Start by: git clone repo, read docs/DATA-INTEGRITY-SF-AUDIT.md, verify deploy status, then address any remaining ITR items or new requests.
+```
