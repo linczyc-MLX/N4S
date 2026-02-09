@@ -5,7 +5,7 @@ import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 
 const PortfolioContextSection = ({ respondent, tier }) => {
-  const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
+  const { kycData, updateKYCData, clientData, lcdData, saveNow } = useAppContext();
   const data = kycData[respondent].portfolioContext;
 
   // KYC Intake integration state
@@ -85,12 +85,14 @@ const PortfolioContextSection = ({ respondent, tier }) => {
     : null;
   const intakePrincipalEmail = data.principalEmail;
   const intakeProjectName = clientData?.projectName || 'Untitled Project';
-  const canSendIntake = intakePrincipalName && intakePrincipalEmail;
 
-  // Generate subdomain slug
-  const intakeSlug = data.principalFirstName && data.principalLastName
-    ? `${data.principalFirstName.charAt(0).toLowerCase()}${data.principalLastName.toLowerCase().replace(/[^a-z0-9]/g, '')}`
-    : 'client';
+  // Use portal slug from lcdData (set in Dashboard Portal Activation)
+  // This ensures the intake questionnaire URL matches the activated portal address
+  const intakeSlug = lcdData?.portalSlug || (clientData?.projectName
+    ? clientData.projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 30)
+    : 'client');
+  const portalActive = lcdData?.portalActive || false;
+  const canSendIntake = intakePrincipalName && intakePrincipalEmail && portalActive;
 
   // Handle sending KYC Intake invitation
   const handleSendIntake = async () => {
@@ -186,7 +188,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             <h3 className="kyc-section__group-title">Project Stakeholders</h3>
             <span className="kyc-section__settings-link">
               <Info size={14} />
-              Configured in Settings
+              Configured in Dashboard
             </span>
           </div>
 
@@ -194,7 +196,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             <div className="kyc-section__notice kyc-section__notice--warning">
               <Info size={16} />
               <span>
-                No stakeholders configured. Please go to <strong>Settings</strong> to set up the Principal and any additional stakeholders before continuing.
+                No stakeholders configured. Please go to <strong>Dashboard</strong> to set up the Principal and any additional stakeholders before continuing.
               </span>
             </div>
           ) : (
@@ -296,7 +298,12 @@ const PortfolioContextSection = ({ respondent, tier }) => {
                 <div className="kyc-section__notice kyc-section__notice--warning">
                   <Info size={16} />
                   <span>
-                    Configure the Principal's name and email in <strong>Settings</strong> before sending.
+                    {!intakePrincipalName || !intakePrincipalEmail
+                      ? <>Configure the Principal's name and email in <strong>Dashboard → Stakeholder Configuration</strong> before sending.</>
+                      : !portalActive
+                        ? <>Activate the LuXeBrief portal in <strong>Dashboard → LuXeBrief Portal</strong> before sending the intake questionnaire.</>
+                        : 'Unable to send intake questionnaire.'
+                    }
                   </span>
                 </div>
               )}
