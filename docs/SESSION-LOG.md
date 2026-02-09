@@ -1479,3 +1479,54 @@ Proposed framework for P2 "Have a Story to Tell":
 ✅ Dusty Rose (#E4C0BE) header color applied
 
 ---
+
+## Session: February 8, 2026 — MVP Data Integrity Enforcement
+
+### Summary
+Fixed critical data integrity issues across all MVP module components and PDF reports. Established and enforced the "Golden Rule": FYI live data is the single source of truth for spaces and square footage throughout N4S. Preset benchmark data is used ONLY for adjacency relationships and as fallback when FYI is empty.
+
+### Issues Fixed
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| White screen on MVP load | `pets.trim()` on non-string data | Type guard in mvp-bridge.js + FamilyHouseholdSection.jsx |
+| Empty adjacency diagram/matrix | Used `req.from`/`req.to` instead of `req.fromSpaceCode`/`req.toSpaceCode` | Fixed property names in PersonalizationResult.tsx |
+| MVP Program Summary showed 15,220 SF (wrong) | ProgramSummaryView read from preset benchmark, not FYI | Rewired to use transformFYIToMVPProgram |
+| PDF Report showed 15,220 SF (wrong) | MVPReportGenerator.js used `presetData.spaces` | Now uses fyiProgram.spaces with FYI totals |
+| Validation Report same issue | MVPValidationReport.js same pattern | Same fix |
+| Adjacency diagram used preset spaces | AdjacencyComparisonGrid passed presetData.spaces | Now uses liveSpaces from FYI |
+| Questionnaire view used preset spaces | AdjacencyPersonalizationView same | Same fix |
+| Zone names incompatible | FYI uses codes (Z1_APB), presets use names | Added zoneName fallback + FYI zones to ZONE_POS maps |
+
+### Golden Rule Pattern (6 files)
+```
+const spaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetData?.spaces || []);
+```
+
+### Files Modified
+- `src/components/MVP/MVPModule.jsx` — passes fyiProgram to report generators
+- `src/components/MVP/MVPReportGenerator.js` — FYI-first spaces, zone name compat, circulation zone entry
+- `src/components/MVP/MVPValidationReport.js` — FYI-first spaces, zone name compat
+- `src/components/MVP/ProgramSummaryView.jsx` — FYI-first data sourcing
+- `src/components/MVP/AdjacencyComparisonGrid.jsx` — liveSpaces for diagram + legend
+- `src/components/MVP/AdjacencyPersonalizationView.jsx` — liveSpaces for PersonalizationResult
+- `src/components/MVP/ValidationResultsPanel.jsx` — derives fyiProgram, passes to report
+- `src/components/KYC/sections/FamilyHouseholdSection.jsx` — pets type guard
+- `src/lib/mvp-bridge.js` — pets type guard
+- `src/mansion-program/client/components/PersonalizationResult.tsx` — fromSpaceCode/toSpaceCode fix
+
+### Documentation Created
+- `docs/DATA-INTEGRITY-SF-AUDIT.md` — Full data flow audit with ITR items
+
+### Commits
+- `5acf8fc` — pets.trim TypeError fix
+- `8d3b5d2` — PersonalizationResult fromSpaceCode/toSpaceCode fix
+- `052dbf6` — ProgramSummaryView FYI data + audit doc
+- `dca315c` — Golden Rule enforcement across all 6 MVP consumers
+
+### ITR Items Logged (docs/DATA-INTEGRITY-SF-AUDIT.md)
+- ITR-1: FYI dual delta labels (net vs total) — Low
+- ITR-2: VMX manual SF entry not connected to FYI — Medium
+- ITR-3/4: Diagram preset spaces — DONE (fixed in dca315c)
+- ITR-5: Circulation calculation alignment verification — Low
+- ITR-6: Structure breakdown display in MVP Program Summary — Low

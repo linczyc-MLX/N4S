@@ -62,19 +62,11 @@ MVP Module (MVPModule.jsx)
 - **Recommendation**: When VMX integrates into N4S as final module, it should read space SF from FYI via the same `transformFYIToMVPProgram` bridge, or directly from `fyiData.selections`
 - **Priority**: Medium (address during VMX integration)
 
-### ITR-3: AdjacencyComparisonGrid + PersonalizationResult use preset spaces for diagram
-- **Location**: `AdjacencyComparisonGrid.jsx` line 254, `PersonalizationResult.tsx` line ~327
-- **Issue**: `spaces={presetData.spaces}` — bubble diagram uses benchmark tier space definitions (including SF values) rather than FYI-customized sizes. This means bubble sizes in the diagram reflect benchmark expectations, not the client's actual program.
-- **Current behavior**: Spaces shown are those defined in the tier preset. If FYI adds/removes spaces, the diagram won't reflect that.
-- **Impact**: Visual only — adjacency RELATIONSHIPS are correctly sourced (benchmark for "desired", decision-applied for "achieved"). The space list and bubble sizes are the discrepancy.
-- **Recommendation**: Pass FYI spaces to the diagram when available. Map FYI space codes to preset adjacency relationships. Handle FYI spaces that don't exist in the preset (no adjacency data — show as isolated nodes).
-- **Priority**: Medium
+### ~~ITR-3: AdjacencyComparisonGrid + PersonalizationResult use preset spaces for diagram~~ FIXED
+- **Fixed in commit**: dca315c — now uses `liveSpaces` derived from FYI via `transformFYIToMVPProgram`
 
-### ITR-4: MVPReportGenerator PDF uses preset spaces for diagram
-- **Location**: `MVPReportGenerator.js` line 443
-- **Issue**: Same as ITR-3 but for PDF export. `const spaces = presetData?.spaces || []`
-- **Recommendation**: Accept FYI spaces as optional parameter, use for node layout when available
-- **Priority**: Medium (fix alongside ITR-3)
+### ~~ITR-4: MVPReportGenerator PDF uses preset spaces for diagram~~ FIXED
+- **Fixed in commit**: dca315c — now uses `fyiProgram.spaces` with zone name compatibility and circulation zone entry
 
 ### ITR-5: Circulation calculation — FYI vs mvp-bridge alignment
 - **Location**: `useFYIState.js` calculateCirculation vs `mvp-bridge.js` calculateCirculation
