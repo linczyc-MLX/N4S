@@ -93,8 +93,6 @@ export type ConstructionIndirectsConfigV1 = {
   feeBase: IndirectFeeBase;
 };
 
-const STORAGE_KEY = "vmx_construction_indirects_v1";
-
 export function getDefaultConstructionIndirectsConfig(): ConstructionIndirectsConfigV1 {
   const select = getDefaultConstructionIndirectsRates("select");
   const reserve = getDefaultConstructionIndirectsRates("reserve");
@@ -133,12 +131,15 @@ export function getDefaultConstructionIndirectsConfig(): ConstructionIndirectsCo
   };
 }
 
-export function loadConstructionIndirectsConfig(): ConstructionIndirectsConfigV1 {
+export function loadConstructionIndirectsConfig(savedConfig?: unknown): ConstructionIndirectsConfigV1 {
   const def = getDefaultConstructionIndirectsConfig();
+
+  if (savedConfig === null || savedConfig === undefined) {
+    return def;
+  }
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return def;
-    const parsed = JSON.parse(raw);
+    const parsed = savedConfig as any;
     if (!parsed || parsed.version !== 1) return def;
 
     const feeBase: IndirectFeeBase = parsed.feeBase === "direct_only" ? "direct_only" : "cost_of_work";
@@ -175,25 +176,14 @@ export function loadConstructionIndirectsConfig(): ConstructionIndirectsConfigV1
       },
     };
 
-    // Persist normalized
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next, null, 2));
-    } catch {
-      // ignore
-    }
-
     return next;
   } catch {
     return def;
   }
 }
 
-export function saveConstructionIndirectsConfig(cfg: ConstructionIndirectsConfigV1) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg, null, 2));
-  } catch {
-    // ignore
-  }
+export function saveConstructionIndirectsConfig(_cfg: ConstructionIndirectsConfigV1) {
+  // No-op: caller (VMXApp) handles persistence via updateVMXData
 }
 
 export function getRatesForTier(cfg: ConstructionIndirectsConfigV1, tier: TierId): ConstructionIndirectsRates {

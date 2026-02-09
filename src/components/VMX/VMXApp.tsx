@@ -460,6 +460,28 @@ type VMXAppProps = {
     selectionsB?: Record<string, string>;
     customBenchmarkLibrary?: any;
     uiMode?: string;
+    benchmarkLibrary?: any;
+    softCostsConfig?: any;
+    constructionIndirectsConfig?: any;
+    baselineLocationPreset?: string;
+    baselineLocationCustom?: number;
+    baselineTypology?: string;
+    n4sClientName?: string;
+    n4sProjectName?: string;
+    n4sProjectId?: string;
+    programProfile?: any;
+    deltaMediumThreshold?: number;
+    deltaHighThreshold?: number;
+    deltaSort?: string;
+    deltaDriversOnly?: boolean;
+    datasetName?: string;
+    datasetLastUpdated?: string;
+    datasetAssumptions?: string;
+    datasetAutoStamp?: boolean;
+    driverMode?: string;
+    driverTopN?: number;
+    driverPctThreshold?: number;
+    driverPctCap?: number;
   };
   updateVMXData?: (updates: Record<string, any>) => void;
   saveNow?: () => Promise<boolean>;
@@ -494,34 +516,19 @@ export default function VMXApp(props: VMXAppProps = {}) {
     } catch {
       // ignore
     }
-    try {
-      const stored = localStorage.getItem("vmx_ui_mode_v1");
-      if (stored === "lite" || stored === "pro") return stored;
-    } catch {
-      // ignore
-    }
-    return "lite";
+    // Fall back to vmxData or default to lite
+    return vmxData?.uiMode === "lite" || vmxData?.uiMode === "pro" ? vmxData.uiMode : "lite";
   });
 
   const allowProMode = typeof window !== "undefined" ? (window as any).__N4S_VMX_ALLOW_PRO__ !== false : true;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_ui_mode_v1", uiMode);
-    } catch {
-      // ignore
-    }
-    // NOTE: Removed URL parameter update (?view=lite/pro) to keep URL clean
-    // Lite/Pro mode is persisted via localStorage instead
-  }, [uiMode]);
-
 
   // Soft costs / escalation / cashflow (visible to all; JSON editable)
-  const [softCostsConfig, setSoftCostsConfig] = useState<SoftCostsConfig>(() => loadSoftCostsConfig());
+  const [softCostsConfig, setSoftCostsConfig] = useState<SoftCostsConfig>(() => loadSoftCostsConfig(vmxData?.softCostsConfig));
 
   // US-style Construction Indirects (GC fee + general conditions, etc.)
   const [constructionIndirectsConfig, setConstructionIndirectsConfig] = useState<ConstructionIndirectsConfigV1>(() =>
-    loadConstructionIndirectsConfig()
+    loadConstructionIndirectsConfig(vmxData?.constructionIndirectsConfig)
   );
 
   useEffect(() => {
@@ -561,62 +568,28 @@ export default function VMXApp(props: VMXAppProps = {}) {
   const [selA, setSelA] = useState<Record<VmxCategoryId, ScenarioSelection>>(buildDefaultSelections());
   const [selB, setSelB] = useState<Record<VmxCategoryId, ScenarioSelection>>(buildDefaultSelections());
 
-  const [library, setLibrary] = useState<BenchmarkLibrary>(() => getInitialLibrary());
-  const initialSel = useMemo(() => getInitialSelection(library), [library]);
+  const [library, setLibrary] = useState<BenchmarkLibrary>(() => getInitialLibrary(vmxData?.benchmarkLibrary));
+  const initialSel = useMemo(() => getInitialSelection(library, vmxData?.regionAId, vmxData?.tier as TierId), [library, vmxData]);
 
   const [regionAId, setRegionAId] = useState<string>(initialSel.regionId);
   const [tier, setTier] = useState<TierId>(initialSel.tier);
   const [tierLockedFromKYC, setTierLockedFromKYC] = useState<boolean>(false);
 
-  const [compareMode, setCompareMode] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem("vmx_compare_mode_v1") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [compareMode, setCompareMode] = useState<boolean>(() => vmxData?.compareMode ?? false);
 
-  const [regionBId, setRegionBId] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_compare_region_b_v1") || pickSecondRegionId(library, initialSel.regionId);
-    } catch {
-      return pickSecondRegionId(library, initialSel.regionId);
-    }
-  });
+  const [regionBId, setRegionBId] = useState<string>(() => vmxData?.regionBId || pickSecondRegionId(library, initialSel.regionId));
 
   // Phase 2: Location multipliers (Baseline × Location)
-  const [locationAPreset, setLocationAPreset] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_location_a_preset_v1") || "national";
-    } catch {
-      return "national";
-    }
-  });
+  const [locationAPreset, setLocationAPreset] = useState<string>(() => vmxData?.locationAPreset || "national");
   const [locationACustom, setLocationACustom] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_location_a_custom_v1");
-      const parsed = raw ? Number(raw) : 1.0;
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1.0;
-    } catch {
-      return 1.0;
-    }
+    const val = vmxData?.locationACustom;
+    return typeof val === 'number' && Number.isFinite(val) && val > 0 ? val : 1.0;
   });
 
-  const [locationBPreset, setLocationBPreset] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_location_b_preset_v1") || "national";
-    } catch {
-      return "national";
-    }
-  });
+  const [locationBPreset, setLocationBPreset] = useState<string>(() => vmxData?.locationBPreset || "national");
   const [locationBCustom, setLocationBCustom] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_location_b_custom_v1");
-      const parsed = raw ? Number(raw) : 1.0;
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1.0;
-    } catch {
-      return 1.0;
-    }
+    const val = vmxData?.locationBCustom;
+    return typeof val === 'number' && Number.isFinite(val) && val > 0 ? val : 1.0;
   });
 
   // String input states for custom location multipliers (for controlled inputs)
@@ -647,51 +620,22 @@ export default function VMXApp(props: VMXAppProps = {}) {
   const locationFactorB = locationBPreset === "custom" ? locationBCustom : presetFactor(locationBPreset);
 
   // Phase 3: Typology modifiers (site conditions)
-  const [typologyA, setTypologyA] = useState<TypologyId>(() => {
-    try {
-      return (localStorage.getItem("vmx_typology_a_v1") as TypologyId) || "suburban";
-    } catch {
-      return "suburban";
-    }
-  });
+  const [typologyA, setTypologyA] = useState<TypologyId>(() => (vmxData?.typologyA as TypologyId) || "suburban");
 
-  const [typologyB, setTypologyB] = useState<TypologyId>(() => {
-    try {
-      return (localStorage.getItem("vmx_typology_b_v1") as TypologyId) || "suburban";
-    } catch {
-      return "suburban";
-    }
-  });
+  const [typologyB, setTypologyB] = useState<TypologyId>(() => (vmxData?.typologyB as TypologyId) || "suburban");
 
   // Baselines used in Key Drivers comparisons
-  const [baselineLocationPreset, setBaselineLocationPreset] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_baseline_location_preset_v1") || "national";
-    } catch {
-      return "national";
-    }
-  });
+  const [baselineLocationPreset, setBaselineLocationPreset] = useState<string>(() => vmxData?.baselineLocationPreset || "national");
 
   const [baselineLocationCustom, setBaselineLocationCustom] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_baseline_location_custom_v1");
-      const parsed = raw ? Number(raw) : 1.0;
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1.0;
-    } catch {
-      return 1.0;
-    }
+    const val = vmxData?.baselineLocationCustom;
+    return typeof val === 'number' && Number.isFinite(val) && val > 0 ? val : 1.0;
   });
 
   const baselineLocationFactor =
     baselineLocationPreset === "custom" ? baselineLocationCustom : presetFactor(baselineLocationPreset);
 
-  const [baselineTypology, setBaselineTypology] = useState<TypologyId>(() => {
-    try {
-      return (localStorage.getItem("vmx_baseline_typology_v1") as TypologyId) || "suburban";
-    } catch {
-      return "suburban";
-    }
-  });
+  const [baselineTypology, setBaselineTypology] = useState<TypologyId>(() => (vmxData?.baselineTypology as TypologyId) || "suburban");
 
 
   // ---------------------------------------------------------------------------
@@ -725,58 +669,23 @@ export default function VMXApp(props: VMXAppProps = {}) {
     context?: VmxIncomingContextV1;
   };
 
-  const [n4sClientName, setN4sClientName] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_n4s_client_name_v1") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [n4sClientName, setN4sClientName] = useState<string>(() => vmxData?.n4sClientName || "");
 
-  const [n4sProjectName, setN4sProjectName] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_n4s_project_name_v1") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [n4sProjectName, setN4sProjectName] = useState<string>(() => vmxData?.n4sProjectName || "");
 
-  const [n4sProjectId, setN4sProjectId] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_n4s_project_id_v1") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [n4sProjectId, setN4sProjectId] = useState<string>(() => vmxData?.n4sProjectId || "");
 
   const [landCostA, setLandCostA] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_land_cost_a_v1");
-      const parsed = raw ? Number(raw) : 0;
-      return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-    } catch {
-      return 0;
-    }
+    const val = vmxData?.landCostA;
+    return typeof val === 'number' && Number.isFinite(val) && val >= 0 ? val : 0;
   });
 
   const [landCostB, setLandCostB] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_land_cost_b_v1");
-      const parsed = raw ? Number(raw) : 0;
-      return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-    } catch {
-      return 0;
-    }
+    const val = vmxData?.landCostB;
+    return typeof val === 'number' && Number.isFinite(val) && val >= 0 ? val : 0;
   });
 
-  const [programProfile, setProgramProfile] = useState<VmxProgramProfile | null>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_program_profile_v1");
-      return raw ? (JSON.parse(raw) as VmxProgramProfile) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [programProfile, setProgramProfile] = useState<VmxProgramProfile | null>(() => vmxData?.programProfile ?? null);
 
   const [n4sProjects, setN4sProjects] = useState<N4SProjectEntry[]>(() => {
     try {
@@ -844,18 +753,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
     }
   }
 
-  // Persist key integration fields locally (so VMX works standalone too)
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_n4s_client_name_v1", n4sClientName || "");
-      localStorage.setItem("vmx_n4s_project_name_v1", n4sProjectName || "");
-      localStorage.setItem("vmx_n4s_project_id_v1", n4sProjectId || "");
-      localStorage.setItem("vmx_land_cost_a_v1", String(landCostA || 0));
-      localStorage.setItem("vmx_land_cost_b_v1", String(landCostB || 0));
-    } catch {
-      // ignore
-    }
-  }, [n4sClientName, n4sProjectName, n4sProjectId, landCostA, landCostB]);
+  // N4S integration fields are persisted via updateVMXData in the main sync effect
 
   // Bootstrap from N4S host if provided (window globals)
   useEffect(() => {
@@ -867,8 +765,8 @@ export default function VMXApp(props: VMXAppProps = {}) {
       const arr = (win.__N4S_VMX_PROJECTS__ as N4SProjectEntry[] | undefined) || [];
       if (Array.isArray(arr) && arr.length > 0) setN4sProjects(arr);
 
-      // If we have a saved projectId and a matching project with context, apply it
-      const savedId = (localStorage.getItem("vmx_n4s_project_id_v1") || "").trim();
+      // If we have a saved projectId from vmxData and a matching project with context, apply it
+      const savedId = (vmxData?.n4sProjectId || "").trim();
       if (!ctx && savedId && Array.isArray(arr)) {
         const found = arr.find((p) => p.id === savedId);
         if (found?.context) applyIncomingContext(found.context);
@@ -880,7 +778,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
   }, []);
 
   // Initialize from vmxData props (server-persisted state via AppContext)
-  // This takes precedence over localStorage for data integrity
+  // This is the single source of truth — all state comes from the server
   const vmxDataInitialized = React.useRef(false);
   useEffect(() => {
     if (vmxDataInitialized.current || !vmxData) return;
@@ -927,46 +825,13 @@ export default function VMXApp(props: VMXAppProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vmxData]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_location_a_preset_v1", locationAPreset);
-      localStorage.setItem("vmx_location_a_custom_v1", String(locationACustom));
-      localStorage.setItem("vmx_location_b_preset_v1", locationBPreset);
-      localStorage.setItem("vmx_location_b_custom_v1", String(locationBCustom));
-    } catch {
-      // ignore
-    }
-  }, [locationAPreset, locationACustom, locationBPreset, locationBCustom]);
+  // Location presets/custom are persisted via the main state sync effect
 
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_typology_a_v1", typologyA);
-      localStorage.setItem("vmx_typology_b_v1", typologyB);
-      localStorage.setItem("vmx_baseline_location_preset_v1", baselineLocationPreset);
-      localStorage.setItem("vmx_baseline_location_custom_v1", String(baselineLocationCustom));
-      localStorage.setItem("vmx_baseline_typology_v1", baselineTypology);
-    } catch {
-      // ignore
-    }
-  }, [typologyA, typologyB, baselineLocationPreset, baselineLocationCustom, baselineTypology]);
+  // Typology and baseline values are persisted via the main state sync effect
 
   // Phase 2: 4-tier override for Interiors + Equipment & Furnishings (finishes + FF&E)
-  const [interiorTierOverride, setInteriorTierOverride] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_interior_tier_override_v1") || "match";
-    } catch {
-      return "match";
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_interior_tier_override_v1", interiorTierOverride);
-    } catch {
-      // ignore
-    }
-  }, [interiorTierOverride]);
+  const [interiorTierOverride, setInteriorTierOverride] = useState<string>(() => vmxData?.interiorTierOverride || "match");
 
   // Sync state changes TO AppContext (server persistence)
   // Only sync after initial load to avoid overwriting with defaults
@@ -1021,117 +886,49 @@ export default function VMXApp(props: VMXAppProps = {}) {
   ]);
 
   const [deltaMediumThr, setDeltaMediumThr] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_delta_medium_thr_v1");
-      const parsed = raw ? Number(raw) : 0.015;
-      return Number.isFinite(parsed) ? parsed : 0.015;
-    } catch {
-      return 0.015;
-    }
+    const val = vmxData?.deltaMediumThreshold;
+    return typeof val === 'number' && Number.isFinite(val) ? val : 0.015;
   });
 
   const [deltaHighThr, setDeltaHighThr] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_delta_high_thr_v1");
-      const parsed = raw ? Number(raw) : 0.03;
-      return Number.isFinite(parsed) ? parsed : 0.03;
-    } catch {
-      return 0.03;
-    }
+    const val = vmxData?.deltaHighThreshold;
+    return typeof val === 'number' && Number.isFinite(val) ? val : 0.03;
   });
 
-  const [deltaSort, setDeltaSort] = useState<DeltaSortMode>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_delta_sort_v1");
-      return raw === "category" ? "category" : "impact";
-    } catch {
-      return "impact";
-    }
-  });
+  const [deltaSort, setDeltaSort] = useState<DeltaSortMode>(() =>
+    vmxData?.deltaSort === "category" ? "category" : "impact"
+  );
 
-  const [deltaDriversOnly, setDeltaDriversOnly] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem("vmx_delta_drivers_only_v1") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [deltaDriversOnly, setDeltaDriversOnly] = useState<boolean>(() => vmxData?.deltaDriversOnly ?? false);
 
   // Provenance (shown in UI footer and exports)
-  const [datasetName, setDatasetName] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_dataset_name_v1") || "US — Reserve (VMX Demo)";
-    } catch {
-      return "US — Reserve (VMX Demo)";
-    }
-  });
+  const [datasetName, setDatasetName] = useState<string>(() => vmxData?.datasetName || "US — Reserve (VMX Demo)");
 
-  const [datasetLastUpdated, setDatasetLastUpdated] = useState<string>(() => {
-    try {
-      return localStorage.getItem("vmx_dataset_last_updated_v1") || formatProvenanceDate(new Date());
-    } catch {
-      return formatProvenanceDate(new Date());
-    }
-  });
+  const [datasetLastUpdated, setDatasetLastUpdated] = useState<string>(() => vmxData?.datasetLastUpdated || formatProvenanceDate(new Date()));
 
-  const [datasetAssumptions, setDatasetAssumptions] = useState<string>(() => {
-    try {
-      return (
-        localStorage.getItem("vmx_dataset_assumptions_v1") ||
-        "Guardrails calibrated for early-stage DIRECT hard costs; benchmarks are $/sf by category; targets are directional ranges (not contract pricing). Construction Indirects (GC fee/conditions/contingency) are calculated separately."
-      );
-    } catch {
-      return "Guardrails calibrated for early-stage DIRECT hard costs; benchmarks are $/sf by category; targets are directional ranges (not contract pricing). Construction Indirects (GC fee/conditions/contingency) are calculated separately.";
-    }
-  });
+  const [datasetAssumptions, setDatasetAssumptions] = useState<string>(() =>
+    vmxData?.datasetAssumptions ||
+    "Guardrails calibrated for early-stage DIRECT hard costs; benchmarks are $/sf by category; targets are directional ranges (not contract pricing). Construction Indirects (GC fee/conditions/contingency) are calculated separately."
+  );
 
-  const [autoStampOnBenchmarkChange, setAutoStampOnBenchmarkChange] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_dataset_auto_stamp_v1");
-      return raw ? raw === "true" : true;
-    } catch {
-      return true;
-    }
-  });
+  const [autoStampOnBenchmarkChange, setAutoStampOnBenchmarkChange] = useState<boolean>(() => vmxData?.datasetAutoStamp ?? true);
 
   // Driver definition (for Delta Heat)
-  const [driverMode, setDriverMode] = useState<"topN" | "pct">(() => {
-    try {
-      const raw = localStorage.getItem("vmx_driver_mode_v1");
-      return raw === "pct" ? "pct" : "topN";
-    } catch {
-      return "topN";
-    }
-  });
+  const [driverMode, setDriverMode] = useState<"topN" | "pct">(() => vmxData?.driverMode === "pct" ? "pct" : "topN");
 
   const [driverTopN, setDriverTopN] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_driver_top_n_v1");
-      const parsed = raw ? Number(raw) : 3;
-      return Number.isFinite(parsed) ? Math.max(1, parsed) : 3;
-    } catch {
-      return 3;
-    }
+    const val = vmxData?.driverTopN;
+    return typeof val === 'number' && Number.isFinite(val) ? Math.max(1, val) : 3;
   });
 
   const [driverPctThreshold, setDriverPctThreshold] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_driver_pct_thr_v1");
-      const parsed = raw ? Number(raw) : 0.02;
-      return Number.isFinite(parsed) ? Math.max(0, parsed) : 0.02;
-    } catch {
-      return 0.02;
-    }
+    const val = vmxData?.driverPctThreshold;
+    return typeof val === 'number' && Number.isFinite(val) ? Math.max(0, val) : 0.02;
   });
 
   const [driverPctMaxDrivers, setDriverPctMaxDrivers] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("vmx_driver_pct_cap_v1");
-      const parsed = raw ? Number(raw) : 7;
-      return Number.isFinite(parsed) ? Math.max(1, parsed) : 7;
-    } catch {
-      return 7;
-    }
+    const val = vmxData?.driverPctCap;
+    return typeof val === 'number' && Number.isFinite(val) ? Math.max(1, val) : 7;
   });
 
 
@@ -1149,25 +946,9 @@ export default function VMXApp(props: VMXAppProps = {}) {
     saveSelection(regionAId, tier);
   }, [regionAId, tier]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_compare_mode_v1", String(compareMode));
-      localStorage.setItem("vmx_compare_region_b_v1", regionBId);
-    } catch {
-      // ignore
-    }
-  }, [compareMode, regionBId]);
+  // compareMode and regionBId are persisted via the main state sync effect
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("vmx_delta_medium_thr_v1", String(deltaMediumThr));
-      localStorage.setItem("vmx_delta_high_thr_v1", String(deltaHighThr));
-      localStorage.setItem("vmx_delta_sort_v1", deltaSort);
-      localStorage.setItem("vmx_delta_drivers_only_v1", String(deltaDriversOnly));
-    } catch {
-      // ignore
-    }
-  }, [deltaMediumThr, deltaHighThr, deltaSort, deltaDriversOnly]);
+  // Delta settings are persisted via the main state sync effect
 
   useEffect(() => {
     try {
@@ -1824,10 +1605,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
             className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
             disabled={isSaving || !hasUnsavedChanges}
             onClick={async () => {
-              // Save to localStorage (for standalone VMX use)
-              saveLibrary(library);
-              saveSelection(regionAId, tier);
-
               // Save to server via AppContext (for N4S integration)
               if (saveNow) {
                 try {

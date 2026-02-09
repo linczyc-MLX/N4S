@@ -262,33 +262,23 @@ function migrateLibrary(input: unknown): { next: BenchmarkLibrary; changed: bool
 
 // --- Public API ---
 
-export function getInitialLibrary(): BenchmarkLibrary {
+export function getInitialLibrary(savedLibrary?: unknown): BenchmarkLibrary {
   const demoLib = buildDemoLibrary();
 
+  if (savedLibrary === null || savedLibrary === undefined) {
+    return demoLib;
+  }
+
   try {
-    const raw = localStorage.getItem(LIB_KEY);
-    if (!raw) return demoLib;
-
-    const parsed = JSON.parse(raw);
-    const { next, changed } = migrateLibrary(parsed);
-
-    if (changed) {
-      // Persist the repaired structure so future boots are clean
-      saveLibrary(next);
-    }
-
+    const { next } = migrateLibrary(savedLibrary);
     return next;
   } catch {
     return demoLib;
   }
 }
 
-export function saveLibrary(lib: BenchmarkLibrary) {
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(lib));
-  } catch {
-    // ignore
-  }
+export function saveLibrary(_lib: BenchmarkLibrary) {
+  // No-op: caller (VMXApp) handles persistence via updateVMXData
 }
 
 /**
@@ -396,28 +386,20 @@ export function resetRegionTierToDemo(lib: BenchmarkLibrary, regionId: string, t
   };
 }
 
-export function getInitialSelection(lib: BenchmarkLibrary): { regionId: string; tier: TierId } {
+export function getInitialSelection(
+  lib: BenchmarkLibrary,
+  savedRegionId?: unknown,
+  savedTier?: unknown
+): { regionId: string; tier: TierId } {
   const fallback = { regionId: lib.regions[0]?.id ?? "us", tier: "reserve" as TierId };
 
-  try {
-    const raw = localStorage.getItem(SEL_KEY);
-    if (!raw) return fallback;
+  const regionId = typeof savedRegionId === "string" ? savedRegionId : fallback.regionId;
+  const tier: TierId = TIERS.includes(savedTier as any) ? (savedTier as TierId) : fallback.tier;
 
-    const parsed = JSON.parse(raw);
-    const regionId = typeof parsed?.regionId === "string" ? parsed.regionId : fallback.regionId;
-    const tier: TierId = TIERS.includes(parsed?.tier) ? parsed.tier : fallback.tier;
-
-    const exists = lib.regions.some((r) => r.id === regionId);
-    return exists ? { regionId, tier } : fallback;
-  } catch {
-    return fallback;
-  }
+  const exists = lib.regions.some((r) => r.id === regionId);
+  return exists ? { regionId, tier } : fallback;
 }
 
-export function saveSelection(regionId: string, tier: TierId) {
-  try {
-    localStorage.setItem(SEL_KEY, JSON.stringify({ regionId, tier }));
-  } catch {
-    // ignore
-  }
+export function saveSelection(_regionId: string, _tier: TierId) {
+  // No-op: caller (VMXApp) handles persistence via updateVMXData
 }

@@ -180,13 +180,15 @@ function normalizeWeights(weights: number[]): number[] {
   return weights.map((w) => w / sum);
 }
 
-export function loadSoftCostsConfigWithAutoMigration(): SoftCostsConfig {
+export function loadSoftCostsConfigWithAutoMigration(savedConfig?: unknown): SoftCostsConfig {
   const def = getDefaultSoftCostsConfig();
-  try {
-    const raw = localStorage.getItem(DEFAULT_CONFIG_KEY);
-    if (!raw) return def;
 
-    const parsed = JSON.parse(raw);
+  if (savedConfig === null || savedConfig === undefined) {
+    return def;
+  }
+
+  try {
+    const parsed = savedConfig as any;
     // If anything is malformed, fall back.
     const duration = clampNumber(parsed?.projectDurationYears, def.projectDurationYears, 1, 10);
     const rate = clampNumber(parsed?.annualEscalationRate, def.annualEscalationRate, 0, 0.5);
@@ -235,21 +237,14 @@ export function loadSoftCostsConfigWithAutoMigration(): SoftCostsConfig {
       next.selectedPresetKey = durKey;
     }
 
-    // Persist the normalized/migrated config to keep future loads stable
-    try {
-      localStorage.setItem(DEFAULT_CONFIG_KEY, JSON.stringify(next, null, 2));
-    } catch {
-      // ignore
-    }
-
     return next;
   } catch {
     return def;
   }
 }
 
-export function saveSoftCostsConfig(cfg: SoftCostsConfig) {
-  localStorage.setItem(DEFAULT_CONFIG_KEY, JSON.stringify(cfg, null, 2));
+export function saveSoftCostsConfig(_cfg: SoftCostsConfig) {
+  // No-op: caller (VMXApp) handles persistence via updateVMXData
 }
 
 export function computeSoftCosts(result: ScenarioResult, cfg: SoftCostsConfig): SoftCostsComputed {
@@ -446,14 +441,15 @@ export function parseConfigFromJson(raw: string): { ok: true; value: SoftCostsCo
   }
 }
 
-const SOFT_COSTS_KEY = "vmx_soft_costs_config_v1";
-
-export function loadSoftCostsConfig(): SoftCostsConfig {
+export function loadSoftCostsConfig(savedConfig?: unknown): SoftCostsConfig {
   const def = getDefaultSoftCostsConfig();
+
+  if (savedConfig === null || savedConfig === undefined) {
+    return def;
+  }
+
   try {
-    const raw = localStorage.getItem(SOFT_COSTS_KEY);
-    if (!raw) return def;
-    const parsed = parseConfigFromJson(raw);
+    const parsed = parseConfigFromJson(JSON.stringify(savedConfig));
     if (!parsed.ok) return def;
     return parsed.value;
   } catch {
@@ -461,10 +457,6 @@ export function loadSoftCostsConfig(): SoftCostsConfig {
   }
 }
 
-export function persistSoftCostsConfig(cfg: SoftCostsConfig) {
-  try {
-    localStorage.setItem(SOFT_COSTS_KEY, configToPrettyJson(cfg));
-  } catch {
-    // ignore
-  }
+export function persistSoftCostsConfig(_cfg: SoftCostsConfig) {
+  // No-op: caller (VMXApp) handles persistence via updateVMXData
 }

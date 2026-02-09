@@ -4,7 +4,7 @@
  * This component:
  * 1. Reads project data from AppContext
  * 2. Sets window.__N4S_VMX_* globals before VMX mounts
- * 3. Writes FYI zone totals to localStorage for smart weighting
+ * 3. Writes FYI zone totals to vmxData for smart weighting
  * 4. Renders the VMX application
  *
  * Integration Spec: N4S → VMX Data Handoff (Phase A + Phase B1)
@@ -173,6 +173,16 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         // Flag if tier was set from KYC (should be locked in VMX)
         const tierLockedFromKYC = !!budgetFramework.interiorQualityTier;
 
+        // Build KYC budget constraints for VMX guardrails
+        const kycBudgetConstraints = {
+          totalBudget: budgetFramework.totalProjectBudget || null,
+          constructionBudget: budgetFramework.interiorBudget || null,
+          budgetPerSF: budgetFramework.perSFExpectation || null,
+          budgetFlexibility: budgetFramework.budgetFlexibility || '',
+          artBudgetSeparate: budgetFramework.artBudgetSeparate || false,
+          artBudgetAmount: budgetFramework.artBudgetAmount || null,
+        };
+
         return {
           id: project.id,
           label: projectName,
@@ -184,6 +194,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
             projectName,
             compareMode: false,  // VMX expects 'compareMode', not 'compareModeEnabled'
             tierLockedFromKYC,  // If true, VMX should not allow tier changes
+            kycBudgetConstraints, // Budget data from KYC for VMX guardrails
             scenarioA: {
               areaSqft,
               tier,
@@ -238,7 +249,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     };
   }, [fyiState.zonesWithCounts]);
 
-  // Set up VMX globals and localStorage before rendering
+  // Set up VMX globals and sync program profile to vmxData
   useEffect(() => {
     // 1. Set project list for dropdown
     window.__N4S_VMX_PROJECTS__ = vmxProjects;
@@ -249,14 +260,16 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     // 3. Set Pro mode access (could be based on user role)
     window.__N4S_VMX_ALLOW_PRO__ = true; // TODO: Wire to user permissions
 
-    // 4. Write FYI zone totals to localStorage for smart weighting
+    // 4. Write FYI zone totals to vmxData (server-persisted)
     if (programProfile) {
-      try {
-        localStorage.setItem('vmx_program_profile_v1', JSON.stringify(programProfile));
-        console.log('[VMX] Set program profile:', programProfile);
-      } catch (e) {
-        console.warn('[VMX] Failed to set program profile:', e);
-      }
+      updateVMXData({ programProfile });
+      console.log('[VMX] Set program profile in vmxData:', programProfile);
+    }
+
+    // 5. Sync KYC budget constraints to vmxData for guardrails
+    if (currentContext?.kycBudgetConstraints) {
+      updateVMXData({ kycBudgetConstraints: currentContext.kycBudgetConstraints });
+      console.log('[VMX] Set KYC budget constraints:', currentContext.kycBudgetConstraints);
     }
 
     console.log('[VMX] Context set:', {

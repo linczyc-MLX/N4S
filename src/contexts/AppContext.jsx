@@ -220,8 +220,9 @@ const initialLCDData = {
 };
 
 // Initial VMX data (Vision Matrix cost estimation)
+// ALL VMX state persisted server-side — NO localStorage
 const initialVMXData = {
-  // Scenario configuration
+  // === Scenario configuration ===
   tier: 'reserve',                    // TierId: select/reserve/signature/legacy
   regionAId: 'us',                    // Primary region
   regionBId: 'me',                    // Compare region
@@ -265,11 +266,49 @@ const initialVMXData = {
     EXTERNAL_WORKS: 'MEDIUM',
   },
 
-  // Custom benchmark library (if user has edited benchmarks)
-  customBenchmarkLibrary: null,
-
   // UI mode
   uiMode: 'lite',                     // 'lite' or 'pro'
+
+  // === Benchmark Library (was vmx_benchmark_library_v2 in localStorage) ===
+  benchmarkLibrary: null,             // Full BenchmarkLibrary object; null = use demo defaults
+
+  // === Snapshots (was vmx_snapshots_v1 in localStorage) ===
+  snapshots: [],                      // Array of Snapshot objects (frozen scenario results)
+
+  // === Soft Costs Config (was vmx_soft_costs_config_v1 in localStorage) ===
+  softCostsConfig: null,              // SoftCostsConfig object; null = use defaults
+
+  // === Construction Indirects (was vmx_construction_indirects_v1 in localStorage) ===
+  constructionIndirectsConfig: null,  // ConstructionIndirectsConfigV1; null = use defaults
+
+  // === Baseline Settings for Key Drivers (was vmx_baseline_* in localStorage) ===
+  baselineLocationPreset: 'national',
+  baselineLocationCustom: 1.0,
+  baselineTypology: 'suburban',
+
+  // === Delta Analysis Settings (was vmx_delta_* in localStorage) ===
+  deltaMediumThreshold: 0.015,
+  deltaHighThreshold: 0.03,
+  deltaSort: 'category',             // 'category' or 'impact'
+  deltaDriversOnly: false,
+
+  // === Driver Settings (was vmx_driver_* in localStorage) ===
+  driverMode: 'topN',                // 'topN' or 'pct'
+  driverTopN: 3,
+  driverPctThreshold: 0.02,
+  driverPctCap: 7,
+
+  // === Dataset Metadata (was vmx_dataset_* in localStorage) ===
+  datasetName: '',
+  datasetLastUpdated: '',
+  datasetAssumptions: '',
+  datasetAutoStamp: true,
+
+  // === Program Profile from FYI zones (was vmx_program_profile_v1 in localStorage) ===
+  programProfile: null,               // { totalSF, byZoneSF } or null
+
+  // === KYC Budget Constraints (linked from KYC budgetFramework) ===
+  kycBudgetConstraints: null,         // { totalBudget, constructionBudget, budgetPerSF }
 };
 
 // Empty project template
@@ -411,13 +450,13 @@ export const AppProvider = ({ children }) => {
               console.log('[APP] FYI selections:', data.fyiData?.selections);
               console.log('[APP] MVP checklist:', data.fyiData?.mvpChecklistState);
               console.log('[APP] KYS data from fyiData:', data.fyiData?.kysData);
-              console.log('[APP] VMX data from fyiData:', data.fyiData?.vmxData);
+              console.log('[APP] VMX data (first-class):', data.vmxData);
               setActiveProjectIdState(activeId);
               // Merge with defaults to handle old projects missing new fields
               // Extract kysData from fyiData where it's stored for backend compatibility
               const loadedKysData = data.fyiData?.kysData || initialKYSData;
-              // Extract vmxData from fyiData where it's stored for backend compatibility
-              const loadedVmxData = data.fyiData?.vmxData || initialVMXData;
+              // VMX data: first-class data type, with migration fallback from fyiData
+              const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
               // Load lcdData directly (first-class data type)
               const loadedLcdData = data.lcdData || initialLCDData;
               setProjectData({
@@ -507,11 +546,20 @@ export const AppProvider = ({ children }) => {
       };
     }
 
+    // Ensure vmxData is sent as first-class data type (not nested in fyiData)
+    if (dataToSave.vmxData) {
+      // Remove stale vmxData from fyiData if it exists (migration cleanup)
+      if (dataToSave.fyiData?.vmxData) {
+        const { vmxData: _discardNested, ...cleanFyiData } = dataToSave.fyiData;
+        dataToSave.fyiData = cleanFyiData;
+      }
+    }
+
     console.log('[APP] Saving to server...');
     console.log('[APP] FYI selections being saved:', dataToSave.fyiData?.selections);
     console.log('[APP] MVP checklist being saved:', dataToSave.fyiData?.mvpChecklistState);
     console.log('[APP] KYS data being saved (in fyiData):', dataToSave.fyiData?.kysData);
-    console.log('[APP] VMX data being saved (in fyiData):', dataToSave.fyiData?.vmxData);
+    console.log('[APP] VMX data being saved (first-class):', dataToSave.vmxData);
 
     try {
       await api.updateProject(activeProjectId, dataToSave);
@@ -558,8 +606,8 @@ export const AppProvider = ({ children }) => {
         // Merge with defaults to handle old projects missing new fields
         // Extract kysData from fyiData where it's stored for backend compatibility
         const loadedKysData = data.fyiData?.kysData || initialKYSData;
-        // Extract vmxData from fyiData where it's stored for backend compatibility
-        const loadedVmxData = data.fyiData?.vmxData || initialVMXData;
+        // VMX data: first-class data type, with migration fallback from fyiData
+        const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
         // Load lcdData directly (first-class data type)
         const loadedLcdData = data.lcdData || initialLCDData;
         setProjectData({
@@ -909,12 +957,11 @@ export const AppProvider = ({ children }) => {
   }, [markChanged]);
 
   // Update VMX data (Vision Matrix cost estimation)
-  // NOTE: Stored in fyiData.vmxData for PHP backend compatibility
+  // First-class data type — persisted directly as vmxData in project_data table
   const updateVMXData = useCallback((updates) => {
     console.log('[APP] updateVMXData:', updates);
     setProjectData(prev => {
-      // VMX data is stored in fyiData.vmxData for backend compatibility
-      const currentVmxData = prev.fyiData?.vmxData || prev.vmxData || initialVMXData;
+      const currentVmxData = prev.vmxData || initialVMXData;
 
       const mergedVmxData = {
         ...currentVmxData,
@@ -937,11 +984,6 @@ export const AppProvider = ({ children }) => {
 
       return {
         ...prev,
-        fyiData: {
-          ...prev.fyiData,
-          vmxData: mergedVmxData,
-        },
-        // Also store at top level for easy access
         vmxData: mergedVmxData,
       };
     });

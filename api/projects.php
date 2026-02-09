@@ -71,7 +71,7 @@ switch ($method) {
             }
 
             // Update data sections
-            $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData'];
+            $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData', 'vmxData'];
             foreach ($dataTypes as $type) {
                 if (isset($input[$type])) {
                     $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");
@@ -108,7 +108,7 @@ switch ($method) {
             $stmt->execute([$id, $projectName, $projectCode, $projectName, $projectCode]);
 
             // Insert/update data sections
-            $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData'];
+            $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData', 'vmxData'];
             foreach ($dataTypes as $type) {
                 if (isset($input[$type])) {
                     $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");
@@ -143,7 +143,7 @@ switch ($method) {
             ]);
         }
 
-        $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData'];
+        $dataTypes = ['kycData', 'fyiData', 'activeRespondent', 'lcdData', 'vmxData'];
         foreach ($dataTypes as $type) {
             if (isset($input[$type])) {
                 $stmt = $pdo->prepare("INSERT INTO project_data (project_id, data_type, data_json) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data_json = ?");

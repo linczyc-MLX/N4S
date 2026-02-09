@@ -12,32 +12,15 @@ type Snapshot = {
   payload: ScenarioResult;
 };
 
-const STORAGE_KEY = "vmx_snapshots_v1";
-
-function safeParse<T>(raw: string | null): T | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
+function loadSnapshots(snapshots: Snapshot[]): Snapshot[] {
+  return Array.isArray(snapshots) ? snapshots : [];
 }
 
-function loadSnapshots(): Snapshot[] {
-  try {
-    const parsed = safeParse<Snapshot[]>(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function persistSnapshots(next: Snapshot[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore
-  }
+function persistSnapshots(
+  next: Snapshot[],
+  onSnapshotsChange: (snapshots: Snapshot[]) => void
+) {
+  onSnapshotsChange(next);
 }
 
 function downloadJson(filename: string, data: unknown) {
@@ -50,13 +33,16 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
-export function SnapshotPanel({ current }: { current: ScenarioResult | null }) {
-  const [snapshots, setSnapshots] = useState<Snapshot[]>(() => loadSnapshots());
+export function SnapshotPanel({
+  current,
+  snapshots,
+  onSnapshotsChange,
+}: {
+  current: ScenarioResult | null;
+  snapshots: Snapshot[];
+  onSnapshotsChange: (snapshots: Snapshot[]) => void;
+}) {
   const [name, setName] = useState<string>("");
-
-  useEffect(() => {
-    persistSnapshots(snapshots);
-  }, [snapshots]);
 
   const canSave = !!current;
 
@@ -82,12 +68,15 @@ export function SnapshotPanel({ current }: { current: ScenarioResult | null }) {
       payload: current,
     };
 
-    setSnapshots((prev) => [snap, ...prev]);
+    persistSnapshots([snap, ...snapshots], onSnapshotsChange);
     setName("");
   }
 
   function onDelete(id: string) {
-    setSnapshots((prev) => prev.filter((s) => s.id !== id));
+    persistSnapshots(
+      snapshots.filter((s) => s.id !== id),
+      onSnapshotsChange
+    );
   }
 
   function onExportOne(s: Snapshot) {
