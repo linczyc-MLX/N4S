@@ -35,12 +35,12 @@ function downloadJson(filename: string, data: unknown) {
 
 export function SnapshotPanel({
   current,
-  snapshots,
-  onSnapshotsChange,
+  snapshots = [],
+  onSnapshotsChange = () => {},
 }: {
   current: ScenarioResult | null;
-  snapshots: Snapshot[];
-  onSnapshotsChange: (snapshots: Snapshot[]) => void;
+  snapshots?: Snapshot[];
+  onSnapshotsChange?: (snapshots: Snapshot[]) => void;
 }) {
   const [name, setName] = useState<string>("");
 

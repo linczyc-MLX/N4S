@@ -243,6 +243,9 @@ const initialVMXData = {
   landCostA: 0,
   landCostB: 0,
 
+  // KYC tier lock flag
+  tierLockedFromKYC: false,
+
   // Interior tier override (for Interiors + FF&E only)
   interiorTierOverride: 'match',      // 'match' or a TierId
 

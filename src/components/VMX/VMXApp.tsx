@@ -469,6 +469,7 @@ type VMXAppProps = {
     n4sClientName?: string;
     n4sProjectName?: string;
     n4sProjectId?: string;
+    tierLockedFromKYC?: boolean;
     programProfile?: any;
     deltaMediumThreshold?: number;
     deltaHighThreshold?: number;
@@ -491,7 +492,10 @@ type VMXAppProps = {
 
 export default function VMXApp(props: VMXAppProps = {}) {
   const { vmxData, updateVMXData, saveNow, hasUnsavedChanges = false, isSaving = false } = props;
-  const [areaSqft, setAreaSqft] = useState<number>(15000);
+  const [areaSqft, setAreaSqft] = useState<number>(() => {
+    if (typeof vmxData?.areaSqft === 'number' && vmxData.areaSqft > 0) return vmxData.areaSqft;
+    return 15000;
+  });
   // Keep a string input for Lite view so users can type commas etc (syncs to numeric areaSqft)
   const [areaSqftInput, setAreaSqftInput] = useState<string>(() => String(areaSqft));
 
@@ -573,7 +577,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
   const [regionAId, setRegionAId] = useState<string>(initialSel.regionId);
   const [tier, setTier] = useState<TierId>(initialSel.tier);
-  const [tierLockedFromKYC, setTierLockedFromKYC] = useState<boolean>(false);
+  const [tierLockedFromKYC, setTierLockedFromKYC] = useState<boolean>(() => vmxData?.tierLockedFromKYC ?? false);
 
   const [compareMode, setCompareMode] = useState<boolean>(() => vmxData?.compareMode ?? false);
 
@@ -777,54 +781,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initialize from vmxData props (server-persisted state via AppContext)
-  // This is the single source of truth — all state comes from the server
-  const vmxDataInitialized = React.useRef(false);
-  useEffect(() => {
-    if (vmxDataInitialized.current || !vmxData) return;
-    vmxDataInitialized.current = true;
-
-    console.log('[VMX] Initializing from vmxData:', vmxData);
-
-    // Apply persisted state from server
-    if (vmxData.tier && TIERS.includes(vmxData.tier as TierId)) setTier(vmxData.tier as TierId);
-    if (vmxData.regionAId) setRegionAId(vmxData.regionAId);
-    if (vmxData.regionBId) setRegionBId(vmxData.regionBId);
-    if (typeof vmxData.compareMode === 'boolean') setCompareMode(vmxData.compareMode);
-    if (typeof vmxData.areaSqft === 'number' && vmxData.areaSqft > 0) setAreaSqft(vmxData.areaSqft);
-    if (vmxData.locationAPreset) setLocationAPreset(vmxData.locationAPreset);
-    if (typeof vmxData.locationACustom === 'number') setLocationACustom(vmxData.locationACustom);
-    if (vmxData.locationBPreset) setLocationBPreset(vmxData.locationBPreset);
-    if (typeof vmxData.locationBCustom === 'number') setLocationBCustom(vmxData.locationBCustom);
-    if (vmxData.typologyA) setTypologyA(vmxData.typologyA as TypologyId);
-    if (vmxData.typologyB) setTypologyB(vmxData.typologyB as TypologyId);
-    if (typeof vmxData.landCostA === 'number') setLandCostA(vmxData.landCostA);
-    if (typeof vmxData.landCostB === 'number') setLandCostB(vmxData.landCostB);
-    if (vmxData.interiorTierOverride) setInteriorTierOverride(vmxData.interiorTierOverride);
-    if (vmxData.uiMode === 'lite' || vmxData.uiMode === 'pro') setUiMode(vmxData.uiMode);
-
-    // Initialize selections from vmxData
-    if (vmxData.selectionsA) {
-      const newSelA = { ...selA };
-      for (const [catId, band] of Object.entries(vmxData.selectionsA)) {
-        if (newSelA[catId as VmxCategoryId]) {
-          newSelA[catId as VmxCategoryId] = { categoryId: catId as VmxCategoryId, band: band as HeatBand };
-        }
-      }
-      setSelA(newSelA);
-    }
-    if (vmxData.selectionsB) {
-      const newSelB = { ...selB };
-      for (const [catId, band] of Object.entries(vmxData.selectionsB)) {
-        if (newSelB[catId as VmxCategoryId]) {
-          newSelB[catId as VmxCategoryId] = { categoryId: catId as VmxCategoryId, band: band as HeatBand };
-        }
-      }
-      setSelB(newSelB);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vmxData]);
-
   // Location presets/custom are persisted via the main state sync effect
 
 
@@ -833,15 +789,16 @@ export default function VMXApp(props: VMXAppProps = {}) {
   // Phase 2: 4-tier override for Interiors + Equipment & Furnishings (finishes + FF&E)
   const [interiorTierOverride, setInteriorTierOverride] = useState<string>(() => vmxData?.interiorTierOverride || "match");
 
-  // Sync state changes TO AppContext (server persistence)
-  // Only sync after initial load to avoid overwriting with defaults
+  // Enable sync after initial render (skip the very first render to avoid
+  // writing defaults back before the window globals effect can run)
   const vmxSyncEnabled = React.useRef(false);
+  const mountCount = React.useRef(0);
   useEffect(() => {
-    // Enable sync after component has initialized from props
-    if (vmxDataInitialized.current) {
+    mountCount.current += 1;
+    if (mountCount.current >= 2) {
       vmxSyncEnabled.current = true;
     }
-  }, [vmxData]);
+  });
 
   // Helper to build selections object for AppContext
   const buildSelectionsObject = (selections: Record<VmxCategoryId, ScenarioSelection>): Record<string, string> => {
@@ -872,6 +829,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
       landCostB,
       interiorTierOverride,
       uiMode,
+      n4sClientName: n4sClientName || undefined,
+      n4sProjectName: n4sProjectName || undefined,
+      n4sProjectId: n4sProjectId || undefined,
+      tierLockedFromKYC,
       selectionsA: buildSelectionsObject(selA),
       selectionsB: buildSelectionsObject(selB),
     };
@@ -882,6 +843,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
     tier, regionAId, regionBId, compareMode, areaSqft,
     locationAPreset, locationACustom, locationBPreset, locationBCustom,
     typologyA, typologyB, landCostA, landCostB, interiorTierOverride, uiMode,
+    n4sClientName, n4sProjectName, n4sProjectId, tierLockedFromKYC,
     selA, selB, updateVMXData
   ]);
 

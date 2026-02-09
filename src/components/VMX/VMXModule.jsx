@@ -19,39 +19,18 @@ import VMXApp from './VMXApp';
 import './vmx-index.css';
 import './vmx-ui-overrides.css';
 
-// Region mapping from N4S project location to VMX region IDs
+// Map N4S project location to VMX benchmark region ID
+// NOTE: The default benchmark library only has 'us' and 'me' regions.
+// Location-specific cost adjustments are handled via LOCATION_PRESETS, not regions.
 const mapLocationToRegionId = (city, state, country) => {
-  if (!country || (country.toLowerCase() !== 'usa' && country.toLowerCase() !== 'united states')) {
-    return 'national_avg';
+  if (!country) return 'us';
+  const countryLower = country.toLowerCase();
+  // Middle East projects use 'me' benchmark set
+  if (['uae', 'united arab emirates', 'saudi arabia', 'qatar', 'bahrain', 'kuwait', 'oman'].includes(countryLower)) {
+    return 'me';
   }
-
-  const stateUpper = (state || '').toUpperCase();
-  const cityLower = (city || '').toLowerCase();
-
-  // Florida
-  if (stateUpper === 'FL' || stateUpper === 'FLORIDA') {
-    return 'fl_miami_palmbeach';
-  }
-
-  // Colorado
-  if (stateUpper === 'CO' || stateUpper === 'COLORADO') {
-    if (cityLower.includes('aspen') || cityLower.includes('vail')) {
-      return 'co_aspen_vail';
-    }
-    return 'co_denver';
-  }
-
-  // California
-  if (stateUpper === 'CA' || stateUpper === 'CALIFORNIA') {
-    return 'ca_la_oc';
-  }
-
-  // New York
-  if (stateUpper === 'NY' || stateUpper === 'NEW YORK') {
-    return 'ny_nyc_hamptons';
-  }
-
-  return 'national_avg';
+  // Everything else uses 'us' benchmark set
+  return 'us';
 };
 
 // Map N4S quality tier to VMX tier (VMX uses lowercase tier IDs)
@@ -90,6 +69,41 @@ const mapSiteTypology = (kysTypology) => {
     'country': 'rural',
   };
   return typologyMap[(kysTypology || '').toLowerCase()] || 'suburban';
+};
+
+// Map N4S project location to VMX location preset ID
+const mapLocationToPreset = (city, state, country) => {
+  if (!country || (country.toLowerCase() !== 'usa' && country.toLowerCase() !== 'united states')) {
+    return 'national';
+  }
+
+  const stateUpper = (state || '').toUpperCase();
+  const cityLower = (city || '').toLowerCase();
+
+  // Florida
+  if (stateUpper === 'FL' || stateUpper === 'FLORIDA') {
+    return 'florida';
+  }
+
+  // Colorado
+  if (stateUpper === 'CO' || stateUpper === 'COLORADO') {
+    if (cityLower.includes('aspen') || cityLower.includes('vail')) {
+      return 'co_aspen';
+    }
+    return 'co_denver';
+  }
+
+  // California
+  if (stateUpper === 'CA' || stateUpper === 'CALIFORNIA') {
+    return 'ca_la';
+  }
+
+  // New York
+  if (stateUpper === 'NY' || stateUpper === 'NEW YORK') {
+    return 'ny_hamptons';
+  }
+
+  return 'national';
 };
 
 // Zone code mapping (FYI uses same codes as VMX - direct passthrough)
@@ -162,6 +176,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         const state = projectParams.projectState || '';
         const country = projectParams.projectCountry || 'USA';
         const regionId = mapLocationToRegionId(city, state, country);
+        const locationPreset = mapLocationToPreset(city, state, country);
 
         // Get typology from KYS if available
         const selectedSite = kysData?.sites?.find(s => s.id === kysData?.selectedSiteId);
@@ -198,7 +213,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
             scenarioA: {
               areaSqft,
               tier,
-              locationPreset: 'national',
+              locationPreset,
               regionId,
               typology: typologyId,  // VMX expects 'typology', not 'typologyId'
               landCost,
@@ -263,13 +278,43 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     // 4. Write FYI zone totals to vmxData (server-persisted)
     if (programProfile) {
       updateVMXData({ programProfile });
-      console.log('[VMX] Set program profile in vmxData:', programProfile);
     }
 
-    // 5. Sync KYC budget constraints to vmxData for guardrails
-    if (currentContext?.kycBudgetConstraints) {
-      updateVMXData({ kycBudgetConstraints: currentContext.kycBudgetConstraints });
-      console.log('[VMX] Set KYC budget constraints:', currentContext.kycBudgetConstraints);
+    // 5. Sync ALL KYC-derived values to vmxData so VMXApp reads them on mount
+    if (currentContext) {
+      const kycSync = {};
+
+      // Client & project identity
+      if (currentContext.clientName) kycSync.n4sClientName = currentContext.clientName;
+      if (currentContext.projectName) kycSync.n4sProjectName = currentContext.projectName;
+      if (currentContext.projectId) kycSync.n4sProjectId = currentContext.projectId;
+
+      // Scenario A values from KYC
+      const a = currentContext.scenarioA;
+      if (a) {
+        if (typeof a.areaSqft === 'number' && a.areaSqft > 0) kycSync.areaSqft = a.areaSqft;
+        if (a.tier) kycSync.tier = a.tier;
+        if (a.regionId) kycSync.regionAId = a.regionId;
+        if (a.locationPreset) kycSync.locationAPreset = a.locationPreset;
+        if (a.typology) kycSync.typologyA = a.typology;
+        if (typeof a.landCost === 'number' && a.landCost >= 0) kycSync.landCostA = a.landCost;
+      }
+
+      // Tier lock flag
+      if (typeof currentContext.tierLockedFromKYC === 'boolean') {
+        kycSync.tierLockedFromKYC = currentContext.tierLockedFromKYC;
+      }
+
+      // Budget constraints
+      if (currentContext.kycBudgetConstraints) {
+        kycSync.kycBudgetConstraints = currentContext.kycBudgetConstraints;
+      }
+
+      // Write all at once (single state update)
+      if (Object.keys(kycSync).length > 0) {
+        updateVMXData(kycSync);
+        console.log('[VMX] Synced KYC values to vmxData:', kycSync);
+      }
     }
 
     console.log('[VMX] Context set:', {
