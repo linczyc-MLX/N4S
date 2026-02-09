@@ -63,6 +63,7 @@ const DEFAULT_ZONE_RGB = { fill: [240,240,240], stroke: [176,176,176], node: [23
 
 // Zone anchor positions for diagram layout
 const ZONE_POS = {
+  // Preset zone names
   'Entry + Formal':   { x: 0.22, y: 0.18 },
   'Arrival + Formal': { x: 0.22, y: 0.18 },
   'Family Hub':       { x: 0.52, y: 0.30 },
@@ -76,6 +77,16 @@ const ZONE_POS = {
   'Hospitality':      { x: 0.38, y: 0.72 },
   'Circulation':      { x: 0.50, y: 0.50 },
   'Support':          { x: 0.78, y: 0.78 },
+  // FYI zone names (from space-registry.js)
+  'Arrival + Public':  { x: 0.22, y: 0.18 },
+  'Family + Kitchen':  { x: 0.52, y: 0.30 },
+  'Entertainment':     { x: 0.62, y: 0.18 },
+  'Primary Suite':     { x: 0.15, y: 0.60 },
+  'Guest + Secondary': { x: 0.38, y: 0.72 },
+  'Service + BOH':     { x: 0.85, y: 0.50 },
+  'Outdoor Spaces':    { x: 0.48, y: 0.82 },
+  'Guest House':       { x: 0.30, y: 0.88 },
+  'Pool House':        { x: 0.55, y: 0.88 },
 };
 
 // Edge styles for diagram
@@ -171,11 +182,11 @@ function layoutNodes(spaces, matrix, boxW, boxH, offsetX, offsetY) {
 
   // Build nodes with initial zone-anchored positions
   const nodes = spaces.filter(s => !skip.has(s.code)).map(s => {
-    const pos = ZONE_POS[s.zone] || { x: 0.5, y: 0.5 };
+    const pos = ZONE_POS[s.zoneName] || ZONE_POS[s.zone] || { x: 0.5, y: 0.5 };
     const maxSF = Math.max(...spaces.map(sp => sp.targetSF || 0), 100);
     const r = 2.5 + 4.5 * Math.sqrt((s.targetSF || 100) / maxSF);
     return {
-      id: s.code, name: s.name, zone: s.zone, targetSF: s.targetSF, r,
+      id: s.code, name: s.name, zone: s.zoneName || s.zone, targetSF: s.targetSF, r,
       x: offsetX + margin + pos.x * w + (Math.random() - 0.5) * 8,
       y: offsetY + margin + pos.y * h + (Math.random() - 0.5) * 8,
     };
@@ -404,7 +415,8 @@ function drawDiagramLegend(doc, x, y, w) {
  * @param {string} config.secondaryName - Secondary client name (optional)
  * @param {string} config.projectName - Project name
  * @param {Object} config.estimatedTier - { tier, label, color }
- * @param {Object} config.presetData - From getPreset() — spaces, adjacencyMatrix, etc.
+ * @param {Object} config.presetData - From getPreset() — adjacencyMatrix, bridgeConfig, etc.
+ * @param {Object} config.fyiProgram - From transformFYIToMVPProgram — live FYI spaces + totals
  * @param {Object} config.benchmarkMatrix - Lookup { 'FROM-TO': 'A' }
  * @param {Object} config.proposedMatrix - After decisions applied
  * @param {Array}  config.deviations - [{ fromSpace, toSpace, desired, proposed }]
@@ -412,7 +424,6 @@ function drawDiagramLegend(doc, x, y, w) {
  * @param {Array}  config.decisions - ADJACENCY_DECISIONS array
  * @param {Object} config.bridgeConfig - Preset bridge requirements
  * @param {Set}    config.enabledBridges - Bridges enabled by decisions
- * @param {Object} config.fyiSummary - { totalSF, spaceCount, zones, levels }
  */
 export async function generateMVPReport(config) {
   const {
@@ -421,6 +432,7 @@ export async function generateMVPReport(config) {
     projectName = 'Luxury Residence',
     estimatedTier = { tier: '15K', label: 'Grand (15,000 SF)' },
     presetData,
+    fyiProgram,
     benchmarkMatrix = {},
     proposedMatrix = {},
     deviations = [],
@@ -428,7 +440,6 @@ export async function generateMVPReport(config) {
     decisions = [],
     bridgeConfig = {},
     enabledBridges = new Set(),
-    fyiSummary = {},
   } = config;
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -439,8 +450,10 @@ export async function generateMVPReport(config) {
   let y = 0;
   let pageNum = 1;
 
-  // Computed data
-  const spaces = presetData?.spaces || [];
+  // GOLDEN RULE: Use FYI live data for spaces/SF when available, preset as fallback
+  const spaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetData?.spaces || []);
+  const totalSFFromFYI = fyiProgram?.totals?.totalConditionedSF || null;
+  const totalSF = totalSFFromFYI || spaces.reduce((s, sp) => s + (sp.targetSF || 0), 0);
   const triggeredFlags = RED_FLAGS.filter(rf => rf.check(proposedMatrix));
   const redFlagEdgeKeys = new Set();
   triggeredFlags.forEach(rf => rf.edges.forEach(([a, b]) => { redFlagEdgeKeys.add(`${a}-${b}`); redFlagEdgeKeys.add(`${b}-${a}`); }));
@@ -584,7 +597,7 @@ export async function generateMVPReport(config) {
   // Summary stats row
   const statsData = [
     ['Spaces', String(spaces.length)],
-    ['Program SF', fmtNum(fyiSummary.totalSF || spaces.reduce((s, sp) => s + (sp.targetSF||0), 0))],
+    ['Program SF', fmtNum(totalSF)],
     ['Decisions', `${Object.keys(decisionAnswers).length} / 10`],
     ['Deviations', String(deviations.length)],
     ['Red Flags', String(triggeredFlags.length)],
@@ -613,7 +626,7 @@ export async function generateMVPReport(config) {
 
   sectionHeader('Executive Summary');
 
-  const totalSF = fyiSummary.totalSF || spaces.reduce((s, sp) => s + (sp.targetSF || 0), 0);
+  // totalSF already computed at top of function from FYI data
   const decCount = Object.keys(decisionAnswers).length;
   const nonDefault = decisions.filter(d => {
     const ans = decisionAnswers[d.id];
@@ -623,7 +636,7 @@ export async function generateMVPReport(config) {
   }).length;
 
   let summary = `This ${estimatedTier.tier} ${fmtNum(totalSF)} SF program comprises ${spaces.length} spaces organized across `;
-  const zoneCount = [...new Set(spaces.map(s => s.zone))].length;
+  const zoneCount = [...new Set(spaces.map(s => s.zoneName || s.zone))].length;
   summary += `${zoneCount} functional zones. `;
   summary += `Of ${decCount} layout decisions addressed, ${nonDefault} deviate from the N4S benchmark, generating ${deviations.length} adjacency change${deviations.length !== 1 ? 's' : ''}. `;
   if (triggeredFlags.length > 0) {
@@ -651,19 +664,26 @@ export async function generateMVPReport(config) {
 
   sectionHeader('Space Program Overview');
 
-  // Group spaces by zone
+  // Group spaces by zone (use zoneName for FYI spaces, zone for preset)
   const zoneMap = {};
   spaces.forEach(s => {
-    if (!zoneMap[s.zone]) zoneMap[s.zone] = { count: 0, sf: 0 };
-    zoneMap[s.zone].count++;
-    zoneMap[s.zone].sf += s.targetSF || 0;
+    const zoneLabel = s.zoneName || s.zone;
+    if (!zoneMap[zoneLabel]) zoneMap[zoneLabel] = { count: 0, sf: 0 };
+    zoneMap[zoneLabel].count++;
+    zoneMap[zoneLabel].sf += s.targetSF || 0;
   });
+
+  // When using FYI data, circulation is computed separately (not in spaces array)
+  // Add it as a zone entry so the table totals match totalSF
+  if (fyiProgram?.totals?.circulationSF > 0) {
+    zoneMap['Circulation'] = { count: 0, sf: fyiProgram.totals.circulationSF };
+  }
 
   const zoneRows = Object.entries(zoneMap)
     .sort((a, b) => b[1].sf - a[1].sf)
     .map(([zone, data]) => [
       zone,
-      String(data.count),
+      data.count > 0 ? String(data.count) : '—',
       fmtNum(data.sf) + ' SF',
       Math.round((data.sf / totalSF) * 100) + '%',
     ]);

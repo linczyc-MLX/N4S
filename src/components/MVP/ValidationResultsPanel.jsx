@@ -26,6 +26,7 @@ import {
   applyDecisionsToMatrix,
   ADJACENCY_DECISIONS
 } from '../../mansion-program';
+import { transformFYIToMVPProgram } from '../../lib/mvp-bridge';
 
 // N4S Brand Colors (from Brand Guide)
 const COLORS = {
@@ -365,7 +366,7 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
   const { fyiData, kycData, updateMVPAdjacencyConfig } = useContext(AppContext);
   const { preset, baseSF } = useKYCData();
   
-  // Get preset data
+  // Get preset data (for adjacency relationships — benchmark)
   const presetData = useMemo(() => {
     try {
       return preset ? getPreset(preset) : null;
@@ -373,6 +374,11 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
       return null;
     }
   }, [preset]);
+
+  // FYI program — live spaces/SF data (GOLDEN RULE: source of truth for program)
+  const fyiProgram = useMemo(() => {
+    return transformFYIToMVPProgram(fyiData);
+  }, [fyiData]);
 
   // Get saved decision answers from user's Layout Questions
   const savedDecisions = useMemo(() => {
@@ -543,6 +549,7 @@ export default function ValidationResultsPanel({ onBack, onViewMatrix, onEditDec
         projectName,
         estimatedTier: tierLabel,
         presetData,
+        fyiProgram,
         benchmarkMatrix,
         proposedMatrix,
         deviations,

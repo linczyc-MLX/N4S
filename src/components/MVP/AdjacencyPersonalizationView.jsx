@@ -30,6 +30,7 @@ import {
   AdjacencyPersonalization,
   getPreset
 } from '../../mansion-program';
+import { transformFYIToMVPProgram } from '../../lib/mvp-bridge';
 
 /**
  * KYC Completeness Banner
@@ -176,6 +177,14 @@ export default function AdjacencyPersonalizationView({
       return null;
     }
   }, [preset]);
+
+  // FYI program — live spaces/SF (GOLDEN RULE: source of truth for program)
+  const fyiProgram = useMemo(() => {
+    return transformFYIToMVPProgram(fyiData);
+  }, [fyiData]);
+
+  // Use FYI spaces when available, preset as fallback
+  const liveSpaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetData?.spaces || []);
   
   const baseMatrix = presetData?.adjacencyMatrix || [];
   
@@ -328,7 +337,7 @@ export default function AdjacencyPersonalizationView({
         preset={preset}
         baseSF={baseSF}
         baseMatrix={baseMatrix}
-        presetSpaces={presetData?.spaces}
+        presetSpaces={liveSpaces}
         savedDecisions={savedDecisions}
         onDecisionChange={handleDecisionChange}
         onComplete={handleComplete}

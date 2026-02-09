@@ -518,6 +518,7 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
         projectName,
         estimatedTier,
         presetData,
+        fyiProgram,
         benchmarkMatrix,
         proposedMatrix,
         deviations,
@@ -525,7 +526,6 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
         decisions: ADJACENCY_DECISIONS || [],
         bridgeConfig: presetData.bridgeConfig || {},
         enabledBridges,
-        fyiSummary: {},
       });
     } catch (err) {
       console.error('[MVP Report] Export failed:', err);

@@ -18,6 +18,7 @@ import {
   applyDecisionsToMatrix,
   getDecisionsForPreset
 } from '../../mansion-program';
+import { transformFYIToMVPProgram } from '../../lib/mvp-bridge';
 import RelationshipDiagram from './RelationshipDiagram';
 
 // N4S Brand Colors (from Brand Guide)
@@ -56,7 +57,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
   const { fyiData } = useContext(AppContext);
   const { preset, baseSF } = useKYCData();
   
-  // Get preset data
+  // Get preset data (for adjacency relationships — benchmark)
   const presetData = useMemo(() => {
     try {
       return preset ? getPreset(preset) : null;
@@ -65,6 +66,14 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
       return null;
     }
   }, [preset]);
+
+  // FYI program — live spaces/SF (GOLDEN RULE: source of truth)
+  const fyiProgram = useMemo(() => {
+    return transformFYIToMVPProgram(fyiData);
+  }, [fyiData]);
+
+  // Use FYI spaces when available, preset as fallback
+  const liveSpaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetData?.spaces || []);
 
   // Get decisions for this preset
   const decisions = useMemo(() => {
@@ -153,7 +162,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
     return deviations.some(d => d.fromSpace === from && d.toSpace === to);
   };
 
-  if (!presetData) {
+  if (!presetData && !fyiProgram) {
     return (
       <div className="acg-container">
         <div className="acg-header">
@@ -249,9 +258,9 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
           </div>
 
           {/* DIAGRAM VIEW */}
-          {displayMode === 'diagram' && presetData?.spaces && (
+          {displayMode === 'diagram' && liveSpaces.length > 0 && (
             <RelationshipDiagram
-              spaces={presetData.spaces}
+              spaces={liveSpaces}
               benchmarkMatrix={benchmarkMatrix}
               proposedMatrix={proposedMatrix}
               deviations={deviations}
@@ -354,7 +363,7 @@ export default function AdjacencyComparisonGrid({ onBack, onRunValidation }) {
             <span className="acg-legend__title">Abbreviation Index</span>
             <div className="acg-legend__grid">
               {filteredSpaces.map(code => {
-                const space = presetData?.spaces?.find(s => s.code === code);
+                const space = liveSpaces.find(s => s.code === code);
                 return (
                   <span key={code} className="acg-legend__item">
                     <strong>{code}</strong> {space?.name || code}

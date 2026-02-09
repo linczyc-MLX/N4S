@@ -53,6 +53,7 @@ const ZONE_RGB = {
 const DEFAULT_ZONE_RGB = { fill: [240,240,240], stroke: [176,176,176], node: [232,232,232] };
 
 const ZONE_POS = {
+  // Preset zone names
   'Entry + Formal': { x: 0.22, y: 0.18 }, 'Arrival + Formal': { x: 0.22, y: 0.18 },
   'Family Hub': { x: 0.52, y: 0.30 }, 'Service': { x: 0.85, y: 0.50 },
   'Service Core': { x: 0.85, y: 0.50 }, 'Wellness': { x: 0.72, y: 0.75 },
@@ -60,6 +61,12 @@ const ZONE_POS = {
   'Guest Wing': { x: 0.38, y: 0.72 }, 'Guest Wing Node': { x: 0.38, y: 0.72 },
   'Hospitality': { x: 0.38, y: 0.72 }, 'Circulation': { x: 0.50, y: 0.50 },
   'Support': { x: 0.78, y: 0.78 },
+  // FYI zone names (from space-registry.js)
+  'Arrival + Public': { x: 0.22, y: 0.18 }, 'Family + Kitchen': { x: 0.52, y: 0.30 },
+  'Entertainment': { x: 0.62, y: 0.18 }, 'Primary Suite': { x: 0.15, y: 0.60 },
+  'Guest + Secondary': { x: 0.38, y: 0.72 }, 'Service + BOH': { x: 0.85, y: 0.50 },
+  'Outdoor Spaces': { x: 0.48, y: 0.82 }, 'Guest House': { x: 0.30, y: 0.88 },
+  'Pool House': { x: 0.55, y: 0.88 },
 };
 
 const EDGE_DRAW = {
@@ -137,9 +144,9 @@ function layoutNodes(spaces, matrix, boxW, boxH, offsetX, offsetY) {
   const skip = new Set(['CIRC1','CIRC2','CORE2']);
   const maxSF = Math.max(...spaces.map(s => s.targetSF || 0), 100);
   const nodes = spaces.filter(s => !skip.has(s.code)).map(s => {
-    const pos = ZONE_POS[s.zone] || { x: 0.5, y: 0.5 };
+    const pos = ZONE_POS[s.zoneName] || ZONE_POS[s.zone] || { x: 0.5, y: 0.5 };
     return {
-      id: s.code, name: s.name, zone: s.zone, targetSF: s.targetSF,
+      id: s.code, name: s.name, zone: s.zoneName || s.zone, targetSF: s.targetSF,
       r: 2.5 + 4.5 * Math.sqrt((s.targetSF || 100) / maxSF),
       x: offsetX + m + pos.x * w + (Math.random()-0.5)*8,
       y: offsetY + m + pos.y * h + (Math.random()-0.5)*8,
@@ -295,6 +302,7 @@ export async function generateMVPValidationReport(config) {
     projectName = 'Luxury Residence',
     estimatedTier = { tier: '15K', label: 'Grand (15,000 SF)' },
     presetData,
+    fyiProgram,
     benchmarkMatrix = {},
     proposedMatrix = {},
     deviations = [],
@@ -310,7 +318,8 @@ export async function generateMVPValidationReport(config) {
   let y = 0;
   let pageNum = 1;
 
-  const spaces = presetData?.spaces || [];
+  // GOLDEN RULE: Use FYI live data for spaces when available, preset as fallback
+  const spaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetData?.spaces || []);
   const triggeredFlags = RED_FLAGS.filter(rf => rf.check(proposedMatrix));
   const redFlagEdgeKeys = new Set();
   triggeredFlags.forEach(rf => rf.edges.forEach(([a, b]) => { redFlagEdgeKeys.add(`${a}-${b}`); redFlagEdgeKeys.add(`${b}-${a}`); }));
