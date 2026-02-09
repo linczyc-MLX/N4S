@@ -173,14 +173,20 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
 
         // Get region from project location
         const city = projectParams.projectCity || '';
-        const state = projectParams.projectState || '';
         const country = projectParams.projectCountry || 'USA';
+
+        // Extract state: try propertyLocation first (e.g. "Malibu, CA, USA"),
+        // then fall back to projectState if it ever gets added
+        const locationStr = projectParams.propertyLocation || '';
+        const locParts = locationStr.split(',').map(s => s.trim());
+        const state = (locParts.length >= 3 ? locParts[1] : '') || projectParams.projectState || '';
+
         const regionId = mapLocationToRegionId(city, state, country);
         const locationPreset = mapLocationToPreset(city, state, country);
 
         // Get typology from KYS if available
         const selectedSite = kysData?.sites?.find(s => s.id === kysData?.selectedSiteId);
-        const typologyId = mapSiteTypology(selectedSite?.typology || projectParams.propertyType);
+        const typologyId = mapSiteTypology(selectedSite?.typology || projectParams.siteTypology);
 
         // Get land cost - prioritize KYC Budget Framework, fallback to KYS site
         const landCost = portfolioContext.landAcquisitionCost || selectedSite?.landCost || 0;
