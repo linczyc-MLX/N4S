@@ -810,6 +810,23 @@ export default function VMXApp(props: VMXAppProps = {}) {
     return result;
   };
 
+  // Keep KYC-locked fields in sync with live data from vmxData (written by VMXModule)
+  useEffect(() => {
+    if (vmxData?.n4sClientName != null && vmxData.n4sClientName !== n4sClientName) {
+      setN4sClientName(vmxData.n4sClientName);
+    }
+    if (vmxData?.n4sProjectName != null && vmxData.n4sProjectName !== n4sProjectName) {
+      setN4sProjectName(vmxData.n4sProjectName);
+    }
+    if (typeof vmxData?.areaSqft === 'number' && vmxData.areaSqft > 0 && vmxData.areaSqft !== areaSqft) {
+      setAreaSqft(vmxData.areaSqft);
+      setAreaSqftInput(String(vmxData.areaSqft));
+    }
+    if (typeof vmxData?.landCostA === 'number' && vmxData.landCostA !== landCostA) {
+      setLandCostA(vmxData.landCostA);
+    }
+  }, [vmxData?.n4sClientName, vmxData?.n4sProjectName, vmxData?.areaSqft, vmxData?.landCostA]);
+
   // Sync core state to AppContext when it changes
   useEffect(() => {
     if (!vmxSyncEnabled.current || !updateVMXData) return;
@@ -1627,38 +1644,44 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
             <div className="adminTopGrid">
               <div>
-                <label className="label">Client Name</label>
+                <label className="label">
+                  Client Name
+                  {n4sClientName && <span className="lockedBadge" title="From KYC Portfolio Context"> (from KYC)</span>}
+                </label>
                 <input
                   type="text"
                   value={n4sClientName}
-                  placeholder="e.g., Anderson Family"
-                  onChange={(e) => setN4sClientName(e.target.value)}
+                  placeholder="Set in KYC"
+                  disabled
+                  style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
                 />
               </div>
 
               <div>
-                <label className="label">Project Name</label>
+                <label className="label">
+                  Project Name
+                  {n4sProjectName && <span className="lockedBadge" title="From KYC Project Parameters"> (from KYC)</span>}
+                </label>
                 <input
                   type="text"
                   value={n4sProjectName}
-                  placeholder="e.g., Thornwood Estate"
-                  onChange={(e) => setN4sProjectName(e.target.value)}
+                  placeholder="Set in KYC"
+                  disabled
+                  style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
                 />
               </div>
 
               <div>
-                <label className="label">Target Area (sq ft)</label>
+                <label className="label">
+                  Target Area (sq ft)
+                  {areaSqft > 0 && <span className="lockedBadge" title="From KYC Project Parameters (P1.A.3)"> (from KYC)</span>}
+                </label>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  value={areaSqftInput}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    setAreaSqftInput(raw);
-                    const cleaned = raw.replace(/[^0-9]/g, "");
-                    const n = Number(cleaned);
-                    if (Number.isFinite(n) && n > 0) setAreaSqft(Math.round(n));
-                  }}
+                  value={areaSqft > 0 ? areaSqft.toLocaleString() : ""}
+                  placeholder="Set in KYC"
+                  disabled
+                  style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
                 />
               </div>
 
@@ -1743,16 +1766,15 @@ export default function VMXApp(props: VMXAppProps = {}) {
                 </div>
 
                 <div className="formRow">
-                  <label className="label">Land Acquisition Cost</label>
+                  <label className="label">
+                    Land Acquisition Cost
+                    {landCostA > 0 && <span className="lockedBadge" title="From KYC Portfolio Context"> (from KYC)</span>}
+                  </label>
                   <input
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={landCostA}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setLandCostA(Number.isFinite(next) ? next : 0);
-                    }}
+                    type="text"
+                    value={landCostA > 0 ? `$${landCostA.toLocaleString()}` : "$0"}
+                    disabled
+                    style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
                   />
                 </div>
               </div>

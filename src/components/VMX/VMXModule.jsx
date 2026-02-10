@@ -311,12 +311,19 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         kycSync.kycBudgetConstraints = currentContext.kycBudgetConstraints;
       }
 
-      // Scenario A values — SEED ONLY (don't overwrite if vmxData already has a value)
+      // Scenario A values — areaSqft + landCostA always sync (live from KYC),
+      // other fields seed-once (don't overwrite user-set values)
       const a = currentContext.scenarioA;
       if (a) {
-        if (typeof a.areaSqft === 'number' && a.areaSqft > 0 && !(typeof vmxData?.areaSqft === 'number' && vmxData.areaSqft > 0)) {
+        // Always sync from KYC (fields are locked in VMX UI)
+        if (typeof a.areaSqft === 'number' && a.areaSqft > 0) {
           kycSync.areaSqft = a.areaSqft;
         }
+        if (typeof a.landCost === 'number' && a.landCost >= 0) {
+          kycSync.landCostA = a.landCost;
+        }
+
+        // Seed-once (don't overwrite user-set values)
         if (a.tier && !vmxData?.tier) {
           kycSync.tier = a.tier;
         }
@@ -328,9 +335,6 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         }
         if (a.typology && (!vmxData?.typologyA || vmxData.typologyA === 'suburban')) {
           kycSync.typologyA = a.typology;
-        }
-        if (typeof a.landCost === 'number' && a.landCost >= 0 && !(typeof vmxData?.landCostA === 'number' && vmxData.landCostA > 0)) {
-          kycSync.landCostA = a.landCost;
         }
       }
 
