@@ -4,6 +4,7 @@ import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const LifestyleLivingSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData, clientData, saveNow } = useAppContext();
@@ -980,8 +981,23 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
     );
   };
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Lifestyle & Living"
+      />
       {/* LuXeBrief Lifestyle Integration Panel */}
       <div className="kyc-section__group luxebrief-panel">
         <div className="luxebrief-panel__header">
@@ -1347,6 +1363,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('workFromHome', v)}
           options={wfhOptions}
           placeholder="How often do you work from home?"
+        readOnly={isLocked}
         />
 
         {data.workFromHome && data.workFromHome !== 'never' && (
@@ -1359,6 +1376,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               placeholder="How many people need home office space?"
               min={1}
               helpText="Include anyone who regularly works from home"
+            readOnly={isLocked}
             />
 
             {/* Second Office Question - appears when 2+ people WFH */}
@@ -1400,6 +1418,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('officeRequirements', v)}
               placeholder="Any specific requirements? Video calls, client meetings, specialized equipment..."
               rows={2}
+            readOnly={isLocked}
             />
           </>
         )}
@@ -1433,6 +1452,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('hobbyDetails', v)}
           placeholder="Specific equipment needs, space requirements, or details about your hobbies..."
           rows={2}
+        readOnly={isLocked}
         />
 
         <div className="form-field">
@@ -1469,6 +1489,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('entertainingFrequency', v)}
             options={entertainingOptions}
             placeholder="How often do you entertain?"
+          readOnly={isLocked}
           />
           <SelectField
             label="Entertaining Style"
@@ -1476,6 +1497,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('entertainingStyle', v)}
             options={entertainingStyleOptions}
             placeholder="What type of entertaining?"
+          readOnly={isLocked}
           />
         </div>
 
@@ -1484,6 +1506,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
           value={data.typicalGuestCount}
           onChange={(v) => handleChange('typicalGuestCount', v)}
           placeholder="e.g., 8-12 for dinners, 50-100 for parties"
+        readOnly={isLocked}
         />
       </div>
 
@@ -1547,6 +1570,7 @@ const LifestyleLivingSection = ({ respondent, tier }) => {
         onChange={(v) => handleChange('dailyRoutinesSummary', v)}
         placeholder="Describe a typical day - morning routines, how you use spaces, evening patterns..."
         rows={3}
+      readOnly={isLocked}
       />
         </div>
       )}

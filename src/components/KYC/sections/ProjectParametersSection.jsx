@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const ProjectParametersSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -90,8 +91,23 @@ const ProjectParametersSection = ({ respondent, tier }) => {
     return labels;
   };
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Project Parameters"
+      />
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Project Identification</h3>
 
@@ -101,6 +117,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('projectName', v)}
           placeholder="e.g., Smith Residence, Villa Azure, The Thornwood Estate"
           required
+        readOnly={isLocked}
         />
       </div>
 
@@ -114,6 +131,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('projectCity', v)}
             placeholder="e.g., Dubai, Los Angeles, London"
             required
+          readOnly={isLocked}
           />
           <FormField
             label="Country"
@@ -121,6 +139,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('projectCountry', v)}
             placeholder="e.g., UAE, USA, UK"
             required
+          readOnly={isLocked}
           />
         </div>
 
@@ -129,6 +148,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           value={data.specificAddress}
           onChange={(v) => handleChange('specificAddress', v)}
           placeholder="If known - street address or development name"
+        readOnly={isLocked}
         />
         <SelectField
           label="Site Typology"
@@ -137,6 +157,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           options={siteTypologyOptions}
           placeholder="Select site type..."
           helpText="Affects architect matching and design approach"
+        readOnly={isLocked}
         />
       </div>
 
@@ -150,6 +171,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           options={propertyTypeOptions}
           placeholder="Select project type..."
           required
+        readOnly={isLocked}
         />
 
         <div className="form-grid form-grid--3col">
@@ -161,6 +183,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             placeholder="Total square feet"
             min={0}
             required
+          readOnly={isLocked}
           />
           <FormField
             label="Bedrooms"
@@ -170,6 +193,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             placeholder="Count"
             min={0}
             required
+          readOnly={isLocked}
           />
           <FormField
             label="Bathrooms"
@@ -178,6 +202,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('bathroomCount', parseInt(v) || null)}
             placeholder="Count"
             min={0}
+          readOnly={isLocked}
           />
         </div>
 
@@ -189,6 +214,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           placeholder="Leave blank for Discovery Mode"
           min={0}
           helpText="Set a maximum SF constraint, or leave blank to explore"
+        readOnly={isLocked}
         />
       </div>
 
@@ -209,6 +235,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             min={0}
             max={3}
             helpText="How many floors above the entry level?"
+          readOnly={isLocked}
           />
           <FormField
             label="Levels Below Arrival (L-1, L-2...)"
@@ -219,6 +246,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
             min={0}
             max={3}
             helpText="Below-grade or down-slope levels"
+          readOnly={isLocked}
           />
         </div>
 
@@ -285,6 +313,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('guestHouseBedrooms', parseInt(v))}
               options={guestHouseBedroomOptions}
               placeholder="Select bedroom count..."
+            readOnly={isLocked}
             />
             <div className="form-grid form-grid--3col">
               <div className="form-field">
@@ -380,6 +409,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('poolHouseLocation', v)}
               options={poolHouseLocationOptions}
               placeholder="Select location..."
+            readOnly={isLocked}
             />
             <div className="form-grid form-grid--2col">
               <div className="form-field">
@@ -435,6 +465,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           options={timelineOptions}
           placeholder="Select timeline..."
           required
+        readOnly={isLocked}
         />
 
         {tier !== 'mvp' && (
@@ -464,6 +495,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
               options={architecturalIntegrationOptions}
               placeholder="Select integration level..."
               helpText="Do you need a full architect, or just interior design?"
+            readOnly={isLocked}
             />
 
             <SelectField
@@ -473,6 +505,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
               options={localKnowledgeOptions}
               placeholder="How important is local expertise?"
               helpText="Affects geographic requirements for architect/designer"
+            readOnly={isLocked}
             />
           </>
         )}

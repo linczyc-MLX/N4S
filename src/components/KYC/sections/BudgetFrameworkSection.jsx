@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const BudgetFrameworkSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -88,8 +89,23 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
 
   const qualityTierInfo = getQualityTierInfo(calculatedPerSF);
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Budget Framework"
+      />
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Project Budget</h3>
         <p className="kyc-section__group-description">
@@ -106,6 +122,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             placeholder="Enter amount"
             helpText="USD - Cost of land/lot"
             min={0}
+          readOnly={isLocked}
           />
           <FormField
             label="Total Project Budget"
@@ -116,6 +133,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             helpText="USD - Total construction + soft costs"
             min={0}
             required
+          readOnly={isLocked}
           />
         </div>
 
@@ -130,6 +148,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
             helpText="Subset of total budget"
             min={0}
             required
+          readOnly={isLocked}
           />
           <div className="budget-grand-total">
             <span className="budget-grand-total__label">Grand Total (Total Project Budget)</span>
@@ -175,6 +194,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
           placeholder="Optional override"
           helpText="Leave blank to use calculated value"
           min={0}
+        readOnly={isLocked}
         />
       </div>
 
@@ -189,6 +209,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
           placeholder="Select your approach..."
           required
           helpText="This affects how aggressively we optimize for value vs. cost"
+        readOnly={isLocked}
         />
       </div>
 
@@ -207,6 +228,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
                 onChange={(v) => handleChange('architectFeeStructure', v)}
                 options={architectFeeOptions}
                 placeholder="How do you prefer to pay the architect?"
+              readOnly={isLocked}
               />
               <SelectField
                 label="Interior Designer Fee Structure"
@@ -214,6 +236,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
                 onChange={(v) => handleChange('interiorDesignerFeeStructure', v)}
                 options={interiorDesignerFeeOptions}
                 placeholder="How do you prefer to pay the ID?"
+              readOnly={isLocked}
               />
             </div>
           </div>
@@ -278,6 +301,7 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
                 onChange={(v) => handleChange('artBudgetAmount', parseInt(v) || null)}
                 placeholder="Separate art acquisition budget"
                 min={0}
+              readOnly={isLocked}
               />
             )}
           </div>

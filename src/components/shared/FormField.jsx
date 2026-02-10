@@ -8,6 +8,7 @@ const FormField = ({
   placeholder,
   required = false,
   disabled = false,
+  readOnly = false,
   helpText,
   error,
   rows = 3,
@@ -21,6 +22,31 @@ const FormField = ({
   };
 
   const inputId = `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
+
+  // Read-only mode: render value as clean styled text
+  if (readOnly) {
+    const displayValue = value || '—';
+    return (
+      <div className={`form-field ${className}`}>
+        <label className="form-field__label" style={{ opacity: 0.7 }}>
+          {label}
+        </label>
+        <div style={{
+          padding: '8px 12px',
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: '6px',
+          border: '1px solid rgba(255,255,255,0.06)',
+          color: value ? '#e5e7eb' : '#6b7280',
+          fontSize: '13px',
+          lineHeight: '1.5',
+          minHeight: type === 'textarea' ? '60px' : 'auto',
+          fontStyle: value ? 'normal' : 'italic',
+        }}>
+          {displayValue}
+        </div>
+      </div>
+    );
+  }
 
   const renderInput = () => {
     const baseProps = {

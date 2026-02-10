@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, X, Info, Send, Clock, CheckCircle, RefreshCw, ClipboardList } from 'lucide-react';
+import { Plus, X, Info, Send, Clock, CheckCircle, RefreshCw, ClipboardList, Copy, ExternalLink, RotateCcw } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const PortfolioContextSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData, clientData, lcdData, saveNow } = useAppContext();
@@ -12,6 +13,8 @@ const PortfolioContextSection = ({ respondent, tier }) => {
   const [intakeLoading, setIntakeLoading] = useState(false);
   const [intakeError, setIntakeError] = useState(null);
   const [intakeRefreshing, setIntakeRefreshing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [overrideMode, setOverrideMode] = useState(false);
 
   const handleChange = (field, value) => {
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
@@ -78,6 +81,68 @@ const PortfolioContextSection = ({ respondent, tier }) => {
   const intakeSessionId = data.intakeSessionId;
   const intakeSentAt = data.intakeSentAt;
   const intakeCompletedAt = data.intakeCompletedAt;
+  const intakeInvitationUrl = data.intakeInvitationUrl;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+  // Copy invitation link to clipboard
+  const handleCopyLink = async () => {
+    if (!intakeInvitationUrl) return;
+    try {
+      await navigator.clipboard.writeText(intakeInvitationUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = intakeInvitationUrl;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
+
+  // Handle resending intake invitation
+  const handleResendIntake = async () => {
+    setIntakeLoading(true);
+    setIntakeError(null);
+    try {
+      if (saveNow) await saveNow();
+      const response = await fetch('https://luxebrief.not-4.sale/api/sessions/from-n4s', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer luxebrief-admin-2024'
+        },
+        body: JSON.stringify({
+          sessionType: 'intake',
+          clientName: intakePrincipalName,
+          clientEmail: intakePrincipalEmail,
+          projectName: intakeProjectName,
+          principalType: 'principal',
+          subdomain: intakeSlug,
+          n4sProjectId: clientData?.id || null,
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        updateKYCData(respondent, 'portfolioContext', {
+          intakeStatus: 'sent',
+          intakeSessionId: result.sessionId,
+          intakeSentAt: new Date().toISOString(),
+          intakeInvitationUrl: result.invitationUrl,
+        });
+      } else {
+        setIntakeError(result.error || 'Failed to resend invitation');
+      }
+    } catch (err) {
+      setIntakeError('Network error — please check your connection');
+    } finally {
+      setIntakeLoading(false);
+    }
+  };
 
   // Get stakeholder info for intake send
   const intakePrincipalName = data.principalFirstName
@@ -311,32 +376,109 @@ const PortfolioContextSection = ({ respondent, tier }) => {
           )}
 
           {(intakeStatus === 'sent' || intakeStatus === 'in_progress') && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <Clock size={14} style={{ color: '#fbbf24' }} />
-                  <span style={{ color: '#fbbf24' }}>
-                    {intakeStatus === 'sent' ? 'Awaiting client response' : 'Client is completing questionnaire'}
-                  </span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                    <Clock size={14} style={{ color: '#fbbf24' }} />
+                    <span style={{ color: '#fbbf24' }}>
+                      {intakeStatus === 'sent' ? 'Awaiting client response' : 'Client is completing questionnaire'}
+                    </span>
+                  </div>
+                  {intakeSentAt && (
+                    <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px', display: 'block' }}>
+                      Sent {new Date(intakeSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
                 </div>
-                {intakeSentAt && (
-                  <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px', display: 'block' }}>
-                    Sent {new Date(intakeSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                )}
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={handleRefreshIntakeStatus}
+                  disabled={intakeRefreshing}
+                  style={{ minWidth: '120px' }}
+                >
+                  {intakeRefreshing ? (
+                    <><RefreshCw size={14} className="spin" /> Checking...</>
+                  ) : (
+                    <><RefreshCw size={14} /> Refresh Status</>
+                  )}
+                </button>
               </div>
-              <button
-                className="btn btn--secondary btn--sm"
-                onClick={handleRefreshIntakeStatus}
-                disabled={intakeRefreshing}
-                style={{ minWidth: '120px' }}
-              >
-                {intakeRefreshing ? (
-                  <><RefreshCw size={14} className="spin" /> Checking...</>
-                ) : (
-                  <><RefreshCw size={14} /> Refresh Status</>
-                )}
-              </button>
+
+              {/* Invitation Link - always visible so advisor can share manually */}
+              {intakeInvitationUrl && (
+                <div style={{
+                  background: '#1a1f2e',
+                  border: '1px solid #2d3548',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  marginBottom: '10px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <ExternalLink size={13} style={{ color: '#9ca3af' }} />
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Client Invitation Link
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <code style={{
+                      flex: 1,
+                      fontSize: '12px',
+                      color: '#93c5fd',
+                      background: '#111827',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #1f2937',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'monospace',
+                    }}>
+                      {intakeInvitationUrl}
+                    </code>
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={handleCopyLink}
+                      style={{ minWidth: '100px', whiteSpace: 'nowrap' }}
+                    >
+                      {linkCopied ? (
+                        <><CheckCircle size={14} style={{ color: '#34d399' }} /> Copied!</>
+                      ) : (
+                        <><Copy size={14} /> Copy Link</>
+                      )}
+                    </button>
+                    <a
+                      href={intakeInvitationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn--secondary btn--sm"
+                      style={{ minWidth: '36px', display: 'flex', justifyContent: 'center' }}
+                      title="Open in new tab"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '8px' }}>
+                    Share this link directly with the client if the email invitation hasn't arrived.
+                  </p>
+                </div>
+              )}
+
+              {/* Resend option */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={handleResendIntake}
+                  disabled={intakeLoading}
+                  style={{ fontSize: '12px' }}
+                >
+                  {intakeLoading ? (
+                    <><RefreshCw size={13} className="spin" /> Resending...</>
+                  ) : (
+                    <><RotateCcw size={13} /> Resend Invitation</>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
@@ -358,6 +500,13 @@ const PortfolioContextSection = ({ respondent, tier }) => {
 
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Portfolio Context</h3>
+        <IntakeProtectionBanner
+          intakeStatus={intakeStatus}
+          intakeCompletedAt={intakeCompletedAt}
+          overrideMode={overrideMode}
+          onToggleOverride={() => setOverrideMode(!overrideMode)}
+          sectionLabel="Portfolio Context"
+        />
         <p className="kyc-section__group-description">
           Understanding the role this property plays in your overall portfolio helps us weight your preferences appropriately.
         </p>
@@ -369,6 +518,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('currentPropertyCount', parseInt(v) || null)}
           placeholder="Total properties owned"
           min={0}
+          readOnly={isLocked}
         />
 
         {/* Multiple Primary Residences */}
@@ -387,12 +537,14 @@ const PortfolioContextSection = ({ respondent, tier }) => {
                     value={residence.city}
                     onChange={(v) => updatePrimaryResidence(index, 'city', v)}
                     placeholder="City"
+                    readOnly={isLocked}
                   />
                   <FormField
                     label="Country"
                     value={residence.country}
                     onChange={(v) => updatePrimaryResidence(index, 'country', v)}
                     placeholder="Country"
+                    readOnly={isLocked}
                   />
                 </div>
                 {(data.primaryResidences || []).length > 1 && (
@@ -425,6 +577,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
           placeholder="Select the role this property will serve..."
           required
           helpText="This fundamentally affects how we weight your preferences vs. market considerations"
+          readOnly={isLocked}
         />
 
         <div className="form-grid form-grid--2col">
@@ -435,6 +588,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             options={investmentHorizonOptions}
             placeholder="How long do you plan to hold?"
             required
+            readOnly={isLocked}
           />
           
           {tier !== 'mvp' && (
@@ -444,6 +598,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('exitStrategy', v)}
               options={exitStrategyOptions}
               placeholder="Long-term plan for the property..."
+              readOnly={isLocked}
             />
           )}
         </div>
@@ -460,6 +615,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             options={lifeStageOptions}
             placeholder="Current household life stage..."
             required
+            readOnly={isLocked}
           />
           <SelectField
             label="Decision Timeline"
@@ -468,6 +624,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
             options={decisionTimelineOptions}
             placeholder="How quickly do you need to move?"
             required
+            readOnly={isLocked}
           />
         </div>
       </div>

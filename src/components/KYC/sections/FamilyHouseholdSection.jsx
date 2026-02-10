@@ -3,6 +3,7 @@ import { Plus, X, User } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const FamilyHouseholdSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -35,8 +36,23 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
     handleChange('familyMembers', updatedMembers);
   };
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Family & Household"
+      />
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Family Members</h3>
         <p className="kyc-section__group-description">
@@ -81,6 +97,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               value={newMember.name}
               onChange={(v) => setNewMember({ ...newMember, name: v })}
               placeholder="First name"
+            readOnly={isLocked}
             />
             <FormField
               label="Age"
@@ -90,6 +107,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               placeholder="Age"
               min={0}
               max={120}
+            readOnly={isLocked}
             />
             <SelectField
               label="Role"
@@ -97,12 +115,14 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               onChange={(v) => setNewMember({ ...newMember, role: v })}
               options={roleOptions}
               placeholder="Select..."
+            readOnly={isLocked}
             />
             <div className="form-field">
               <label className="form-field__label">&nbsp;</label>
               <button 
                 className="btn btn--secondary btn--full"
                 onClick={addFamilyMember}
+                disabled={isLocked}
                 disabled={!newMember.name}
               >
                 <Plus size={18} /> Add
@@ -116,6 +136,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               value={newMember.specialNeeds}
               onChange={(v) => setNewMember({ ...newMember, specialNeeds: v })}
               placeholder="Mobility, sensory, medical requirements..."
+            readOnly={isLocked}
             />
           )}
         </div>
@@ -129,6 +150,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('pets', v)}
           placeholder="e.g., 2 dogs (Golden Retrievers), 1 cat - all indoor"
           helpText="Include type, quantity, and indoor/outdoor status"
+        readOnly={isLocked}
         />
         
         {data.pets && (typeof data.pets !== 'string' || data.pets.trim() !== '') && (
@@ -198,6 +220,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               ]}
               placeholder="Select staffing level..."
               helpText="Affects service areas and staff accommodation requirements"
+            readOnly={isLocked}
             />
             
             {data.staffingLevel === 'live_in' && (
@@ -209,6 +232,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
                   onChange={(v) => handleChange('liveInStaff', parseInt(v) || null)}
                   placeholder="Number of live-in staff"
                   min={0}
+                readOnly={isLocked}
                 />
                 <div className="form-field">
                   <label className="form-field__label">Staff Quarters Required?</label>
@@ -265,6 +289,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('anticipatedFamilyChanges', v)}
               placeholder="Any expected changes? Growing family, children leaving for college, aging parents moving in..."
               rows={3}
+            readOnly={isLocked}
             />
           </div>
         </>

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
 import SliderField from '../../shared/SliderField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const WorkingPreferencesSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -54,8 +55,23 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
     { value: 'cm-at-risk', label: 'CM at Risk' },
   ];
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Working Preferences"
+      />
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Communication & Collaboration Style</h3>
         <p className="kyc-section__group-description">
@@ -69,6 +85,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
           options={communicationStyleOptions}
           placeholder="How do you prefer to communicate?"
           required
+        readOnly={isLocked}
         />
 
         <div className="form-grid form-grid--2col">
@@ -78,6 +95,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('decisionCadence', v)}
             options={decisionCadenceOptions}
             placeholder="How often do you want updates?"
+          readOnly={isLocked}
           />
           <SelectField
             label="Collaboration Style"
@@ -85,6 +103,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('collaborationStyle', v)}
             options={collaborationStyleOptions}
             placeholder="How involved do you want to be?"
+          readOnly={isLocked}
           />
         </div>
       </div>
@@ -101,6 +120,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
               options={principalInvolvementOptions}
               placeholder="How important is the firm principal's involvement?"
               helpText="Some clients want the 'name' designer personally involved"
+            readOnly={isLocked}
             />
 
             <SelectField
@@ -109,6 +129,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('presentationFormat', v)}
               options={presentationFormatOptions}
               placeholder="In-person or virtual meetings?"
+            readOnly={isLocked}
             />
           </div>
 
@@ -122,6 +143,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('previousDesignerExperience', v)}
               placeholder="Have you worked with architects or interior designers before? What worked well? What didn't?"
               rows={3}
+            readOnly={isLocked}
             />
 
             <FormField
@@ -131,6 +153,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('redFlagsToAvoid', v)}
               placeholder="Past frustrations or behaviors you want to avoid in your design team..."
               rows={2}
+            readOnly={isLocked}
             />
 
             <FormField
@@ -138,6 +161,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
               value={data.existingIndustryConnections}
               onChange={(v) => handleChange('existingIndustryConnections', v)}
               placeholder="Designers you know or have been referred to..."
+            readOnly={isLocked}
             />
           </div>
         </>
@@ -179,6 +203,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('caRequirement', v)}
             options={caOptions}
             placeholder="How much architect involvement during construction?"
+          readOnly={isLocked}
           />
 
           <SelectField
@@ -187,6 +212,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('contractorRelationshipPreference', v)}
             options={contractorRelationshipOptions}
             placeholder="How should the contractor be engaged?"
+          readOnly={isLocked}
           />
 
           <div className="form-field">

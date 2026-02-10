@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import FormField from '../../shared/FormField';
 import SelectField from '../../shared/SelectField';
+import IntakeProtectionBanner from '../IntakeProtectionBanner';
 
 const SpaceRequirementsSection = ({ respondent, tier }) => {
   const { kycData, updateKYCData } = useAppContext();
@@ -172,8 +173,23 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
     handleChange(field, updated);
   };
 
+  // Intake protection — fields lock when client completes intake questionnaire
+  const [overrideMode, setOverrideMode] = useState(false);
+  const portfolioCtx = kycData[respondent].portfolioContext || {};
+  const intakeStatus = portfolioCtx.intakeStatus || 'not_sent';
+  const intakeCompletedAt = portfolioCtx.intakeCompletedAt;
+  const isLocked = intakeStatus === 'completed' && !overrideMode;
+
+
   return (
     <div className="kyc-section">
+      <IntakeProtectionBanner
+        intakeStatus={intakeStatus}
+        intakeCompletedAt={intakeCompletedAt}
+        overrideMode={overrideMode}
+        onToggleOverride={() => setOverrideMode(!overrideMode)}
+        sectionLabel="Space Requirements"
+      />
       {/* Interior Spaces - Must Have */}
       <div className="kyc-section__group">
         <h3 className="kyc-section__group-title">Must-Have Interior Spaces</h3>
@@ -351,6 +367,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
           onChange={(v) => handleChange('garageSize', v)}
           options={garageOptions}
           placeholder="Select minimum garage capacity..."
+        readOnly={isLocked}
         />
 
         <div className="form-field">
@@ -603,6 +620,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('privacyNoNeighbors', v)}
             options={privacyOptions}
             placeholder="How important?"
+          readOnly={isLocked}
           />
           <SelectField
             label="Perimeter Fully Walled/Gated"
@@ -610,6 +628,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('privacyPerimeter', v)}
             options={privacyOptions}
             placeholder="How important?"
+          readOnly={isLocked}
           />
         </div>
 
@@ -619,12 +638,14 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
             value={data.minimumSetback}
             onChange={(v) => handleChange('minimumSetback', v)}
             placeholder="e.g., 200 ft, 500 ft..."
+          readOnly={isLocked}
           />
           <FormField
             label="Minimum Lot Size"
             value={data.minimumLotSize}
             onChange={(v) => handleChange('minimumLotSize', v)}
             placeholder="e.g., 2 acres, 5 acres..."
+          readOnly={isLocked}
           />
         </div>
       </div>
@@ -660,6 +681,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('adjacencyRequirements', v)}
               placeholder="e.g., Kitchen must be near outdoor dining, Primary suite away from children's rooms..."
               rows={2}
+            readOnly={isLocked}
             />
 
             <FormField
@@ -669,6 +691,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('currentSpacePainPoints', v)}
               placeholder="What's wrong with your current home that you want to fix?"
               rows={2}
+            readOnly={isLocked}
             />
           </div>
 
@@ -681,6 +704,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
               onChange={(v) => handleChange('storageNeeds', v)}
               options={storageOptions}
               placeholder="How much storage do you need?"
+            readOnly={isLocked}
             />
 
             <FormField
@@ -688,6 +712,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
               value={data.accessibilityRequirements}
               onChange={(v) => handleChange('accessibilityRequirements', v)}
               placeholder="ADA compliance, aging in place, mobility accommodations..."
+            readOnly={isLocked}
             />
 
             <div className="form-field">
