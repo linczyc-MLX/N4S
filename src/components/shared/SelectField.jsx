@@ -15,6 +15,7 @@ const SelectField = ({
   className = '',
 }) => {
   const handleChange = (e) => {
+    if (readOnly) return; // Intake-locked: ignore input, field looks unchanged
     const selectedValue = e.target.value;
     const parsed = !isNaN(selectedValue) && selectedValue !== '' 
       ? Number(selectedValue) 
@@ -23,7 +24,6 @@ const SelectField = ({
   };
 
   const inputId = `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
-  const isDisabled = disabled || readOnly;
 
   return (
     <div className={`form-field ${className}`}>
@@ -31,12 +31,12 @@ const SelectField = ({
         {label}
         {required && <span className="form-field__required">*</span>}
       </label>
-      <div className="select-wrapper">
+      <div className="select-wrapper" style={readOnly ? { pointerEvents: 'none' } : undefined}>
         <select
           id={inputId}
           value={value || ''}
           onChange={handleChange}
-          disabled={isDisabled}
+          disabled={disabled}
           className={`form-field__select ${error ? 'form-field__select--error' : ''}`}
         >
           <option value="">{placeholder}</option>

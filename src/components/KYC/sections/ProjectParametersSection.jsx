@@ -9,6 +9,7 @@ const ProjectParametersSection = ({ respondent, tier }) => {
   const data = kycData[respondent].projectParameters;
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'projectParameters', { [field]: value });
   };
 

@@ -17,6 +17,7 @@ const PortfolioContextSection = ({ respondent, tier }) => {
   const [overrideMode, setOverrideMode] = useState(false);
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
   };
 

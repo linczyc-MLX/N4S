@@ -10,6 +10,7 @@ const WorkingPreferencesSection = ({ respondent, tier }) => {
   const data = kycData[respondent].workingPreferences;
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'workingPreferences', { [field]: value });
   };
 

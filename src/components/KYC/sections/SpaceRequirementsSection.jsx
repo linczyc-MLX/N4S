@@ -9,6 +9,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
   const data = kycData[respondent].spaceRequirements;
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'spaceRequirements', { [field]: value });
   };
 
@@ -166,6 +167,7 @@ const SpaceRequirementsSection = ({ respondent, tier }) => {
   ];
 
   const toggleOption = (field, option) => {
+    if (isLocked) return;
     const current = data[field] || [];
     const updated = current.includes(option)
       ? current.filter(o => o !== option)

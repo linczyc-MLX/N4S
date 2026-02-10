@@ -11,9 +11,11 @@ const SliderField = ({
   rightLabel,
   showValue = true,
   helpText,
+  readOnly = false,
   className = '',
 }) => {
   const handleChange = (e) => {
+    if (readOnly) return;
     onChange(parseInt(e.target.value, 10));
   };
 
@@ -38,7 +40,7 @@ const SliderField = ({
           </span>
         )}
         
-        <div className="slider-field__track-wrapper">
+        <div className="slider-field__track-wrapper" style={readOnly ? { pointerEvents: 'none' } : undefined}>
           <input
             type="range"
             id={inputId}

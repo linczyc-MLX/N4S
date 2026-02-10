@@ -10,6 +10,7 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
   const data = kycData[respondent].familyHousehold;
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'familyHousehold', { [field]: value });
   };
 
@@ -77,69 +78,68 @@ const FamilyHouseholdSection = ({ respondent, tier }) => {
                     <span className="family-member-card__needs">{member.specialNeeds}</span>
                   )}
                 </div>
-                <button 
-                  className="family-member-card__remove"
-                  onClick={() => removeFamilyMember(member.id)}
-                  aria-label="Remove member"
-                >
-                  <X size={16} />
-                </button>
+                {!isLocked && (
+                  <button
+                    className="family-member-card__remove"
+                    onClick={() => removeFamilyMember(member.id)}
+                    aria-label="Remove member"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* Add New Member Form */}
-        <div className="add-member-form">
-          <div className="form-grid form-grid--4col">
-            <FormField
-              label="Name"
-              value={newMember.name}
-              onChange={(v) => setNewMember({ ...newMember, name: v })}
-              placeholder="First name"
-            readOnly={isLocked}
-            />
-            <FormField
-              label="Age"
-              type="number"
-              value={newMember.age}
-              onChange={(v) => setNewMember({ ...newMember, age: v })}
-              placeholder="Age"
-              min={0}
-              max={120}
-            readOnly={isLocked}
-            />
-            <SelectField
-              label="Role"
-              value={newMember.role}
-              onChange={(v) => setNewMember({ ...newMember, role: v })}
-              options={roleOptions}
-              placeholder="Select..."
-            readOnly={isLocked}
-            />
-            <div className="form-field">
-              <label className="form-field__label">&nbsp;</label>
-              <button 
-                className="btn btn--secondary btn--full"
-                onClick={addFamilyMember}
-                disabled={isLocked}
-                disabled={!newMember.name}
-              >
-                <Plus size={18} /> Add
-              </button>
+        {/* Add New Member Form - hidden when locked */}
+        {!isLocked && (
+          <div className="add-member-form">
+            <div className="form-grid form-grid--4col">
+              <FormField
+                label="Name"
+                value={newMember.name}
+                onChange={(v) => setNewMember({ ...newMember, name: v })}
+                placeholder="First name"
+              />
+              <FormField
+                label="Age"
+                type="number"
+                value={newMember.age}
+                onChange={(v) => setNewMember({ ...newMember, age: v })}
+                placeholder="Age"
+                min={0}
+                max={120}
+              />
+              <SelectField
+                label="Role"
+                value={newMember.role}
+                onChange={(v) => setNewMember({ ...newMember, role: v })}
+                options={roleOptions}
+                placeholder="Select..."
+              />
+              <div className="form-field">
+                <label className="form-field__label">&nbsp;</label>
+                <button
+                  className="btn btn--secondary btn--full"
+                  onClick={addFamilyMember}
+                  disabled={!newMember.name}
+                >
+                  <Plus size={18} /> Add
+                </button>
+              </div>
             </div>
+
+            {tier !== 'mvp' && (
+              <FormField
+                label="Special Needs / Accommodations"
+                value={newMember.specialNeeds}
+                onChange={(v) => setNewMember({ ...newMember, specialNeeds: v })}
+                placeholder="Mobility, sensory, medical requirements..."
+              />
+            )}
           </div>
-          
-          {tier !== 'mvp' && (
-            <FormField
-              label="Special Needs / Accommodations"
-              value={newMember.specialNeeds}
-              onChange={(v) => setNewMember({ ...newMember, specialNeeds: v })}
-              placeholder="Mobility, sensory, medical requirements..."
-            readOnly={isLocked}
-            />
-          )}
-        </div>
+        )}
       </div>
 
       <div className="kyc-section__group">

@@ -18,12 +18,11 @@ const FormField = ({
   className = '',
 }) => {
   const handleChange = (e) => {
+    if (readOnly) return; // Intake-locked: ignore input, field looks unchanged
     onChange(e.target.value);
   };
 
   const inputId = `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
-
-  const isDisabled = disabled || readOnly;
 
   const renderInput = () => {
     const baseProps = {
@@ -31,7 +30,8 @@ const FormField = ({
       value: value || '',
       onChange: handleChange,
       placeholder,
-      disabled: isDisabled,
+      disabled,
+      readOnly: readOnly,
       className: `form-field__input ${error ? 'form-field__input--error' : ''}`,
     };
 

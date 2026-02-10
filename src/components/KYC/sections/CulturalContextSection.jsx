@@ -15,6 +15,7 @@ const CulturalContextSection = ({ respondent, tier }) => {
   const isLocked = intakeStatus === 'completed' && !overrideMode;
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'culturalContext', { [field]: value });
   };
 
@@ -42,6 +43,7 @@ const CulturalContextSection = ({ respondent, tier }) => {
   ];
 
   const toggleOption = (field, option) => {
+    if (isLocked) return;
     const current = data[field] || [];
     const updated = current.includes(option)
       ? current.filter(o => o !== option)
@@ -142,6 +144,7 @@ const CulturalContextSection = ({ respondent, tier }) => {
             onChange={(v) => handleChange('crossCulturalRequirements', v)}
             placeholder="If blending multiple cultural influences, describe how..."
             rows={2}
+            readOnly={isLocked}
           />
 
           <div className="form-field">

@@ -10,10 +10,12 @@ const BudgetFrameworkSection = ({ respondent, tier }) => {
   const portfolioContext = kycData[respondent].portfolioContext || {};
 
   const handleChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'budgetFramework', { [field]: value });
   };
 
   const handlePortfolioContextChange = (field, value) => {
+    if (isLocked) return;
     updateKYCData(respondent, 'portfolioContext', { [field]: value });
   };
 
