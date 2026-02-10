@@ -1615,22 +1615,14 @@ export default function VMXApp(props: VMXAppProps = {}) {
         <DocumentationOverlay onClose={() => setShowDocs(false)} onExportPdf={exportPdfReport} />
       )}
 
-      {uiMode === "lite" ? (
-        <>
           <div className="card">
             <div className="adminHeader">
               <div>
-                <h2>VMX Lite — Client Dashboard</h2>
+                <h2>VMX — Client Dashboard</h2>
                 <div className="muted">
-                  High-level budget trajectory (VMX Pro remains available for the professional team).
+                  High-level budget trajectory. Use Lite/Pro toggle for different detail levels.
                 </div>
               </div>
-              {allowProMode && (
-                <button type="button" className="secondaryBtn" onClick={() => setUiMode("pro")}
-                  title="Open the full VMX professional interface">
-                  Open VMX Pro
-                </button>
-              )}
             </div>
 
             <div className="adminTopGrid">
@@ -1936,6 +1928,9 @@ export default function VMXApp(props: VMXAppProps = {}) {
             </div>
           )}
 
+      {uiMode === "lite" ? (
+        <>
+
           {(errorA || (compareMode && errorB)) && (
             <div className="card" style={{ borderColor: "rgba(220, 38, 38, 0.35)" }}>
               <h3 style={{ marginTop: 0 }}>Scenario Error</h3>
@@ -2032,65 +2027,12 @@ export default function VMXApp(props: VMXAppProps = {}) {
       <div className="card">
         <div className="adminHeader">
           <div>
-            <h2>Compare Setup</h2>
-            <div className="muted">Compare two regions at the same tier. Units: sq ft.</div>
+            <h3 style={{ margin: 0 }}>Pro Controls</h3>
+            <div className="muted">Benchmark editor and interior tier override settings.</div>
           </div>
-
-          <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900 }}>
-            <input type="checkbox" checked={compareMode} onChange={(e) => setCompareMode(e.target.checked)} />
-            Compare Mode
-          </label>
         </div>
 
         <div className="adminTopGrid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-          <div>
-            <label className="label">Client Name (for PDF / exports)</label>
-            <input
-              className="input"
-              value={n4sClientName}
-              onChange={(e) => setN4sClientName(e.target.value)}
-              placeholder="Client name"
-            />
-          </div>
-
-          <div>
-            <label className="label">Project Name (for PDF / exports)</label>
-            <input
-              className="input"
-              value={n4sProjectName}
-              onChange={(e) => setN4sProjectName(e.target.value)}
-              placeholder="Project name"
-            />
-          </div>
-        </div>
-
-        <div className="adminTopGrid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-          <div>
-            <label className="label">Area (sq ft)</label>
-            <input className="input" type="number" min={1} value={areaSqft} onChange={(e) => setAreaSqft(Number(e.target.value))} />
-          </div>
-
-          <div>
-            <label className="label">
-              Tier
-              {tierLockedFromKYC && <span className="lockedBadge" title="Set in KYC P1.A.4 Interior Quality Tier"> (from KYC)</span>}
-            </label>
-            <select
-              className="input"
-              value={tier}
-              onChange={(e) => setTier(e.target.value as TierId)}
-              disabled={tierLockedFromKYC}
-              title={tierLockedFromKYC ? "Tier is set from KYC P1.A.4 Interior Quality Tier" : undefined}
-              style={tierLockedFromKYC ? { backgroundColor: "#f1f5f9", cursor: "not-allowed" } : undefined}
-            >
-              {TIERS.map((t) => (
-                <option key={t} value={t}>
-                  {tierLabel(t)}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div>
             <label className="label">Benchmark Editor Target</label>
             <select
@@ -2104,10 +2046,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
               <option value={regionB.id}>Scenario B — {regionB.name}</option>
             </select>
           </div>
-        </div>
 
-
-        <div className="adminTopGrid" style={{ gridTemplateColumns: "1fr" }}>
           <div>
             <label className="label">Interiors + FF&amp;E Package (4-tier override)</label>
             <select
@@ -2127,244 +2066,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
             </div>
           </div>
         </div>
-
-        <div className="adminTopGrid" style={{ gridTemplateColumns: compareMode ? "1fr 1fr" : "1fr" }}>
-          <div>
-            <label className="label">Scenario A — Region</label>
-            <select className="input" value={regionAId} onChange={(e) => setRegionAId(e.target.value)}>
-              {library.regions.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-
-            <label className="label" style={{ marginTop: 10 }}>Scenario A — Location</label>
-            <select className="input" value={locationAPreset} onChange={(e) => setLocationAPreset(e.target.value)}>
-              {LOCATION_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}{p.id !== "custom" ? ` (×${p.factor.toFixed(2)})` : ""}
-                </option>
-              ))}
-            </select>
-            {locationAPreset === "custom" && (
-              <input
-                className="input"
-                type="number"
-                min={0.5}
-                step={0.01}
-                value={locationACustom}
-                onChange={(e) => setLocationACustom(Number(e.target.value))}
-                placeholder="1.00"
-              />
-            )}
-            <div className="muted" style={{ marginTop: 6 }}>
-              Effective multiplier: <span className="mono">×{locationFactorA.toFixed(2)}</span>
-            </div>
-
-            <label className="label" style={{ marginTop: 10 }}>Scenario A — Typology</label>
-            <select className="input" value={typologyA} onChange={(e) => setTypologyA(e.target.value as TypologyId)}>
-              {TYPOLOGY_PRESETS.map((tp) => (
-                <option key={tp.id} value={tp.id}>
-                  {tp.label}
-                </option>
-              ))}
-            </select>
-            <div className="muted" style={{ marginTop: 6 }}>
-              Applies category-specific site impacts (e.g., Hillside increases Substructure + Exterior Works).
-            </div>
-
-
-            <label className="label" style={{ marginTop: 10 }}>Scenario A — Land Acquisition Cost (USD)</label>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              step={1000}
-              value={landCostA}
-              onChange={(e) => setLandCostA(Number(e.target.value) || 0)}
-              placeholder="0"
-            />
-            <div className="muted" style={{ marginTop: 6 }}>
-              Included in <strong>Grand Total (All-in)</strong> and PDF / Client Pack exports.
-            </div>
-          </div>
-
-          {compareMode && (
-            <div>
-              <label className="label">Scenario B — Region</label>
-              <select className="input" value={regionBId} onChange={(e) => setRegionBId(e.target.value)}>
-                {library.regions.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-
-              <label className="label" style={{ marginTop: 10 }}>Scenario B — Location</label>
-              <select className="input" value={locationBPreset} onChange={(e) => setLocationBPreset(e.target.value)}>
-                {LOCATION_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}{p.id !== "custom" ? ` (×${p.factor.toFixed(2)})` : ""}
-                  </option>
-                ))}
-              </select>
-              {locationBPreset === "custom" && (
-                <input
-                  className="input"
-                  type="number"
-                  min={0.5}
-                  step={0.01}
-                  value={locationBCustom}
-                  onChange={(e) => setLocationBCustom(Number(e.target.value))}
-                  placeholder="1.00"
-                />
-              )}
-              <div className="muted" style={{ marginTop: 6 }}>
-                Effective multiplier: <span className="mono">×{locationFactorB.toFixed(2)}</span>
-              </div>
-
-              <label className="label" style={{ marginTop: 10 }}>Scenario B — Typology</label>
-              <select className="input" value={typologyB} onChange={(e) => setTypologyB(e.target.value as TypologyId)}>
-                {TYPOLOGY_PRESETS.map((tp) => (
-                  <option key={tp.id} value={tp.id}>
-                    {tp.label}
-                  </option>
-                ))}
-              </select>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Applies category-specific site impacts.
-              </div>
-
-
-              <label className="label" style={{ marginTop: 10 }}>Scenario B — Land Acquisition Cost (USD)</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                step={1000}
-                value={landCostB}
-                onChange={(e) => setLandCostB(Number(e.target.value) || 0)}
-                placeholder="0"
-              />
-              <div className="muted" style={{ marginTop: 6 }}>
-                Included in <strong>Grand Total (All-in)</strong> and PDF / Client Pack exports.
-              </div>
-            </div>
-          )}
-        </div>
-
-        {!compareMode && (
-          <div className="muted" style={{ marginTop: 8 }}>
-            Enable Compare Mode to select Scenario B and view deltas.
-          </div>
-        )}
       </div>
-
-          {/* KYC Budget Framework Reference (P1.A.4) — Pro view */}
-          {vmxData?.kycBudgetConstraints && (vmxData?.kycBudgetConstraints.totalBudget || vmxData?.kycBudgetConstraints.constructionBudget) && (
-            <div className="card" style={{ borderLeft: "3px solid #c9a227", background: "linear-gradient(135deg, #fefcf6 0%, #faf7ef 100%)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 15, color: "#1e3a5f" }}>KYC Budget Framework</h3>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>Reference from P1.A.4 — read-only</div>
-                </div>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#c9a227",
-                  background: "#fef9e7",
-                  border: "1px solid #e8d48b",
-                  borderRadius: 4,
-                  padding: "2px 8px",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                }}>FROM KYC</span>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                {vmxData?.kycBudgetConstraints.totalBudget != null && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Total Project Budget</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(vmxData?.kycBudgetConstraints.totalBudget, "USD")}
-                    </div>
-                  </div>
-                )}
-
-                {vmxData?.kycBudgetConstraints.constructionBudget != null && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget (ID + FF&E)</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(vmxData?.kycBudgetConstraints.constructionBudget, "USD")}
-                    </div>
-                  </div>
-                )}
-
-                {vmxData?.kycBudgetConstraints.totalBudget != null && (vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) > 0 && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Grand Total (Land + Project)</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney((vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) + vmxData?.kycBudgetConstraints.totalBudget, "USD")}
-                    </div>
-                  </div>
-                )}
-
-                {vmxData?.kycBudgetConstraints.constructionBudget != null && (vmxData?.kycBudgetConstraints.targetGSF || areaSqft) > 0 && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget / SF</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                        ${Math.round(vmxData?.kycBudgetConstraints.constructionBudget / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft)).toLocaleString()}/SF
-                      </span>
-                      {(() => {
-                        const perSF = Math.round(vmxData?.kycBudgetConstraints.constructionBudget! / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft));
-                        let tierLabel = "";
-                        let tierColor = "";
-                        if (perSF >= 750) { tierLabel = "ULTRA LUXURY"; tierColor = "#c9a227"; }
-                        else if (perSF >= 500) { tierLabel = "LUXURY"; tierColor = "#315098"; }
-                        else if (perSF >= 350) { tierLabel = "PREMIUM"; tierColor = "#2d7d6f"; }
-                        else { tierLabel = "STANDARD"; tierColor = "#6b6b6b"; }
-                        return tierLabel ? (
-                          <span style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: "white",
-                            background: tierColor,
-                            borderRadius: 4,
-                            padding: "2px 6px",
-                            letterSpacing: "0.05em",
-                          }}>{tierLabel}</span>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                {vmxData?.kycBudgetConstraints.budgetFlexibility && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Budget Flexibility</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a5f" }}>
-                      {vmxData?.kycBudgetConstraints.budgetFlexibility === "fixed" ? "Fixed Ceiling — Cannot Exceed"
-                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "flexible" ? "Flexible — Room for Quality"
-                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "investment" ? "Investment-Appropriate"
-                        : vmxData?.kycBudgetConstraints.budgetFlexibility}
-                    </div>
-                  </div>
-                )}
-
-                {vmxData?.kycBudgetConstraints.artBudgetSeparate && vmxData?.kycBudgetConstraints.artBudgetAmount != null && vmxData?.kycBudgetConstraints.artBudgetAmount > 0 && (
-                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
-                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Art Budget (Separate)</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(vmxData?.kycBudgetConstraints.artBudgetAmount, "USD")}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
       {!compareMode ? (
         <Matrix
           title="Scenario"
