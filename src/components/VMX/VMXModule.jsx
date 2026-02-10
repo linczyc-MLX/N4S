@@ -393,16 +393,15 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="vmx-module">
-      {/* FYI-pattern header: title + save area */}
-      <header className="vmx-module__header">
-        <div className="vmx-module__header-content">
-          <div className="vmx-module__title-group">
-            <h1 className="vmx-module__title">VMX – Vision Matrix</h1>
-            <p className="vmx-module__subtitle">Project Cost Analysis</p>
+      {/* Module Header (universal pattern) */}
+      <header className="module-header">
+        <div className="module-header__content">
+          <div className="module-header__title-group">
+            <h1 className="module-header__title">VMX – Vision Matrix</h1>
+            <p className="module-header__subtitle">Project Cost Analysis</p>
           </div>
 
-          {/* SAVE BUTTON (FYI pattern) */}
-          <div className="vmx-module__save-area">
+          <div className="module-header__actions">
             <button
               className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
               onClick={handleSave}
@@ -412,23 +411,23 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
               {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </button>
             {lastSaved && !hasUnsavedChanges && (
-              <span className="vmx-module__last-saved">
+              <span className="module-header__last-saved">
                 Last saved: {new Date(lastSaved).toLocaleTimeString()}
               </span>
             )}
           </div>
         </div>
 
-        {/* Project context banner (matches FYI KYC banner) */}
+        {/* Project context banner */}
         {currentContext && (
-          <div className="vmx-module__context-banner">
-            <span className="vmx-module__context-label">Project:</span>
-            <span className="vmx-module__context-value">{currentContext.projectName}</span>
+          <div className="module-header__banner">
+            <span className="module-header__banner-label">Project:</span>
+            <span className="module-header__banner-value">{currentContext.projectName}</span>
             {currentContext.clientName && (
-              <span className="vmx-module__context-value">{currentContext.clientName}</span>
+              <span className="module-header__banner-value">{currentContext.clientName}</span>
             )}
             {currentContext.scenarioA?.areaSqft && (
-              <span className="vmx-module__context-value">
+              <span className="module-header__banner-value">
                 {currentContext.scenarioA.areaSqft.toLocaleString()} SF
               </span>
             )}
@@ -453,84 +452,6 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           flex-direction: column;
           height: 100%;
           background: var(--gray-50, #f7fafc);
-        }
-
-        /* FYI-pattern header */
-        .vmx-module__header {
-          border-bottom: 1px solid var(--color-border, #e5e5e0);
-          background: white;
-          flex-shrink: 0;
-        }
-
-        .vmx-module__header-content {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 1.5rem 2rem;
-        }
-
-        .vmx-module__title-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .vmx-module__title {
-          font-family: 'Playfair Display', Georgia, serif;
-          font-size: 1.5rem !important;
-          font-weight: 500 !important;
-          color: var(--gray-800, #1a1a1a) !important;
-          margin: 0;
-          letter-spacing: -0.01em !important;
-        }
-
-        .vmx-module__subtitle {
-          font-size: 0.875rem;
-          color: var(--gray-500, #6b6b6b);
-          margin: 0;
-        }
-
-        .vmx-module__save-area {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-left: auto;
-          margin-right: 1rem;
-        }
-
-        .vmx-module__last-saved {
-          font-size: 0.75rem;
-          color: var(--gray-500, #6b6b6b);
-        }
-
-        /* Context banner (matches FYI KYC banner) */
-        .vmx-module__context-banner {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 0.75rem 2rem;
-          background: var(--color-accent-light, #f5f0e8);
-          border-top: 1px solid var(--color-border, #e5e5e0);
-          font-size: 0.8125rem;
-        }
-
-        .vmx-module__context-label {
-          color: var(--gray-500, #6b6b6b);
-        }
-
-        .vmx-module__context-value {
-          color: var(--gray-800, #1a1a1a);
-          font-weight: 500;
-        }
-
-        .vmx-module__context-value::before {
-          content: '•';
-          margin-right: 1rem;
-          color: var(--color-border, #e5e5e0);
-        }
-
-        .vmx-module__context-value:first-of-type::before {
-          display: none;
         }
 
         .vmx-module__content {

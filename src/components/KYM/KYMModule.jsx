@@ -1415,38 +1415,40 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kym-module">
-      {/* Module Header */}
-      <div className="kym-header">
-        <div className="kym-header__title-area">
-          <h1 className="kym-header__title">Know Your Market</h1>
-          <p className="kym-header__subtitle">Market intelligence for luxury residential development</p>
+      {/* Module Header (universal pattern) */}
+      <header className="module-header">
+        <div className="module-header__content">
+          <div className="module-header__title-group">
+            <h1 className="module-header__title">KYM – Know Your Market</h1>
+            <p className="module-header__subtitle">Market Intelligence</p>
+          </div>
+          <div className="module-header__actions">
+            <LocationSelector 
+              selectedZipCode={selectedZipCode}
+              onSelect={handleLocationChange}
+              clientLocation={clientLocation}
+              locationData={locationData}
+            />
+            <button 
+              className="kyc-export-btn"
+              onClick={handleExportReport}
+              disabled={isLoading || isExporting || !locationData}
+              title="Export Market Intelligence Report"
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </button>
+            <button 
+              className="module-header__reset-btn"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+              Refresh
+            </button>
+          </div>
         </div>
-        <div className="kym-header__actions">
-          <LocationSelector 
-            selectedZipCode={selectedZipCode}
-            onSelect={handleLocationChange}
-            clientLocation={clientLocation}
-            locationData={locationData}
-          />
-          <button 
-            className="kym-export-btn"
-            onClick={handleExportReport}
-            disabled={isLoading || isExporting || !locationData}
-            title="Export Market Intelligence Report"
-          >
-            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-            {isExporting ? 'Exporting...' : 'Export Report'}
-          </button>
-          <button 
-            className="kym-refresh-btn"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
-            Refresh
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* Data Source Indicator */}
       <div className="kym-data-source">

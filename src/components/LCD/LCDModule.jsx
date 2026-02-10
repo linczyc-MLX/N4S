@@ -47,7 +47,7 @@ const generateSlug = (name) => {
     .substring(0, 30);
 };
 
-const LCDModule = () => {
+const LCDModule = ({ showDocs, onCloseDocs }) => {
   const {
     activeProjectId,
     clientData,
@@ -57,6 +57,7 @@ const LCDModule = () => {
     hasUnsavedChanges,
     saveNow,
     isSaving,
+    lastSaved,
     calculateCompleteness,
   } = useAppContext();
 
@@ -222,25 +223,32 @@ const LCDModule = () => {
   }
 
   return (
-    <div className="lcd-module">
-      {/* Header */}
-      <div className="lcd-module__header">
-        <div className="lcd-module__title-row">
-          <Monitor size={28} className="lcd-module__icon" />
-          <div>
-            <h1 className="lcd-module__title">LuXeBrief Portal</h1>
-            <p className="lcd-module__subtitle">Client Dashboard Control Panel</p>
-          </div>
-        </div>
-        <button
-          className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-          onClick={saveNow}
-          disabled={isSaving || !hasUnsavedChanges}
-        >
-          <Save size={16} />
-          {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-        </button>
-      </div>
+    <div className={`lcd-layout ${showDocs ? 'lcd-layout--with-docs' : ''}`}>
+      <div className="lcd-layout__main">
+        <div className="lcd-module">
+          {/* Module Header (universal pattern) */}
+          <header className="module-header">
+            <div className="module-header__content">
+              <div className="module-header__title-group">
+                <h1 className="module-header__title">LCD – LuXeBrief Portal</h1>
+                <p className="module-header__subtitle">Client Dashboard Control Panel</p>
+              </div>
+
+              <div className="module-header__actions">
+                <button
+                  className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+                  onClick={saveNow}
+                  disabled={isSaving || !hasUnsavedChanges}
+                >
+                  <Save size={16} />
+                  {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+                </button>
+                {lastSaved && !hasUnsavedChanges && (
+                  <span className="module-header__last-saved">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
+                )}
+              </div>
+            </div>
+          </header>
 
       {/* Portal Status Section */}
       <section className="lcd-section">
@@ -828,6 +836,26 @@ const LCDModule = () => {
           </div>
         )}
       </section>
+        </div>
+      </div>
+
+      {/* Documentation Panel (4-tab system) */}
+      {showDocs && (
+        <div className="lcd-layout__docs">
+          <div className="lcd-docs">
+            <div className="lcd-docs__header">
+              <h3>LCD Documentation</h3>
+              <button className="lcd-docs__close" onClick={onCloseDocs}>✕</button>
+            </div>
+            <div className="lcd-docs__content">
+              <p style={{ color: '#6b6b6b', padding: '2rem', textAlign: 'center' }}>
+                LCD Documentation is being formulated.<br />
+                <span style={{ fontSize: '0.8125rem' }}>This will follow the 4-tab system: Overview / Workflow / Gates / Reference</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -645,57 +645,52 @@ const MVPModule = ({ onNavigate, showDocs, onCloseDocs }) => {
     // ============================================
     return (
       <div className="mvp-module">
-        {/* Top Action Bar — Save on right, matching KYC pattern */}
-        <div className="kyc-module__top-bar">
-          <div className="kyc-module__save-area">
-            <button
-              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-              onClick={saveNow}
-              disabled={isSaving || !hasUnsavedChanges}
-            >
-              <Save size={16} />
-              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-            </button>
-            {lastSaved && !hasUnsavedChanges && (
-              <span className="kyc-save-time">
-                Last saved: {new Date(lastSaved).toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Module Header (universal pattern) */}
+        <header className="module-header">
+          <div className="module-header__content">
+            <div className="module-header__title-group">
+              <h1 className="module-header__title">MVP – Mansion Validation Program</h1>
+              <p className="module-header__subtitle">
+                {hasFYIData ? (
+                  <>Space program from FYI</>
+                ) : (
+                  <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
+                )}
+              </p>
+            </div>
 
-        {/* Module Header — title + Export + Tier badge */}
-        <div className="mvp-module__header">
-          <div className="mvp-module__title-group">
-            <h1 className="mvp-module__title">
-              <ClipboardCheck size={28} />
-              Mansion Validation Program
-            </h1>
-            <p className="mvp-module__subtitle">
-              {hasFYIData ? (
-                <>Space program from FYI</>
-              ) : (
-                <>Area program derived from KYC inputs • {activeRespondent.charAt(0).toUpperCase() + activeRespondent.slice(1)} respondent</>
+            <div className="module-header__actions">
+              <button
+                className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+                onClick={saveNow}
+                disabled={isSaving || !hasUnsavedChanges}
+              >
+                <Save size={16} />
+                {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+              </button>
+              <button
+                onClick={handleExportReport}
+                disabled={isExporting || !preset}
+                className="kyc-export-btn"
+                title="Export comprehensive MVP Report PDF"
+              >
+                <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+                {isExporting ? 'Exporting...' : 'Export Report'}
+              </button>
+              {lastSaved && !hasUnsavedChanges && (
+                <span className="module-header__last-saved">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
               )}
-            </p>
+            </div>
           </div>
+        </header>
 
-          <div className="mvp-module__header-right">
-            <button
-              onClick={handleExportReport}
-              disabled={isExporting || !preset}
-              className="kyc-export-btn"
-              title="Export comprehensive MVP Report PDF"
-            >
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </button>
-            <TierBenchmarkDropdown
-              estimatedTier={estimatedTier}
-              isOpen={tierDropdownOpen}
-              onToggle={() => setTierDropdownOpen(!tierDropdownOpen)}
-            />
-          </div>
+        {/* Tier Benchmark */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <TierBenchmarkDropdown
+            estimatedTier={estimatedTier}
+            isOpen={tierDropdownOpen}
+            onToggle={() => setTierDropdownOpen(!tierDropdownOpen)}
+          />
         </div>
 
         {/* DEPLOYMENT WORKFLOW */}

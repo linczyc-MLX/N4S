@@ -793,7 +793,31 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kys-module">
-      {/* Header with Mode Toggle and Save */}
+      {/* Module Header (universal pattern) */}
+      <header className="module-header">
+        <div className="module-header__content">
+          <div className="module-header__title-group">
+            <h1 className="module-header__title">KYS – Know Your Site</h1>
+            <p className="module-header__subtitle">Site Assessment & Analysis</p>
+          </div>
+
+          <div className="module-header__actions">
+            <button
+              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+              onClick={saveNow}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
+              <Save size={16} />
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+            </button>
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="module-header__last-saved">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Mode Toggle and Project Selector */}
       <div className="kys-module__header">
         <div className="kys-module__mode-toggle">
           <span className="kys-mode-label">Assessment Mode:</span>
@@ -835,22 +859,6 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
                 </span>
               )}
             </div>
-          )}
-        </div>
-        
-        <div className="kys-module__save-area">
-          <button
-            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-            onClick={saveNow}
-            disabled={isSaving || !hasUnsavedChanges}
-          >
-            <Save size={16} />
-            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-          </button>
-          {lastSaved && !hasUnsavedChanges && (
-            <span className="kys-module__save-time">
-              Last saved: {new Date(lastSaved).toLocaleTimeString()}
-            </span>
           )}
         </div>
       </div>

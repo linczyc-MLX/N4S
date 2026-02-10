@@ -632,3 +632,50 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* LCD Layout — docs panel support */
+.lcd-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+}
+.lcd-layout__main {
+  flex: 1;
+  min-width: 0;
+  transition: all 0.2s ease;
+}
+.lcd-layout--with-docs .lcd-layout__main {
+  flex: 0 0 60%;
+  max-width: 60%;
+}
+.lcd-layout__docs {
+  flex: 0 0 40%;
+  max-width: 40%;
+  border-left: 1px solid var(--gray-200, #e5e5e0);
+  background: white;
+  overflow-y: auto;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.lcd-docs__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--gray-200, #e5e5e0);
+}
+.lcd-docs__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.lcd-docs__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--gray-500, #6b6b6b);
+  padding: 4px 8px;
+}
+.lcd-docs__close:hover { color: var(--gray-700, #1a1a1a); }

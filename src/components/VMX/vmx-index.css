@@ -42,23 +42,37 @@
 
 
 /* ============================================
-   TOP BAR — Slim mode-toggle row only.
-   Title/docs hidden (provided by N4S wrapper).
+   TOP BAR — Hide ALL duplicate chrome.
+   Only Lite/Pro mode pills remain visible.
    ============================================ */
 
 .vmx-module .topBar {
   background: transparent;
   border: none;
-  margin: 0 0 16px;
-  padding: 0;
+  margin: 0;
+  padding: 8px 0;
   min-height: auto;
+}
+/* Hide title + client info */
+.vmx-module .topBar > div:first-child { display: none; }
+/* Hide save button (in module-header instead) */
+.vmx-module .topBar .btn { display: none !important; }
+.vmx-module .topBar .btn--primary { display: none !important; }
+.vmx-module .topBar .btn--success { display: none !important; }
+/* Hide docs button (in App.jsx header instead) */
+.vmx-module .topBar .docsBtn { display: none !important; }
+/* Hide project dropdown (N4S handles project switching) */
+.vmx-module .topBar select.input { display: none !important; }
+/* Keep Lite/Pro pills visible, right-aligned */
+.vmx-module .topBarActions {
   display: flex;
   align-items: center;
+  gap: 12px;
   justify-content: flex-end;
+  width: 100%;
 }
-
-.vmx-module .topBar > h1 { display: none; }
-.vmx-module .topBar .docsBtn { display: none; }
+/* Hide redundant "VMX — Client Dashboard" title */
+.vmx-module .adminHeader h2 { display: none; }
 
 
 /* ============================================

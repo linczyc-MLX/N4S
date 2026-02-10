@@ -199,34 +199,41 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="kyc-module">
-      {/* Top Action Bar - SAVE & Export on right side */}
-      <div className="kyc-module__top-bar">
-        <div className="kyc-module__save-area">
-          <button
-            className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
-            onClick={handleSave}
-            disabled={isSaving || !hasUnsavedChanges}
-          >
-            <Save size={16} />
-            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
-          </button>
-          {/* Export Report only shows on P1.A.1 Portfolio Context - master report for entire module */}
-          {visibleSections[currentKYCSection]?.id === 'portfolioContext' && (
+      {/* Module Header (universal pattern) */}
+      <header className="module-header">
+        <div className="module-header__content">
+          <div className="module-header__title-group">
+            <h1 className="module-header__title">KYC – Know Your Client</h1>
+            <p className="module-header__subtitle">Client Discovery & Profile</p>
+          </div>
+
+          <div className="module-header__actions">
             <button
-              className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
-              onClick={handleExportReport}
-              disabled={isExporting || !areAllSectionsComplete}
-              title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
+              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
             >
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export Report'}
+              <Save size={16} />
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </button>
-          )}
-          {lastSaved && !hasUnsavedChanges && (
-            <span className="kyc-save-time">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
-          )}
+            {/* Export Report only shows on P1.A.1 Portfolio Context */}
+            {visibleSections[currentKYCSection]?.id === 'portfolioContext' && (
+              <button
+                className={`kyc-export-btn ${!areAllSectionsComplete ? 'kyc-export-btn--disabled' : ''}`}
+                onClick={handleExportReport}
+                disabled={isExporting || !areAllSectionsComplete}
+                title={areAllSectionsComplete ? 'Export KYC Report as PDF' : 'Complete all sections to enable export'}
+              >
+                <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+                {isExporting ? 'Exporting...' : 'Export Report'}
+              </button>
+            )}
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="module-header__last-saved">Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Respondent Status Display (non-clickable) */}
       <div className="kyc-module__respondent-tabs">
