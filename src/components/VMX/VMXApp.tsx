@@ -692,18 +692,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
   const [programProfile, setProgramProfile] = useState<VmxProgramProfile | null>(() => vmxData?.programProfile ?? null);
 
-  // KYC Budget Framework reference data (read-only, synced from VMXModule)
-  const [kycBudgetConstraints, setKycBudgetConstraints] = useState<{
-    totalBudget: number | null;
-    constructionBudget: number | null;
-    budgetPerSF: number | null;
-    budgetFlexibility: string;
-    artBudgetSeparate: boolean;
-    artBudgetAmount: number | null;
-    landAcquisitionCost: number | null;
-    targetGSF: number | null;
-  } | null>(() => vmxData?.kycBudgetConstraints ?? null);
-
   const [n4sProjects, setN4sProjects] = useState<N4SProjectEntry[]>(() => {
     try {
       const win = window as any;
@@ -794,13 +782,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep kycBudgetConstraints in sync when vmxData changes externally
-  useEffect(() => {
-    if (vmxData?.kycBudgetConstraints) {
-      setKycBudgetConstraints(vmxData.kycBudgetConstraints);
-    }
-  }, [vmxData?.kycBudgetConstraints]);
-
   // Location presets/custom are persisted via the main state sync effect
 
 
@@ -853,7 +834,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
       n4sProjectName: n4sProjectName || undefined,
       n4sProjectId: n4sProjectId || undefined,
       tierLockedFromKYC,
-      kycBudgetConstraints,
       selectionsA: buildSelectionsObject(selA),
       selectionsB: buildSelectionsObject(selB),
     };
@@ -865,7 +845,6 @@ export default function VMXApp(props: VMXAppProps = {}) {
     locationAPreset, locationACustom, locationBPreset, locationBCustom,
     typologyA, typologyB, landCostA, landCostB, interiorTierOverride, uiMode,
     n4sClientName, n4sProjectName, n4sProjectId, tierLockedFromKYC,
-    kycBudgetConstraints,
     selA, selB, updateVMXData
   ]);
 
@@ -1854,7 +1833,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
           </div>
 
           {/* KYC Budget Framework Reference (P1.A.4) */}
-          {kycBudgetConstraints && (kycBudgetConstraints.totalBudget || kycBudgetConstraints.constructionBudget) && (
+          {vmxData?.kycBudgetConstraints && (vmxData?.kycBudgetConstraints.totalBudget || vmxData?.kycBudgetConstraints.constructionBudget) && (
             <div className="card" style={{ borderLeft: "3px solid #c9a227", background: "linear-gradient(135deg, #fefcf6 0%, #faf7ef 100%)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
@@ -1875,42 +1854,42 @@ export default function VMXApp(props: VMXAppProps = {}) {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                {kycBudgetConstraints.totalBudget != null && (
+                {vmxData?.kycBudgetConstraints.totalBudget != null && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Total Project Budget</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(kycBudgetConstraints.totalBudget, "USD")}
+                      {formatMoney(vmxData?.kycBudgetConstraints.totalBudget, "USD")}
                     </div>
                   </div>
                 )}
 
-                {kycBudgetConstraints.constructionBudget != null && (
+                {vmxData?.kycBudgetConstraints.constructionBudget != null && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget (ID + FF&E)</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(kycBudgetConstraints.constructionBudget, "USD")}
+                      {formatMoney(vmxData?.kycBudgetConstraints.constructionBudget, "USD")}
                     </div>
                   </div>
                 )}
 
-                {kycBudgetConstraints.totalBudget != null && (kycBudgetConstraints.landAcquisitionCost || landCostA) > 0 && (
+                {vmxData?.kycBudgetConstraints.totalBudget != null && (vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) > 0 && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Grand Total (Land + Project)</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney((kycBudgetConstraints.landAcquisitionCost || landCostA) + kycBudgetConstraints.totalBudget, "USD")}
+                      {formatMoney((vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) + vmxData?.kycBudgetConstraints.totalBudget, "USD")}
                     </div>
                   </div>
                 )}
 
-                {kycBudgetConstraints.constructionBudget != null && (kycBudgetConstraints.targetGSF || areaSqft) > 0 && (
+                {vmxData?.kycBudgetConstraints.constructionBudget != null && (vmxData?.kycBudgetConstraints.targetGSF || areaSqft) > 0 && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget / SF</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                       <span style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                        ${Math.round(kycBudgetConstraints.constructionBudget / (kycBudgetConstraints.targetGSF || areaSqft)).toLocaleString()}/SF
+                        ${Math.round(vmxData?.kycBudgetConstraints.constructionBudget / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft)).toLocaleString()}/SF
                       </span>
                       {(() => {
-                        const perSF = Math.round(kycBudgetConstraints.constructionBudget! / (kycBudgetConstraints.targetGSF || areaSqft));
+                        const perSF = Math.round(vmxData?.kycBudgetConstraints.constructionBudget! / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft));
                         let tierLabel = "";
                         let tierColor = "";
                         if (perSF >= 750) { tierLabel = "ULTRA LUXURY"; tierColor = "#c9a227"; }
@@ -1933,23 +1912,23 @@ export default function VMXApp(props: VMXAppProps = {}) {
                   </div>
                 )}
 
-                {kycBudgetConstraints.budgetFlexibility && (
+                {vmxData?.kycBudgetConstraints.budgetFlexibility && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Budget Flexibility</div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a5f" }}>
-                      {kycBudgetConstraints.budgetFlexibility === "fixed" ? "Fixed Ceiling — Cannot Exceed"
-                        : kycBudgetConstraints.budgetFlexibility === "flexible" ? "Flexible — Room for Quality"
-                        : kycBudgetConstraints.budgetFlexibility === "investment" ? "Investment-Appropriate"
-                        : kycBudgetConstraints.budgetFlexibility}
+                      {vmxData?.kycBudgetConstraints.budgetFlexibility === "fixed" ? "Fixed Ceiling — Cannot Exceed"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "flexible" ? "Flexible — Room for Quality"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "investment" ? "Investment-Appropriate"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility}
                     </div>
                   </div>
                 )}
 
-                {kycBudgetConstraints.artBudgetSeparate && kycBudgetConstraints.artBudgetAmount != null && kycBudgetConstraints.artBudgetAmount > 0 && (
+                {vmxData?.kycBudgetConstraints.artBudgetSeparate && vmxData?.kycBudgetConstraints.artBudgetAmount != null && vmxData?.kycBudgetConstraints.artBudgetAmount > 0 && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Art Budget (Separate)</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(kycBudgetConstraints.artBudgetAmount, "USD")}
+                      {formatMoney(vmxData?.kycBudgetConstraints.artBudgetAmount, "USD")}
                     </div>
                   </div>
                 )}
