@@ -700,6 +700,8 @@ export default function VMXApp(props: VMXAppProps = {}) {
     budgetFlexibility: string;
     artBudgetSeparate: boolean;
     artBudgetAmount: number | null;
+    landAcquisitionCost: number | null;
+    targetGSF: number | null;
   } | null>(() => vmxData?.kycBudgetConstraints ?? null);
 
   const [n4sProjects, setN4sProjects] = useState<N4SProjectEntry[]>(() => {
@@ -1891,24 +1893,24 @@ export default function VMXApp(props: VMXAppProps = {}) {
                   </div>
                 )}
 
-                {kycBudgetConstraints.totalBudget != null && landCostA > 0 && (
+                {kycBudgetConstraints.totalBudget != null && (kycBudgetConstraints.landAcquisitionCost || landCostA) > 0 && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Grand Total (Land + Project)</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                      {formatMoney(landCostA + kycBudgetConstraints.totalBudget, "USD")}
+                      {formatMoney((kycBudgetConstraints.landAcquisitionCost || landCostA) + kycBudgetConstraints.totalBudget, "USD")}
                     </div>
                   </div>
                 )}
 
-                {kycBudgetConstraints.constructionBudget != null && areaSqft > 0 && (
+                {kycBudgetConstraints.constructionBudget != null && (kycBudgetConstraints.targetGSF || areaSqft) > 0 && (
                   <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
                     <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget / SF</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                       <span style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
-                        ${Math.round(kycBudgetConstraints.constructionBudget / areaSqft).toLocaleString()}/SF
+                        ${Math.round(kycBudgetConstraints.constructionBudget / (kycBudgetConstraints.targetGSF || areaSqft)).toLocaleString()}/SF
                       </span>
                       {(() => {
-                        const perSF = Math.round(kycBudgetConstraints.constructionBudget! / areaSqft);
+                        const perSF = Math.round(kycBudgetConstraints.constructionBudget! / (kycBudgetConstraints.targetGSF || areaSqft));
                         let tierLabel = "";
                         let tierColor = "";
                         if (perSF >= 750) { tierLabel = "ULTRA LUXURY"; tierColor = "#c9a227"; }

@@ -165,8 +165,9 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
         // Get project name
         const projectName = clientData?.projectName || projectParams.projectName || project.name || 'Untitled Project';
 
-        // Get area from FYI settings or KYC
-        const areaSqft = fyiData?.settings?.targetSF || projectParams.targetGSF || 15000;
+        // Get area: KYC targetGSF is authoritative (set by client in intake),
+        // FYI targetSF is only used if KYC hasn't set a value yet
+        const areaSqft = projectParams.targetGSF || fyiData?.settings?.targetSF || 15000;
 
         // Get tier
         const tier = mapQualityTierToVmxTier(budgetFramework.interiorQualityTier);
@@ -202,6 +203,8 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           budgetFlexibility: budgetFramework.budgetFlexibility || '',
           artBudgetSeparate: budgetFramework.artBudgetSeparate || false,
           artBudgetAmount: budgetFramework.artBudgetAmount || null,
+          landAcquisitionCost: portfolioContext.landAcquisitionCost || null,
+          targetGSF: projectParams.targetGSF || null,
         };
 
         return {
@@ -286,40 +289,55 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
       updateVMXData({ programProfile });
     }
 
-    // 5. Sync ALL KYC-derived values to vmxData so VMXApp reads them on mount
+    // 5. Seed KYC-derived values into vmxData ONLY when vmxData doesn't
+    //    already have a user-set value. This prevents overwriting advisor
+    //    adjustments made in VMX. Identity fields and budget constraints
+    //    are always synced (they're reference data, not user-editable in VMX).
     if (currentContext) {
       const kycSync = {};
 
-      // Client & project identity
+      // Identity fields — always sync (not user-editable in VMX)
       if (currentContext.clientName) kycSync.n4sClientName = currentContext.clientName;
       if (currentContext.projectName) kycSync.n4sProjectName = currentContext.projectName;
       if (currentContext.projectId) kycSync.n4sProjectId = currentContext.projectId;
 
-      // Scenario A values from KYC
-      const a = currentContext.scenarioA;
-      if (a) {
-        if (typeof a.areaSqft === 'number' && a.areaSqft > 0) kycSync.areaSqft = a.areaSqft;
-        if (a.tier) kycSync.tier = a.tier;
-        if (a.regionId) kycSync.regionAId = a.regionId;
-        if (a.locationPreset) kycSync.locationAPreset = a.locationPreset;
-        if (a.typology) kycSync.typologyA = a.typology;
-        if (typeof a.landCost === 'number' && a.landCost >= 0) kycSync.landCostA = a.landCost;
-      }
-
-      // Tier lock flag
+      // Tier lock flag — always sync (metadata, not a user value)
       if (typeof currentContext.tierLockedFromKYC === 'boolean') {
         kycSync.tierLockedFromKYC = currentContext.tierLockedFromKYC;
       }
 
-      // Budget constraints
+      // Budget constraints — always sync (read-only reference in VMX)
       if (currentContext.kycBudgetConstraints) {
         kycSync.kycBudgetConstraints = currentContext.kycBudgetConstraints;
       }
 
-      // Write all at once (single state update)
+      // Scenario A values — SEED ONLY (don't overwrite if vmxData already has a value)
+      const a = currentContext.scenarioA;
+      if (a) {
+        if (typeof a.areaSqft === 'number' && a.areaSqft > 0 && !(typeof vmxData?.areaSqft === 'number' && vmxData.areaSqft > 0)) {
+          kycSync.areaSqft = a.areaSqft;
+        }
+        if (a.tier && !vmxData?.tier) {
+          kycSync.tier = a.tier;
+        }
+        if (a.regionId && !vmxData?.regionAId) {
+          kycSync.regionAId = a.regionId;
+        }
+        if (a.locationPreset && (!vmxData?.locationAPreset || vmxData.locationAPreset === 'national')) {
+          kycSync.locationAPreset = a.locationPreset;
+        }
+        if (a.typology && (!vmxData?.typologyA || vmxData.typologyA === 'suburban')) {
+          kycSync.typologyA = a.typology;
+        }
+        if (typeof a.landCost === 'number' && a.landCost >= 0 && !(typeof vmxData?.landCostA === 'number' && vmxData.landCostA > 0)) {
+          kycSync.landCostA = a.landCost;
+        }
+      }
+
+      // Write seeded values
       if (Object.keys(kycSync).length > 0) {
         updateVMXData(kycSync);
-        console.log('[VMX] Synced KYC values to vmxData:', kycSync);
+        console.log('[VMX] Seeded KYC values to vmxData (seed-once):', kycSync);
       }
     }
 
