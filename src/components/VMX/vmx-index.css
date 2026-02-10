@@ -1,454 +1,680 @@
-/**
- * VMX Scoped Styles
- * All styles are scoped under .vmx-scope to prevent conflicts with N4S global styles.
- * The VMXApp component wraps its content in a div with className="vmx-scope".
- */
+/* ============================================
+   VMX — Visual Matrix
+   N4S Brand-Aligned Stylesheet
+   
+   Brand Guide Reference:
+   - Navy:       #1e3a5f   (primary brand, headers, primary buttons)
+   - Gold:       #c9a227   (accent, CTAs, highlights)
+   - Background: #fafaf8   (warm page background)
+   - Surface:    #ffffff   (cards, panels)
+   - Border:     #e5e5e0   (dividers, card borders)
+   - Text:       #1a1a1a   (primary text)
+   - Text Muted: #6b6b6b   (secondary text, labels)
+   - VMX Module: #FBD0E0   (Soft Pillow — light pink)
+   ============================================ */
 
-.vmx-scope {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  line-height: 1.35;
+:root {
+  --n4s-navy: #1e3a5f;
+  --n4s-gold: #c9a227;
+  --n4s-bg: #fafaf8;
+  --n4s-surface: #ffffff;
+  --n4s-border: #e5e5e0;
+  --n4s-text: #1a1a1a;
+  --n4s-text-muted: #6b6b6b;
+  --n4s-vmx-pink: #FBD0E0;
+  --n4s-success: #2e7d32;
+  --n4s-warning: #f57c00;
+  --n4s-error: #d32f2f;
+  --n4s-radius: 8px;
+  --n4s-radius-sm: 4px;
+
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
   font-weight: 400;
-  color: #0f172a;
-  background: #f6f7fb;
-  box-sizing: border-box;
+  color: var(--n4s-text);
+  background: var(--n4s-bg);
 }
 
-.vmx-scope *, .vmx-scope *::before, .vmx-scope *::after {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--n4s-bg); }
 
-.vmx-scope .container {
-  max-width: 1440px;
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.container {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 18px;
+  padding: 0 32px 32px;
 }
 
-.vmx-scope .card {
-  background: #ffffff;
-  border: 1px solid #e6eef8;
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-  width: 100%;
+
+/* ============================================
+   TOP BAR — VMX Module Header
+   Matches N4S .main-header pattern with VMX module colour
+   ============================================ */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  margin: 0 -32px 24px;
+  background: var(--n4s-vmx-pink);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  min-height: 64px;
 }
 
-.vmx-scope h1, .vmx-scope h2, .vmx-scope h3 {
-  margin: 0;
+.topBar h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--n4s-text);
+  letter-spacing: -0.01em;
 }
 
-.vmx-scope h1 { font-size: 28px; letter-spacing: -0.02em; }
-.vmx-scope h2 { font-size: 18px; letter-spacing: -0.02em; }
-.vmx-scope h3 { font-size: 16px; letter-spacing: -0.02em; }
-
-.vmx-scope .muted {
-  color: #64748b;
-  font-size: 13px;
+.topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.vmx-scope .label {
-  font-size: 12px;
-  font-weight: 800;
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1, h2, h3 { margin: 0; color: var(--n4s-text); }
+h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 1rem; font-weight: 600; }
+
+.muted {
+  color: var(--n4s-text-muted);
+  font-size: 0.8125rem;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.8125rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--n4s-navy);
+  margin-bottom: 8px;
+}
+
+
+/* ============================================
+   LABELS
+   ============================================ */
+
+.label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
   letter-spacing: 0.02em;
-  color: #475569;
+  color: var(--n4s-text-muted);
   text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
-.vmx-scope .input {
+
+/* ============================================
+   CARDS — N4S standard
+   No drop shadows, subtle border, 8px radius
+   ============================================ */
+
+.card {
+  background: var(--n4s-surface);
+  border: 1px solid var(--n4s-border);
+  border-radius: var(--n4s-radius);
+  padding: 1rem;
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d6e2f1;
-  border-radius: 12px;
-  font-size: 14px;
-  outline: none;
-  background: #fff;
-}
-.vmx-scope .input:focus {
-  border-color: #9dbbff;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  margin-top: 16px;
 }
 
-.vmx-scope .table {
+.card:first-child { margin-top: 0; }
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--n4s-navy);
+}
+
+.grandTotalCard {
+  border-left: 3px solid var(--n4s-gold);
+}
+
+
+/* ============================================
+   FORM INPUTS — N4S standard
+   4px radius, navy focus ring, #e5e5e0 border
+   ============================================ */
+
+.input,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--n4s-border);
+  border-radius: var(--n4s-radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--n4s-text);
+  outline: none;
+  background: var(--n4s-surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus {
+  border-color: var(--n4s-navy);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.formRow .label { margin-bottom: 0; }
+
+
+/* ============================================
+   TABLES — N4S standard
+   Warm header (#f5f0e8), #e5e5e0 borders
+   ============================================ */
+
+.table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   overflow: hidden;
-  border: 1px solid #e6eef8;
-  border-radius: 14px;
+  border: 1px solid var(--n4s-border);
+  border-radius: var(--n4s-radius);
 }
-.vmx-scope .table th,
-.vmx-scope .table td {
-  padding: 12px 12px;
-  border-bottom: 1px solid #eef3fb;
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--n4s-border);
   vertical-align: middle;
 }
-.vmx-scope .table thead th {
-  background: #f7faff;
-  font-size: 12px;
-  font-weight: 900;
-  color: #475569;
+
+.table thead th {
+  background: #f5f0e8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--n4s-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  text-align: left;
 }
-.vmx-scope .table.small th,
-.vmx-scope .table.small td {
-  padding: 10px 10px;
-}
-.vmx-scope .table tr:last-child td { border-bottom: none; }
 
-.vmx-scope .adminHeader {
+.table.small th,
+.table.small td { padding: 8px 8px; }
+
+.table tr:last-child td { border-bottom: none; }
+
+
+/* ============================================
+   GRIDS
+   ============================================ */
+
+.adminHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.vmx-scope .adminTopGrid {
+.adminHeaderBtns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.adminTopGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.vmx-scope .compareGrid {
+.compareGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 16px;
   align-items: start;
   margin-top: 12px;
 }
 
-.vmx-scope .compareGrid .statusCell {
-  width: 160px;
-}
+.compareGrid .statusCell { width: 160px; }
 
-.vmx-scope .summaryTop {
+.summaryTop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 12px;
 }
 
-.vmx-scope .big {
-  font-size: 28px;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-  margin-top: 3px;
+
+/* ============================================
+   BIG NUMBERS
+   ============================================ */
+
+.big {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+  color: var(--n4s-navy);
 }
 
-.vmx-scope .error {
+
+/* ============================================
+   ERROR
+   ============================================ */
+
+.error {
   margin-top: 10px;
   padding: 10px 12px;
-  border-radius: 12px;
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  font-weight: 800;
-  font-size: 13px;
+  border-radius: var(--n4s-radius);
+  background: #fef2f2;
+  color: var(--n4s-error);
+  border: 1px solid rgba(211, 47, 47, 0.2);
+  font-weight: 500;
+  font-size: 0.8125rem;
 }
 
-.vmx-scope .catLabel {
-  font-weight: 900;
-}
 
-.vmx-scope .bandBtn {
-  width: 100%;
-  text-align: left;
-  border-radius: 14px;
-  padding: 12px 12px;
-  border: 1px solid #dbe7f7;
-  background: #ffffff;
+/* ============================================
+   BUTTONS — N4S standard
+   6px radius, weight 500, navy accent
+   ============================================ */
+
+button:not(.bandBtn):not(.modePillBtn) {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--n4s-border);
+  background: var(--n4s-surface);
+  color: var(--n4s-text);
+  border-radius: 6px;
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.4;
   cursor: pointer;
-  transition: transform 60ms ease, box-shadow 120ms ease, border-color 120ms ease;
-}
-.vmx-scope .bandBtn:hover {
-  border-color: #b6ccff;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-}
-.vmx-scope .bandBtn:active {
-  transform: translateY(1px);
-}
-.vmx-scope .bandBtn.active {
-  border-color: #7aa6ff;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.vmx-scope .bandBtn.low { background: #ecfdf5; }
-.vmx-scope .bandBtn.medium { background: #eff6ff; }
-.vmx-scope .bandBtn.high { background: #fff7ed; }
-
-.vmx-scope .bandTitle {
-  font-size: 12px;
-  font-weight: 950;
-  color: #0f172a;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+button:not(.bandBtn):not(.modePillBtn):hover {
+  background: var(--n4s-bg);
+  border-color: rgba(30, 58, 95, 0.3);
 }
 
-.vmx-scope .bandSub {
-  font-size: 12px;
-  font-weight: 850;
-  color: #334155;
-  margin-top: 4px;
+button:not(.bandBtn):not(.modePillBtn):active {
+  background: rgba(30, 58, 95, 0.06);
+  border-color: var(--n4s-navy);
 }
 
-.vmx-scope .linkBtn {
+button:not(.bandBtn):not(.modePillBtn):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.2);
+  border-color: var(--n4s-navy);
+}
+
+button:not(.bandBtn):not(.modePillBtn):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary — navy bg */
+.docsBtn {
+  background: var(--n4s-navy) !important;
+  color: #ffffff !important;
+  border-color: var(--n4s-navy) !important;
+}
+.docsBtn:hover {
+  background: #2a4a75 !important;
+  border-color: #2a4a75 !important;
+}
+
+/* Secondary — navy text, white bg */
+.secondaryBtn {
+  background: transparent !important;
+  color: var(--n4s-navy) !important;
+  border: 1px solid var(--n4s-border) !important;
+}
+.secondaryBtn:hover {
+  background: rgba(30, 58, 95, 0.04) !important;
+  border-color: rgba(30, 58, 95, 0.3) !important;
+}
+
+/* Header action buttons */
+.adminHeader button,
+.headerActions button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.linkBtn {
   appearance: none;
   border: none;
   background: transparent;
   padding: 0;
   margin: 0;
-  color: #2563eb;
-  font-weight: 900;
+  color: var(--n4s-navy);
+  font-weight: 500;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* Delta table styling */
-.vmx-scope .deltaTable td, .vmx-scope .deltaTable th {
-  padding: 10px 10px;
-}
-.vmx-scope .deltaRow {
-  background: #fff;
-}
-.vmx-scope .deltaRow.medium {
-  background: #fff7ed;
-}
-.vmx-scope .deltaRow.high {
-  background: #fee2e2;
+
+/* ============================================
+   BAND SELECTION BUTTONS
+   ============================================ */
+
+.catLabel {
+  font-weight: 600;
+  color: var(--n4s-text);
 }
 
-.vmx-scope .deltaPill {
+.bandBtn {
+  width: 100%;
+  text-align: left;
+  border-radius: var(--n4s-radius);
+  padding: 10px 12px;
+  border: 1px solid var(--n4s-border);
+  background: var(--n4s-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.bandBtn:hover {
+  border-color: rgba(30, 58, 95, 0.3);
+}
+.bandBtn:active {
+  transform: translateY(1px);
+}
+.bandBtn.active {
+  border-color: var(--n4s-navy);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+}
+
+.bandBtn.low    { background: #f0fdf4; }
+.bandBtn.medium { background: #f0f4ff; }
+.bandBtn.high   { background: #fff8f0; }
+
+.bandTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--n4s-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bandSub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--n4s-text-muted);
+  margin-top: 2px;
+}
+
+
+/* ============================================
+   DELTA TABLE
+   ============================================ */
+
+.deltaTable td, .deltaTable th { padding: 8px 10px; }
+.deltaRow { background: var(--n4s-surface); }
+.deltaRow.medium { background: #fff8f0; }
+.deltaRow.high { background: #fef2f2; }
+
+.deltaPill {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-weight: 900;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: 0.75rem;
   line-height: 1;
 }
-.vmx-scope .deltaPill.inc {
-  background: #fee2e2;
-  color: #991b1b;
-}
-.vmx-scope .deltaPill.dec {
-  background: #dcfce7;
-  color: #166534;
+.deltaPill.inc { background: #fef2f2; color: var(--n4s-error); }
+.deltaPill.dec { background: #f0fdf4; color: var(--n4s-success); }
+
+.deltaImpact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Button styling - scoped to VMX only */
-.vmx-scope button:not(.bandBtn) {
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid #d6e2f1;
-  background: #ffffff;
-  color: #0b1f3b;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 850;
-  font-size: 13px;
-  line-height: 1.05;
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 60ms ease, box-shadow 140ms ease;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+.deltaImpactPct {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--n4s-text-muted);
+  white-space: nowrap;
+  min-width: 36px;
 }
 
-.vmx-scope button:not(.bandBtn):hover {
-  background: #f1f6ff;
-  border-color: #b6ccff;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+.deltaBarWrap {
+  flex: 1;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-.vmx-scope button:not(.bandBtn):active {
-  transform: translateY(1px);
-  background: #e7efff;
-  border-color: #9dbbff;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+.deltaBar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
 }
+.deltaBar.inc { background: var(--n4s-error); }
+.deltaBar.dec { background: var(--n4s-success); }
 
-.vmx-scope button:not(.bandBtn):focus-visible {
-  outline: 3px solid rgba(59, 130, 246, 0.35);
-  outline-offset: 2px;
-}
 
-.vmx-scope button:not(.bandBtn):disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
+/* ============================================
+   STATUS CELLS & CIRCLES
+   ============================================ */
 
-.vmx-scope .headerActions button:not(.bandBtn),
-.vmx-scope .adminHeader button:not(.bandBtn) {
-  padding: 9px 14px;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-/* Status cells and circles */
-.vmx-scope .statusCell {
+.statusCell {
   width: 120px;
   vertical-align: middle;
   text-align: center;
 }
 
-.vmx-scope .statusCircle {
-  width: 86px;
-  height: 86px;
+.statusCircle {
+  width: 80px;
+  height: 80px;
   border-radius: 999px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   margin: 0 auto;
-  font-weight: 950;
-  letter-spacing: -0.01em;
+  font-weight: 600;
   text-align: center;
-  line-height: 1.05;
+  line-height: 1.1;
   user-select: none;
 }
+.statusCircle.ok    { background: #f0fdf4; color: var(--n4s-success); }
+.statusCircle.alert { background: #fef2f2; color: var(--n4s-error); }
 
-.vmx-scope .statusCircle.ok {
-  background: #dcfce7;
-  color: #166534;
-}
+.statusArrow { font-size: 12px; line-height: 1; }
+.statusText { font-size: 15px; font-weight: 600; }
+.statusTextSmall { font-size: 11px; font-weight: 500; opacity: 0.9; }
 
-.vmx-scope .statusCircle.alert {
-  background: #fee2e2;
-  color: #991b1b;
-}
 
-.vmx-scope .statusArrow {
-  font-size: 13px;
-  line-height: 1;
-}
+/* ============================================
+   STATUS PILLS (Advisory Readout)
+   ============================================ */
 
-.vmx-scope .statusText {
-  font-size: 16px;
-}
-
-.vmx-scope .statusTextSmall {
-  font-size: 12px;
-  font-weight: 900;
-  opacity: 0.9;
-}
-
-/* Advisory Readout – Status Pills */
-.vmx-scope .statusPill {
+.statusPill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 0.75rem;
+  font-weight: 500;
   line-height: 1;
   white-space: nowrap;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
+.statusPill.ok { background: #f0fdf4; color: var(--n4s-success); }
+.statusPill.below,
+.statusPill.above { background: #fef2f2; color: var(--n4s-error); }
+.statusPill .arrow { font-size: 11px; line-height: 1; }
 
-.vmx-scope .statusPill.ok {
-  background: #dcfce7;
-  color: #166534;
-}
+.advisoryTable th.statusCol,
+.advisoryTable td.statusCol { width: 140px; }
+.advisoryTable td { overflow: visible; vertical-align: middle; }
 
-.vmx-scope .statusPill.below,
-.vmx-scope .statusPill.above {
-  background: #fee2e2;
-  color: #991b1b;
-}
 
-.vmx-scope .statusPill .arrow {
-  font-size: 12px;
-  line-height: 1;
-  transform: translateY(-0.5px);
-}
+/* ============================================
+   SWITCH / TOGGLE — N4S standard
+   ============================================ */
 
-.vmx-scope .advisoryTable th.statusCol,
-.vmx-scope .advisoryTable td.statusCol {
-  width: 140px;
-}
-
-.vmx-scope .advisoryTable td {
-  overflow: visible;
-  vertical-align: middle;
-}
-
-/* Top Bar Layout */
-.vmx-scope .topBar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.vmx-scope .topBarActions {
+.switchRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 }
 
-/* VMX Save Button - matches N4S styling */
-.vmx-scope .vmxSaveBtn {
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--n4s-border);
+  border-radius: 11px;
+  transition: background 0.15s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.switch input:checked + .slider {
+  background: var(--n4s-navy);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+
+/* ============================================
+   PROVENANCE BAR
+   ============================================ */
+
+.provenanceBar {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(30, 58, 95, 0.04);
+  border: 1px solid rgba(30, 58, 95, 0.08);
+  border-radius: var(--n4s-radius);
+  font-size: 0.75rem;
+  color: var(--n4s-text-muted);
+  line-height: 1.5;
+}
+
+.provLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.provStrong {
+  font-weight: 600;
+  color: var(--n4s-text);
+}
+
+
+/* ============================================
+   FOOTER ACTIONS
+   ============================================ */
+
+.footerActions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  background: #319795;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--n4s-border);
 }
 
-.vmx-scope .vmxSaveBtn:hover {
-  background: #2c7a7b;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(49, 151, 149, 0.3);
+
+/* ============================================
+   PRINT
+   ============================================ */
+
+.printOnly { display: none; }
+
+.printHeaderTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--n4s-navy);
 }
 
-.vmx-scope .vmxSaveBtn:active {
-  transform: translateY(0);
+.printHeaderMeta {
+  font-size: 0.8125rem;
+  color: var(--n4s-text-muted);
+  margin-top: 6px;
 }
 
-.vmx-scope .vmxSaveBtn.saved {
-  background: #38a169;
-}
+.printHeaderMeta div { margin-bottom: 2px; }
 
-/* Documentation Button */
-.vmx-scope .docsBtn {
-  padding: 9px 14px;
-  background: rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.vmx-scope .docsBtn:hover {
-  background: rgba(15, 23, 42, 0.10);
-  border-color: rgba(15, 23, 42, 0.20);
-}
-
-/* Locked from KYC badge */
-.vmx-scope .lockedBadge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  color: #319795;
-  background: rgba(49, 151, 149, 0.12);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-  vertical-align: middle;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+@media print {
+  .noPrint { display: none !important; }
+  .printOnly { display: block !important; }
+  body { background: white; }
+  .container { max-width: none; padding: 0; }
+  .topBar { display: none; }
+  .card { border: 1px solid #ddd; page-break-inside: avoid; }
 }
