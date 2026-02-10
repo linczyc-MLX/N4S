@@ -2261,6 +2261,110 @@ export default function VMXApp(props: VMXAppProps = {}) {
         )}
       </div>
 
+          {/* KYC Budget Framework Reference (P1.A.4) — Pro view */}
+          {vmxData?.kycBudgetConstraints && (vmxData?.kycBudgetConstraints.totalBudget || vmxData?.kycBudgetConstraints.constructionBudget) && (
+            <div className="card" style={{ borderLeft: "3px solid #c9a227", background: "linear-gradient(135deg, #fefcf6 0%, #faf7ef 100%)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 15, color: "#1e3a5f" }}>KYC Budget Framework</h3>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>Reference from P1.A.4 — read-only</div>
+                </div>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#c9a227",
+                  background: "#fef9e7",
+                  border: "1px solid #e8d48b",
+                  borderRadius: 4,
+                  padding: "2px 8px",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                }}>FROM KYC</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                {vmxData?.kycBudgetConstraints.totalBudget != null && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Total Project Budget</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
+                      {formatMoney(vmxData?.kycBudgetConstraints.totalBudget, "USD")}
+                    </div>
+                  </div>
+                )}
+
+                {vmxData?.kycBudgetConstraints.constructionBudget != null && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget (ID + FF&E)</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
+                      {formatMoney(vmxData?.kycBudgetConstraints.constructionBudget, "USD")}
+                    </div>
+                  </div>
+                )}
+
+                {vmxData?.kycBudgetConstraints.totalBudget != null && (vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) > 0 && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Grand Total (Land + Project)</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
+                      {formatMoney((vmxData?.kycBudgetConstraints.landAcquisitionCost || landCostA) + vmxData?.kycBudgetConstraints.totalBudget, "USD")}
+                    </div>
+                  </div>
+                )}
+
+                {vmxData?.kycBudgetConstraints.constructionBudget != null && (vmxData?.kycBudgetConstraints.targetGSF || areaSqft) > 0 && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Interior Budget / SF</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
+                        ${Math.round(vmxData?.kycBudgetConstraints.constructionBudget / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft)).toLocaleString()}/SF
+                      </span>
+                      {(() => {
+                        const perSF = Math.round(vmxData?.kycBudgetConstraints.constructionBudget! / (vmxData?.kycBudgetConstraints.targetGSF || areaSqft));
+                        let tierLabel = "";
+                        let tierColor = "";
+                        if (perSF >= 750) { tierLabel = "ULTRA LUXURY"; tierColor = "#c9a227"; }
+                        else if (perSF >= 500) { tierLabel = "LUXURY"; tierColor = "#315098"; }
+                        else if (perSF >= 350) { tierLabel = "PREMIUM"; tierColor = "#2d7d6f"; }
+                        else { tierLabel = "STANDARD"; tierColor = "#6b6b6b"; }
+                        return tierLabel ? (
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: "white",
+                            background: tierColor,
+                            borderRadius: 4,
+                            padding: "2px 6px",
+                            letterSpacing: "0.05em",
+                          }}>{tierLabel}</span>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {vmxData?.kycBudgetConstraints.budgetFlexibility && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Budget Flexibility</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a5f" }}>
+                      {vmxData?.kycBudgetConstraints.budgetFlexibility === "fixed" ? "Fixed Ceiling — Cannot Exceed"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "flexible" ? "Flexible — Room for Quality"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility === "investment" ? "Investment-Appropriate"
+                        : vmxData?.kycBudgetConstraints.budgetFlexibility}
+                    </div>
+                  </div>
+                )}
+
+                {vmxData?.kycBudgetConstraints.artBudgetSeparate && vmxData?.kycBudgetConstraints.artBudgetAmount != null && vmxData?.kycBudgetConstraints.artBudgetAmount > 0 && (
+                  <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.7)", borderRadius: 6, border: "1px solid #e5e0d5" }}>
+                    <div style={{ fontSize: 11, color: "#6b6b6b", fontWeight: 600, marginBottom: 4 }}>Art Budget (Separate)</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a5f" }}>
+                      {formatMoney(vmxData?.kycBudgetConstraints.artBudgetAmount, "USD")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
       {!compareMode ? (
         <Matrix
           title="Scenario"
