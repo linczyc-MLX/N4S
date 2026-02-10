@@ -70,8 +70,8 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .sidebar__logo-icon { color: var(--gold); }
 .sidebar__logo-text { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.05em; }
 .sidebar__toggle {
-  background: rgba(255,255,255,0.1);
-  border: none;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
   color: var(--white);
   width: 32px;
   height: 32px;
@@ -81,7 +81,8 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
   align-items: center;
   justify-content: center;
 }
-.sidebar__toggle:hover { background: rgba(255,255,255,0.2); }
+.sidebar__toggle:hover { background: rgba(255,255,255,0.25); }
+.sidebar__toggle svg { color: var(--white); stroke: var(--white); }
 .sidebar__nav { flex: 1; padding: 16px 0; overflow-y: auto; }
 .sidebar__nav-item {
   display: flex;
@@ -91,13 +92,18 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
   padding: 16px;
   background: transparent;
   border: none;
+  border-top: none;
+  border-bottom: none;
+  border-right: none;
+  border-left: 3px solid transparent;
   color: rgba(255,255,255,0.7);
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
+  outline: none;
 }
-.sidebar__nav-item:hover { background: rgba(255,255,255,0.1); color: var(--white); }
-.sidebar__nav-item--active { background: rgba(255,255,255,0.15); color: var(--white); border-left: 3px solid var(--gold); }
+.sidebar__nav-item:hover { background: rgba(255,255,255,0.1); color: var(--white); border-top: none; border-bottom: none; border-right: none; }
+.sidebar__nav-item--active { background: rgba(255,255,255,0.15); color: var(--white); border-left: 3px solid var(--gold); border-top: none; border-bottom: none; border-right: none; }
 .sidebar__nav-icon { flex-shrink: 0; width: 24px; height: 24px; }
 .sidebar__nav-content { display: flex; flex-direction: column; flex: 1; }
 .sidebar__nav-label { font-weight: 600; font-size: 0.95rem; }
@@ -170,9 +176,15 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  color: #ffffff;
+  color: inherit;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+.main-header__settings-btn svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+  stroke: currentColor;
 }
 .main-header__settings-btn:hover {
   background: rgba(255, 255, 255, 0.2);

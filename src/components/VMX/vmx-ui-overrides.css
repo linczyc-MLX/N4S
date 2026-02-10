@@ -1,178 +1,71 @@
-/* VMX UI overrides – loaded once from App.tsx
-   Brand-aligned to N4S Brand Guide
+/* VMX UI overrides – N4S-hosted (scoped under .vmx-module)
    ============================================ */
 
-/* Make grids/tables shrink-safe */
-*, *::before, *::after { box-sizing: border-box; }
+.vmx-module .compareGrid > * { min-width: 0; }
+.vmx-module .bandBtn { max-width: 100%; }
 
-/* In CSS grid, children default min-width:auto which can force overflow */
-.compareGrid > * { min-width: 0; }
+.vmx-module .bandBtn.active {
+  box-shadow: inset 0 0 0 2px rgba(30, 58, 95, 0.4), inset 0 0 0 4px rgba(30, 58, 95, 0.1);
+}
+.vmx-module .bandBtn:hover { box-shadow: none; }
 
-/* Keep band highlight/hover contained */
-.bandBtn { max-width: 100%; }
+.vmx-module .matrixTable { table-layout: fixed; width: 100%; }
 
-.bandBtn.active {
-  box-shadow:
-    inset 0 0 0 2px rgba(30, 58, 95, 0.4),
-    inset 0 0 0 4px rgba(30, 58, 95, 0.1);
+.vmx-module .allocTable td.statusCell { text-align: center; vertical-align: middle; white-space: nowrap; }
+.vmx-module .allocTable th:last-child,
+.vmx-module .allocTable td.statusCell { padding-right: 18px; padding-left: 18px; width: 150px; }
+
+.vmx-module .statusCircle { width: 72px; height: 72px; gap: 4px; }
+.vmx-module .statusText { font-size: 15px; }
+.vmx-module .statusTextSmall { font-size: 11px; }
+.vmx-module .statusArrow { font-size: 12px; }
+
+.vmx-module .smallTh {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--n4s-text-muted, #6b6b6b); font-weight: 600; text-align: left;
+  padding: 10px; border-bottom: 1px solid var(--n4s-border, #e5e5e0);
+}
+.vmx-module .smallTd {
+  padding: 10px; border-bottom: 1px solid var(--n4s-border, #e5e5e0); vertical-align: middle;
 }
 
-.bandBtn:hover {
-  box-shadow: none;
+.vmx-module .panel { overflow: hidden; }
+
+/* Lite/Pro mode toggle */
+.vmx-module .modePills {
+  display: inline-flex; gap: 4px; padding: 3px; border-radius: 6px;
+  border: 1px solid var(--n4s-border, #e5e5e0); background: var(--n4s-bg, #fafaf8);
 }
-
-/* Stabilize matrix table layout */
-.matrixTable {
-  table-layout: fixed;
-  width: 100%;
-}
-
-/* Allocation & Flags status cell alignment */
-.allocTable td.statusCell {
-  text-align: center;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.allocTable th:last-child,
-.allocTable td.statusCell {
-  padding-right: 18px;
-  padding-left: 18px;
-  width: 150px;
-}
-
-.statusCircle {
-  width: 72px;
-  height: 72px;
-  gap: 4px;
-}
-.statusText { font-size: 15px; }
-.statusTextSmall { font-size: 11px; }
-.statusArrow { font-size: 12px; }
-
-/* Guardrail snapshot tables (AdvisoryReadout) */
-.smallTh {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--n4s-text-muted, #6b6b6b);
-  font-weight: 600;
-  text-align: left;
-  padding: 10px 10px;
-  border-bottom: 1px solid var(--n4s-border, #e5e5e0);
-}
-
-.smallTd {
-  padding: 10px 10px;
-  border-bottom: 1px solid var(--n4s-border, #e5e5e0);
-  vertical-align: middle;
-}
-
-/* Default panel should not overflow outside its rounded corners */
-.panel { overflow: hidden; }
-
-
-/* VMX Lite/Pro mode toggle — N4S navy accent */
-.modePills {
-  display: inline-flex;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 6px;
-  border: 1px solid var(--n4s-border, #e5e5e0);
-  background: var(--n4s-bg, #fafaf8);
-}
-
-.modePillBtn {
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-weight: 500;
-  font-size: 0.8125rem;
-  line-height: 1;
-  border: none;
-  background: transparent;
-  color: var(--n4s-text-muted, #6b6b6b);
-  cursor: pointer;
+.vmx-module .modePillBtn {
+  border-radius: 4px; padding: 6px 12px; font-weight: 500; font-size: 0.8125rem;
+  line-height: 1; border: none; background: transparent;
+  color: var(--n4s-text-muted, #6b6b6b); cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
+.vmx-module .modePillBtn:hover { background: rgba(30, 58, 95, 0.06); color: var(--n4s-text, #1a1a1a); }
+.vmx-module .modePillBtn.active { background: var(--n4s-navy, #1e3a5f); color: #fff; }
+.vmx-module .modePillBtn:focus { outline: none; box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15); }
 
-.modePillBtn:hover {
-  background: rgba(30, 58, 95, 0.06);
-  color: var(--n4s-text, #1a1a1a);
-}
+.vmx-module .liteBadge { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; letter-spacing: 0.02em; }
 
-.modePillBtn.active {
-  background: var(--n4s-navy, #1e3a5f);
-  color: #fff;
-}
-
-.modePillBtn:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
-}
-
-.liteBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.liteKpiGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
+.vmx-module .liteKpiGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 @media (min-width: 980px) {
-  .liteKpiGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .vmx-module .liteKpiGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-.liteKpi {
-  border: 1px solid var(--n4s-border, #e5e5e0);
-  border-radius: var(--n4s-radius, 8px);
-  padding: 12px;
-  background: var(--n4s-surface, #ffffff);
+.vmx-module .liteKpi {
+  border: 1px solid var(--n4s-border, #e5e5e0); border-radius: var(--n4s-radius, 8px);
+  padding: 12px; background: var(--n4s-surface, #ffffff);
 }
-
-.liteKpi .k {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--n4s-text-muted, #6b6b6b);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.vmx-module .liteKpi .k {
+  font-size: 0.6875rem; font-weight: 600; color: var(--n4s-text-muted, #6b6b6b);
+  letter-spacing: 0.05em; text-transform: uppercase;
 }
+.vmx-module .liteKpi .v { margin-top: 6px; font-size: 1rem; font-weight: 600; color: var(--n4s-navy, #1e3a5f); }
 
-.liteKpi .v {
-  margin-top: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--n4s-navy, #1e3a5f);
-}
+.vmx-module .liteScenarioTitle { margin-bottom: 8px; }
+.vmx-module .liteSectionTitle { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.vmx-module .liteSectionTitle h3 { margin: 0; }
 
-.liteScenarioTitle {
-  margin-bottom: 8px;
-}
-
-.liteSectionTitle {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.liteSectionTitle h3 { margin: 0; }
-
-.liteList {
-  margin: 8px 0 0;
-  padding-left: 18px;
-}
-
-.liteList li {
-  margin: 4px 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
+.vmx-module .liteList { margin: 8px 0 0; padding-left: 18px; }
+.vmx-module .liteList li { margin: 4px 0; font-size: 0.875rem; line-height: 1.5; }

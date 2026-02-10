@@ -1,18 +1,19 @@
 /* ============================================
-   VMX — Visual Matrix
-   N4S Brand-Aligned Stylesheet
+   VMX — Visual Matrix (N4S-hosted version)
+   SCOPED under .vmx-module to prevent bleed
    
    Brand Guide Reference:
-   - Navy:       #1e3a5f   (primary brand, headers, primary buttons)
-   - Gold:       #c9a227   (accent, CTAs, highlights)
-   - Background: #fafaf8   (warm page background)
-   - Surface:    #ffffff   (cards, panels)
-   - Border:     #e5e5e0   (dividers, card borders)
-   - Text:       #1a1a1a   (primary text)
-   - Text Muted: #6b6b6b   (secondary text, labels)
-   - VMX Module: #FBD0E0   (Soft Pillow — light pink)
+   - Navy:       #1e3a5f
+   - Gold:       #c9a227
+   - Background: #fafaf8
+   - Surface:    #ffffff
+   - Border:     #e5e5e0
+   - Text:       #1a1a1a
+   - Text Muted: #6b6b6b
+   - VMX Module: #FBD0E0
    ============================================ */
 
+/* Variables only — safe at :root, no font/bg overrides */
 :root {
   --n4s-navy: #1e3a5f;
   --n4s-gold: #c9a227;
@@ -27,23 +28,13 @@
   --n4s-error: #d32f2f;
   --n4s-radius: 8px;
   --n4s-radius-sm: 4px;
-
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: var(--n4s-text);
-  background: var(--n4s-bg);
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--n4s-bg); }
-
-
 /* ============================================
-   LAYOUT
+   LAYOUT — scoped
    ============================================ */
 
-.container {
+.vmx-module .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 32px 32px;
@@ -51,55 +42,47 @@ body { margin: 0; background: var(--n4s-bg); }
 
 
 /* ============================================
-   TOP BAR — VMX Module Header
-   Matches N4S .main-header pattern with VMX module colour
+   TOP BAR — Slim mode-toggle row only.
+   Title/docs hidden (provided by N4S wrapper).
    ============================================ */
 
-.topBar {
+.vmx-module .topBar {
+  background: transparent;
+  border: none;
+  margin: 0 0 16px;
+  padding: 0;
+  min-height: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 32px;
-  margin: 0 -32px 24px;
-  background: var(--n4s-vmx-pink);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  min-height: 64px;
+  justify-content: flex-end;
 }
 
-.topBar h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--n4s-text);
-  letter-spacing: -0.01em;
-}
-
-.topBarActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.vmx-module .topBar > h1 { display: none; }
+.vmx-module .topBar .docsBtn { display: none; }
 
 
 /* ============================================
-   TYPOGRAPHY
+   TYPOGRAPHY — scoped
    ============================================ */
 
-h1, h2, h3 { margin: 0; color: var(--n4s-text); }
-h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
-h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
-h3 { font-size: 1rem; font-weight: 600; }
+.vmx-module h1,
+.vmx-module h2,
+.vmx-module h3 { margin: 0; color: var(--n4s-text); }
+.vmx-module h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+.vmx-module h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
+.vmx-module h3 { font-size: 1rem; font-weight: 600; }
 
-.muted {
+.vmx-module .muted {
   color: var(--n4s-text-muted);
   font-size: 0.8125rem;
 }
 
-.mono {
+.vmx-module .mono {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 0.8125rem;
 }
 
-.sectionTitle {
+.vmx-module .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
   color: var(--n4s-navy);
@@ -108,10 +91,10 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 
 /* ============================================
-   LABELS
+   LABELS — scoped
    ============================================ */
 
-.label {
+.vmx-module .label {
   display: block;
   font-size: 0.75rem;
   font-weight: 500;
@@ -123,11 +106,10 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 
 /* ============================================
-   CARDS — N4S standard
-   No drop shadows, subtle border, 8px radius
+   CARDS — scoped
    ============================================ */
 
-.card {
+.vmx-module .card {
   background: var(--n4s-surface);
   border: 1px solid var(--n4s-border);
   border-radius: var(--n4s-radius);
@@ -136,9 +118,9 @@ h3 { font-size: 1rem; font-weight: 600; }
   margin-top: 16px;
 }
 
-.card:first-child { margin-top: 0; }
+.vmx-module .card:first-child { margin-top: 0; }
 
-.cardHeader {
+.vmx-module .cardHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -146,25 +128,24 @@ h3 { font-size: 1rem; font-weight: 600; }
   margin-bottom: 12px;
 }
 
-.cardTitle {
+.vmx-module .cardTitle {
   font-size: 1rem;
   font-weight: 600;
   color: var(--n4s-navy);
 }
 
-.grandTotalCard {
+.vmx-module .grandTotalCard {
   border-left: 3px solid var(--n4s-gold);
 }
 
 
 /* ============================================
-   FORM INPUTS — N4S standard
-   4px radius, navy focus ring, #e5e5e0 border
+   FORM INPUTS — scoped
    ============================================ */
 
-.input,
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-select {
+.vmx-module .input,
+.vmx-module input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.vmx-module select {
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--n4s-border);
@@ -177,29 +158,28 @@ select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.input:focus,
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
-select:focus {
+.vmx-module .input:focus,
+.vmx-module input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.vmx-module select:focus {
   border-color: var(--n4s-navy);
   box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
 }
 
-.formRow {
+.vmx-module .formRow {
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin-top: 12px;
 }
 
-.formRow .label { margin-bottom: 0; }
+.vmx-module .formRow .label { margin-bottom: 0; }
 
 
 /* ============================================
-   TABLES — N4S standard
-   Warm header (#f5f0e8), #e5e5e0 borders
+   TABLES — scoped
    ============================================ */
 
-.table {
+.vmx-module .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -208,14 +188,14 @@ select:focus {
   border-radius: var(--n4s-radius);
 }
 
-.table th,
-.table td {
+.vmx-module .table th,
+.vmx-module .table td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--n4s-border);
   vertical-align: middle;
 }
 
-.table thead th {
+.vmx-module .table thead th {
   background: #f5f0e8;
   font-size: 0.75rem;
   font-weight: 600;
@@ -225,17 +205,17 @@ select:focus {
   text-align: left;
 }
 
-.table.small th,
-.table.small td { padding: 8px 8px; }
+.vmx-module .table.small th,
+.vmx-module .table.small td { padding: 8px 8px; }
 
-.table tr:last-child td { border-bottom: none; }
+.vmx-module .table tr:last-child td { border-bottom: none; }
 
 
 /* ============================================
-   GRIDS
+   GRIDS — scoped
    ============================================ */
 
-.adminHeader {
+.vmx-module .adminHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -243,26 +223,26 @@ select:focus {
   margin-bottom: 12px;
 }
 
-.adminHeaderBtns {
+.vmx-module .adminHeaderBtns {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.adminTopGrid {
+.vmx-module .adminTopGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 8px;
 }
 
-.grid2 {
+.vmx-module .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.compareGrid {
+.vmx-module .compareGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -270,9 +250,9 @@ select:focus {
   margin-top: 12px;
 }
 
-.compareGrid .statusCell { width: 160px; }
+.vmx-module .compareGrid .statusCell { width: 160px; }
 
-.summaryTop {
+.vmx-module .summaryTop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -281,10 +261,10 @@ select:focus {
 
 
 /* ============================================
-   BIG NUMBERS
+   BIG NUMBERS — scoped
    ============================================ */
 
-.big {
+.vmx-module .big {
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -294,10 +274,10 @@ select:focus {
 
 
 /* ============================================
-   ERROR
+   ERROR — scoped
    ============================================ */
 
-.error {
+.vmx-module .error {
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: var(--n4s-radius);
@@ -310,11 +290,10 @@ select:focus {
 
 
 /* ============================================
-   BUTTONS — N4S standard
-   6px radius, weight 500, navy accent
+   BUTTONS — scoped (CRITICAL: was global, caused sidebar dividers)
    ============================================ */
 
-button:not(.bandBtn):not(.modePillBtn) {
+.vmx-module button:not(.bandBtn):not(.modePillBtn):not(.btn):not(.vmx-module__reset-btn) {
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid var(--n4s-border);
@@ -330,57 +309,50 @@ button:not(.bandBtn):not(.modePillBtn) {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-button:not(.bandBtn):not(.modePillBtn):hover {
+.vmx-module button:not(.bandBtn):not(.modePillBtn):not(.btn):not(.vmx-module__reset-btn):hover {
   background: var(--n4s-bg);
   border-color: rgba(30, 58, 95, 0.3);
 }
 
-button:not(.bandBtn):not(.modePillBtn):active {
+.vmx-module button:not(.bandBtn):not(.modePillBtn):not(.btn):not(.vmx-module__reset-btn):active {
   background: rgba(30, 58, 95, 0.06);
   border-color: var(--n4s-navy);
 }
 
-button:not(.bandBtn):not(.modePillBtn):focus-visible {
+.vmx-module button:not(.bandBtn):not(.modePillBtn):not(.btn):not(.vmx-module__reset-btn):focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.2);
   border-color: var(--n4s-navy);
 }
 
-button:not(.bandBtn):not(.modePillBtn):disabled {
+.vmx-module button:not(.bandBtn):not(.modePillBtn):not(.btn):not(.vmx-module__reset-btn):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Primary — navy bg */
-.docsBtn {
+.vmx-module .docsBtn {
   background: var(--n4s-navy) !important;
   color: #ffffff !important;
   border-color: var(--n4s-navy) !important;
 }
-.docsBtn:hover {
+.vmx-module .docsBtn:hover {
   background: #2a4a75 !important;
   border-color: #2a4a75 !important;
 }
 
 /* Secondary — navy text, white bg */
-.secondaryBtn {
+.vmx-module .secondaryBtn {
   background: transparent !important;
   color: var(--n4s-navy) !important;
   border: 1px solid var(--n4s-border) !important;
 }
-.secondaryBtn:hover {
+.vmx-module .secondaryBtn:hover {
   background: rgba(30, 58, 95, 0.04) !important;
   border-color: rgba(30, 58, 95, 0.3) !important;
 }
 
-/* Header action buttons */
-.adminHeader button,
-.headerActions button {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
-
-.linkBtn {
+.vmx-module .linkBtn {
   appearance: none;
   border: none;
   background: transparent;
@@ -395,15 +367,15 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
 
 
 /* ============================================
-   BAND SELECTION BUTTONS
+   BAND SELECTION BUTTONS — scoped
    ============================================ */
 
-.catLabel {
+.vmx-module .catLabel {
   font-weight: 600;
   color: var(--n4s-text);
 }
 
-.bandBtn {
+.vmx-module .bandBtn {
   width: 100%;
   text-align: left;
   border-radius: var(--n4s-radius);
@@ -413,22 +385,18 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.bandBtn:hover {
-  border-color: rgba(30, 58, 95, 0.3);
-}
-.bandBtn:active {
-  transform: translateY(1px);
-}
-.bandBtn.active {
+.vmx-module .bandBtn:hover { border-color: rgba(30, 58, 95, 0.3); }
+.vmx-module .bandBtn:active { transform: translateY(1px); }
+.vmx-module .bandBtn.active {
   border-color: var(--n4s-navy);
   box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
 }
 
-.bandBtn.low    { background: #f0fdf4; }
-.bandBtn.medium { background: #f0f4ff; }
-.bandBtn.high   { background: #fff8f0; }
+.vmx-module .bandBtn.low    { background: #f0fdf4; }
+.vmx-module .bandBtn.medium { background: #f0f4ff; }
+.vmx-module .bandBtn.high   { background: #fff8f0; }
 
-.bandTitle {
+.vmx-module .bandTitle {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--n4s-text);
@@ -436,7 +404,7 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
   letter-spacing: 0.03em;
 }
 
-.bandSub {
+.vmx-module .bandSub {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--n4s-text-muted);
@@ -445,15 +413,16 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
 
 
 /* ============================================
-   DELTA TABLE
+   DELTA TABLE — scoped
    ============================================ */
 
-.deltaTable td, .deltaTable th { padding: 8px 10px; }
-.deltaRow { background: var(--n4s-surface); }
-.deltaRow.medium { background: #fff8f0; }
-.deltaRow.high { background: #fef2f2; }
+.vmx-module .deltaTable td,
+.vmx-module .deltaTable th { padding: 8px 10px; }
+.vmx-module .deltaRow { background: var(--n4s-surface); }
+.vmx-module .deltaRow.medium { background: #fff8f0; }
+.vmx-module .deltaRow.high { background: #fef2f2; }
 
-.deltaPill {
+.vmx-module .deltaPill {
   display: inline-flex;
   padding: 3px 8px;
   border-radius: 999px;
@@ -461,16 +430,16 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
   font-size: 0.75rem;
   line-height: 1;
 }
-.deltaPill.inc { background: #fef2f2; color: var(--n4s-error); }
-.deltaPill.dec { background: #f0fdf4; color: var(--n4s-success); }
+.vmx-module .deltaPill.inc { background: #fef2f2; color: var(--n4s-error); }
+.vmx-module .deltaPill.dec { background: #f0fdf4; color: var(--n4s-success); }
 
-.deltaImpact {
+.vmx-module .deltaImpact {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.deltaImpactPct {
+.vmx-module .deltaImpactPct {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--n4s-text-muted);
@@ -478,7 +447,7 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
   min-width: 36px;
 }
 
-.deltaBarWrap {
+.vmx-module .deltaBarWrap {
   flex: 1;
   height: 6px;
   background: rgba(0, 0, 0, 0.06);
@@ -486,195 +455,110 @@ button:not(.bandBtn):not(.modePillBtn):disabled {
   overflow: hidden;
 }
 
-.deltaBar {
+.vmx-module .deltaBar {
   height: 100%;
   border-radius: 3px;
   transition: width 0.3s ease;
 }
-.deltaBar.inc { background: var(--n4s-error); }
-.deltaBar.dec { background: var(--n4s-success); }
+.vmx-module .deltaBar.inc { background: var(--n4s-error); }
+.vmx-module .deltaBar.dec { background: var(--n4s-success); }
 
 
 /* ============================================
-   STATUS CELLS & CIRCLES
+   STATUS — scoped
    ============================================ */
 
-.statusCell {
-  width: 120px;
-  vertical-align: middle;
-  text-align: center;
-}
+.vmx-module .statusCell { width: 120px; vertical-align: middle; text-align: center; }
 
-.statusCircle {
-  width: 80px;
-  height: 80px;
-  border-radius: 999px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin: 0 auto;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.1;
+.vmx-module .statusCircle {
+  width: 80px; height: 80px; border-radius: 999px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; margin: 0 auto; font-weight: 600; text-align: center; line-height: 1.1;
   user-select: none;
 }
-.statusCircle.ok    { background: #f0fdf4; color: var(--n4s-success); }
-.statusCircle.alert { background: #fef2f2; color: var(--n4s-error); }
+.vmx-module .statusCircle.ok    { background: #f0fdf4; color: var(--n4s-success); }
+.vmx-module .statusCircle.alert { background: #fef2f2; color: var(--n4s-error); }
 
-.statusArrow { font-size: 12px; line-height: 1; }
-.statusText { font-size: 15px; font-weight: 600; }
-.statusTextSmall { font-size: 11px; font-weight: 500; opacity: 0.9; }
+.vmx-module .statusArrow { font-size: 12px; line-height: 1; }
+.vmx-module .statusText { font-size: 15px; font-weight: 600; }
+.vmx-module .statusTextSmall { font-size: 11px; font-weight: 500; opacity: 0.9; }
 
-
-/* ============================================
-   STATUS PILLS (Advisory Readout)
-   ============================================ */
-
-.statusPill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
+.vmx-module .statusPill {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 4px 10px; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 500; line-height: 1; white-space: nowrap;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
-.statusPill.ok { background: #f0fdf4; color: var(--n4s-success); }
-.statusPill.below,
-.statusPill.above { background: #fef2f2; color: var(--n4s-error); }
-.statusPill .arrow { font-size: 11px; line-height: 1; }
+.vmx-module .statusPill.ok { background: #f0fdf4; color: var(--n4s-success); }
+.vmx-module .statusPill.below,
+.vmx-module .statusPill.above { background: #fef2f2; color: var(--n4s-error); }
+.vmx-module .statusPill .arrow { font-size: 11px; line-height: 1; }
 
-.advisoryTable th.statusCol,
-.advisoryTable td.statusCol { width: 140px; }
-.advisoryTable td { overflow: visible; vertical-align: middle; }
+.vmx-module .advisoryTable th.statusCol,
+.vmx-module .advisoryTable td.statusCol { width: 140px; }
+.vmx-module .advisoryTable td { overflow: visible; vertical-align: middle; }
 
 
 /* ============================================
-   SWITCH / TOGGLE — N4S standard
+   SWITCH / TOGGLE — scoped
    ============================================ */
 
-.switchRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.vmx-module .switchRow { display: flex; align-items: center; gap: 10px; }
 
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
+.vmx-module .switch {
+  position: relative; display: inline-block; width: 40px; height: 22px;
 }
+.vmx-module .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
+.vmx-module .slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--n4s-border); border-radius: 11px; transition: background 0.15s ease;
 }
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--n4s-border);
-  border-radius: 11px;
-  transition: background 0.15s ease;
+.vmx-module .slider::before {
+  content: ""; position: absolute; height: 18px; width: 18px; left: 2px; bottom: 2px;
+  background: white; border-radius: 50%; transition: transform 0.15s ease;
 }
+.vmx-module .switch input:checked + .slider { background: var(--n4s-navy); }
+.vmx-module .switch input:checked + .slider::before { transform: translateX(18px); }
 
-.slider::before {
-  content: "";
-  position: absolute;
-  height: 18px;
-  width: 18px;
-  left: 2px;
-  bottom: 2px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.15s ease;
+
+/* ============================================
+   PROVENANCE BAR — scoped
+   ============================================ */
+
+.vmx-module .provenanceBar {
+  margin-top: 16px; padding: 12px 16px;
+  background: rgba(30, 58, 95, 0.04); border: 1px solid rgba(30, 58, 95, 0.08);
+  border-radius: var(--n4s-radius); font-size: 0.75rem;
+  color: var(--n4s-text-muted); line-height: 1.5;
 }
+.vmx-module .provLine { display: flex; flex-wrap: wrap; gap: 2px; }
+.vmx-module .provStrong { font-weight: 600; color: var(--n4s-text); }
 
-.switch input:checked + .slider {
-  background: var(--n4s-navy);
-}
 
-.switch input:checked + .slider::before {
-  transform: translateX(18px);
+/* ============================================
+   FOOTER ACTIONS — scoped
+   ============================================ */
+
+.vmx-module .footerActions {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--n4s-border);
 }
 
 
 /* ============================================
-   PROVENANCE BAR
+   PRINT — scoped
    ============================================ */
 
-.provenanceBar {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: rgba(30, 58, 95, 0.04);
-  border: 1px solid rgba(30, 58, 95, 0.08);
-  border-radius: var(--n4s-radius);
-  font-size: 0.75rem;
-  color: var(--n4s-text-muted);
-  line-height: 1.5;
-}
+.vmx-module .printOnly { display: none; }
 
-.provLine {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
-
-.provStrong {
-  font-weight: 600;
-  color: var(--n4s-text);
-}
-
-
-/* ============================================
-   FOOTER ACTIONS
-   ============================================ */
-
-.footerActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--n4s-border);
-}
-
-
-/* ============================================
-   PRINT
-   ============================================ */
-
-.printOnly { display: none; }
-
-.printHeaderTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--n4s-navy);
-}
-
-.printHeaderMeta {
-  font-size: 0.8125rem;
-  color: var(--n4s-text-muted);
-  margin-top: 6px;
-}
-
-.printHeaderMeta div { margin-bottom: 2px; }
+.vmx-module .printHeaderTitle { font-size: 1.25rem; font-weight: 600; color: var(--n4s-navy); }
+.vmx-module .printHeaderMeta { font-size: 0.8125rem; color: var(--n4s-text-muted); margin-top: 6px; }
+.vmx-module .printHeaderMeta div { margin-bottom: 2px; }
 
 @media print {
-  .noPrint { display: none !important; }
-  .printOnly { display: block !important; }
-  body { background: white; }
-  .container { max-width: none; padding: 0; }
-  .topBar { display: none; }
-  .card { border: 1px solid #ddd; page-break-inside: avoid; }
+  .vmx-module .noPrint { display: none !important; }
+  .vmx-module .printOnly { display: block !important; }
+  .vmx-module .topBar { display: none; }
+  .vmx-module .card { border: 1px solid #ddd; page-break-inside: avoid; }
 }

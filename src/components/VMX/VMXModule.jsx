@@ -10,7 +10,8 @@
  * Integration Spec: N4S → VMX Data Handoff (Phase A + Phase B1)
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Save } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFYIState } from '../FYI/hooks/useFYIState';
 
@@ -131,6 +132,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     saveNow,
     hasUnsavedChanges,
     isSaving,
+    lastSaved,
     updateFYISelection,
     updateFYISettings,
     initializeFYISelections,
@@ -370,6 +372,16 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     window.history.replaceState({}, '', url.toString());
   };
 
+  // SAVE HANDLER (FYI pattern)
+  const [saveMessage, setSaveMessage] = useState(null);
+  const handleSave = useCallback(async () => {
+    const success = await saveNow();
+    if (success) {
+      setSaveMessage('Saved!');
+      setTimeout(() => setSaveMessage(null), 2000);
+    }
+  }, [saveNow]);
+
   if (!vmxReady) {
     return (
       <div className="vmx-loading">
@@ -381,18 +393,48 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
 
   return (
     <div className="vmx-module">
-      {/* Project Info Header - view toggle removed (VMX has its own) */}
-      {currentContext && (
-        <div className="vmx-module__header">
-          <div className="vmx-module__project-info">
-            <span className="vmx-project-label">Project:</span>
-            <span className="vmx-project-name">{currentContext.projectName}</span>
-            {currentContext.clientName && (
-              <span className="vmx-project-client">({currentContext.clientName})</span>
+      {/* FYI-pattern header: title + save area */}
+      <header className="vmx-module__header">
+        <div className="vmx-module__header-content">
+          <div className="vmx-module__title-group">
+            <h1 className="vmx-module__title">VMX – Vision Matrix</h1>
+            <p className="vmx-module__subtitle">Project Cost Analysis</p>
+          </div>
+
+          {/* SAVE BUTTON (FYI pattern) */}
+          <div className="vmx-module__save-area">
+            <button
+              className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
+              <Save size={16} />
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes' : 'Saved'}
+            </button>
+            {lastSaved && !hasUnsavedChanges && (
+              <span className="vmx-module__last-saved">
+                Last saved: {new Date(lastSaved).toLocaleTimeString()}
+              </span>
             )}
           </div>
         </div>
-      )}
+
+        {/* Project context banner (matches FYI KYC banner) */}
+        {currentContext && (
+          <div className="vmx-module__context-banner">
+            <span className="vmx-module__context-label">Project:</span>
+            <span className="vmx-module__context-value">{currentContext.projectName}</span>
+            {currentContext.clientName && (
+              <span className="vmx-module__context-value">{currentContext.clientName}</span>
+            )}
+            {currentContext.scenarioA?.areaSqft && (
+              <span className="vmx-module__context-value">
+                {currentContext.scenarioA.areaSqft.toLocaleString()} SF
+              </span>
+            )}
+          </div>
+        )}
+      </header>
 
       {/* VMX Content Area */}
       <div className="vmx-module__content">
@@ -410,111 +452,91 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           display: flex;
           flex-direction: column;
           height: 100%;
-          background: #fafaf8;
+          background: var(--gray-50, #f7fafc);
         }
 
+        /* FYI-pattern header */
         .vmx-module__header {
+          border-bottom: 1px solid var(--color-border, #e5e5e0);
+          background: white;
+          flex-shrink: 0;
+        }
+
+        .vmx-module__header-content {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          align-items: center;
-          padding: 16px 24px;
-          background: white;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          padding: 1.5rem 2rem;
         }
 
-        .vmx-module__view-toggle {
+        .vmx-module__title-group {
           display: flex;
-          gap: 8px;
+          flex-direction: column;
+          gap: 0.25rem;
         }
 
-        .vmx-view-btn {
-          padding: 8px 16px;
-          border: 1px solid #e0e0e0;
-          border-radius: 6px;
-          background: white;
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s;
+        .vmx-module__title {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 1.5rem !important;
+          font-weight: 500 !important;
+          color: var(--gray-800, #1a1a1a) !important;
+          margin: 0;
+          letter-spacing: -0.01em !important;
         }
 
-        .vmx-view-btn:hover:not(:disabled) {
-          border-color: #1e3a5f;
+        .vmx-module__subtitle {
+          font-size: 0.875rem;
+          color: var(--gray-500, #6b6b6b);
+          margin: 0;
         }
 
-        .vmx-view-btn--active {
-          background: #1e3a5f;
-          color: white;
-          border-color: #1e3a5f;
-        }
-
-        .vmx-view-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .vmx-module__project-info {
+        .vmx-module__save-area {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 14px;
+          gap: 1rem;
+          margin-left: auto;
+          margin-right: 1rem;
         }
 
-        .vmx-project-label {
-          color: #6b6b6b;
+        .vmx-module__last-saved {
+          font-size: 0.75rem;
+          color: var(--gray-500, #6b6b6b);
         }
 
-        .vmx-project-name {
-          font-weight: 600;
-          color: #1e3a5f;
+        /* Context banner (matches FYI KYC banner) */
+        .vmx-module__context-banner {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.75rem 2rem;
+          background: var(--color-accent-light, #f5f0e8);
+          border-top: 1px solid var(--color-border, #e5e5e0);
+          font-size: 0.8125rem;
         }
 
-        .vmx-project-client {
-          color: #6b6b6b;
+        .vmx-module__context-label {
+          color: var(--gray-500, #6b6b6b);
+        }
+
+        .vmx-module__context-value {
+          color: var(--gray-800, #1a1a1a);
+          font-weight: 500;
+        }
+
+        .vmx-module__context-value::before {
+          content: '•';
+          margin-right: 1rem;
+          color: var(--color-border, #e5e5e0);
+        }
+
+        .vmx-module__context-value:first-of-type::before {
+          display: none;
         }
 
         .vmx-module__content {
           flex: 1;
           overflow: auto;
           padding: 24px;
-        }
-
-        .vmx-placeholder {
-          background: white;
-          border-radius: 8px;
-          padding: 32px;
-          border: 2px dashed #e0e0e0;
-        }
-
-        .vmx-placeholder h3 {
-          margin: 0 0 8px;
-          color: #1e3a5f;
-        }
-
-        .vmx-placeholder p {
-          margin: 0 0 24px;
-          color: #6b6b6b;
-        }
-
-        .vmx-debug {
-          background: #f5f5f5;
-          border-radius: 6px;
-          padding: 16px;
-        }
-
-        .vmx-debug h4 {
-          margin: 0 0 8px;
-          font-size: 12px;
-          text-transform: uppercase;
-          color: #6b6b6b;
-        }
-
-        .vmx-debug pre {
-          margin: 0 0 16px;
-          padding: 12px;
-          background: white;
-          border-radius: 4px;
-          font-size: 12px;
-          overflow: auto;
         }
 
         .vmx-loading {
