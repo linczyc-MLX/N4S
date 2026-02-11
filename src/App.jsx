@@ -116,7 +116,7 @@ const AppContent = () => {
   ];
 
   // Modules that have documentation
-  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym', 'kys'];
+  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym', 'kys', 'vmx'];
 
   const renderModule = () => {
     switch (activeModule) {
