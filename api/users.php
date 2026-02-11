@@ -10,6 +10,7 @@
  *   POST   /users.php?id=X&action=delete   — Delete user (soft: deactivate)
  *   POST   /users.php?id=X&action=reset_password — Admin reset password
  */
+ob_start();
 require_once 'config.php';
 
 // Start session
