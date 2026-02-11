@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Settings, AlertTriangle, Palette, ExternalLink
+  Settings, AlertTriangle, Palette, ExternalLink, Users
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
+import UsersPanel from './UsersPanel';
+import './UsersPanel.css';
 import './SettingsModule.css';
 
 // Taste Exploration App URL
@@ -24,8 +27,9 @@ const SettingsModule = () => {
     activeProjectId,
     kycData,
   } = useAppContext();
+  const { isAdmin } = useAuth();
 
-  const [expandedSection, setExpandedSection] = useState('admin-tools');
+  const [expandedSection, setExpandedSection] = useState(isAdmin ? 'users' : 'admin-tools');
 
   // Get stakeholder data for app integration
   const stakeholderData = kycData?.principal?.portfolioContext || {};
@@ -66,6 +70,27 @@ const SettingsModule = () => {
           Project configuration, stakeholder setup, and portal activation are now managed from the <strong>Dashboard</strong>.
         </span>
       </div>
+
+      {/* Users Section — Admin Only */}
+      {isAdmin && (
+        <section className="settings-section">
+          <div
+            className="settings-section__header settings-section__header--clickable"
+            onClick={() => toggleSection('users')}
+          >
+            <div className="settings-section__header-left">
+              <Users size={20} />
+              <h2>Users</h2>
+            </div>
+          </div>
+
+          {expandedSection === 'users' && (
+            <div className="settings-section__content">
+              <UsersPanel />
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Admin Tools Section */}
       <section className="settings-section">

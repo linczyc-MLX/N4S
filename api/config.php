@@ -8,8 +8,21 @@ $DB_USER = getenv('DB_USER') ?: 'dbu2492912';
 $DB_PASS = getenv('DB_PASS') ?: 'reMarkable2026!'; // Set via environment or replace during deploy
 $DB_PORT = getenv('DB_PORT') ?: 3306;
 
-// CORS headers for API access
-header('Access-Control-Allow-Origin: *');
+// CORS headers for API access (credentials require specific origin, not wildcard)
+$allowed_origins = [
+    'https://website.not-4.sale',
+    'https://home-5019238456.app-ionos.space',
+    'http://localhost:3000',
+    'http://localhost:5173',
+];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+} elseif (!$origin) {
+    // Same-origin request (no Origin header) — allow
+    header('Access-Control-Allow-Origin: https://website.not-4.sale');
+}
+header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Content-Type: application/json');

@@ -19,6 +19,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
     };
 
     const config = { ...defaultOptions, ...options };
@@ -94,6 +95,77 @@ class ApiService {
   // Setup database (run once)
   async setupDatabase() {
     return this.request('/setup.php');
+  }
+
+  // ========================================================================
+  // Auth API
+  // ========================================================================
+  async login(username, password) {
+    return this.request('/auth.php?action=login', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+  }
+
+  async logout() {
+    return this.request('/auth.php?action=logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  }
+
+  async checkSession() {
+    return this.request('/auth.php?action=check', {
+      credentials: 'include',
+    });
+  }
+
+  async changePassword(currentPassword, newPassword) {
+    return this.request('/auth.php?action=change_password', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+  }
+
+  // ========================================================================
+  // Users API (Admin)
+  // ========================================================================
+  async getUsers() {
+    return this.request('/users.php', { credentials: 'include' });
+  }
+
+  async createUser(userData) {
+    return this.request('/users.php', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async updateUser(id, userData) {
+    return this.request(`/users.php?id=${encodeURIComponent(id)}&action=update`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async resetUserPassword(id, newPassword) {
+    return this.request(`/users.php?id=${encodeURIComponent(id)}&action=reset_password`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ new_password: newPassword }),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users.php?id=${encodeURIComponent(id)}&action=delete`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({}),
+    });
   }
 
   // Health check

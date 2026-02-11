@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign, Monitor
+  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign, Monitor, LogOut
 } from 'lucide-react';
 
 // Import modules
@@ -14,9 +14,11 @@ import KYMModule from './components/KYM/KYMModule';
 import VMXModule from './components/VMX/VMXModule';
 import LCDModule from './components/LCD/LCDModule';
 import SettingsModule from './components/Settings/SettingsModule';
+import LoginPage from './components/LoginPage';
 
-// Import context provider
+// Import context providers
 import { AppProvider, useAppContext } from './contexts/AppContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Error Boundary — catches runtime errors and displays them instead of white screen
 class ErrorBoundary extends React.Component {
@@ -69,6 +71,8 @@ const moduleColors = {
 };
 
 const AppContent = () => {
+  const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
+
   // Persist activeModule to localStorage so it survives page refresh
   const [activeModule, setActiveModule] = useState(() => {
     try {
@@ -137,6 +141,27 @@ const AppContent = () => {
     }
   };
 
+  // Auth loading state
+  if (authLoading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', background: '#1e3a5f', color: '#ffffff',
+        fontFamily: 'Inter, -apple-system, sans-serif', fontSize: '0.875rem'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <Building2 size={40} style={{ marginBottom: '12px', opacity: 0.7 }} />
+          <div>Loading…</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Login gate
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -198,6 +223,19 @@ const AppContent = () => {
                 }
                 return <span className="sidebar__client-placeholder">No client loaded</span>;
               })()}
+            </div>
+            <div className="sidebar__user-bar">
+              <div className="sidebar__user-info">
+                <span className="sidebar__user-name">{user?.display_name || user?.username}</span>
+                <span className="sidebar__user-role">{user?.role}</span>
+              </div>
+              <button
+                className="sidebar__logout-btn"
+                onClick={logout}
+                title="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
           </div>
         )}
@@ -274,9 +312,11 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </AuthProvider>
   );
 };
 

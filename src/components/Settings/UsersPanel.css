@@ -1,0 +1,289 @@
+/* ============================================
+   UsersPanel — User Management (Settings)
+   ============================================ */
+
+.users-panel {
+  margin-top: 0;
+}
+
+.users-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.users-panel__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.users-panel__header-left h2 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.users-panel__header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Messages */
+.users-panel__msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  margin-bottom: 12px;
+}
+
+.users-panel__msg--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.users-panel__msg--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* Loading */
+.users-panel__loading {
+  padding: 32px;
+  text-align: center;
+  color: #6b6b6b;
+  font-size: 0.875rem;
+}
+
+/* Table */
+.users-panel__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e5e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.users-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.users-panel__table thead th {
+  text-align: left;
+  font-weight: 600;
+  color: #6b6b6b;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e5e0;
+  background: #fafaf8;
+  white-space: nowrap;
+}
+
+.users-panel__table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.users-panel__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.users-panel__table tbody tr:hover {
+  background: #fafaf8;
+}
+
+.users-panel__row--inactive {
+  opacity: 0.55;
+}
+
+/* User cell */
+.users-panel__user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.users-panel__display-name {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.users-panel__username {
+  font-size: 0.75rem;
+  color: #6b6b6b;
+}
+
+/* Role badge */
+.users-panel__role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Status */
+.users-panel__status {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.users-panel__status--active {
+  color: #2e7d32;
+}
+
+.users-panel__status--inactive {
+  color: #d32f2f;
+}
+
+/* Date */
+.users-panel__date {
+  font-size: 0.75rem;
+  color: #6b6b6b;
+  white-space: nowrap;
+}
+
+/* Actions */
+.users-panel__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.users-panel__empty {
+  text-align: center;
+  color: #6b6b6b;
+  padding: 24px !important;
+}
+
+/* ============================================
+   Modals
+   ============================================ */
+
+.users-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+
+.users-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.users-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e5e0;
+}
+
+.users-modal__header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.users-modal__description {
+  padding: 12px 20px 0;
+  font-size: 0.8125rem;
+  color: #6b6b6b;
+  margin: 0;
+}
+
+.users-modal__error {
+  margin: 12px 20px 0;
+  padding: 8px 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.users-modal__body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.users-modal__label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b6b6b;
+  letter-spacing: 0.02em;
+}
+
+.users-modal__label input,
+.users-modal__label select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid #e5e5e0;
+  border-radius: 4px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.users-modal__label input:focus,
+.users-modal__label select:focus {
+  border-color: #1e3a5f;
+}
+
+.users-modal__label input::placeholder {
+  color: #a0aec0;
+}
+
+.users-modal__label select {
+  cursor: pointer;
+}
+
+.users-modal__hint {
+  font-size: 0.6875rem;
+  color: #f57c00;
+  font-weight: 400;
+}
+
+.users-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #f0f0f0;
+}

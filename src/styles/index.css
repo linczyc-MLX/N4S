@@ -114,6 +114,52 @@ body { font-family: var(--font-sans); background: var(--gray-50); color: var(--g
 .sidebar__client-name { font-weight: 600; font-size: 0.9rem; }
 .sidebar__client-project { font-size: 0.8rem; opacity: 0.7; }
 .sidebar__client-placeholder { font-size: 0.85rem; opacity: 0.5; font-style: italic; }
+.sidebar__user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.sidebar__user-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar__user-role {
+  font-size: 0.6875rem;
+  text-transform: capitalize;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.03em;
+}
+.sidebar__logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.sidebar__logout-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+}
 
 /* Main Content */
 .main-content {

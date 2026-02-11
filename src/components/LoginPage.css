@@ -1,0 +1,207 @@
+/* ============================================
+   LoginPage — N4S Platform Entry Gate
+   ============================================ */
+
+.login-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+/* Background image — covers full viewport, set via inline style */
+.login-page__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+/* Form wrapper — positioned to right side, vertically centered-up to roughly match the blue box */
+.login-page__form-wrapper {
+  position: relative;
+  z-index: 1;
+  margin-right: 5vw;
+  margin-top: -8vh;
+}
+
+/* The form card — styled to match the blue box aesthetic */
+.login-form {
+  width: 320px;
+  background: linear-gradient(135deg, #4A9FE8 0%, #3A7BD5 100%);
+  border-radius: 12px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.login-form__title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 24px;
+  letter-spacing: 0.01em;
+}
+
+/* Error message */
+.login-form__error {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  color: #fff;
+  font-size: 0.8125rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Field */
+.login-form__field {
+  margin-bottom: 16px;
+}
+
+.login-form__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.login-form__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-form__input-icon {
+  position: absolute;
+  left: 12px;
+  color: #a0aec0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.login-form__input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  background: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-form__input::placeholder {
+  color: #a0aec0;
+}
+
+.login-form__input:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+.login-form__input:disabled {
+  opacity: 0.7;
+}
+
+/* Password toggle */
+.login-form__toggle-pw {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.login-form__toggle-pw:hover {
+  color: #4a5568;
+}
+
+/* Submit button — white with blue text, matching the image */
+.login-form__submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: #ffffff;
+  color: #3A7BD5;
+  border: none;
+  border-radius: 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.login-form__submit:hover:not(:disabled) {
+  background: #f0f4ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.login-form__submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Footer branding */
+.login-form__footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.login-form__brand {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .login-page__form-wrapper {
+    margin-right: 3vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .login-page {
+    justify-content: center;
+  }
+  .login-page__form-wrapper {
+    margin-right: 0;
+    margin-top: 0;
+  }
+  .login-page__bg {
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-form {
+    width: 290px;
+    padding: 24px 20px 20px;
+  }
+}
