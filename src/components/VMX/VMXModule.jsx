@@ -15,8 +15,9 @@ import { Save } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFYIState } from '../FYI/hooks/useFYIState';
 
-// Import VMX App and styles
+// Import VMX App, Documentation, and styles
 import VMXApp from './VMXApp';
+import VMXDocumentation from './VMXDocumentation';
 import './vmx-index.css';
 import './vmx-ui-overrides.css';
 
@@ -381,6 +382,10 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
       setTimeout(() => setSaveMessage(null), 2000);
     }
   }, [saveNow]);
+
+  if (showDocs) {
+    return <VMXDocumentation onClose={onCloseDocs} />;
+  }
 
   if (!vmxReady) {
     return (
