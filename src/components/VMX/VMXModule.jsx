@@ -10,8 +10,8 @@
  * Integration Spec: N4S → VMX Data Handoff (Phase A + Phase B1)
  */
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Save } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { Save, FileDown, Archive } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFYIState } from '../FYI/hooks/useFYIState';
 
@@ -383,6 +383,12 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     }
   }, [saveNow]);
 
+  // Receive export functions from VMXApp
+  const vmxExportsRef = useRef({});
+  const handleRegisterExports = useCallback((fns) => {
+    vmxExportsRef.current = fns;
+  }, []);
+
   if (showDocs) {
     return <VMXDocumentation onClose={onCloseDocs} />;
   }
@@ -407,6 +413,22 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           </div>
 
           <div className="module-header__actions">
+            <button
+              className="btn btn--outline"
+              onClick={() => vmxExportsRef.current?.exportPdf?.()}
+              title="Export PDF Report"
+            >
+              <FileDown size={16} />
+              Export PDF
+            </button>
+            <button
+              className="btn btn--outline"
+              onClick={() => vmxExportsRef.current?.exportClientPack?.()}
+              title="Export Client Pack (.zip)"
+            >
+              <Archive size={16} />
+              Client Pack
+            </button>
             <button
               className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
               onClick={handleSave}
@@ -448,6 +470,7 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           saveNow={saveNow}
           hasUnsavedChanges={hasUnsavedChanges}
           isSaving={isSaving}
+          onRegisterExports={handleRegisterExports}
         />
       </div>
 

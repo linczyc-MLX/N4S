@@ -489,10 +489,11 @@ type VMXAppProps = {
   saveNow?: () => Promise<boolean>;
   hasUnsavedChanges?: boolean;
   isSaving?: boolean;
+  onRegisterExports?: (exports: { exportPdf: () => void; exportClientPack: () => void }) => void;
 };
 
 export default function VMXApp(props: VMXAppProps = {}) {
-  const { vmxData, updateVMXData, saveNow, hasUnsavedChanges = false, isSaving = false } = props;
+  const { vmxData, updateVMXData, saveNow, hasUnsavedChanges = false, isSaving = false, onRegisterExports } = props;
   const [areaSqft, setAreaSqft] = useState<number>(() => {
     if (typeof vmxData?.areaSqft === 'number' && vmxData.areaSqft > 0) return vmxData.areaSqft;
     return 15000;
@@ -1362,6 +1363,19 @@ export default function VMXApp(props: VMXAppProps = {}) {
       alert("Client pack export failed. Please open the browser console for details.");
     }
   };
+
+  // Register export functions with parent VMXModule for header buttons
+  const exportPdfRef = React.useRef(exportPdfReport);
+  const exportClientPackRef = React.useRef(exportClientPack);
+  exportPdfRef.current = exportPdfReport;
+  exportClientPackRef.current = exportClientPack;
+
+  useEffect(() => {
+    onRegisterExports?.({
+      exportPdf: () => exportPdfRef.current(),
+      exportClientPack: () => exportClientPackRef.current(),
+    });
+  }, [onRegisterExports]);
 
 
   type DriverSummary = ReturnType<typeof computeDriverLines>;
