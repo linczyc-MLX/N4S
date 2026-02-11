@@ -168,6 +168,9 @@
 .login-form__footer {
   margin-top: 20px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .login-form__brand {

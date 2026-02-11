@@ -95,7 +95,8 @@ const LoginPage = () => {
           </button>
 
           <div className="login-form__footer">
-            <span className="login-form__brand">N4S — Not4Sale Advisory Platform</span>
+            <span className="login-form__brand">&copy; 2026 Not4Sale LLC</span>
+            <span className="login-form__brand">Luxury Residential Advisory</span>
           </div>
         </form>
       </div>
