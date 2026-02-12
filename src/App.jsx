@@ -16,6 +16,15 @@ import LCDModule from './components/LCD/LCDModule';
 import SettingsModule from './components/Settings/SettingsModule';
 import LoginPage from './components/LoginPage';
 
+// Import documentation components (for ?printModule= PDF route)
+import DashboardDocumentation from './components/DashboardDocumentation';
+import KYCDocumentation from './components/KYC/KYCDocumentation';
+import FYIDocumentation from './components/FYI/FYIDocumentation';
+import MVPDocumentation from './components/MVP/MVPDocumentation';
+import KYMDocumentation from './components/KYM/KYMDocumentation';
+import KYSDocumentation from './components/KYS/KYSDocumentation';
+import VMXDocumentation from './components/VMX/VMXDocumentation';
+
 // Import context providers
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -68,6 +77,16 @@ const moduleColors = {
   vmx: { bg: '#FBD0E0', text: '#1a1a1a', accent: '#FBD0E0' },                   // Light Pink (Soft Pillow 5)
   lcd: { bg: '#1a1a1a', text: '#ffffff', accent: '#c9a227' },                   // Black/Gold (PANDA branding)
   settings: { bg: '#374151', text: '#ffffff', accent: '#9ca3af' },              // Gray (utility) - KEEP
+};
+
+const PRINT_DOC_COMPONENTS = {
+  dashboard: DashboardDocumentation,
+  kyc: KYCDocumentation,
+  fyi: FYIDocumentation,
+  mvp: MVPDocumentation,
+  kym: KYMDocumentation,
+  kys: KYSDocumentation,
+  vmx: VMXDocumentation,
 };
 
 const AppContent = () => {
@@ -311,6 +330,13 @@ const AppContent = () => {
 };
 
 const App = () => {
+  // PDF print mode: ?printModule=xxx renders docs full-page (no shell, no auth)
+  const printModule = new URLSearchParams(window.location.search).get('printModule');
+  if (printModule && PRINT_DOC_COMPONENTS[printModule]) {
+    const DocComponent = PRINT_DOC_COMPONENTS[printModule];
+    return <DocComponent printAll />;
+  }
+
   return (
     <AuthProvider>
       <AppProvider>

@@ -48,18 +48,19 @@ const COLORS = {
  * Expandable Section Component
  */
 function ExpandableSection({ title, children, defaultOpen = false }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  
+  const printMode = new URLSearchParams(window.location.search).has('printModule');
+  const [isOpen, setIsOpen] = useState(defaultOpen || printMode);
+
   return (
     <div className="doc-expandable">
-      <button 
+      <button
         className="doc-expandable-header"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         <span>{title}</span>
       </button>
-      {isOpen && (
+      {(printMode || isOpen) && (
         <div className="doc-expandable-content">
           {children}
         </div>
@@ -863,7 +864,7 @@ function ReferenceTab() {
 /**
  * Main FYIDocumentation Component
  */
-export default function FYIDocumentation({ onClose }) {
+export default function FYIDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
   
   const tabs = [
@@ -874,40 +875,47 @@ export default function FYIDocumentation({ onClose }) {
   ];
 
   return (
-    <div className="doc-container">
-      {/* Header */}
-      <div className="doc-header">
-        <div className="doc-header-top">
-          {onClose && (
-            <button className="doc-close-btn" onClick={onClose}>
-              <ArrowLeft size={16} />
-              Back to FYI
-            </button>
-          )}
+    <div className={`doc-container ${printAll ? 'doc-print-mode' : ''}`}>
+      {printAll && (
+        <div className="doc-print-header">
+          <h1 className="doc-print-header__title">FYI (Find Your Inspiration) — Documentation</h1>
+          <p className="doc-print-header__subtitle">N4S — Luxury Residential Advisory Platform</p>
         </div>
-        <h1 className="doc-title">Documentation</h1>
-        <p className="doc-subtitle">N4S FYI — Space Programming Guide</p>
-        
-        {/* Tabs */}
-        <div className="doc-tabs">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`doc-tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
+      )}
+      {!printAll && (
+        <div className="doc-header">
+          <div className="doc-header-top">
+            {onClose && (
+              <button className="doc-close-btn" onClick={onClose}>
+                <ArrowLeft size={16} />
+                Back to FYI
+              </button>
+            )}
+          </div>
+          <h1 className="doc-title">Documentation</h1>
+          <p className="doc-subtitle">N4S FYI — Space Programming Guide</p>
+
+          {/* Tabs */}
+          <div className="doc-tabs">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`doc-tab ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="doc-content">
-        {activeTab === 'overview' && <OverviewTab />}
-        {activeTab === 'workflow' && <WorkflowTab />}
-        {activeTab === 'gates' && <GatesTab />}
-        {activeTab === 'reference' && <ReferenceTab />}
+        {(printAll || activeTab === 'overview') && (<>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>)}
+        {(printAll || activeTab === 'workflow') && (<>{printAll && <h2 className="doc-print-section-title">2. Workflow</h2>}<WorkflowTab /></>)}
+        {(printAll || activeTab === 'gates') && (<>{printAll && <h2 className="doc-print-section-title">3. Gates & Validation</h2>}<GatesTab /></>)}
+        {(printAll || activeTab === 'reference') && (<>{printAll && <h2 className="doc-print-section-title">4. Reference</h2>}<ReferenceTab /></>)}
       </div>
 
       <style>{fyiDocumentationStyles}</style>
@@ -1653,5 +1661,55 @@ const fyiDocumentationStyles = `
   .doc-benchmark-row {
     grid-template-columns: 1fr 1fr 1fr;
   }
+}
+
+/* ---- Print / PDF Mode ---- */
+.doc-print-mode {
+  max-width: 100%;
+  padding: 0 2rem;
+}
+.doc-print-mode .doc-content {
+  max-width: 100%;
+  padding: 1rem 0;
+}
+.doc-print-header {
+  padding: 2rem 0 1.5rem;
+  border-bottom: 2px solid #1e3a5f;
+  margin-bottom: 1rem;
+}
+.doc-print-header__title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0;
+}
+.doc-print-header__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: #6b6b6b;
+  margin: 0.5rem 0 0;
+}
+.doc-print-section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  border-bottom: 1px solid #e5e5e0;
+  padding: 1.5rem 0 0.5rem;
+  margin: 2rem 0 1rem;
+  page-break-before: always;
+}
+.doc-print-section-title:first-of-type {
+  page-break-before: avoid;
+  margin-top: 0;
+}
+.doc-print-mode .doc-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.doc-print-mode .doc-expandable {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 `;
