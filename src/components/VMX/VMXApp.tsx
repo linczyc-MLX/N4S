@@ -19,6 +19,7 @@ import { DocumentationOverlay } from "./components/DocumentationOverlay";
 import { SoftCostsCashflowPanel } from "./components/SoftCostsCashflowPanel";
 import { AdminGuardrails, GuardrailsState } from "./components/AdminGuardrails";
 import { ConstructionIndirectsPanel } from "./components/ConstructionIndirectsPanel";
+import { generateVMXReport, VMXExportMeta } from "./VMXReportGenerator";
 import {
   BenchmarkLibrary,
   TierId,
@@ -547,13 +548,13 @@ export default function VMXApp(props: VMXAppProps = {}) {
     return () => window.removeEventListener("afterprint", cleanup);
   }, []);
 
-  const exportPdfReport = () => {
-    // Close any overlays first so the report prints cleanly
+  // Ref to the VMX container for PDF capture
+  const vmxContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const exportPdfReport = async () => {
+    // Close any overlays first so the report captures cleanly
     setShowDocs(false);
     setShowGuardrails(false);
-
-    // Print mode class enables report-friendly CSS
-    document.body.classList.add("print-vmx-report");
 
     // Ensure we start at the top of the report
     try {
@@ -562,13 +563,37 @@ export default function VMXApp(props: VMXAppProps = {}) {
       // ignore
     }
 
-    // Wait for React to commit state updates + CSS to apply before printing.
-    // requestAnimationFrame (twice) is more reliable than a fixed timeout.
-    window.requestAnimationFrame(() => {
+    // Wait for React to commit state updates before capturing
+    await new Promise<void>((resolve) => {
       window.requestAnimationFrame(() => {
-        window.print();
+        window.requestAnimationFrame(() => resolve());
       });
     });
+
+    const container = vmxContainerRef.current;
+    if (!container) {
+      console.error('[VMX Report] Container ref not found');
+      return;
+    }
+
+    const meta: VMXExportMeta = {
+      clientName: n4sClientName || 'Client',
+      projectName: n4sProjectName || 'Project',
+      datasetName,
+      tier,
+      areaSqft,
+      scenarioA: `${regionA.name} (×${locationFactorA.toFixed(2)}) • ${typologyA} • Land ${formatMoney(landCostA, 'USD')}`,
+      scenarioB: compareMode ? `${regionB.name} (×${locationFactorB.toFixed(2)}) • ${typologyB} • Land ${formatMoney(landCostB, 'USD')}` : undefined,
+      compareMode,
+      uiMode,
+    };
+
+    try {
+      await generateVMXReport(container, meta);
+    } catch (err) {
+      console.error('[VMX Report] Generation failed:', err);
+      alert('PDF generation failed. Check console for details.');
+    }
   };
 
   const [selA, setSelA] = useState<Record<VmxCategoryId, ScenarioSelection>>(buildDefaultSelections());
@@ -1530,7 +1555,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
 
   return (
-    <div className="vmx-scope">
+    <div className="vmx-scope" ref={vmxContainerRef}>
     <div className="container">
       <div className="topBar">
         <div>
@@ -1862,7 +1887,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
           {/* KYC Budget Framework Reference (P1.A.4) */}
           {vmxData?.kycBudgetConstraints && (vmxData?.kycBudgetConstraints.totalBudget || vmxData?.kycBudgetConstraints.constructionBudget) && (
-            <div className="card" style={{ borderLeft: "3px solid #c9a227", background: "linear-gradient(135deg, #fefcf6 0%, #faf7ef 100%)" }}>
+            <div className="card" data-pdf-section="kyc-budget" style={{ borderLeft: "3px solid #c9a227", background: "linear-gradient(135deg, #fefcf6 0%, #faf7ef 100%)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: 15, color: "#1e3a5f" }}>KYC Budget Framework</h3>
@@ -1976,6 +2001,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
           )}
 
           <div className={compareMode ? "compareGrid" : ""}>
+            <div data-pdf-section="scenario-a">
             <LiteScenarioCard
               title="Scenario A"
               subtitle={`${regionA?.name ?? ""}`}
@@ -1993,8 +2019,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
               driversLocation={driversA_Location}
               watchouts={watchoutsA}
             />
+            </div>
 
             {compareMode && (
+              <div data-pdf-section="scenario-b">
               <LiteScenarioCard
                 title="Scenario B"
                 subtitle={`${regionB?.name ?? ""}`}
@@ -2012,11 +2040,12 @@ export default function VMXApp(props: VMXAppProps = {}) {
                 driversLocation={driversB_Location}
                 watchouts={watchoutsB}
               />
+              </div>
             )}
           </div>
 
           {compareMode && delta && (
-            <div className="card">
+            <div className="card" data-pdf-section="delta-heat">
               <h3 className="sectionTitle">Scenario A vs B — Key Differences</h3>
               <div className="muted" style={{ marginBottom: 10 }}>
                 Delta is shown as <strong>B − A</strong> across each category.
@@ -2042,7 +2071,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
             </div>
           )}
 
-          <div className="provenanceBar">
+          <div className="provenanceBar" data-pdf-section="provenance">
             <div>
               <strong>VMX Engine:</strong> Uniformat II category allocation + guardrails + location damping + typology modifiers.
             </div>
@@ -2060,7 +2089,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
         </>
       ) : (
         <>
-      <div className="card">
+      <div className="card" data-pdf-section="pro-controls">
         <div className="adminHeader">
           <div>
             <h3 style={{ margin: 0 }}>Pro Controls</h3>
@@ -2104,7 +2133,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
         </div>
       </div>
       {!compareMode ? (
-        <div className="vmx-scenario-section">
+        <div className="vmx-scenario-section" data-pdf-section="scenario">
         <Matrix
           title="Scenario"
           areaSqft={areaSqft}
@@ -2120,6 +2149,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
         <>
         <div className="vmx-scenario-section">
           <div className="compareGrid">
+          <div data-pdf-section="scenario-a">
             <Matrix
               title={`Scenario A — ${regionA.name}`}
               areaSqft={areaSqft}
@@ -2131,6 +2161,8 @@ export default function VMXApp(props: VMXAppProps = {}) {
               result={resultA}
               error={errorA}
             />
+          </div>
+          <div data-pdf-section="scenario-b">
             <Matrix
               title={`Scenario B — ${regionB.name}`}
               areaSqft={areaSqft}
@@ -2143,7 +2175,9 @@ export default function VMXApp(props: VMXAppProps = {}) {
               error={errorB}
             />
           </div>
+          </div>{/* end compareGrid */}
 
+          <div data-pdf-section="delta-heat">
           <div className="card">
             <h2>Delta Heat (B − A)</h2>
 
@@ -2297,8 +2331,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
               </>
             )}
           </div>
+          </div>{/* end delta-heat pdf section */}
 
           {/* Advisory readout – compare mode only */}
+          <div data-pdf-section="advisory-readout">
           <AdvisoryReadout
             compareMode={compareMode}
             scenarioAName={regionA.name}
@@ -2306,11 +2342,12 @@ export default function VMXApp(props: VMXAppProps = {}) {
             resultA={resultA}
             resultB={resultB}
           />
+          </div>
         </div>
         </>
       )}
 
-      <div className="vmx-benchmark-section">
+      <div className="vmx-benchmark-section" data-pdf-section="benchmark-admin">
       <BenchmarkLibraryAdmin
         library={library}
         setLibrary={setLibrary}
@@ -2403,7 +2440,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
       <SnapshotPanel current={resultA} />
 
-      <div className="vmx-indirects-section">
+      <div className="vmx-indirects-section" data-pdf-section="indirects">
       <ConstructionIndirectsPanel
         areaSqft={areaSqft}
         currency={resultA?.currency ?? "USD"}
@@ -2418,6 +2455,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
 
       <div className="vmx-remaining-section">
+      <div data-pdf-section="soft-costs">
       <SoftCostsCashflowPanel
         visibleToAll={true}
         currency={resultA?.currency ?? "USD"}
@@ -2429,9 +2467,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
         config={softCostsConfig}
         setConfig={setSoftCostsConfig}
       />
+      </div>
 
 
-      <div className="card" style={{ marginTop: 18 }}>
+      <div className="card" data-pdf-section="key-drivers" style={{ marginTop: 18 }}>
         <div className="cardHeader">
           <div>
             <div className="cardTitle">Key Drivers — Location & Typology</div>
@@ -2662,7 +2701,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
       </div>
 
 
-      <div className="card grandTotalCard" style={{ marginTop: 18 }}>
+      <div className="card grandTotalCard" data-pdf-section="grand-total" style={{ marginTop: 18 }}>
         <div className="cardHeader">
           <div>
             <div className="cardTitle">Grand Total Project Cost</div>
@@ -2814,7 +2853,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
 
 
-      <div className="provenanceBar">
+      <div className="provenanceBar" data-pdf-section="provenance">
         <div className="provLine">
           <span className="provStrong">VMX v{VMX_APP_VERSION}</span>
           <span> | Dataset: </span>

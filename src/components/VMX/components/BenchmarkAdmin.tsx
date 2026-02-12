@@ -235,7 +235,7 @@ export function BenchmarkAdmin({ benchmark, setBenchmark }: Props) {
         </div>
       </div>
 
-      <div className="vmx-benchmark-data-table">
+      <div className="vmx-benchmark-data-table" data-pdf-section="benchmark-table">
       <table className="table small" style={{ marginTop: 12 }}>
         <thead>
           <tr>
