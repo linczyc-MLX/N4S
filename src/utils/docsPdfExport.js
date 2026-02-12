@@ -2,7 +2,8 @@
  * docsPdfExport.js
  *
  * Shared utility for exporting N4S documentation panels as branded PDFs.
- * Uses html2canvas + jsPDF. Called from each module's Documentation component.
+ * Uses html2canvas + jsPDF with PER-CARD capture — each doc-card is captured
+ * individually and placed using a layout engine that never splits cards across pages.
  *
  * Standard footer: (C) 2026 Not4Sale LLC - Luxury Residential Advisory | Page X of Y | Date
  * Standard header: Navy bar with "N4S" left, report type right.
@@ -24,7 +25,7 @@ const COLORS = {
   white: [255, 255, 255],
 };
 
-// A4 Portrait for documentation (text-heavy, easier to read)
+// A4 Portrait for documentation
 const PAGE = {
   width: 210,
   height: 297,
@@ -35,13 +36,14 @@ const PAGE = {
   get contentTop() { return this.margin + this.headerBarHeight + 4; },
   get contentBottom() { return this.height - this.margin - this.footerHeight; },
   get usableHeight() { return this.contentBottom - this.contentTop; },
+  cardGap: 4, // mm gap between cards
 };
 
 const formatDate = (d) =>
   d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
 // =============================================================================
-// HEADER & FOOTER
+// HEADER & FOOTER — N4S STANDARD
 // =============================================================================
 
 const addHeader = (doc, reportLabel) => {
@@ -82,12 +84,24 @@ const updateAllFooters = (doc, totalPages) => {
 };
 
 // =============================================================================
+// NEW PAGE HELPER
+// =============================================================================
+
+const startNewPage = (doc, state, reportLabel) => {
+  doc.addPage();
+  state.pageNumber++;
+  addHeader(doc, reportLabel);
+  addFooter(doc, state.pageNumber);
+  state.currentY = PAGE.contentTop + 2;
+};
+
+// =============================================================================
 // COVER PAGE
 // =============================================================================
 
-const addCoverPage = (doc, moduleName, moduleSubtitle, pageNum) => {
+const addCoverPage = (doc, moduleName, moduleSubtitle) => {
   addHeader(doc, `${moduleName} Documentation`);
-  addFooter(doc, pageNum);
+  addFooter(doc, 1);
 
   // Gold accent line
   doc.setDrawColor(...COLORS.gold);
@@ -111,15 +125,53 @@ const addCoverPage = (doc, moduleName, moduleSubtitle, pageNum) => {
   doc.setTextColor(...COLORS.textMuted);
   doc.text(`Generated: ${formatDate(new Date())}`, PAGE.margin, y);
 
+  y += 12;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...COLORS.navy);
+  doc.text('Contents', PAGE.margin, y);
+
   y += 7;
-  doc.text('Sections: Overview \u2022 Workflow \u2022 Gates & Validation \u2022 Reference', PAGE.margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...COLORS.text);
+  const sections = ['1.  Overview', '2.  Workflow', '3.  Gates & Validation', '4.  Reference'];
+  sections.forEach((s) => {
+    doc.text(s, PAGE.margin + 4, y);
+    y += 6;
+  });
 };
 
 // =============================================================================
-// CAPTURE & PLACE
+// SECTION DIVIDER — starts each tab on a new page
 // =============================================================================
 
-const captureElement = async (el) => {
+const addSectionDivider = (doc, state, reportLabel, sectionTitle) => {
+  startNewPage(doc, state, reportLabel);
+  state.currentY = PAGE.contentTop + 6;
+
+  // Section title in navy
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...COLORS.navy);
+  doc.text(sectionTitle, PAGE.margin, state.currentY);
+  state.currentY += 4;
+
+  // Gold rule
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(0.8);
+  doc.line(PAGE.margin, state.currentY, PAGE.margin + 50, state.currentY);
+  state.currentY += 8;
+};
+
+// =============================================================================
+// PER-CARD CAPTURE & LAYOUT ENGINE
+// =============================================================================
+
+/**
+ * Captures a single DOM element as a canvas.
+ */
+const captureCard = async (el) => {
   const canvas = await html2canvas(el, {
     scale: 1.5,
     useCORS: true,
@@ -131,52 +183,86 @@ const captureElement = async (el) => {
 };
 
 /**
- * Places a captured canvas across one or more PDF pages.
- * Splits tall content across pages rather than scaling.
+ * Converts canvas to JPEG data URL.
  */
-const placeCanvasOnPages = (doc, canvas, state, reportLabel) => {
-  const pxPerMm = canvas.width / PAGE.contentWidth;
-  const totalHeightMm = canvas.height / pxPerMm;
-  const usable = PAGE.usableHeight;
+const canvasToJpeg = (canvas) => canvas.toDataURL('image/jpeg', 0.75);
 
-  if (totalHeightMm <= usable) {
-    const imgData = canvas.toDataURL('image/jpeg', 0.75);
-    doc.addImage(imgData, 'JPEG', PAGE.margin, state.currentY, PAGE.contentWidth, totalHeightMm);
-    state.currentY += totalHeightMm + 4;
+/**
+ * Places a single captured card on the PDF.
+ * - If it fits the remaining page space -> place it here
+ * - If it doesn't fit -> new page, place at top
+ * - If taller than a full page -> scale down to fit one page
+ *
+ * NEVER splits a card across pages.
+ */
+const placeCard = (doc, canvas, state, reportLabel) => {
+  const pxPerMm = canvas.width / PAGE.contentWidth;
+  const cardHeightMm = canvas.height / pxPerMm;
+  const availableHeight = PAGE.contentBottom - state.currentY;
+  const maxH = PAGE.usableHeight - 4; // 4mm breathing room
+
+  // Does the card fit on this page?
+  if (cardHeightMm <= availableHeight) {
+    const imgData = canvasToJpeg(canvas);
+    doc.addImage(imgData, 'JPEG', PAGE.margin, state.currentY, PAGE.contentWidth, cardHeightMm);
+    state.currentY += cardHeightMm + PAGE.cardGap;
     return;
   }
 
-  // Split across multiple pages by slicing the canvas
-  let srcYPx = 0;
-  const canvasW = canvas.width;
-  const canvasH = canvas.height;
+  // Card doesn't fit current page -> start a new page
+  startNewPage(doc, state, reportLabel);
 
-  while (srcYPx < canvasH) {
-    const availH = PAGE.contentBottom - state.currentY;
-    const availHPx = availH * pxPerMm;
-    const sliceHPx = Math.min(availHPx, canvasH - srcYPx);
-    const sliceHMm = sliceHPx / pxPerMm;
+  if (cardHeightMm <= maxH) {
+    // Fits on a fresh page
+    const imgData = canvasToJpeg(canvas);
+    doc.addImage(imgData, 'JPEG', PAGE.margin, state.currentY, PAGE.contentWidth, cardHeightMm);
+    state.currentY += cardHeightMm + PAGE.cardGap;
+  } else {
+    // Card is taller than a full page -> scale down to fit
+    const scaleFactor = maxH / cardHeightMm;
+    const renderHeight = maxH;
+    const renderWidth = PAGE.contentWidth * scaleFactor;
+    const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
 
-    const sliceCanvas = document.createElement('canvas');
-    sliceCanvas.width = canvasW;
-    sliceCanvas.height = Math.ceil(sliceHPx);
-    const ctx = sliceCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, srcYPx, canvasW, sliceHPx, 0, 0, canvasW, sliceHPx);
-
-    const imgData = sliceCanvas.toDataURL('image/jpeg', 0.75);
-    doc.addImage(imgData, 'JPEG', PAGE.margin, state.currentY, PAGE.contentWidth, sliceHMm);
-
-    srcYPx += sliceHPx;
-    state.currentY += sliceHMm + 2;
-
-    if (srcYPx < canvasH - 1) {
-      doc.addPage();
-      state.pageNumber++;
-      addHeader(doc, reportLabel);
-      addFooter(doc, state.pageNumber);
-      state.currentY = PAGE.contentTop + 4;
-    }
+    const imgData = canvasToJpeg(canvas);
+    doc.addImage(imgData, 'JPEG', xOffset, state.currentY, renderWidth, renderHeight);
+    state.currentY += renderHeight + PAGE.cardGap;
   }
+};
+
+// =============================================================================
+// EXPAND ALL COLLAPSIBLE SECTIONS
+// =============================================================================
+
+/**
+ * Forces all ExpandableSection components open for PDF capture.
+ * These use conditional React rendering ({isOpen && <content>}),
+ * so we must click the header buttons to toggle React state.
+ * Returns a restore function that clicks back any we opened.
+ */
+const expandAllSections = async (containerEl) => {
+  const expandables = containerEl.querySelectorAll('.doc-expandable');
+  const headersWeOpened = [];
+
+  expandables.forEach((el) => {
+    const content = el.querySelector('.doc-expandable-content');
+    const header = el.querySelector('.doc-expandable-header');
+    // If there's no content div, the section is collapsed (conditional render)
+    if (!content && header) {
+      header.click();
+      headersWeOpened.push(header);
+    }
+  });
+
+  // Wait for React to re-render after clicks
+  if (headersWeOpened.length > 0) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  return () => {
+    // Click them back to collapse
+    headersWeOpened.forEach((h) => h.click());
+  };
 };
 
 // =============================================================================
@@ -184,15 +270,17 @@ const placeCanvasOnPages = (doc, canvas, state, reportLabel) => {
 // =============================================================================
 
 /**
- * Exports a documentation panel as a branded PDF.
+ * Exports a documentation panel as a branded PDF using per-card capture.
+ * Each [data-pdf-card] element is captured individually and placed using
+ * a layout engine that keeps cards intact across page boundaries.
  *
  * @param {Object} options
  * @param {Object} options.contentRef - React ref to the .doc-content div
  * @param {Function} options.setActiveTab - Function to switch tabs
  * @param {string[]} options.tabIds - Array of tab IDs
- * @param {string} options.moduleName - e.g. 'KYC', 'VMX', 'FYI'
+ * @param {string} options.moduleName - e.g. 'KYC', 'VMX'
  * @param {string} options.moduleSubtitle - e.g. 'Know Your Client Guide'
- * @param {string} options.currentTab - Current active tab to restore after export
+ * @param {string} options.currentTab - Current active tab to restore
  * @param {Function} [options.onStart] - Called when export starts
  * @param {Function} [options.onComplete] - Called when export finishes
  */
@@ -209,63 +297,72 @@ export async function exportDocumentationPdf({
   if (onStart) onStart();
 
   const reportLabel = `${moduleName} Documentation`;
+  const tabLabels = {
+    overview: 'Overview',
+    workflow: 'Workflow',
+    gates: 'Gates & Validation',
+    reference: 'Reference',
+  };
 
   try {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const state = { currentY: PAGE.contentTop, pageNumber: 1 };
 
-    // --- Cover page ---
-    addCoverPage(doc, moduleName, moduleSubtitle, 1);
+    // ---- Cover page ----
+    addCoverPage(doc, moduleName, moduleSubtitle);
 
-    // --- Capture each tab ---
-    const tabLabels = { overview: 'Overview', workflow: 'Workflow', gates: 'Gates & Validation', reference: 'Reference' };
+    // ---- Process each tab ----
+    for (let t = 0; t < tabIds.length; t++) {
+      const tabId = tabIds[t];
 
-    for (let i = 0; i < tabIds.length; i++) {
-      const tabId = tabIds[i];
-
-      // Switch to this tab and wait for render
+      // Switch tab and wait for React render
       setActiveTab(tabId);
       await new Promise((r) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150)));
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 200)));
       });
 
-      // New page for each section
-      doc.addPage();
-      state.pageNumber++;
-      addHeader(doc, reportLabel);
-      addFooter(doc, state.pageNumber);
-      state.currentY = PAGE.contentTop + 4;
+      const contentEl = contentRef.current || contentRef;
+      if (!contentEl) continue;
 
-      // Add section title
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.setTextColor(...COLORS.navy);
-      doc.text(tabLabels[tabId] || tabId, PAGE.margin, state.currentY);
-      state.currentY += 8;
+      // Expand all collapsible sections for full capture
+      const restoreExpand = await expandAllSections(contentEl);
+      await new Promise((r) => setTimeout(r, 100));
 
-      // Gold divider
-      doc.setDrawColor(...COLORS.gold);
-      doc.setLineWidth(0.5);
-      doc.line(PAGE.margin, state.currentY, PAGE.margin + 40, state.currentY);
-      state.currentY += 6;
+      // Section divider page
+      addSectionDivider(doc, state, reportLabel, tabLabels[tabId] || tabId);
 
-      // Capture content
-      const el = contentRef.current || contentRef;
-      if (el) {
-        const canvas = await captureElement(el);
-        placeCanvasOnPages(doc, canvas, state, reportLabel);
+      // Find all cards in this tab via data-pdf-card attribute
+      const cards = contentEl.querySelectorAll('[data-pdf-card]');
+      console.log(`[Docs PDF] Tab "${tabId}": found ${cards.length} cards`);
+
+      // Capture and place each card individually
+      for (let c = 0; c < cards.length; c++) {
+        const cardEl = cards[c];
+        const cardId = cardEl.getAttribute('data-pdf-card');
+        console.log(`[Docs PDF]   Capturing card: ${cardId}`);
+
+        try {
+          const canvas = await captureCard(cardEl);
+          placeCard(doc, canvas, state, reportLabel);
+        } catch (err) {
+          console.error(`[Docs PDF]   Failed to capture card ${cardId}:`, err);
+        }
       }
+
+      // Restore collapsed state
+      restoreExpand();
     }
 
-    // --- Update all footers with total page count ---
+    // ---- Update all footers with total page count ----
     updateAllFooters(doc, state.pageNumber);
 
-    // --- Restore original tab ---
+    // ---- Restore original tab ----
     setActiveTab(currentTab);
 
-    // --- Save ---
+    // ---- Save ----
     const filename = `N4S-${moduleName}-Documentation.pdf`;
     doc.save(filename);
+    console.log(`[Docs PDF] Generated: ${filename} (${state.pageNumber} pages)`);
 
   } catch (err) {
     console.error(`[Docs PDF] Export failed for ${moduleName}:`, err);

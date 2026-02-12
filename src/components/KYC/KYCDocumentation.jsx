@@ -79,7 +79,7 @@ function ExpandableSection({ title, children, defaultOpen = false }) {
 function OverviewTab() {
   return (
     <div className="doc-tab-content">
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="overview-intro">
         <h2 className="doc-section-title">What is KYC?</h2>
         <p className="doc-paragraph">
           Know Your Client (KYC) is the foundation of your N4S mansion program. This module captures 
@@ -94,7 +94,7 @@ function OverviewTab() {
         </p>
       </div>
 
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="overview-answers">
         <h3 className="doc-subsection-title">What Your Answers Determine</h3>
         <ul className="doc-list">
           <li>
@@ -128,7 +128,7 @@ function OverviewTab() {
         </ul>
       </div>
 
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="overview-respondents">
         <h3 className="doc-subsection-title">Respondent Types</h3>
         <p className="doc-paragraph">
           KYC captures perspectives from multiple decision-makers to ensure the home works for everyone.
@@ -159,7 +159,7 @@ function OverviewTab() {
         </div>
       </div>
 
-      <div className="doc-card doc-card--highlight">
+      <div className="doc-card doc-card--highlight" data-pdf-card="overview-completion">
         <h3 className="doc-subsection-title">Completion Time</h3>
         <p className="doc-paragraph">
           The KYC module captures comprehensive client information across 8 sections. Principal
@@ -344,7 +344,7 @@ function WorkflowTab() {
 
   return (
     <div className="doc-tab-content">
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="workflow-intro">
         <h2 className="doc-section-title">KYC Section Guide</h2>
         <p className="doc-paragraph">
           Complete each section to build your personalized mansion program. Sections marked with
@@ -354,7 +354,7 @@ function WorkflowTab() {
 
       {/* Section Cards */}
       {sections.map((section, index) => (
-        <div key={section.code} className="doc-section-card">
+        <div key={section.code} className="doc-section-card" data-pdf-card={`workflow-${section.code}`}>
           <div className="doc-section-card__header">
             <div className="doc-section-card__code">{section.code}</div>
             <div className="doc-section-card__title-group">
@@ -393,7 +393,7 @@ function WorkflowTab() {
       ))}
 
       {/* LuXeBrief Integration */}
-      <div className="doc-card doc-card--highlight">
+      <div className="doc-card doc-card--highlight" data-pdf-card="workflow-luxebrief">
         <h3 className="doc-subsection-title">LuXeBrief Integration</h3>
         <p className="doc-paragraph">
           P1.A.6 Lifestyle & Living can be completed via LuXeBrief—N4S's external questionnaire platform
@@ -443,7 +443,7 @@ function WorkflowTab() {
       </div>
 
       {/* Completion Guide */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="workflow-tips">
         <h3 className="doc-subsection-title">Completion Tips</h3>
         <div className="doc-tips-grid">
           <div className="doc-tip-card">
@@ -486,7 +486,7 @@ function WorkflowTab() {
 function GatesTab() {
   return (
     <div className="doc-tab-content">
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="gates-intro">
         <h2 className="doc-section-title">Data Quality Gates</h2>
         <p className="doc-paragraph">
           KYC data flows downstream to FYI and MVP modules. Incomplete or inconsistent data will 
@@ -495,7 +495,7 @@ function GatesTab() {
       </div>
 
       {/* Completeness Gate */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="gates-completeness">
         <h3 className="doc-subsection-title">Completeness Requirements</h3>
         <div className="doc-gate-table">
           <div className="doc-gate-row doc-gate-row--header">
@@ -527,7 +527,7 @@ function GatesTab() {
       </div>
 
       {/* Downstream Dependencies */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="gates-dependencies">
         <h3 className="doc-subsection-title">Downstream Module Dependencies</h3>
         <p className="doc-paragraph">
           Your KYC answers directly control what appears in subsequent modules.
@@ -568,7 +568,7 @@ function GatesTab() {
       </div>
 
       {/* Client Intake Protection */}
-      <div className="doc-card doc-card--warning">
+      <div className="doc-card doc-card--warning" data-pdf-card="gates-protection">
         <h3 className="doc-subsection-title">Client Intake Protection</h3>
         <p className="doc-paragraph">
           When a client completes the Portal Intake Wizard (P1.A.3 Project Parameters and P1.A.4
@@ -584,7 +584,7 @@ function GatesTab() {
       </div>
 
       {/* Privacy Postures */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="gates-privacy">
         <h3 className="doc-subsection-title">Privacy Postures</h3>
         <div style={{ padding: '0.5rem 0.75rem', background: '#fff3e0', borderRadius: '4px', fontSize: '0.8125rem', color: '#f57c00', marginBottom: '0.75rem' }}>
           <strong>Planned Feature:</strong> Privacy posture selection will be added in a future update.
@@ -624,7 +624,7 @@ function GatesTab() {
       </div>
 
       {/* Operating Models */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="gates-operating">
         <h3 className="doc-subsection-title">Operating Models</h3>
         <p className="doc-paragraph">
           Your operating model determines the service infrastructure your home requires.
@@ -702,7 +702,7 @@ function GatesTab() {
 function ReferenceTab() {
   return (
     <div className="doc-tab-content">
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="reference-intro">
         <h2 className="doc-section-title">Reference Guide</h2>
         <p className="doc-paragraph">
           Definitions and reference information for KYC terminology and concepts.
@@ -710,7 +710,7 @@ function ReferenceTab() {
       </div>
 
       {/* Section Codes */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="reference-codes">
         <h3 className="doc-subsection-title">Section Code Reference</h3>
         <div className="doc-code-table">
           <div className="doc-code-row doc-code-row--header">
@@ -771,7 +771,7 @@ function ReferenceTab() {
       </div>
 
       {/* Taste Exploration */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="reference-design">
         <h3 className="doc-subsection-title">Design Identity Categories</h3>
         <p className="doc-paragraph">
           The Design Identity section captures architectural style preferences across 9 categories
@@ -821,7 +821,7 @@ function ReferenceTab() {
       </div>
 
       {/* Entertaining Profiles */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="reference-entertaining">
         <h3 className="doc-subsection-title">Entertaining Profiles</h3>
         <ExpandableSection title="View Definitions">
           <dl className="doc-glossary">
@@ -844,7 +844,7 @@ function ReferenceTab() {
       </div>
 
       {/* Glossary */}
-      <div className="doc-card">
+      <div className="doc-card" data-pdf-card="reference-glossary">
         <h3 className="doc-subsection-title">Glossary</h3>
         <ExpandableSection title="View Definitions">
           <dl className="doc-glossary">
