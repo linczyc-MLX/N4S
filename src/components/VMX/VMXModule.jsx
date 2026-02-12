@@ -389,21 +389,28 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
     vmxExportsRef.current = fns;
   }, []);
 
-  if (showDocs) {
-    return <VMXDocumentation onClose={onCloseDocs} />;
-  }
-
   if (!vmxReady) {
     return (
-      <div className="vmx-loading">
-        <div className="vmx-loading__spinner" />
-        <p>Loading VMX...</p>
+      <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+        <div className="n4s-docs-layout__main">
+          <div className="vmx-loading">
+            <div className="vmx-loading__spinner" />
+            <p>Loading VMX...</p>
+          </div>
+        </div>
+        {showDocs && (
+          <div className="n4s-docs-layout__docs">
+            <VMXDocumentation onClose={onCloseDocs} />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="vmx-module">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="vmx-module">
       {/* Module Header (universal pattern) */}
       <header className="module-header">
         <div className="module-header__content">
@@ -510,6 +517,13 @@ const VMXModule = ({ showDocs, onCloseDocs }) => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <VMXDocumentation onClose={onCloseDocs} />
+        </div>
+      )}
     </div>
   );
 };

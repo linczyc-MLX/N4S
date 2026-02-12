@@ -4932,6 +4932,68 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
 }
 
 /* ============================================
+   Generic split-screen docs layout
+   Used by KYC, FYI, KYM, KYS, VMX, Dashboard
+   (MVP and LCD have their own specific layouts)
+   ============================================ */
+.n4s-docs-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+}
+
+.n4s-docs-layout__main {
+  flex: 1;
+  min-width: 0;
+  transition: all 0.2s ease;
+}
+
+.n4s-docs-layout--with-docs .n4s-docs-layout__main {
+  flex: 0 0 60%;
+  max-width: 60%;
+}
+
+.n4s-docs-layout__docs {
+  flex: 0 0 40%;
+  max-width: 40%;
+  border-left: 1px solid var(--gray-200);
+  background: var(--white);
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+}
+
+@media (max-width: 1024px) {
+  .n4s-docs-layout--with-docs .n4s-docs-layout__main {
+    flex: 0 0 55%;
+    max-width: 55%;
+  }
+  .n4s-docs-layout__docs {
+    flex: 0 0 45%;
+    max-width: 45%;
+  }
+}
+
+@media (max-width: 768px) {
+  .n4s-docs-layout {
+    flex-direction: column;
+  }
+  .n4s-docs-layout--with-docs .n4s-docs-layout__main {
+    flex: 1;
+    max-width: 100%;
+  }
+  .n4s-docs-layout__docs {
+    flex: 1;
+    max-width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--gray-200);
+    position: static;
+    max-height: none;
+  }
+}
+
+/* ============================================
    ITR #7: MVP Workflow section (relocated)
    ============================================ */
 .mvp-workflow {

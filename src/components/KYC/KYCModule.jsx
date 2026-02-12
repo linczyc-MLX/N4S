@@ -192,13 +192,10 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
 
   const completionPercentage = calculateCompleteness('principal');
 
-  // If in docs mode, show documentation
-  if (showDocs) {
-    return <KYCDocumentation onClose={onCloseDocs} />;
-  }
-
   return (
-    <div className="kyc-module">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="kyc-module">
       {/* Module Header (universal pattern) */}
       <header className="module-header">
         <div className="module-header__content">
@@ -376,6 +373,13 @@ const KYCModule = ({ showDocs, onCloseDocs }) => {
           </div>
         </div>
       </div>
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <KYCDocumentation onClose={onCloseDocs} />
+        </div>
+      )}
     </div>
   );
 };

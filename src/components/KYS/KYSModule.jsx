@@ -786,13 +786,10 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
     setViewMode('list');
   }, []);
 
-  // Show documentation if requested
-  if (showDocs) {
-    return <KYSDocumentation onClose={onCloseDocs} />;
-  }
-
   return (
-    <div className="kys-module">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="kys-module">
       {/* Module Header (universal pattern) */}
       <header className="module-header">
         <div className="module-header__content">
@@ -971,6 +968,13 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
           onBack={handleBackToList}
           assessmentMode={assessmentMode}
         />
+      )}
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <KYSDocumentation onClose={onCloseDocs} />
+        </div>
       )}
     </div>
   );

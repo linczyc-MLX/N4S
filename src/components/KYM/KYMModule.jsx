@@ -1408,13 +1408,10 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   const formatNumber = (value) => new Intl.NumberFormat('en-US').format(value);
 
-  // Show documentation if requested
-  if (showDocs) {
-    return <KYMDocumentation onClose={onCloseDocs} />;
-  }
-
   return (
-    <div className="kym-module">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="kym-module">
       {/* Module Header (universal pattern) */}
       <header className="module-header">
         <div className="module-header__content">
@@ -2252,6 +2249,13 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
           All investment decisions should be made in consultation with qualified professionals.
         </p>
       </div>
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <KYMDocumentation onClose={onCloseDocs} />
+        </div>
+      )}
     </div>
   );
 };

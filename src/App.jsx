@@ -265,7 +265,7 @@ const AppContent = () => {
             {modulesWithDocs.includes(activeModule) && (
               <button
                 className="main-header__docs-btn"
-                onClick={() => setShowDocs(true)}
+                onClick={() => setShowDocs(!showDocs)}
                 title="View Documentation"
                 style={{ 
                   color: moduleColors[activeModule]?.text || '#ffffff',
@@ -278,7 +278,7 @@ const AppContent = () => {
                 }}
               >
                 <FileText size={16} />
-                <span>Documentation</span>
+                <span>{showDocs ? 'Close Docs' : 'Documentation'}</span>
               </button>
             )}
             <button

@@ -312,13 +312,6 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
   }, [availableLevels, totals.byLevel]);
 
   // ---------------------------------------------------------------------------
-  // DOCS MODE (must be after all hooks)
-  // ---------------------------------------------------------------------------
-  if (showDocs) {
-    return <FYIDocumentation onClose={onCloseDocs} />;
-  }
-
-  // ---------------------------------------------------------------------------
   // LOADING STATE
   // ---------------------------------------------------------------------------
   if (isLoading) {
@@ -333,7 +326,9 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
   // RENDER
   // ---------------------------------------------------------------------------
   return (
-    <div className="fyi-module">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="fyi-module">
       {/* Header */}
       <header className="fyi-module__header">
         <div className="fyi-module__header-content">
@@ -477,6 +472,13 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
           />
         </aside>
       </div>
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <FYIDocumentation onClose={onCloseDocs} />
+        </div>
+      )}
     </div>
   );
 };

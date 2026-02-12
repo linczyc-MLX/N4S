@@ -287,17 +287,12 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
   };
 
   // ---------------------------------------------------------------------------
-  // RENDER — DOCUMENTATION MODE
-  // ---------------------------------------------------------------------------
-  if (showDocs) {
-    return <DashboardDocumentation onClose={onCloseDocs} />;
-  }
-
-  // ---------------------------------------------------------------------------
   // RENDER — MAIN DASHBOARD
   // ---------------------------------------------------------------------------
   return (
-    <div className="dashboard">
+    <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
+      <div className="n4s-docs-layout__main">
+        <div className="dashboard">
       {/* Authority Level Confirmation Modal */}
       {showAuthorityModal && (
         <div className="modal-overlay">
@@ -906,6 +901,13 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
           ))}
         </div>
       </section>
+    </div>
+      </div>
+      {showDocs && (
+        <div className="n4s-docs-layout__docs">
+          <DashboardDocumentation onClose={onCloseDocs} />
+        </div>
+      )}
     </div>
   );
 };
