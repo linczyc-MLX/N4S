@@ -224,6 +224,18 @@ function OverviewTab() {
           auto-populated and locked (marked "from KYC") to maintain data integrity
           across the platform.
         </p>
+        <p className="doc-paragraph">
+          VMX receives data from KYC and FYI through three mechanisms:
+        </p>
+        <p className="doc-paragraph">
+          <strong>Always Synced (read-only):</strong> Client name, project name, quality tier lock status, and KYC budget constraints update in real-time whenever KYC data changes.
+        </p>
+        <p className="doc-paragraph">
+          <strong>Seed Once:</strong> Scenario values like target area, location preset, and typology are populated from KYC/FYI when VMX first loads for a project. After initial seeding, these values become independently editable by the advisor without being overwritten by KYC changes.
+        </p>
+        <p className="doc-paragraph">
+          <strong>Editable:</strong> All scenario parameters (cost bands, multipliers, overrides) are fully advisor-controlled and never overwritten by upstream modules.
+        </p>
 
         <div className="doc-ref-table">
           <div className="doc-ref-row doc-ref-row--header">
@@ -234,47 +246,47 @@ function OverviewTab() {
           <div className="doc-ref-row">
             <div>Client Name</div>
             <div>KYC (Portfolio Context)</div>
-            <div>Locked — display only</div>
+            <div>Always Synced — display only</div>
           </div>
           <div className="doc-ref-row">
             <div>Project Name</div>
             <div>KYC (Project Parameters)</div>
-            <div>Locked — display only</div>
+            <div>Always Synced — display only</div>
           </div>
           <div className="doc-ref-row">
             <div>Target Area (SF)</div>
             <div>KYC targetGSF → FYI targetSF fallback</div>
-            <div>Locked — always synced from KYC</div>
+            <div>Seed Once — editable after initial load</div>
           </div>
           <div className="doc-ref-row">
             <div>Quality Tier</div>
             <div>KYC (P1.A.4 Interior Quality Tier)</div>
-            <div>Locked when set in KYC; editable otherwise</div>
+            <div>Always Synced — locked when set in KYC</div>
           </div>
           <div className="doc-ref-row">
             <div>Location Preset</div>
             <div>KYC (Property Location)</div>
-            <div>Seeded once — advisor can change</div>
+            <div>Seed Once — advisor can change after load</div>
           </div>
           <div className="doc-ref-row">
             <div>Site Typology</div>
             <div>KYS (Selected Site)</div>
-            <div>Seeded once — advisor can change</div>
+            <div>Seed Once — advisor can change after load</div>
           </div>
           <div className="doc-ref-row">
             <div>Land Cost</div>
             <div>KYC → KYS fallback</div>
-            <div>Always synced from KYC</div>
+            <div>Always Synced from KYC</div>
           </div>
           <div className="doc-ref-row">
             <div>Program Bias</div>
             <div>FYI (Zone SF totals)</div>
-            <div>Auto-calculated — adjusts Interiors/FF&E/Services</div>
+            <div>Always Synced — auto-calculated from FYI zones</div>
           </div>
           <div className="doc-ref-row">
             <div>Budget Framework</div>
             <div>KYC (P1.A.4)</div>
-            <div>Read-only reference panel in VMX</div>
+            <div>Always Synced — read-only reference panel</div>
           </div>
         </div>
       </ExpandableSection>

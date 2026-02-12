@@ -131,7 +131,7 @@ function OverviewTab() {
             <div className="doc-feature-number">8</div>
             <div className="doc-feature-text">
               <strong>Validation Modules</strong>
-              <p>Covering all mansion program areas from kitchen to staff quarters</p>
+              <p>Each contributes to the overall validation score, covering all mansion program areas</p>
             </div>
           </div>
           <div className="doc-feature">
@@ -298,7 +298,7 @@ function WorkflowTab() {
               <CheckCircle size={16} className="doc-check-icon success" />
               <div>
                 <strong>Module Scores</strong>
-                <p>Performance by area (target: 80+ for each module)</p>
+                <p>Each module contributes to the overall validation score (target: 80+ overall)</p>
               </div>
             </div>
           </div>
@@ -321,8 +321,8 @@ function WorkflowTab() {
               <span className="doc-outcome-then">Review which layout questions enable them</span>
             </div>
             <div className="doc-outcome">
-              <span className="doc-outcome-if">If scores below 80:</span>
-              <span className="doc-outcome-then">Check which adjacencies are causing deviations in that module</span>
+              <span className="doc-outcome-if">If overall score below 80:</span>
+              <span className="doc-outcome-then">Check which modules are underperforming and which adjacencies are causing deviations</span>
             </div>
             <div className="doc-outcome doc-outcome--success">
               <span className="doc-outcome-if">If all gates pass:</span>
@@ -332,36 +332,53 @@ function WorkflowTab() {
         </div>
       </div>
 
+      {/* PDF Export */}
+      <div className="doc-card">
+        <h3 className="doc-subsection-title">PDF Report Export</h3>
+        <p className="doc-paragraph">
+          MVP includes a comprehensive PDF report generator that exports the full validation results
+          including adjacency matrix, red flag report, bridge recommendations, and module scores.
+          Access the export via the report button in the module header.
+        </p>
+      </div>
+
       {/* Project Context */}
       <div className="doc-card">
         <h3 className="doc-subsection-title">Where MVP Fits in Your Project</h3>
         <div className="doc-timeline">
           <div className="doc-timeline-item">
-            <div className="doc-timeline-badge">Phase A</div>
+            <div className="doc-timeline-badge">Stage A</div>
             <div className="doc-timeline-content">
-              <strong>Kickoff (Day 0-7)</strong>
-              <p>Complete KYC and FYI modules to capture lifestyle and space requirements</p>
+              <strong>Profile Complete</strong>
+              <p>KYC data validated — operating model, privacy posture, staffing, and entertaining inputs confirmed</p>
+            </div>
+          </div>
+          <div className="doc-timeline-item">
+            <div className="doc-timeline-badge">Stage B</div>
+            <div className="doc-timeline-content">
+              <strong>Space Program</strong>
+              <p>FYI allocations confirmed — zones assigned, S/M/L sizing selected, tier detection verified</p>
             </div>
           </div>
           <div className="doc-timeline-item doc-timeline-item--active">
-            <div className="doc-timeline-badge">Phase B</div>
+            <div className="doc-timeline-badge">Stage C</div>
             <div className="doc-timeline-content">
-              <strong>Concept Plan (Gate 1)</strong>
-              <p>Run MVP validation to lock adjacency logic before design begins</p>
+              <strong>Module Validation</strong>
+              <p>8 validation modules scored — adjacency choices evaluated against tier benchmarks</p>
             </div>
           </div>
           <div className="doc-timeline-item">
-            <div className="doc-timeline-badge">Phase C</div>
+            <div className="doc-timeline-badge">Stage D</div>
             <div className="doc-timeline-content">
-              <strong>Schematic Design (Gate 2)</strong>
-              <p>Re-run validation with updated plans to confirm compliance</p>
+              <strong>Adjacency Lock</strong>
+              <p>Adjacency decisions finalized — red flags resolved, bridges enabled, matrix confirmed</p>
             </div>
           </div>
           <div className="doc-timeline-item">
-            <div className="doc-timeline-badge">Phase D</div>
+            <div className="doc-timeline-badge">Stage E</div>
             <div className="doc-timeline-content">
-              <strong>Design Development (Gate 3)</strong>
-              <p>Final validation freeze—changes require documented rationale</p>
+              <strong>Brief Ready</strong>
+              <p>The final validation gate. Once adjacency decisions are locked and the overall score meets the threshold, the system generates a validated brief package that can be exported as a PDF for design team handoff.</p>
             </div>
           </div>
         </div>
@@ -379,10 +396,10 @@ function GatesTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">Master Adjacency Gate</h2>
         <p className="doc-paragraph">
-          The MVP validation gate is a pre-design decision gate. Your program passes if it contains 
-          zero critical red flags, has all required bridges enabled, and meets module score thresholds 
-          (default: 80+). Passing this gate means your adjacency logic is sound and you can proceed 
-          to schematic design with confidence.
+          The MVP validation gate is a pre-design decision gate. Your program passes if it contains
+          zero critical red flags, has all required bridges enabled, and achieves an overall validation
+          score of 80 or above. Passing this gate means your adjacency logic is sound and you can
+          proceed to adjacency review with confidence.
         </p>
         <div className="doc-gate-criteria">
           <div className="doc-criterion">
@@ -395,7 +412,7 @@ function GatesTab() {
           </div>
           <div className="doc-criterion">
             <CheckCircle size={20} color={COLORS.success} />
-            <span>Module scores ≥ 80</span>
+            <span>Overall validation score ≥ 80</span>
           </div>
         </div>
       </div>
@@ -624,9 +641,9 @@ function GatesTab() {
       <div className="doc-card">
         <h3 className="doc-subsection-title">Module Score Thresholds</h3>
         <p className="doc-paragraph">
-          Each module evaluates a specific functional area of your home. Scores reflect how well 
-          your adjacency choices align with the benchmark for homes of your tier. Target: 80+ for 
-          each module.
+          MVP calculates an overall validation score. A score of 80 or above indicates the program
+          passes validation and is ready for adjacency review. Each module evaluates a specific
+          functional area of your home and contributes to the overall validation score.
         </p>
 
         <div className="doc-module-scores">
@@ -636,7 +653,6 @@ function GatesTab() {
               <strong>Kitchen Rules Engine</strong>
               <p>Cooking flow, prep zones, service circulation, sightline management</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Users size={18} className="doc-module-icon" />
@@ -644,7 +660,6 @@ function GatesTab() {
               <strong>Entertaining Spine</strong>
               <p>Guest arrival sequence, formal circulation, dining-to-living flow</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Home size={18} className="doc-module-icon" />
@@ -652,7 +667,6 @@ function GatesTab() {
               <strong>Primary Suite Ecosystem</strong>
               <p>Privacy protection, bath-closet relationships, retreat quality</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Users size={18} className="doc-module-icon" />
@@ -660,7 +674,6 @@ function GatesTab() {
               <strong>Guest Wing Logic</strong>
               <p>Independence, acoustic separation, autonomous access</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Volume2 size={18} className="doc-module-icon" />
@@ -668,7 +681,6 @@ function GatesTab() {
               <strong>Media & Acoustic Control</strong>
               <p>Sound isolation, zone separation, 24/7 usability</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Car size={18} className="doc-module-icon" />
@@ -676,7 +688,6 @@ function GatesTab() {
               <strong>Service Spine</strong>
               <p>Delivery routes, back-of-house circulation, MEP access</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Dumbbell size={18} className="doc-module-icon" />
@@ -684,7 +695,6 @@ function GatesTab() {
               <strong>Wellness Program</strong>
               <p>Pool-spa relationships, gym access, indoor-outdoor transitions</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
           <div className="doc-module-row">
             <Briefcase size={18} className="doc-module-icon" />
@@ -692,7 +702,6 @@ function GatesTab() {
               <strong>Staff Layer</strong>
               <p>Operations hub, staff quarters, service support functions</p>
             </div>
-            <span className="doc-module-target">80+</span>
           </div>
         </div>
       </div>

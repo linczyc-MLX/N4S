@@ -290,7 +290,10 @@ function WorkflowTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">KYM Workflow</h2>
         <p className="doc-paragraph">
-          Follow these steps to complete the KYM module and validate buyer alignment.
+          The KYM module contains 5 tabs: <strong>Market Analysis</strong>, <strong>Comparable
+          Properties</strong>, <strong>Land Acquisition</strong>, <strong>Demographics</strong>,
+          and <strong>Buyer Alignment (BAM)</strong>. Follow these steps to complete each section
+          and validate buyer alignment.
         </p>
       </div>
 
@@ -311,7 +314,19 @@ function WorkflowTab() {
         </ol>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 3: Analyze Comparables">
+      <ExpandableSection title="Step 3: Land Acquisition Search" defaultOpen={false}>
+        <p>Search for available land parcels and lots in your target area using live Realtor.com
+        data. Filter by price range, acreage, and property type. Parcels of interest can be added
+        to the KYS Site Library for formal site assessment.</p>
+        <ol className="doc-steps">
+          <li>Enter ZIP code or location for the search area</li>
+          <li>Set price range and minimum acreage filters</li>
+          <li>Review listings with price, acreage, and location details</li>
+          <li>Click "Add to KYS Library" to export parcels for site assessment</li>
+        </ol>
+      </ExpandableSection>
+
+      <ExpandableSection title="Step 4: Analyze Comparables">
         <ol className="doc-steps">
           <li>Filter properties by relevant criteria</li>
           <li>Compare features across listings</li>
@@ -320,7 +335,7 @@ function WorkflowTab() {
         </ol>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 4: Review Demographics">
+      <ExpandableSection title="Step 5: Review Demographics">
         <ol className="doc-steps">
           <li>Examine buyer pool characteristics</li>
           <li>Review income and wealth distributions</li>
@@ -328,7 +343,7 @@ function WorkflowTab() {
         </ol>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 5: Review Buyer Alignment (BAM v3.0)" defaultOpen={true}>
+      <ExpandableSection title="Step 6: Review Buyer Alignment (BAM v3.0)" defaultOpen={true}>
         <div className="doc-step-intro">
           <Info size={16} />
           <span>This critical step validates that your design serves both your needs
@@ -337,7 +352,7 @@ function WorkflowTab() {
 
         <div className="doc-substeps">
           <div className="doc-substep">
-            <span className="doc-substep-num">5.1</span>
+            <span className="doc-substep-num">6.1</span>
             <div className="doc-substep-content">
               <strong>Set Portfolio Context slider</strong>
               <p>
@@ -348,7 +363,7 @@ function WorkflowTab() {
           </div>
 
           <div className="doc-substep">
-            <span className="doc-substep-num">5.2</span>
+            <span className="doc-substep-num">6.2</span>
             <div className="doc-substep-content">
               <strong>Review dual scores</strong>
               <p>
@@ -359,7 +374,7 @@ function WorkflowTab() {
           </div>
 
           <div className="doc-substep">
-            <span className="doc-substep-num">5.3</span>
+            <span className="doc-substep-num">6.3</span>
             <div className="doc-substep-content">
               <strong>Examine Buyer Pool breakdown</strong>
               <p>
@@ -370,7 +385,7 @@ function WorkflowTab() {
           </div>
 
           <div className="doc-substep">
-            <span className="doc-substep-num">5.4</span>
+            <span className="doc-substep-num">6.4</span>
             <div className="doc-substep-content">
               <strong>Check Feature Classification quadrants</strong>
               <p>
@@ -381,7 +396,7 @@ function WorkflowTab() {
           </div>
 
           <div className="doc-substep">
-            <span className="doc-substep-num">5.5</span>
+            <span className="doc-substep-num">6.5</span>
             <div className="doc-substep-content">
               <strong>Follow Path to 80% recommendations</strong>
               <p>
@@ -393,7 +408,7 @@ function WorkflowTab() {
         </div>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 6: Generate Report">
+      <ExpandableSection title="Step 7: Generate Report">
         <ol className="doc-steps">
           <li>Click "Generate PDF Report"</li>
           <li>Review all sections for accuracy</li>
@@ -634,6 +649,21 @@ function ReferenceTab() {
             <span>Spa Suite, Natural Materials</span>
             <span>Urban location, Artificial materials</span>
           </div>
+          <div className="doc-archetype-row">
+            <span><strong>Medical / Biotech</strong></span>
+            <span>Home lab space, climate control, privacy</span>
+            <span>Ostentatious design, shared access</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Developer</strong></span>
+            <span>ROI potential, scalability, flex spaces</span>
+            <span>Hyper-personalization, niche features</span>
+          </div>
+          <div className="doc-archetype-row">
+            <span><strong>Creative Entrepreneur</strong></span>
+            <span>Studio spaces, showcase areas, unique design</span>
+            <span>Cookie-cutter layouts, minimal storage</span>
+          </div>
         </div>
       </ExpandableSection>
 
@@ -683,6 +713,49 @@ function ReferenceTab() {
           </div>
         </div>
       </ExpandableSection>
+
+      <div className="doc-card">
+        <h3 className="doc-subsection-title">Data Sources</h3>
+        <p className="doc-paragraph">
+          KYM uses a combination of live API data and statistical estimates depending on market coverage.
+        </p>
+        <div className="doc-ref-table">
+          <div className="doc-ref-row doc-ref-row--header">
+            <span>Data Type</span>
+            <span>Source</span>
+            <span>Coverage</span>
+          </div>
+          <div className="doc-ref-row">
+            <span>Comparable Properties</span>
+            <span>Realtor.com API (via RapidAPI)</span>
+            <span>Live data for US markets</span>
+          </div>
+          <div className="doc-ref-row">
+            <span>Land Parcels</span>
+            <span>Realtor.com API (via RapidAPI)</span>
+            <span>Live data for US markets</span>
+          </div>
+          <div className="doc-ref-row">
+            <span>ZIP Validation</span>
+            <span>Zippopotam.us API</span>
+            <span>US ZIP codes</span>
+          </div>
+          <div className="doc-ref-row">
+            <span>Luxury Market Benchmarks</span>
+            <span>N4S curated dataset</span>
+            <span>8 key luxury markets</span>
+          </div>
+          <div className="doc-ref-row">
+            <span>Demographics</span>
+            <span>Statistical estimates</span>
+            <span>Seeded generation for unknown markets</span>
+          </div>
+        </div>
+        <p className="doc-paragraph" style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: '#6b6b6b' }}>
+          A data source indicator in the module header shows whether you are viewing live API data
+          or statistically estimated data for your selected location.
+        </p>
+      </div>
     </div>
   );
 }

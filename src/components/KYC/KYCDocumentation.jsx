@@ -173,7 +173,7 @@ function OverviewTab() {
           <div className="doc-capture-option">
             <div className="doc-capture-badge">Secondary</div>
             <div className="doc-capture-time">15-20 min</div>
-            <p>Design Preferences and Lifestyle & Living sections only. Captures independent perspective
+            <p>Design Identity and Lifestyle & Living sections only. Captures independent perspective
             on taste and lifestyle to inform design alignment.</p>
           </div>
         </div>
@@ -262,12 +262,12 @@ function WorkflowTab() {
     },
     {
       code: 'P1.A.5',
-      title: 'Design Preferences',
+      title: 'Design Identity',
       icon: Palette,
       secondary: true,
       description: 'Visual and stylistic preferences for your home.',
       captures: [
-        'Taste exploration (110 image quads)',
+        'Architectural style preferences (9 style categories)',
         'Material affinities',
         'Color palette preferences',
         'Reference projects or designers'
@@ -564,9 +564,29 @@ function GatesTab() {
         </div>
       </div>
 
+      {/* Client Intake Protection */}
+      <div className="doc-card doc-card--warning">
+        <h3 className="doc-subsection-title">Client Intake Protection</h3>
+        <p className="doc-paragraph">
+          When a client completes the Portal Intake Wizard (P1.A.3 Project Parameters and P1.A.4
+          Budget Framework), those fields become protected in the advisor's KYC view. A banner
+          displays indicating that client-submitted data is locked to preserve the client's original
+          inputs. The advisor can still view and export the data but cannot edit fields that were
+          submitted through the portal intake.
+        </p>
+        <p className="doc-paragraph">
+          This protection ensures that the client's stated requirements form the trusted baseline
+          for all downstream modules (FYI, MVP, VMX).
+        </p>
+      </div>
+
       {/* Privacy Postures */}
       <div className="doc-card">
         <h3 className="doc-subsection-title">Privacy Postures</h3>
+        <div style={{ padding: '0.5rem 0.75rem', background: '#fff3e0', borderRadius: '4px', fontSize: '0.8125rem', color: '#f57c00', marginBottom: '0.75rem' }}>
+          <strong>Planned Feature:</strong> Privacy posture selection will be added in a future update.
+          Currently, MVP uses standard thresholds for all projects.
+        </div>
         <p className="doc-paragraph">
           Your privacy posture selection in KYC determines how strictly MVP enforces separation 
           between zones. Higher privacy = more red flags for adjacency violations.
@@ -722,7 +742,7 @@ function ReferenceTab() {
           </div>
           <div className="doc-code-row doc-code-row--secondary">
             <code>P1.A.5</code>
-            <span>Design Preferences</span>
+            <span>Design Identity</span>
             <span>✓</span>
             <span>✓</span>
           </div>
@@ -749,82 +769,49 @@ function ReferenceTab() {
 
       {/* Taste Exploration */}
       <div className="doc-card">
-        <h3 className="doc-subsection-title">Taste Exploration Categories</h3>
+        <h3 className="doc-subsection-title">Design Identity Categories</h3>
         <p className="doc-paragraph">
-          The Design Preferences section includes a visual taste exploration with 110 image quads 
-          across 10 categories. Each quad presents 4 images—select all that appeal to you.
+          The Design Identity section captures architectural style preferences across 9 categories
+          (AS1-AS9), delivered via the external LuXeBrief taste exploration platform. Each category
+          presents curated architectural imagery for selection.
         </p>
         <ExpandableSection title="View Categories">
           <div className="doc-taste-categories">
             <div className="doc-taste-category">
-              <span className="doc-taste-number">1</span>
-              <div>
-                <strong>Material Authenticity</strong>
-                <p>Natural vs. manufactured, raw vs. refined</p>
-              </div>
+              <span className="doc-taste-number">AS1</span>
+              <div><strong>Architectural Period</strong><p>Historical era preferences and stylistic anchors</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">2</span>
-              <div>
-                <strong>Color Temperature</strong>
-                <p>Warm vs. cool palettes, neutral vs. saturated</p>
-              </div>
+              <span className="doc-taste-number">AS2</span>
+              <div><strong>Material Language</strong><p>Natural vs. manufactured, raw vs. refined</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">3</span>
-              <div>
-                <strong>Spatial Volume</strong>
-                <p>Intimate vs. grand, horizontal vs. vertical</p>
-              </div>
+              <span className="doc-taste-number">AS3</span>
+              <div><strong>Color Temperature</strong><p>Warm vs. cool palettes, neutral vs. saturated</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">4</span>
-              <div>
-                <strong>Light Quality</strong>
-                <p>Diffused vs. dramatic, natural vs. artificial</p>
-              </div>
+              <span className="doc-taste-number">AS4</span>
+              <div><strong>Spatial Volume</strong><p>Intimate vs. grand, horizontal vs. vertical emphasis</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">5</span>
-              <div>
-                <strong>Formal Expression</strong>
-                <p>Traditional vs. contemporary, ornate vs. minimal</p>
-              </div>
+              <span className="doc-taste-number">AS5</span>
+              <div><strong>Light Quality</strong><p>Diffused vs. dramatic, natural vs. artificial</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">6</span>
-              <div>
-                <strong>Indoor-Outdoor</strong>
-                <p>Connection to landscape, threshold preferences</p>
-              </div>
+              <span className="doc-taste-number">AS6</span>
+              <div><strong>Formal Expression</strong><p>Traditional vs. contemporary, ornate vs. minimal</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">7</span>
-              <div>
-                <strong>Texture Density</strong>
-                <p>Layered vs. clean, tactile vs. smooth</p>
-              </div>
+              <span className="doc-taste-number">AS7</span>
+              <div><strong>Indoor-Outdoor</strong><p>Connection to landscape, threshold preferences</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">8</span>
-              <div>
-                <strong>Art & Objects</strong>
-                <p>Curated collections vs. minimal display</p>
-              </div>
+              <span className="doc-taste-number">AS8</span>
+              <div><strong>Detail & Craft</strong><p>Finish expectations, joinery level, bespoke vs. production</p></div>
             </div>
             <div className="doc-taste-category">
-              <span className="doc-taste-number">9</span>
-              <div>
-                <strong>Kitchen Character</strong>
-                <p>Professional vs. concealed, social vs. private</p>
-              </div>
-            </div>
-            <div className="doc-taste-category">
-              <span className="doc-taste-number">10</span>
-              <div>
-                <strong>Bath & Wellness</strong>
-                <p>Spa-like vs. efficient, open vs. private</p>
-              </div>
+              <span className="doc-taste-number">AS9</span>
+              <div><strong>Contextual Response</strong><p>Site integration, vernacular sensitivity, statement vs. stealth</p></div>
             </div>
           </div>
         </ExpandableSection>
@@ -864,7 +851,7 @@ function ReferenceTab() {
             
             <dt>Secondary Respondent</dt>
             <dd>Spouse or co-decision-maker who provides independent perspective on taste and
-            lifestyle preferences. Completes P1.A.5 (Design Preferences) and P1.A.6 (Lifestyle & Living).</dd>
+            lifestyle preferences. Completes P1.A.5 (Design Identity) and P1.A.6 (Lifestyle & Living).</dd>
 
             <dt>Privacy Posture</dt>
             <dd>Client preference for separation between public, private, and service zones. 

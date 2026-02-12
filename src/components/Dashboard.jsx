@@ -272,8 +272,8 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
       description: 'Market analysis, comparable properties, and demographics',
       icon: Map, progress: 0, status: getModuleStatus('B'), color: 'teal', enabled: true },
     { code: 'D', id: 'vmx', title: 'Module D: VMX', subtitle: 'Vision Matrix',
-      description: 'Budget allocation and project delivery',
-      icon: Zap, progress: 0, status: 'not-started', color: 'gold', enabled: false, comingSoon: true },
+      description: 'Cost analysis engine with scenario comparison',
+      icon: Zap, progress: 0, status: getModuleStatus('D'), color: 'gold', enabled: true },
   ];
 
   const getStatusBadge = (status, comingSoon) => {

@@ -361,8 +361,8 @@ function WorkflowTab() {
           <div className="doc-workflow-number">4</div>
           <div className="doc-workflow-content">
             <h4>Monitor Totals</h4>
-            <p>Watch the totals panel as you work. Stay within ±10% of your target SF. The 
-            system will warn you if you're significantly over or under.</p>
+            <p>Watch the totals panel as you work. A warning displays when total program SF
+            exceeds target by more than 50%, indicating the program may need scaling adjustments.</p>
           </div>
         </div>
         <div className="doc-workflow-step">
@@ -379,6 +379,14 @@ function WorkflowTab() {
       <div className="doc-card">
         <h3 className="doc-subsection-title">Zone-by-Zone Guide</h3>
       </div>
+
+      <ExpandableSection title="Structure Selection (Guest House / Pool House)" defaultOpen={false}>
+        <p>FYI supports multiple structures beyond the Main House. If your KYC Project Parameters
+        include a Guest House or Pool House, FYI creates dedicated zone sections (Z9 for Guest House,
+        Z10 for Pool House) where you can allocate rooms independently. Each structure maintains its
+        own SF totals and level assignments, and the grand total across all structures is displayed
+        in the program summary sidebar.</p>
+      </ExpandableSection>
 
       {zones.map((zone) => (
         <div key={zone.code} className="doc-zone-card" style={{ '--zone-color': zone.color }}>
@@ -436,8 +444,8 @@ function GatesTab() {
           Target Square Footage
         </h3>
         <p className="doc-paragraph">
-          Your total program should be within ±10% of your target SF from KYC. Significant 
-          deviations require either adjusting your program or revising your target.
+          A warning displays when total program SF exceeds target by more than 50%, indicating
+          the program may need scaling adjustments. Moderate deviations are normal during programming.
         </p>
         <div className="doc-variance-scale">
           <div className="doc-variance-bar">
@@ -506,14 +514,18 @@ function GatesTab() {
             <span>&lt;6% (undersized service infrastructure)</span>
           </div>
         </div>
+        <div className="doc-tip">
+          <Info size={14} />
+          <span>Note: Zone balance percentages are reference guidelines. The system does not currently enforce zone balance validation — these serve as benchmarks for advisor review.</span>
+        </div>
       </div>
 
       {/* Circulation */}
       <div className="doc-card">
         <h3 className="doc-subsection-title">Circulation Allowance</h3>
         <p className="doc-paragraph">
-          Your programmed spaces don't account for hallways, stairs, walls, and circulation. 
-          FYI adds a circulation factor (typically 15-20%) when calculating buildable area.
+          Your programmed spaces don't account for hallways, stairs, walls, and circulation.
+          Circulation is calculated as a percentage of net assignable area, varying by tier: 12% for 5K homes, 13% for 10K, 14% for 15K, and 15% for 20K estates.
         </p>
         <div className="doc-circulation-example">
           <div className="doc-circ-row">
@@ -521,12 +533,12 @@ function GatesTab() {
             <span>12,000 SF</span>
           </div>
           <div className="doc-circ-row">
-            <span>Circulation Factor (18%)</span>
-            <span>+ 2,160 SF</span>
+            <span>Circulation Factor (13% for 10K tier)</span>
+            <span>+ 1,560 SF</span>
           </div>
           <div className="doc-circ-row doc-circ-row--total">
             <span>Buildable Area Estimate</span>
-            <span>14,160 SF</span>
+            <span>13,560 SF</span>
           </div>
         </div>
         <div className="doc-tip">
@@ -542,6 +554,11 @@ function GatesTab() {
         <p className="doc-paragraph">
           Certain spaces are expected in each tier. Missing them will trigger warnings.
         </p>
+
+        <div className="doc-tip">
+          <Info size={14} />
+          <span>The system validates 5 universal required spaces across all tiers: Foyer (FOY), Kitchen (KIT), Family Room (FR), Primary Bedroom (PRI), and Primary Bathroom (PRIBATH). Additional tier-specific space requirements are planned for a future update.</span>
+        </div>
 
         <ExpandableSection title="5K Tier Requirements" defaultOpen={true}>
           <ul className="doc-required-list">

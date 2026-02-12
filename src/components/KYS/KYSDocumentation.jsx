@@ -136,7 +136,7 @@ function OverviewTab() {
             </div>
           </div>
           <div className="doc-feature">
-            <div className="doc-feature-number">32</div>
+            <div className="doc-feature-number">31</div>
             <div className="doc-feature-text">
               <strong>Scoring Factors</strong>
               <p>Detailed sub-factors with scoring guides for consistent evaluation</p>
@@ -275,6 +275,9 @@ function WorkflowTab() {
               <li><strong>From MVP:</strong> Validated tier (5K/10K/15K/20K), final adjacency requirements</li>
               <li><strong>From KYM:</strong> Market comparables, price positioning, buyer demographics, neighborhood context</li>
             </ul>
+            <p className="doc-paragraph" style={{ marginTop: '0.75rem' }}>
+              Sites from KYM's Land Acquisition search are manually added to the KYS Site Library by the advisor. This is not an automatic import — the advisor selects which parcels to evaluate.
+            </p>
           </div>
           <div className="doc-flow-section">
             <h4>Outputs (Site Selection Report)</h4>

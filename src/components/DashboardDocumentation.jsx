@@ -163,8 +163,8 @@ function OverviewTab() {
       <div className="doc-card doc-card--highlight">
         <h3 className="doc-subsection-title">The N4S Journey</h3>
         <p className="doc-paragraph">
-          N4S guides you through five interconnected modules, each building on the previous to 
-          create a comprehensive, validated mansion program. The journey typically takes 2-3 weeks 
+          N4S guides you through six interconnected modules, each building on the previous to
+          create a comprehensive, validated mansion program. The journey typically takes 3-5 weeks
           of client engagement, but the insights shape years of design and construction.
         </p>
         <div className="doc-journey-preview">
@@ -189,7 +189,12 @@ function OverviewTab() {
           </div>
           <ArrowRight size={16} className="doc-journey-arrow" />
           <div className="doc-journey-step">
-            <div className="doc-journey-badge" style={{ background: COLORS.gold }}>5</div>
+            <div className="doc-journey-badge" style={{ background: '#805ad5' }}>5</div>
+            <span>KYS</span>
+          </div>
+          <ArrowRight size={16} className="doc-journey-arrow" />
+          <div className="doc-journey-step">
+            <div className="doc-journey-badge" style={{ background: COLORS.gold }}>6</div>
             <span>VMX</span>
           </div>
         </div>
@@ -363,85 +368,130 @@ function WorkflowTab() {
         </div>
       </div>
 
-      {/* Module 4: KYM (Placeholder) */}
-      <div className="doc-module-card doc-module-card--placeholder">
+      {/* Module 4: KYM */}
+      <div className="doc-module-card">
         <div className="doc-module-header">
           <div className="doc-module-badge" style={{ background: COLORS.purple }}>
             <TrendingUp size={18} />
           </div>
           <div className="doc-module-title-area">
             <h3>Module 4: KYM – Know Your Market</h3>
-            <ModuleStatusBadge status="coming" />
+            <ModuleStatusBadge status="active" />
           </div>
           <div className="doc-module-timing">
             <Clock size={14} />
-            <span>TBD</span>
+            <span>1-2 hours</span>
           </div>
         </div>
         <div className="doc-module-body">
           <p>
-            <em>Coming Soon:</em> Benchmark your program against comparable properties in your 
-            market. Understand how your specifications compare to recent sales and help ensure 
-            your investment is appropriately positioned.
+            Benchmark your project against real market data. KYM provides comparable property analysis,
+            demographic intelligence, land acquisition search, and a Buyer Alignment Matrix (BAM) that
+            scores how well your program matches your target market.
           </p>
           <div className="doc-module-sections">
-            <strong>Planned Features:</strong>
+            <strong>Key Features:</strong>
             <div className="doc-section-tags">
-              <span>Market Comparables</span>
-              <span>Price/SF Analysis</span>
-              <span>Feature Benchmarking</span>
-              <span>Investment Positioning</span>
+              <span>Market Analysis</span>
+              <span>Comparable Properties</span>
+              <span>Land Acquisition Search</span>
+              <span>Demographics</span>
+              <span>Buyer Alignment (BAM)</span>
             </div>
           </div>
           <div className="doc-module-outputs">
-            <strong>Will Produce:</strong>
+            <strong>Produces:</strong>
             <ul>
+              <li>BAM alignment score (Client + Market)</li>
               <li>Comparable property analysis</li>
-              <li>Market positioning report</li>
-              <li>Investment value indicators</li>
-              <li>Feature gap analysis</li>
+              <li>Land parcel search results</li>
+              <li>Demographic buyer personas</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Module 5: VMX (Placeholder) */}
-      <div className="doc-module-card doc-module-card--placeholder">
+      {/* Module 5: KYS */}
+      <div className="doc-module-card">
+        <div className="doc-module-header">
+          <div className="doc-module-badge" style={{ background: '#805ad5' }}>
+            <Target size={18} />
+          </div>
+          <div className="doc-module-title-area">
+            <h3>Module 5: KYS – Know Your Site</h3>
+            <ModuleStatusBadge status="active" />
+          </div>
+          <div className="doc-module-timing">
+            <Clock size={14} />
+            <span>30-60 min per site</span>
+          </div>
+        </div>
+        <div className="doc-module-body">
+          <p>
+            Evaluate potential building sites with a structured 31-factor scoring system across
+            7 categories. Each site receives a traffic-light recommendation (GO/AMBER/NO-GO) with
+            10 deal-breaker checks that can override the score.
+          </p>
+          <div className="doc-module-sections">
+            <strong>Key Features:</strong>
+            <div className="doc-section-tags">
+              <span>7 Assessment Categories</span>
+              <span>31 Scoring Factors</span>
+              <span>10 Deal-Breakers</span>
+              <span>Traffic Light Scoring</span>
+              <span>Multi-Site Comparison</span>
+            </div>
+          </div>
+          <div className="doc-module-outputs">
+            <strong>Produces:</strong>
+            <ul>
+              <li>GO / AMBER / NO-GO recommendation</li>
+              <li>Site constraint register</li>
+              <li>Deal-breaker report</li>
+              <li>Site comparison matrix</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Module 6: VMX */}
+      <div className="doc-module-card">
         <div className="doc-module-header">
           <div className="doc-module-badge" style={{ background: COLORS.gold }}>
             <LayoutGrid size={18} />
           </div>
           <div className="doc-module-title-area">
-            <h3>Module 5: VMX – Visual Matrix</h3>
-            <ModuleStatusBadge status="coming" />
+            <h3>Module 6: VMX – Vision Matrix</h3>
+            <ModuleStatusBadge status="active" />
           </div>
           <div className="doc-module-timing">
             <Clock size={14} />
-            <span>TBD</span>
+            <span>30-60 min</span>
           </div>
         </div>
         <div className="doc-module-body">
           <p>
-            <em>Coming Soon:</em> Visualize your validated program as an interactive adjacency 
-            diagram. See how spaces connect, identify circulation patterns, and communicate 
-            your requirements visually to your design team.
+            The cost analysis engine. VMX translates your spatial program, quality tier, location, and
+            site conditions into a structured budget trajectory using a 7-category elemental cost model
+            based on ASTM UniFormat II. Compare scenarios and stress-test your budget.
           </p>
           <div className="doc-module-sections">
-            <strong>Planned Features:</strong>
+            <strong>Key Features:</strong>
             <div className="doc-section-tags">
-              <span>Interactive Diagrams</span>
-              <span>Circulation Paths</span>
-              <span>Zone Visualization</span>
-              <span>Export to Mermaid</span>
+              <span>7-Category Cost Model</span>
+              <span>Scenario Comparison</span>
+              <span>Location Multipliers</span>
+              <span>Typology Adjustments</span>
+              <span>Lite + Pro Modes</span>
             </div>
           </div>
           <div className="doc-module-outputs">
-            <strong>Will Produce:</strong>
+            <strong>Produces:</strong>
             <ul>
-              <li>Visual adjacency diagrams</li>
-              <li>Circulation flow maps</li>
-              <li>Zone relationship charts</li>
-              <li>Designer handoff materials</li>
+              <li>Cost trajectory per category</li>
+              <li>Budget scenario comparison (A vs B)</li>
+              <li>Key cost drivers analysis</li>
+              <li>Client pack PDF export</li>
             </ul>
           </div>
         </div>
@@ -470,8 +520,24 @@ function WorkflowTab() {
             <div className="doc-timeline-badge">Week 3</div>
             <div className="doc-timeline-content">
               <strong>Validation</strong>
-              <p>Complete MVP module. Validate adjacencies, resolve red flags, and generate 
+              <p>Complete MVP module. Validate adjacencies, resolve red flags, and generate
               validated brief for design team.</p>
+            </div>
+          </div>
+          <div className="doc-timeline-item">
+            <div className="doc-timeline-badge">Week 4</div>
+            <div className="doc-timeline-content">
+              <strong>Market & Site</strong>
+              <p>Complete KYM module for market benchmarking and BAM scoring.
+              Complete KYS for site evaluation with GO/NO-GO recommendation.</p>
+            </div>
+          </div>
+          <div className="doc-timeline-item">
+            <div className="doc-timeline-badge">Week 5</div>
+            <div className="doc-timeline-content">
+              <strong>Budget & Handoff</strong>
+              <p>Complete VMX cost analysis. Generate client pack with validated brief,
+              cost trajectory, and all module outputs for design team handoff.</p>
             </div>
           </div>
         </div>
@@ -576,23 +642,80 @@ function GatesTab() {
         </div>
       </div>
 
-      {/* Future Gates */}
-      <div className="doc-card doc-card--muted">
-        <h3 className="doc-subsection-title">Future Gates (Coming Soon)</h3>
-        <div className="doc-future-gates">
-          <div className="doc-future-gate">
-            <div className="doc-gate-number doc-gate-number--future">Gate 3</div>
-            <div>
-              <strong>Market Positioned</strong>
-              <p>KYM module validates program against market comparables</p>
-            </div>
+      {/* Gate 3: Market Positioned */}
+      <div className="doc-gate-card">
+        <div className="doc-gate-header">
+          <div className="doc-gate-number">Gate 3</div>
+          <h3>Market Positioned</h3>
+        </div>
+        <div className="doc-gate-content">
+          <p>
+            <strong>When:</strong> After KYM Buyer Alignment Matrix scoring completes
+          </p>
+          <div className="doc-gate-criteria">
+            <h4>Pass Criteria:</h4>
+            <ul>
+              <li>BAM combined score ≥ 80%</li>
+              <li>Client satisfaction score ≥ 80%</li>
+              <li>Market appeal score ≥ 80%</li>
+              <li>Comparable analysis reviewed</li>
+            </ul>
           </div>
-          <div className="doc-future-gate">
-            <div className="doc-gate-number doc-gate-number--future">Gate 4</div>
-            <div>
-              <strong>Visually Mapped</strong>
-              <p>VMX module produces adjacency diagrams ready for architect review</p>
-            </div>
+          <div className="doc-gate-unlocks">
+            <h4>Unlocks:</h4>
+            <span>Site evaluation with market context, land acquisition search</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Gate 4: Site Validated */}
+      <div className="doc-gate-card">
+        <div className="doc-gate-header">
+          <div className="doc-gate-number">Gate 4</div>
+          <h3>Site Validated</h3>
+        </div>
+        <div className="doc-gate-content">
+          <p>
+            <strong>When:</strong> After KYS site assessment produces GO recommendation
+          </p>
+          <div className="doc-gate-criteria">
+            <h4>Pass Criteria:</h4>
+            <ul>
+              <li>Traffic light: GREEN (score 4.0-5.0)</li>
+              <li>Zero triggered deal-breakers</li>
+              <li>No more than 2 RED categories</li>
+              <li>No more than 3 AMBER categories</li>
+            </ul>
+          </div>
+          <div className="doc-gate-unlocks">
+            <h4>Unlocks:</h4>
+            <span>VMX cost analysis with site-specific typology and land cost inputs</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Gate 5: Budget Validated */}
+      <div className="doc-gate-card doc-gate-card--critical">
+        <div className="doc-gate-header">
+          <div className="doc-gate-number">Gate 5</div>
+          <h3>Budget Validated</h3>
+        </div>
+        <div className="doc-gate-content">
+          <p>
+            <strong>When:</strong> After VMX cost trajectory falls within KYC budget constraints
+          </p>
+          <div className="doc-gate-criteria">
+            <h4>Pass Criteria:</h4>
+            <ul>
+              <li>Grand total within KYC budget framework</li>
+              <li>No category exceeds guardrail limits</li>
+              <li>Budget watchouts reviewed and acknowledged</li>
+              <li>Client pack generated for design team</li>
+            </ul>
+          </div>
+          <div className="doc-gate-unlocks">
+            <h4>Unlocks:</h4>
+            <span>Complete validated brief package ready for architect and design team handoff</span>
           </div>
         </div>
       </div>
@@ -672,14 +795,20 @@ function ReferenceTab() {
           <div className="doc-ref-row">
             <span className="doc-ref-code">KYM</span>
             <span>Know Your Market</span>
-            <span>Market positioning report</span>
-            <span><ModuleStatusBadge status="coming" /></span>
+            <span>BAM score, market analysis, land search</span>
+            <span><ModuleStatusBadge status="active" /></span>
+          </div>
+          <div className="doc-ref-row">
+            <span className="doc-ref-code">KYS</span>
+            <span>Know Your Site</span>
+            <span>GO/AMBER/NO-GO recommendation</span>
+            <span><ModuleStatusBadge status="active" /></span>
           </div>
           <div className="doc-ref-row">
             <span className="doc-ref-code">VMX</span>
-            <span>Visual Matrix</span>
-            <span>Adjacency diagrams</span>
-            <span><ModuleStatusBadge status="coming" /></span>
+            <span>Vision Matrix</span>
+            <span>Cost trajectory, budget scenarios</span>
+            <span><ModuleStatusBadge status="active" /></span>
           </div>
         </div>
       </div>
@@ -799,19 +928,37 @@ function ReferenceTab() {
             <span className="doc-dataflow-source">KYC</span>
             <span className="doc-dataflow-arrow">→</span>
             <span className="doc-dataflow-target">FYI</span>
-            <span className="doc-dataflow-data">Target SF, family size, lifestyle inputs</span>
+            <span className="doc-dataflow-data">Target SF, family size, lifestyle inputs, LuXeBrief living responses</span>
           </div>
           <div className="doc-dataflow-item">
             <span className="doc-dataflow-source">FYI</span>
             <span className="doc-dataflow-arrow">→</span>
             <span className="doc-dataflow-target">MVP</span>
-            <span className="doc-dataflow-data">Space program, zones, tier detection</span>
+            <span className="doc-dataflow-data">Space program, zones, level assignments, tier detection</span>
           </div>
           <div className="doc-dataflow-item">
-            <span className="doc-dataflow-source">KYC + FYI + MVP</span>
+            <span className="doc-dataflow-source">KYC + FYI</span>
+            <span className="doc-dataflow-arrow">→</span>
+            <span className="doc-dataflow-target">KYM</span>
+            <span className="doc-dataflow-data">Location, target SF, budget tier for market benchmarking</span>
+          </div>
+          <div className="doc-dataflow-item">
+            <span className="doc-dataflow-source">KYM</span>
+            <span className="doc-dataflow-arrow">→</span>
+            <span className="doc-dataflow-target">KYS</span>
+            <span className="doc-dataflow-data">Land parcels from acquisition search → site library</span>
+          </div>
+          <div className="doc-dataflow-item">
+            <span className="doc-dataflow-source">KYC + FYI + KYS</span>
+            <span className="doc-dataflow-arrow">→</span>
+            <span className="doc-dataflow-target">VMX</span>
+            <span className="doc-dataflow-data">Target SF, quality tier, location, typology, land cost, program bias</span>
+          </div>
+          <div className="doc-dataflow-item">
+            <span className="doc-dataflow-source">All Modules</span>
             <span className="doc-dataflow-arrow">→</span>
             <span className="doc-dataflow-target">Brief</span>
-            <span className="doc-dataflow-data">Validated program for design team</span>
+            <span className="doc-dataflow-data">Validated program + market + site + budget for design team</span>
           </div>
         </div>
       </div>
