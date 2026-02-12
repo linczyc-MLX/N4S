@@ -215,7 +215,7 @@ const canvasToImageData = (canvas: HTMLCanvasElement): { data: string; format: '
   return { data: canvas.toDataURL('image/png'), format: 'PNG' };
 };
 
-const placeSection = (state: LayoutState, section: CapturedSection): void => {
+const placeSection = (state: LayoutState, section: CapturedSection, canRotate: boolean = false): void => {
   const { doc } = state;
   const availableHeight = PAGE.contentBottom - state.currentY;
 
@@ -229,41 +229,50 @@ const placeSection = (state: LayoutState, section: CapturedSection): void => {
 
   const maxH = PAGE.usableHeight - PAGE.pageTopPadding;
 
-  // If section is taller than usable page height, ROTATE 90° CCW
-  // so the tall content uses the wider page dimension
+  // If section is taller than usable page height...
   if (section.heightMm > maxH) {
-    const rotatedCanvas = rotateCanvasCCW(section.canvas);
+    if (canRotate) {
+      // ROTATE 90° CCW — for dense matrix/table sections only
+      const rotatedCanvas = rotateCanvasCCW(section.canvas);
 
-    // After rotation: original height → new width, original width → new height
-    // Scale rotated image to fit page content area
-    const rotatedAspect = rotatedCanvas.width / rotatedCanvas.height;
-    const pageAspect = PAGE.contentWidth / maxH;
+      const rotatedAspect = rotatedCanvas.width / rotatedCanvas.height;
+      const pageAspect = PAGE.contentWidth / maxH;
 
-    let renderWidth: number;
-    let renderHeight: number;
+      let renderWidth: number;
+      let renderHeight: number;
 
-    if (rotatedAspect > pageAspect) {
-      // Width-constrained
-      renderWidth = PAGE.contentWidth;
-      renderHeight = PAGE.contentWidth / rotatedAspect;
+      if (rotatedAspect > pageAspect) {
+        renderWidth = PAGE.contentWidth;
+        renderHeight = PAGE.contentWidth / rotatedAspect;
+      } else {
+        renderHeight = maxH;
+        renderWidth = maxH * rotatedAspect;
+      }
+
+      const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
+      const yOffset = state.currentY + (maxH - renderHeight) / 2;
+
+      const { data, format } = canvasToImageData(rotatedCanvas);
+      doc.addImage(data, format, xOffset, yOffset, renderWidth, renderHeight);
+
+      state.currentY += renderHeight + 4;
+      return;
     } else {
-      // Height-constrained
-      renderHeight = maxH;
-      renderWidth = maxH * rotatedAspect;
+      // SCALE DOWN — keep text upright, reduce uniformly to fit page
+      const scaleFactor = maxH / section.heightMm;
+      const renderHeight = maxH;
+      const renderWidth = section.widthMm * scaleFactor;
+      const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
+
+      const { data, format } = canvasToImageData(section.canvas);
+      doc.addImage(data, format, xOffset, state.currentY, renderWidth, renderHeight);
+
+      state.currentY += renderHeight + 4;
+      return;
     }
-
-    // Center on page
-    const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
-    const yOffset = state.currentY + (maxH - renderHeight) / 2;
-
-    const { data, format } = canvasToImageData(rotatedCanvas);
-    doc.addImage(data, format, xOffset, yOffset, renderWidth, renderHeight);
-
-    state.currentY += renderHeight + 4;
-    return;
   }
 
-  // Normal placement — section fits on page without rotation
+  // Normal placement — section fits on page without rotation or scaling
   const xOffset = PAGE.margin;
   const { data, format } = canvasToImageData(section.canvas);
   doc.addImage(data, format, xOffset, state.currentY, section.widthMm, section.heightMm);
@@ -434,13 +443,23 @@ export const generateVMXReport = async (
     'grand-total',
   ]);
 
+  // Only these dense matrix/table sections get rotated when too tall.
+  // All other sections scale down to fit instead (keeps text upright).
+  const ROTATE_SECTIONS = new Set([
+    'scenario',
+    'scenario-a',
+    'scenario-b',
+    'benchmark-admin',
+  ]);
+
   // ---- 4. Capture and place each section ----
   for (let i = 0; i < sectionEls.length; i++) {
     const el = sectionEls[i];
     const sectionId = el.getAttribute('data-pdf-section') || `section-${i}`;
     const forceBreak = PAGE_BREAK_SECTIONS.has(sectionId);
+    const canRotate = ROTATE_SECTIONS.has(sectionId);
 
-    console.log(`[VMX Report] Capturing section: ${sectionId}${forceBreak ? ' (page break)' : ''}`);
+    console.log(`[VMX Report] Capturing section: ${sectionId}${forceBreak ? ' (page break)' : ''}${canRotate ? ' (rotatable)' : ''}`);
 
     try {
       // For the first page-break section, always start new page
@@ -448,7 +467,7 @@ export const generateVMXReport = async (
       const shouldBreak = forceBreak || (i > 0 && sectionId !== 'kyc-budget' && sectionId !== 'pro-controls');
 
       const section = await captureSection(el, sectionId, shouldBreak);
-      placeSection(state, section);
+      placeSection(state, section, canRotate);
     } catch (err) {
       console.error(`[VMX Report] Failed to capture section ${sectionId}:`, err);
     }
