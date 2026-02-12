@@ -5358,3 +5358,50 @@ textarea.form-field__input { resize: vertical; min-height: 80px; }
   background: rgba(52, 211, 153, 0.15) !important;
   color: #34d399 !important;
 }
+
+/* ============================================
+   GLOBAL PRINT STYLES — @media print
+   Hides the N4S shell (sidebar, header, footer)
+   and makes content full-width for all modules.
+   ============================================ */
+@media print {
+  /* Hide the N4S navigation sidebar */
+  .sidebar,
+  .sidebar--open,
+  .sidebar--closed {
+    display: none !important;
+    width: 0 !important;
+  }
+
+  /* Hide the top navy header bar */
+  .main-header {
+    display: none !important;
+  }
+
+  /* Remove sidebar margin so content spans full page width */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide module header action buttons (Export PDF, Save, etc.) */
+  .module-header__actions {
+    display: none !important;
+  }
+
+  /* Full-width body with no overflow clipping */
+  .main-body {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* General noPrint utility */
+  .noPrint {
+    display: none !important;
+  }
+
+  /* General printOnly utility */
+  .printOnly {
+    display: block !important;
+  }
+}

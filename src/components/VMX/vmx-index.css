@@ -571,8 +571,99 @@
 .vmx-module .printHeaderMeta div { margin-bottom: 2px; }
 
 @media print {
+  /* ---- Hide UI controls ---- */
   .vmx-module .noPrint { display: none !important; }
+  .vmx-module .topBar { display: none !important; }
+  .vmx-module .topBarActions { display: none !important; }
+  .vmx-module .modePills { display: none !important; }
+  .vmx-module .footerActions { display: none !important; }
+  .vmx-module .adminHeaderBtns { display: none !important; }
+  .vmx-module .docsBtn { display: none !important; }
+
+  /* ---- Show print-only header ---- */
   .vmx-module .printOnly { display: block !important; }
-  .vmx-module .topBar { display: none; }
-  .vmx-module .card { border: 1px solid #ddd; page-break-inside: avoid; }
+  .vmx-module .printHeader {
+    padding: 20px 0 16px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #1e3a5f;
+  }
+  .vmx-module .printHeaderTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .vmx-module .printHeaderMeta {
+    font-size: 0.8125rem;
+    color: #6b6b6b;
+    margin-top: 8px;
+    columns: 2;
+    column-gap: 24px;
+  }
+  .vmx-module .printHeaderMeta div {
+    margin-bottom: 3px;
+    break-inside: avoid;
+  }
+
+  /* ---- Full-width layout ---- */
+  .vmx-module {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* ---- Page break controls ---- */
+  .vmx-module .card {
+    border: 1px solid #ddd;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+  }
+  .vmx-module .panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .vmx-module .liteKpiGrid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .vmx-module .liteKpi {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .vmx-module .allocTable tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .vmx-module .matrixTable tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ---- Clean up table styling for print ---- */
+  .vmx-module .allocTable {
+    width: 100% !important;
+  }
+  .vmx-module .statusCircle {
+    width: 56px;
+    height: 56px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---- Ensure colors print correctly ---- */
+  .vmx-module * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
+
+/* ---- body.print-vmx-report scoped rules ---- */
+/* Applied via JS before window.print(), removed on afterprint */
+body.print-vmx-report .sidebar { display: none !important; }
+body.print-vmx-report .main-header { display: none !important; }
+body.print-vmx-report .main-content { margin-left: 0 !important; }
+body.print-vmx-report .module-header { display: none !important; }
+body.print-vmx-report .main-body { padding: 0 !important; overflow: visible !important; }
