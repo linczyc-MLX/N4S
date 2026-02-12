@@ -188,7 +188,7 @@ const captureCard = async (el) => {
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
-    windowWidth: 1100, // Wide enough for 2-3 column grids without clipping
+    windowWidth: 1200, // Wide enough for 3-column grids without clipping
   });
   return canvas;
 };

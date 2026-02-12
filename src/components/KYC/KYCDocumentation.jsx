@@ -1920,4 +1920,14 @@ const kycDocumentationStyles = `
   break-inside: avoid;
   page-break-inside: avoid;
 }
+.doc-print-mode .doc-privacy-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  font-size: 0.85em;
+}
+.doc-print-mode .doc-privacy-grid .doc-privacy-level {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
 `;
