@@ -147,8 +147,19 @@ const addCoverPage = (doc, moduleName, moduleSubtitle) => {
 // =============================================================================
 
 const addSectionDivider = (doc, state, reportLabel, sectionTitle) => {
-  startNewPage(doc, state, reportLabel);
-  state.currentY = PAGE.contentTop + 6;
+  const titleBlockHeight = 18; // title + gold rule + spacing
+  const minContentAfter = 40; // need at least 40mm for first card
+  const availableHeight = PAGE.contentBottom - state.currentY;
+
+  // Only start a new page if we can't fit the title + some content
+  if (availableHeight < titleBlockHeight + minContentAfter) {
+    startNewPage(doc, state, reportLabel);
+  }
+
+  // Add some breathing room before section title (unless at top of page)
+  if (state.currentY > PAGE.contentTop + 10) {
+    state.currentY += 6;
+  }
 
   // Section title in navy
   doc.setFont('helvetica', 'bold');
@@ -177,7 +188,7 @@ const captureCard = async (el) => {
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
-    windowWidth: 800,
+    windowWidth: 1100, // Wide enough for 2-3 column grids without clipping
   });
   return canvas;
 };
@@ -331,8 +342,11 @@ export async function exportDocumentationPdf({
       // Section divider page
       addSectionDivider(doc, state, reportLabel, tabLabels[tabId] || tabId);
 
-      // Find all cards in this tab via data-pdf-card attribute
-      const cards = contentEl.querySelectorAll('[data-pdf-card]');
+      // Find all cards in this tab — prefer data-pdf-card, fall back to doc-card classes
+      let cards = contentEl.querySelectorAll('[data-pdf-card]');
+      if (cards.length === 0) {
+        cards = contentEl.querySelectorAll('.doc-card, .doc-section-card');
+      }
       console.log(`[Docs PDF] Tab "${tabId}": found ${cards.length} cards`);
 
       // Capture and place each card individually

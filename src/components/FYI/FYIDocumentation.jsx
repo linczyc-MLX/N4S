@@ -1722,15 +1722,15 @@ const fyiDocumentationStyles = `
   border-bottom: 1px solid #e5e5e0;
   padding: 1.5rem 0 0.5rem;
   margin: 2rem 0 1rem;
-  page-break-before: always;
+  page-break-after: avoid;
 }
 .doc-print-section-title:first-of-type {
-  page-break-before: avoid;
   margin-top: 0;
 }
 .doc-print-mode .doc-card {
   break-inside: avoid;
   page-break-inside: avoid;
+  overflow: hidden;
 }
 .doc-print-mode .doc-expandable {
   break-inside: avoid;

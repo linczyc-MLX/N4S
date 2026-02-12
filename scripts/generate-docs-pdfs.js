@@ -99,6 +99,7 @@ async function main() {
 
       console.log(`Generating ${filename}...`);
       const page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 800 });
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
       // Wait for documentation content to render
@@ -112,11 +113,23 @@ async function main() {
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '0.6in',
-          bottom: '0.6in',
+          top: '0.8in',
+          bottom: '0.8in',
           left: '0.6in',
           right: '0.6in',
         },
+        displayHeaderFooter: true,
+        headerTemplate: `
+          <div style="width:100%;font-size:8px;font-family:Helvetica,Arial,sans-serif;padding:0 0.6in;display:flex;justify-content:space-between;">
+            <span style="font-weight:bold;color:#1e3a5f;">N4S</span>
+            <span style="color:#6b6b6b;">${mod.label} Documentation</span>
+          </div>`,
+        footerTemplate: `
+          <div style="width:100%;font-size:6px;font-family:Helvetica,Arial,sans-serif;padding:0 0.6in;display:flex;justify-content:space-between;border-top:0.5px solid #e5e5e0;padding-top:4px;">
+            <span style="color:#6b6b6b;">(C) 2026 Not4Sale LLC - Luxury Residential Advisory</span>
+            <span style="color:#6b6b6b;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+            <span style="color:#6b6b6b;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>`,
       });
 
       await page.close();
