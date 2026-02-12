@@ -79,15 +79,39 @@ const ProjectParametersSection = ({ respondent, tier }) => {
   // Calculate total levels for display
   const totalLevels = 1 + (data.levelsAboveArrival || 0) + (data.levelsBelowArrival || 0);
 
+  // Entry level - which level is the arrival/entry level (defaults to L1)
+  const entryLevel = data.entryLevel || 'L1';
+
+  // Build all level names for entry-level selector and visual diagram
+  const getAllLevelNames = () => {
+    const levels = [];
+    for (let i = (data.levelsAboveArrival || 0); i >= 1; i--) {
+      levels.push(`L${i + 1}`);
+    }
+    levels.push('L1');
+    for (let i = 1; i <= (data.levelsBelowArrival || 0); i++) {
+      levels.push(`L-${i}`);
+    }
+    return levels;
+  };
+
+  const entryLevelOptions = getAllLevelNames().map(level => ({
+    value: level,
+    label: level,
+  }));
+
   // Build level labels for visual diagram
   const getLevelLabels = () => {
     const labels = [];
     for (let i = (data.levelsAboveArrival || 0); i >= 1; i--) {
-      labels.push(`L${i + 1}`);
+      const name = `L${i + 1}`;
+      labels.push(name === entryLevel ? `${name} (Arrival)` : name);
     }
-    labels.push('L1 (Arrival)');
+    const l1Label = entryLevel === 'L1' ? 'L1 (Arrival)' : 'L1';
+    labels.push(l1Label);
     for (let i = 1; i <= (data.levelsBelowArrival || 0); i++) {
-      labels.push(`L-${i}`);
+      const name = `L-${i}`;
+      labels.push(name === entryLevel ? `${name} (Arrival)` : name);
     }
     return labels;
   };
@@ -251,22 +275,37 @@ const ProjectParametersSection = ({ respondent, tier }) => {
           />
         </div>
 
+        {/* Entry Level Selector - appears when there are multiple levels */}
+        {totalLevels > 1 && (
+          <SelectField
+            label="Entry / Arrival Level"
+            value={entryLevel}
+            onChange={(v) => handleChange('entryLevel', v)}
+            options={entryLevelOptions}
+            helpText="Which level will be the main entry point? (e.g., for hillside sites, entry may be at an upper level)"
+            readOnly={isLocked}
+          />
+        )}
+
         {/* Visual Level Diagram */}
         {totalLevels > 0 && (
           <div className="level-config-preview">
             <div className="level-config-preview__label">Building Section Preview</div>
             <div className="level-config-preview__stack">
-              {getLevelLabels().map((label, idx) => (
-                <div 
-                  key={label}
-                  className={`level-config-preview__level ${label.includes('Arrival') ? 'level-config-preview__level--arrival' : ''}`}
-                >
-                  <span className="level-config-preview__level-label">{label}</span>
-                  {label.includes('Arrival') && (
-                    <span className="level-config-preview__arrival-badge">← Entry</span>
-                  )}
-                </div>
-              ))}
+              {getLevelLabels().map((label, idx) => {
+                const isArrival = label.includes('Arrival');
+                return (
+                  <div
+                    key={label}
+                    className={`level-config-preview__level ${isArrival ? 'level-config-preview__level--arrival' : ''}`}
+                  >
+                    <span className="level-config-preview__level-label">{label}</span>
+                    {isArrival && (
+                      <span className="level-config-preview__arrival-badge">← Entry</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="level-config-preview__total">
               Total: {totalLevels} level{totalLevels !== 1 ? 's' : ''}

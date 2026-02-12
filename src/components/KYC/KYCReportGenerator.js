@@ -146,6 +146,16 @@ const COMMUNICATION_STYLE_LABELS = {
   'visual': 'Visual-First',
 };
 
+const DECISION_TIMELINE_LABELS = {
+  'urgent': 'Urgent (< 6 months)',
+  'standard': 'Standard (6\u201312 months)',
+  'flexible': 'Flexible (12+ months)',
+  'immediate': 'Immediate (Ready Now)',
+  '3-6mo': '3\u20136 Months',
+  '6-12mo': '6\u201312 Months',
+  'exploring': 'Just Exploring',
+};
+
 const DECISION_CADENCE_LABELS = {
   'weekly': 'Weekly Check-ins',
   'milestone': 'Milestone-Based',
@@ -456,9 +466,53 @@ export const generateKYCReport = async (kycData) => {
   addTwoColumn('Exit Strategy', getLabel(EXIT_STRATEGY_LABELS, portfolioContext.exitStrategy),
                'Life Stage', getLabel(LIFE_STAGE_LABELS, portfolioContext.lifeStage));
   addTwoColumn('Current Properties', portfolioContext.currentPropertyCount || '—',
-               'Decision Timeline', portfolioContext.decisionTimeline || '—');
+               'Decision Timeline', getLabel(DECISION_TIMELINE_LABELS, portfolioContext.decisionTimeline));
   if (portfolioContext.landAcquisitionCost) {
     addRow('Land Acquisition Cost', formatCurrency(portfolioContext.landAcquisitionCost));
+  }
+
+  // Primary Residences
+  const primaryResidences = portfolioContext.primaryResidences || [];
+  if (primaryResidences.length > 0) {
+    addSubsection('Primary Residences');
+    primaryResidences.forEach((res, idx) => {
+      const loc = [res.city, res.country].filter(Boolean).join(', ');
+      addCompactRow(`Property ${idx + 1}`, loc || '—');
+    });
+  }
+
+  // KYC-KYM Weighting Preview
+  if (portfolioContext.thisPropertyRole && portfolioContext.investmentHorizon) {
+    addSpacer(2);
+    const isPrimary = portfolioContext.thisPropertyRole === 'primary';
+    const isForever = portfolioContext.investmentHorizon === 'forever';
+    const isInvestment = portfolioContext.thisPropertyRole === 'investment';
+
+    let kycWeight, explanation;
+    if (isPrimary && isForever) {
+      kycWeight = '70%';
+      explanation = 'Forever home: Personal preferences take priority over resale considerations.';
+    } else if (isInvestment) {
+      kycWeight = '30%';
+      explanation = 'Investment property: Market realities and resale value take priority.';
+    } else {
+      kycWeight = '50%';
+      explanation = 'Balanced approach: Preferences and market considerations weighted equally.';
+    }
+
+    doc.setFillColor(...COLORS.accentLight);
+    doc.roundedRect(margin, currentY, contentWidth, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.navy);
+    doc.text('KYC-KYM WEIGHTING', margin + 3, currentY + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.text);
+    doc.text(`KYC ${kycWeight} | KYM ${100 - parseInt(kycWeight)}%`, margin + 50, currentY + 4);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(explanation, margin + 3, currentY + 8);
+    currentY += 13;
   }
   addSpacer(2);
 
@@ -477,8 +531,20 @@ export const generateKYCReport = async (kycData) => {
   addTwoColumn('Staffing Level', getLabel(STAFFING_LEVEL_LABELS, familyHousehold.staffingLevel),
                'Live-In Staff', familyHousehold.liveInStaff || '0');
 
+  // Multi-generational needs — display boolean as Yes/No
+  if (familyHousehold.multigenerationalNeeds !== undefined && familyHousehold.multigenerationalNeeds !== null) {
+    addRow('Multi-Generational', familyHousehold.multigenerationalNeeds === true ? 'Yes' : 'No');
+  }
+
   if (familyHousehold.pets) {
     addRow('Pets', familyHousehold.pets);
+    // Pet facility details
+    const petFacilities = [];
+    if (familyHousehold.petGroomingRoom) petFacilities.push('Grooming/Washing Room');
+    if (familyHousehold.petDogRun) petFacilities.push('Outdoor Dog Run');
+    if (petFacilities.length > 0) {
+      addRow('Pet Facilities', petFacilities.join(', '));
+    }
   }
   if (familyHousehold.anticipatedFamilyChanges) {
     addRow('Anticipated Changes', familyHousehold.anticipatedFamilyChanges);
@@ -498,7 +564,10 @@ export const generateKYCReport = async (kycData) => {
   addTwoColumn('Target SF', formatNumber(projectParameters.targetGSF) + (projectParameters.targetGSF ? ' sf' : ''),
                'Bedrooms', projectParameters.bedroomCount || '—');
   addTwoColumn('Bathrooms', projectParameters.bathroomCount || '—',
-               'Levels Above', projectParameters.levelsAboveArrival || '—');
+               'Levels Above Arrival', projectParameters.levelsAboveArrival != null ? projectParameters.levelsAboveArrival : '—');
+  const entryLevel = projectParameters.entryLevel || 'L1';
+  addTwoColumn('Levels Below Arrival', projectParameters.levelsBelowArrival != null ? projectParameters.levelsBelowArrival : '—',
+               'Entry Level', entryLevel);
 
   if (projectParameters.hasGuestHouse) {
     addRow('Guest House', `Yes — ${projectParameters.guestHouseBedrooms || '?'} bedrooms`);
