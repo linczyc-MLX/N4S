@@ -90,7 +90,7 @@ const addFooter = (doc: jsPDF, pageNum: number) => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
   doc.setTextColor(...COLORS.textMuted);
-  doc.text('\u00A9 2026 N4S Luxury Residential Advisory', PAGE.margin, footerY);
+  doc.text('(C) 2026 Not4Sale LLC - Luxury Residential Advisory', PAGE.margin, footerY);
   doc.text(`Page ${pageNum}`, PAGE.width / 2, footerY, { align: 'center' });
   doc.text(formatDate(new Date()), PAGE.width - PAGE.margin, footerY, { align: 'right' });
 };
@@ -144,11 +144,10 @@ const captureSection = async (
   el.style.visibility = 'visible';
 
   const canvas = await html2canvas(el, {
-    scale: 2, // 2x for crisp rendering
+    scale: 1.5, // 1.5x balances crisp text with reasonable file size
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
-    // Landscape A4 at 96dpi ≈ 1123px, at 2x scale we capture at native resolution
     windowWidth: 1200,
   });
 
@@ -187,6 +186,35 @@ const newPage = (state: LayoutState): void => {
   state.currentY = PAGE.contentTop + PAGE.pageTopPadding;
 };
 
+/**
+ * Rotates a canvas 90° counter-clockwise.
+ * The resulting canvas has width = original height, height = original width.
+ */
+const rotateCanvasCCW = (source: HTMLCanvasElement): HTMLCanvasElement => {
+  const rotated = document.createElement('canvas');
+  rotated.width = source.height;
+  rotated.height = source.width;
+  const ctx = rotated.getContext('2d')!;
+  ctx.translate(0, rotated.height);
+  ctx.rotate(-Math.PI / 2);
+  ctx.drawImage(source, 0, 0);
+  return rotated;
+};
+
+/**
+ * Converts a canvas to a JPEG data URL with compression.
+ * Falls back to PNG for very small sections where JPEG artifacts would show.
+ */
+const canvasToImageData = (canvas: HTMLCanvasElement): { data: string; format: 'JPEG' | 'PNG' } => {
+  // Use JPEG with 0.75 quality for large sections (huge file size savings)
+  // PNG only for tiny sections where JPEG blocking artifacts would be visible
+  const pixels = canvas.width * canvas.height;
+  if (pixels > 50000) {
+    return { data: canvas.toDataURL('image/jpeg', 0.75), format: 'JPEG' };
+  }
+  return { data: canvas.toDataURL('image/png'), format: 'PNG' };
+};
+
 const placeSection = (state: LayoutState, section: CapturedSection): void => {
   const { doc } = state;
   const availableHeight = PAGE.contentBottom - state.currentY;
@@ -199,25 +227,48 @@ const placeSection = (state: LayoutState, section: CapturedSection): void => {
     }
   }
 
-  // If section is taller than usable page height, scale it down to fit one page
-  let renderWidth = section.widthMm;
-  let renderHeight = section.heightMm;
   const maxH = PAGE.usableHeight - PAGE.pageTopPadding;
 
-  if (renderHeight > maxH) {
-    const scaleFactor = maxH / renderHeight;
-    renderHeight = maxH;
-    renderWidth = section.widthMm * scaleFactor;
+  // If section is taller than usable page height, ROTATE 90° CCW
+  // so the tall content uses the wider page dimension
+  if (section.heightMm > maxH) {
+    const rotatedCanvas = rotateCanvasCCW(section.canvas);
+
+    // After rotation: original height → new width, original width → new height
+    // Scale rotated image to fit page content area
+    const rotatedAspect = rotatedCanvas.width / rotatedCanvas.height;
+    const pageAspect = PAGE.contentWidth / maxH;
+
+    let renderWidth: number;
+    let renderHeight: number;
+
+    if (rotatedAspect > pageAspect) {
+      // Width-constrained
+      renderWidth = PAGE.contentWidth;
+      renderHeight = PAGE.contentWidth / rotatedAspect;
+    } else {
+      // Height-constrained
+      renderHeight = maxH;
+      renderWidth = maxH * rotatedAspect;
+    }
+
+    // Center on page
+    const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
+    const yOffset = state.currentY + (maxH - renderHeight) / 2;
+
+    const { data, format } = canvasToImageData(rotatedCanvas);
+    doc.addImage(data, format, xOffset, yOffset, renderWidth, renderHeight);
+
+    state.currentY += renderHeight + 4;
+    return;
   }
 
-  // Center horizontally if scaled down
-  const xOffset = PAGE.margin + (PAGE.contentWidth - renderWidth) / 2;
+  // Normal placement — section fits on page without rotation
+  const xOffset = PAGE.margin;
+  const { data, format } = canvasToImageData(section.canvas);
+  doc.addImage(data, format, xOffset, state.currentY, section.widthMm, section.heightMm);
 
-  // Place the image
-  const imgData = section.canvas.toDataURL('image/png');
-  doc.addImage(imgData, 'PNG', xOffset, state.currentY, renderWidth, renderHeight);
-
-  state.currentY += renderHeight + 4; // 4mm gap between sections
+  state.currentY += section.heightMm + 4; // 4mm gap between sections
 };
 
 // =============================================================================

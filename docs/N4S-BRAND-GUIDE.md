@@ -331,7 +331,7 @@ Every PDF report includes:
 
 ```
 ────────────────────────────────────────────────────────────────────────
-© 2026 N4S Luxury Residential Advisory                    Page X of Y
+(C) 2026 Not4Sale LLC - Luxury Residential Advisory              Page X of Y
 ```
 
 ### Sliders in Reports

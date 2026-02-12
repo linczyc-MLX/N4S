@@ -347,7 +347,7 @@ export async function generateMVPValidationReport(config) {
     doc.setDrawColor(...C.border); doc.setLineWidth(0.2);
     doc.line(margin, fy-2, pw-margin, fy-2);
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.textMuted);
-    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, fy);
+    doc.text('(C) 2026 Not4Sale LLC - Luxury Residential Advisory', margin, fy);
     doc.text(`Page ${pn}`, pw/2, fy, { align:'center' });
     doc.text(fmtDate(new Date()), pw-margin, fy, { align:'right' });
   };

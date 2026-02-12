@@ -732,7 +732,7 @@ export class FYIReportGenerator {
     this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b);
-    this.doc.text('(C) 2026 Not4Sale LLC - Confidential', this.margin, footerY);
+    this.doc.text('(C) 2026 Not4Sale LLC - Luxury Residential Advisory', this.margin, footerY);
 
     // Page number (center)
     this.doc.text(`Page ${pageNum} of ${this.totalPages}`, this.pageWidth / 2, footerY, { align: 'center' });

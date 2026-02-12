@@ -407,7 +407,7 @@ MVP uses this to:
 - List of spaces per level
 - SF per level
 
-**Footer**: © 2026 N4S Luxury Residential Advisory
+**Footer**: (C) 2026 Not4Sale LLC - Luxury Residential Advisory
 
 ---
 

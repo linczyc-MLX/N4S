@@ -483,7 +483,7 @@ export async function generateMVPReport(config) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
     doc.setTextColor(...C.textMuted);
-    doc.text('(C) 2026 Not4Sale LLC - Confidential', margin, fy);
+    doc.text('(C) 2026 Not4Sale LLC - Luxury Residential Advisory', margin, fy);
     doc.text(`Page ${pn}`, pw / 2, fy, { align: 'center' });
     doc.text(fmtDate(new Date()), pw - margin, fy, { align: 'right' });
   };
