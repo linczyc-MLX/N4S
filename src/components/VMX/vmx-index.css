@@ -570,7 +570,24 @@
 .vmx-module .printHeaderMeta { font-size: 0.8125rem; color: var(--n4s-text-muted); margin-top: 6px; }
 .vmx-module .printHeaderMeta div { margin-bottom: 2px; }
 
+/* ============================================
+   VMX PRINT STYLES — A4 LANDSCAPE
+   Applies to all three export formats:
+   1. Lite (single + compare)
+   2. Pro (single scenario)
+   3. Pro Compare (dual scenario)
+
+   A4 landscape = 11.69in × 8.27in
+   With margins: ~10.49in × 7.07in usable
+   ============================================ */
+
 @media print {
+  /* ---- Page setup ---- */
+  @page {
+    size: A4 landscape;
+    margin: 0.6in;
+  }
+
   /* ---- Hide UI controls ---- */
   .vmx-module .noPrint { display: none !important; }
   .vmx-module .topBar { display: none !important; }
@@ -598,7 +615,7 @@
     color: #6b6b6b;
     margin-top: 8px;
     columns: 2;
-    column-gap: 24px;
+    column-gap: 32px;
   }
   .vmx-module .printHeaderMeta div {
     margin-bottom: 3px;
@@ -614,17 +631,253 @@
     overflow: visible !important;
   }
 
-  /* ---- Page break controls ---- */
+  /* ---- Card base styling ---- */
   .vmx-module .card {
     border: 1px solid #ddd;
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    padding: 14px 18px;
+    overflow: hidden !important;
+  }
+
+  /* ---- Global table overflow protection ---- */
+  .vmx-module table {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+  .vmx-module table th,
+  .vmx-module table td {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
   .vmx-module .panel {
-    break-inside: avoid;
-    page-break-inside: avoid;
+    overflow: hidden !important;
   }
+
+  /* ---- Ensure colors print correctly ---- */
+  .vmx-module * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .vmx-module .statusCircle {
+    width: 56px;
+    height: 56px;
+  }
+
+  /* ============================================
+     COMPARE MODE GRIDS
+     In landscape these FIT side-by-side.
+     Only stack vmx-print-stack on very wide
+     3-column grids.
+     ============================================ */
+  .vmx-module .compareGrid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+  /* vmx-print-stack: keep 2-col, landscape has room */
+  .vmx-module .vmx-print-stack {
+    gap: 14px !important;
+  }
+  /* 3-column summary grids → 3-col is fine in landscape */
+  .vmx-module .adminTopGrid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .vmx-module .summaryTop {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ============================================
+     PAGE BREAK CONTROLS
+     Consistent across all three formats.
+     Padding-top adds breathing room when a
+     panel lands at the top of a new page.
+     ============================================ */
+
+  /* Pro: Scenario section */
+  .vmx-module .vmx-scenario-section {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Pro: Benchmark Library */
+  .vmx-module .vmx-benchmark-section {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Pro: Benchmark data table */
+  .vmx-module .vmx-benchmark-data-table {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Pro: Construction Indirects */
+  .vmx-module .vmx-indirects-section {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Pro: Remaining panels (Soft Costs → Provenance) */
+  .vmx-module .vmx-remaining-section {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Grand Total always starts a new page */
+  .vmx-module .grandTotalCard {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* ============================================
+     SCENARIO PANEL — MODERATE SCALING
+     Landscape gives enough width that we only
+     need light scaling to fit matrix + allocation
+     on fewer pages.
+     ============================================ */
+  .vmx-module .vmx-scenario-section .card {
+    padding: 12px 16px;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .vmx-module .vmx-scenario-section h2 {
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+  }
+  .vmx-module .vmx-scenario-section .muted {
+    font-size: 0.75rem;
+  }
+  .vmx-module .vmx-scenario-section .matrixTable {
+    font-size: 0.8rem;
+  }
+  .vmx-module .vmx-scenario-section .matrixTable th {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+  .vmx-module .vmx-scenario-section .matrixTable td {
+    padding: 3px 6px;
+  }
+  .vmx-module .vmx-scenario-section .bandBtn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    min-height: auto;
+  }
+  .vmx-module .vmx-scenario-section .bandTop {
+    font-size: 0.65rem;
+  }
+  .vmx-module .vmx-scenario-section .bandBottom {
+    font-size: 0.7rem;
+  }
+  .vmx-module .vmx-scenario-section .totalsRow {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .vmx-module .vmx-scenario-section .totalsRow .big {
+    font-size: 1rem;
+  }
+  .vmx-module .vmx-scenario-section .totalsRow .label {
+    font-size: 0.7rem;
+  }
+  .vmx-module .vmx-scenario-section h3 {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    margin-bottom: 6px;
+  }
+  .vmx-module .vmx-scenario-section .allocTable {
+    font-size: 0.75rem;
+  }
+  .vmx-module .vmx-scenario-section .allocTable th,
+  .vmx-module .vmx-scenario-section .allocTable td {
+    padding: 4px 8px;
+  }
+  .vmx-module .vmx-scenario-section .rangePill {
+    transform: scale(0.9);
+  }
+
+  /* ============================================
+     COMPARE MODE — SCENARIO PAGE BREAKS
+     Each scenario card gets its own page.
+     Delta Heat + Advisory Readout also get
+     their own pages.
+     ============================================ */
+  .vmx-module .compareGrid > .card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .vmx-module .compareGrid > .card + .card {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 8px;
+  }
+
+  /* Delta Heat and Advisory Readout in compare (direct children of vmx-scenario-section) */
+  .vmx-module .vmx-scenario-section > .card {
+    break-before: page;
+    page-break-before: always;
+    break-inside: auto;
+    page-break-inside: auto;
+    padding-top: 8px;
+  }
+
+  /* ============================================
+     ADVISORY READOUT
+     In landscape, guardrails tables sit
+     side-by-side with enough room.
+     Light font scaling for dense tables.
+     ============================================ */
+  .vmx-module .smallTh,
+  .vmx-module .smallTd {
+    font-size: 0.7rem;
+    padding: 5px 8px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  /* Override table-layout:fixed in print — let columns auto-size */
+  .vmx-module .panel table {
+    table-layout: auto !important;
+  }
+
+  /* ============================================
+     CONSTRUCTION INDIRECTS & SOFT COSTS
+     Allow page breaks within these tall panels.
+     In landscape compare mode, A and B sit
+     side-by-side naturally.
+     ============================================ */
+  .vmx-module .vmx-indirects-section .card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .vmx-module .vmx-remaining-section .card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* ============================================
+     BENCHMARK SECTION
+     Allow the tall benchmark card to break
+     across pages.
+     ============================================ */
+  .vmx-module .vmx-benchmark-section .card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* ============================================
+     LITE MODE
+     LiteScenarioCards in compare mode use
+     the same compareGrid which stays 2-col
+     in landscape. Each card breaks to own page
+     via the compareGrid > .card + .card rule.
+     ============================================ */
   .vmx-module .liteKpiGrid {
     break-inside: avoid;
     page-break-inside: avoid;
@@ -633,30 +886,20 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  .vmx-module .allocTable tr {
+
+  /* ============================================
+     ROW-LEVEL PROTECTION
+     Keep individual table rows together.
+     ============================================ */
+  .vmx-module .allocTable tr,
+  .vmx-module .matrixTable tr,
+  .vmx-module table.small tr {
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  .vmx-module .matrixTable tr {
+  .vmx-module .panel {
     break-inside: avoid;
     page-break-inside: avoid;
-  }
-
-  /* ---- Clean up table styling for print ---- */
-  .vmx-module .allocTable {
-    width: 100% !important;
-  }
-  .vmx-module .statusCircle {
-    width: 56px;
-    height: 56px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* ---- Ensure colors print correctly ---- */
-  .vmx-module * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 }
 

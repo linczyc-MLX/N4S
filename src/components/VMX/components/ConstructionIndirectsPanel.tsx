@@ -154,7 +154,7 @@ export function ConstructionIndirectsPanel({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 12 }}>
+      <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 12 }}>
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ fontWeight: 900 }}>Defaults (Tier: {tier.toUpperCase()})</div>
 

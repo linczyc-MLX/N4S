@@ -235,6 +235,7 @@ export function BenchmarkAdmin({ benchmark, setBenchmark }: Props) {
         </div>
       </div>
 
+      <div className="vmx-benchmark-data-table">
       <table className="table small" style={{ marginTop: 12 }}>
         <thead>
           <tr>
@@ -323,6 +324,7 @@ export function BenchmarkAdmin({ benchmark, setBenchmark }: Props) {
 
       <div className="muted" style={{ marginTop: 10 }}>
         Guidance: target ranges are stored as decimals under the hood (e.g., 0.25 = 25%). UI shows percentages for clarity.
+      </div>
       </div>
     </div>
   );

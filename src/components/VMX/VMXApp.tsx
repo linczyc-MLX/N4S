@@ -1646,7 +1646,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
         <DocumentationOverlay onClose={() => setShowDocs(false)} onExportPdf={exportPdfReport} />
       )}
 
-          <div className="card">
+          <div className="card noPrint">
             <div className="adminHeader">
               <div>
                 <h2>VMX — Client Dashboard</h2>
@@ -2104,6 +2104,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
         </div>
       </div>
       {!compareMode ? (
+        <div className="vmx-scenario-section">
         <Matrix
           title="Scenario"
           areaSqft={areaSqft}
@@ -2114,8 +2115,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
           result={resultA}
           error={errorA}
         />
+        </div>
       ) : (
         <>
+        <div className="vmx-scenario-section">
           <div className="compareGrid">
             <Matrix
               title={`Scenario A — ${regionA.name}`}
@@ -2303,9 +2306,11 @@ export default function VMXApp(props: VMXAppProps = {}) {
             resultA={resultA}
             resultB={resultB}
           />
+        </div>
         </>
       )}
 
+      <div className="vmx-benchmark-section">
       <BenchmarkLibraryAdmin
         library={library}
         setLibrary={setLibrary}
@@ -2318,6 +2323,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
       >
         <BenchmarkAdmin benchmark={currentBenchmarkForAdmin} setBenchmark={setCurrentBenchmark} />
       </BenchmarkLibraryAdmin>
+      </div>
 
 
       <div className="card" style={{ marginTop: 12 }}>
@@ -2397,6 +2403,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
 
       <SnapshotPanel current={resultA} />
 
+      <div className="vmx-indirects-section">
       <ConstructionIndirectsPanel
         areaSqft={areaSqft}
         currency={resultA?.currency ?? "USD"}
@@ -2407,8 +2414,10 @@ export default function VMXApp(props: VMXAppProps = {}) {
         resultB={resultB}
         compareMode={compareMode}
       />
+      </div>
 
 
+      <div className="vmx-remaining-section">
       <SoftCostsCashflowPanel
         visibleToAll={true}
         currency={resultA?.currency ?? "USD"}
@@ -2432,7 +2441,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
           </div>
         </div>
 
-        <div className="grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div className="grid2 vmx-print-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
               <div>
@@ -2815,6 +2824,7 @@ export default function VMXApp(props: VMXAppProps = {}) {
           <span> | Assumptions: </span>
           <span>{datasetAssumptions}</span>
         </div>
+      </div>
       </div>
 
       <div className="footerActions noPrint">

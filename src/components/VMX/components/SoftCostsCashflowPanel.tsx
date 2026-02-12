@@ -113,7 +113,7 @@ export function SoftCostsCashflowPanel({
 
       {tab === "summary" && resultA && calcA ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: compareMode ? "1fr 1fr" : "1fr", gap: 12 }}>
+          <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: compareMode ? "1fr 1fr" : "1fr", gap: 12 }}>
             <div>
               <div className="label">Scenario A — {scenarioAName}</div>
               <div className="big" style={{ marginTop: 4 }}>
@@ -197,7 +197,7 @@ export function SoftCostsCashflowPanel({
             This schedule allocates base costs by year weight, and computes escalation per-year using a mid-year assumption (t=0.5, 1.5, …).
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: compareMode ? "1fr 1fr" : "1fr", gap: 12 }}>
+          <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: compareMode ? "1fr 1fr" : "1fr", gap: 12 }}>
             <div>
               <Table title={`Scenario A — ${scenarioAName}`} rows={calcA.rows} currency={currency} />
             </div>

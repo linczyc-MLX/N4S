@@ -315,7 +315,7 @@ export function AdvisoryReadout({ compareMode, scenarioAName, scenarioBName, res
         A structured interpretation of guardrails, allocation pressure points, and the most material drivers.
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 18, alignItems: "start" }}>
+      <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 18, alignItems: "start" }}>
         <div style={{ minWidth: 0 }}>
           <div className="label">Scenario A — {scenarioANameUpper} Total</div>
           <div className="big">{formatMoney(computed.aTotal, computed.currency)}</div>
@@ -335,7 +335,7 @@ export function AdvisoryReadout({ compareMode, scenarioAName, scenarioBName, res
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18, marginTop: 16, alignItems: "start" }}>
+      <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18, marginTop: 16, alignItems: "start" }}>
         <GuardrailSnapshot
           title={`Scenario A — ${scenarioAName}`}
           rows={computed.aGuardrails}
@@ -380,7 +380,7 @@ export function AdvisoryReadout({ compareMode, scenarioAName, scenarioBName, res
           This suggests approximate dollar shifts to move each category toward the midpoint of its target range, holding total constant. Use as directional guidance, not a pricing engine.
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
+        <div className="vmx-print-stack" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
           <div style={{ minWidth: 0 }}>
             <div className="label" style={{ marginBottom: 6 }}>
               Scenario A — {scenarioAName}
