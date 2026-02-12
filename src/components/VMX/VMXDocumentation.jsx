@@ -13,12 +13,14 @@
  * - Reference: Glossary, category/tier/location/typology definitions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
   ChevronRight,
+  FileDown,
 } from 'lucide-react';
+import { exportDocumentationPdf } from '../../utils/docsPdfExport';
 
 // N4S Brand Colors
 const COLORS = {
@@ -1129,6 +1131,21 @@ function ReferenceTab() {
 
 export default function VMXDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isExporting, setIsExporting] = useState(false);
+  const contentRef = useRef(null);
+
+  const handleExportPdf = () => {
+    exportDocumentationPdf({
+      contentRef,
+      setActiveTab,
+      tabIds: ['overview', 'workflow', 'gates', 'reference'],
+      moduleName: 'VMX',
+      moduleSubtitle: 'Vision Matrix Guide',
+      currentTab: activeTab,
+      onStart: () => setIsExporting(true),
+      onComplete: () => setIsExporting(false),
+    });
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -1154,6 +1171,10 @@ export default function VMXDocumentation({ onClose, printAll }) {
               Back to VMX
             </button>
           )}
+          <button className="doc-export-btn" onClick={handleExportPdf} disabled={isExporting}>
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export PDF'}
+          </button>
         </div>
         <h1 className="doc-title">Documentation</h1>
         <p className="doc-subtitle">N4S VMX — Vision Matrix Guide</p>
@@ -1174,7 +1195,7 @@ export default function VMXDocumentation({ onClose, printAll }) {
       )}
 
       {/* Content */}
-      <div className="doc-content">
+      <div className="doc-content" ref={contentRef}>
         {(printAll || activeTab === 'overview') && (
           <>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>
         )}
@@ -1214,6 +1235,9 @@ const vmxDocumentationStyles = `
 }
 
 .doc-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
 }
 

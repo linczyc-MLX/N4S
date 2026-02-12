@@ -10,8 +10,9 @@
  * Client-facing language with progressive technical detail.
  */
 
-import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, CheckCircle, XCircle, FileDown } from 'lucide-react';
+import { exportDocumentationPdf } from '../../utils/docsPdfExport';
 
 // N4S Brand Colors
 const COLORS = {
@@ -628,7 +629,22 @@ function ReferenceTab() {
  */
 export default function KYSDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isExporting, setIsExporting] = useState(false);
+  const contentRef = useRef(null);
   
+  const handleExportPdf = () => {
+    exportDocumentationPdf({
+      contentRef,
+      setActiveTab,
+      tabIds: ['overview', 'workflow', 'gates', 'reference'],
+      moduleName: 'KYS',
+      moduleSubtitle: 'Site-Vision Compatibility Assessment Guide',
+      currentTab: activeTab,
+      onStart: () => setIsExporting(true),
+      onComplete: () => setIsExporting(false),
+    });
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'workflow', label: 'Workflow' },
@@ -653,6 +669,10 @@ export default function KYSDocumentation({ onClose, printAll }) {
               Back to KYS
             </button>
           )}
+          <button className="doc-export-btn" onClick={handleExportPdf} disabled={isExporting}>
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export PDF'}
+          </button>
         </div>
         <h1 className="doc-title">Documentation</h1>
         <p className="doc-subtitle">N4S KYS — Site-Vision Compatibility Assessment Guide</p>
@@ -673,7 +693,7 @@ export default function KYSDocumentation({ onClose, printAll }) {
       )}
 
       {/* Content */}
-      <div className="doc-content">
+      <div className="doc-content" ref={contentRef}>
         {(printAll || activeTab === 'overview') && (
           <>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>
         )}
@@ -708,6 +728,9 @@ const documentationStyles = `
 }
 
 .doc-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
 }
 

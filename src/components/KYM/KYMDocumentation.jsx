@@ -13,7 +13,7 @@
  * - Reference: BAM Terminology definitions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
@@ -23,8 +23,10 @@ import {
   Target,
   Users,
   TrendingUp,
-  Info
+  Info,
+  FileDown,
 } from 'lucide-react';
+import { exportDocumentationPdf } from '../../utils/docsPdfExport';
 
 // N4S Brand Colors
 const COLORS = {
@@ -767,6 +769,21 @@ function ReferenceTab() {
 
 export default function KYMDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isExporting, setIsExporting] = useState(false);
+  const contentRef = useRef(null);
+
+  const handleExportPdf = () => {
+    exportDocumentationPdf({
+      contentRef,
+      setActiveTab,
+      tabIds: ['overview', 'workflow', 'gates', 'reference'],
+      moduleName: 'KYM',
+      moduleSubtitle: 'Know Your Market Guide',
+      currentTab: activeTab,
+      onStart: () => setIsExporting(true),
+      onComplete: () => setIsExporting(false),
+    });
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -792,6 +809,10 @@ export default function KYMDocumentation({ onClose, printAll }) {
               Back to KYM
             </button>
           )}
+          <button className="doc-export-btn" onClick={handleExportPdf} disabled={isExporting}>
+            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+            {isExporting ? 'Exporting...' : 'Export PDF'}
+          </button>
         </div>
         <h1 className="doc-title">Documentation</h1>
         <p className="doc-subtitle">N4S KYM — Know Your Market Guide</p>
@@ -812,7 +833,7 @@ export default function KYMDocumentation({ onClose, printAll }) {
       )}
 
       {/* Content */}
-      <div className="doc-content">
+      <div className="doc-content" ref={contentRef}>
         {(printAll || activeTab === 'overview') && (
           <>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>
         )}
@@ -852,6 +873,9 @@ const kymDocumentationStyles = `
 }
 
 .doc-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
 }
 
