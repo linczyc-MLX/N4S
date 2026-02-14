@@ -92,27 +92,11 @@ const PRINT_DOC_COMPONENTS = {
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
 
-  // Persist activeModule to localStorage so it survives page refresh
-  const [activeModule, setActiveModule] = useState(() => {
-    try {
-      const saved = localStorage.getItem('n4s_active_module');
-      return saved || 'dashboard';
-    } catch {
-      return 'dashboard';
-    }
-  });
+  // Always start on dashboard
+  const [activeModule, setActiveModule] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showDocs, setShowDocs] = useState(false);
   const { clientData, kycData } = useAppContext();
-
-  // Save activeModule to localStorage when it changes
-  React.useEffect(() => {
-    try {
-      localStorage.setItem('n4s_active_module', activeModule);
-    } catch (e) {
-      console.warn('Failed to save active module:', e);
-    }
-  }, [activeModule]);
 
   // Close docs when switching modules
   React.useEffect(() => {

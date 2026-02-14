@@ -66,6 +66,7 @@ const N4S_PHASES = {
 const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
   const {
     clientData, updateClientData, kycData, updateKYCData, fyiData,
+    mvpData, kysData, vmxData,
     calculateCompleteness, lcdData, updateLCDData,
     projects, activeProjectId, createProject, setActiveProjectId, deleteProject,
     hasUnsavedChanges, saveNow, isSaving,
@@ -76,9 +77,7 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
   // ---------------------------------------------------------------------------
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
-  const [expandedPanel, setExpandedPanel] = useState(
-    !activeProjectId ? 'project' : 'stakeholders'
-  );
+  const [expandedPanel, setExpandedPanel] = useState(null);
   const [showAuthorityModal, setShowAuthorityModal] = useState(false);
   const [pendingAuthorityLevel, setPendingAuthorityLevel] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
@@ -131,7 +130,24 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
     fyiSelectionCount >= 10 ? 75 :
     fyiSelectionCount > 0 ? 50 : 0;
 
-  const mvpProgress = 0;
+  // MVP progress - derived from actual adjacency config data
+  const mvpAdjConfig = fyiData?.mvpAdjacencyConfig || {};
+  const mvpDecisionCount = Object.keys(mvpAdjConfig.decisionAnswers || {}).length;
+  const mvpHasValidation = !!mvpAdjConfig.validationRunAt;
+  const mvpHasQuestionnaire = !!mvpAdjConfig.questionnaireCompletedAt;
+  const mvpProgress = mvpHasValidation ? 100 :
+    mvpHasQuestionnaire ? 75 :
+    mvpDecisionCount > 0 ? 50 : 0;
+
+  // KYS progress - derived from site data
+  const kysSiteCount = (kysData?.sites || []).length;
+  const kysProgress = kysSiteCount > 0 ? 100 : 0;
+
+  // KYM progress - module has been opened/used
+  const kymProgress = 0; // No persistent KYM data tracked yet
+
+  // VMX progress - has scenario data been configured beyond defaults
+  const vmxProgress = 0; // No persistent VMX completion tracked yet
 
   // ---------------------------------------------------------------------------
   // HANDLERS
@@ -204,7 +220,7 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
     setTimeout(() => setCopiedField(null), 2000);
   }, []);
 
-  // Module status calculation
+  // Module status calculation (overall module progress)
   const getModuleStatus = (moduleCode) => {
     switch (moduleCode) {
       case 'A':
@@ -215,35 +231,44 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
           fyiProgress > 0 ? 'in-progress' : 'not-started';
       case 'M':
         if (fyiProgress < 50) return 'locked';
-        return mvpProgress === 0 ? 'not-started' : mvpProgress < 100 ? 'in-progress' : 'complete';
-      case 'B': return 'not-started';
-      case 'D': return 'not-started';
+        return mvpProgress >= 100 ? 'complete' :
+          mvpProgress > 0 ? 'in-progress' : 'not-started';
+      case 'B':
+        return kymProgress >= 100 ? 'complete' :
+          kymProgress > 0 ? 'in-progress' : 'not-started';
+      case 'D':
+        return vmxProgress >= 100 ? 'complete' :
+          vmxProgress > 0 ? 'in-progress' : 'not-started';
       default: return 'not-started';
     }
   };
 
+  // Phase-module cell status
+  // P1 = data entry/discovery phase for each module (the current platform scope)
+  // P2/P3 = future phases, locked until P1 complete for that module
   const getPhaseStatus = (phaseCode, moduleCode) => {
     const moduleStatus = getModuleStatus(moduleCode);
-    if (moduleStatus === 'not-started') return 'pending';
-    if (moduleStatus === 'locked') return 'locked';
-    if (moduleStatus === 'complete') return 'complete';
 
-    if (moduleCode === 'A') {
-      if (phaseCode === 'P1') return kycProgress > 30 ? 'complete' : 'in-progress';
-      if (phaseCode === 'P2') return kycProgress > 60 ? 'in-progress' : 'pending';
-      if (phaseCode === 'P3') return kycProgress > 90 ? 'in-progress' : 'pending';
+    if (phaseCode === 'P1') {
+      // P1 reflects the actual module progress
+      if (moduleStatus === 'locked') return 'locked';
+      if (moduleStatus === 'complete') return 'complete';
+      if (moduleStatus === 'in-progress') return 'in-progress';
+      return 'pending';
     }
-    if (moduleCode === 'C') {
-      if (phaseCode === 'P1') return fyiProgress > 30 ? 'complete' : 'in-progress';
-      if (phaseCode === 'P2') return fyiProgress > 60 ? 'in-progress' : 'pending';
-      if (phaseCode === 'P3') return fyiProgress > 90 ? 'in-progress' : 'pending';
+
+    if (phaseCode === 'P2') {
+      // P2 unlocks only when P1 for this module is complete
+      if (moduleStatus === 'complete') return 'pending'; // Unlocked but not started
+      return 'locked';
     }
-    if (moduleCode === 'M') {
-      if (phaseCode === 'P1') return mvpProgress > 30 ? 'complete' : 'in-progress';
-      if (phaseCode === 'P2') return mvpProgress > 60 ? 'in-progress' : 'pending';
-      if (phaseCode === 'P3') return mvpProgress > 90 ? 'in-progress' : 'pending';
+
+    if (phaseCode === 'P3') {
+      // P3 locked until P2 work exists (future)
+      return 'locked';
     }
-    return 'pending';
+
+    return 'locked';
   };
 
   const getStatusClass = (status) => {
@@ -270,10 +295,10 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
       enabled: fyiProgress >= 50 },
     { code: 'B', id: 'kym', title: 'Module B: KYM', subtitle: 'Know Your Market',
       description: 'Market analysis, comparable properties, and demographics',
-      icon: Map, progress: 0, status: getModuleStatus('B'), color: 'teal', enabled: true },
+      icon: Map, progress: kymProgress, status: getModuleStatus('B'), color: 'teal', enabled: true },
     { code: 'D', id: 'vmx', title: 'Module D: VMX', subtitle: 'Vision Matrix',
       description: 'Cost analysis engine with scenario comparison',
-      icon: Zap, progress: 0, status: getModuleStatus('D'), color: 'gold', enabled: true },
+      icon: Zap, progress: vmxProgress, status: getModuleStatus('D'), color: 'gold', enabled: true },
   ];
 
   const getStatusBadge = (status, comingSoon) => {
