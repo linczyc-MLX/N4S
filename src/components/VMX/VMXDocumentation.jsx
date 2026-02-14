@@ -13,14 +13,13 @@
  * - Reference: Glossary, category/tier/location/typology definitions
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
   ChevronRight,
   FileDown,
 } from 'lucide-react';
-import { exportDocumentationPdf } from '../../utils/docsPdfExport';
 
 // N4S Brand Colors
 const COLORS = {
@@ -1131,20 +1130,11 @@ function ReferenceTab() {
 
 export default function VMXDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isExporting, setIsExporting] = useState(false);
-  const contentRef = useRef(null);
-
   const handleExportPdf = () => {
-    exportDocumentationPdf({
-      contentRef,
-      setActiveTab,
-      tabIds: ['overview', 'workflow', 'gates', 'reference'],
-      moduleName: 'VMX',
-      moduleSubtitle: 'Vision Matrix Guide',
-      currentTab: activeTab,
-      onStart: () => setIsExporting(true),
-      onComplete: () => setIsExporting(false),
-    });
+    const link = document.createElement('a');
+    link.href = '/docs/N4S-VMX-Documentation.pdf';
+    link.download = 'N4S-VMX-Documentation.pdf';
+    link.click();
   };
 
   const tabs = [
@@ -1171,9 +1161,9 @@ export default function VMXDocumentation({ onClose, printAll }) {
               Back to VMX
             </button>
           )}
-          <button className="doc-export-btn" onClick={handleExportPdf} disabled={isExporting}>
-            <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-            {isExporting ? 'Exporting...' : 'Export PDF'}
+          <button className="doc-export-btn" onClick={handleExportPdf}>
+              <FileDown size={16} />
+              Export PDF
           </button>
         </div>
         <h1 className="doc-title">Documentation</h1>
@@ -1195,7 +1185,7 @@ export default function VMXDocumentation({ onClose, printAll }) {
       )}
 
       {/* Content */}
-      <div className="doc-content" ref={contentRef}>
+      <div className="doc-content">
         {(printAll || activeTab === 'overview') && (
           <>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>
         )}

@@ -11,7 +11,7 @@
  * Client-facing language with progressive technical detail.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   ChevronDown, 
@@ -30,7 +30,6 @@ import {
   Target,
   FileDown,
 } from 'lucide-react';
-import { exportDocumentationPdf } from '../../utils/docsPdfExport';
 
 // N4S Brand Colors
 const COLORS = {
@@ -868,20 +867,12 @@ function ReferenceTab() {
  */
 export default function FYIDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isExporting, setIsExporting] = useState(false);
-  const contentRef = useRef(null);
   
   const handleExportPdf = () => {
-    exportDocumentationPdf({
-      contentRef,
-      setActiveTab,
-      tabIds: ['overview', 'workflow', 'gates', 'reference'],
-      moduleName: 'FYI',
-      moduleSubtitle: 'Space Programming Guide',
-      currentTab: activeTab,
-      onStart: () => setIsExporting(true),
-      onComplete: () => setIsExporting(false),
-    });
+    const link = document.createElement('a');
+    link.href = '/docs/N4S-FYI-Documentation.pdf';
+    link.download = 'N4S-FYI-Documentation.pdf';
+    link.click();
   };
 
   const tabs = [
@@ -908,9 +899,9 @@ export default function FYIDocumentation({ onClose, printAll }) {
                 Back to FYI
               </button>
             )}
-            <button className="doc-export-btn" onClick={handleExportPdf} disabled={isExporting}>
-              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
-              {isExporting ? 'Exporting...' : 'Export PDF'}
+            <button className="doc-export-btn" onClick={handleExportPdf}>
+              <FileDown size={16} />
+              Export PDF
             </button>
           </div>
           <h1 className="doc-title">Documentation</h1>
@@ -932,7 +923,7 @@ export default function FYIDocumentation({ onClose, printAll }) {
       )}
 
       {/* Content */}
-      <div className="doc-content" ref={contentRef}>
+      <div className="doc-content">
         {(printAll || activeTab === 'overview') && (<>{printAll && <h2 className="doc-print-section-title">1. Overview</h2>}<OverviewTab /></>)}
         {(printAll || activeTab === 'workflow') && (<>{printAll && <h2 className="doc-print-section-title">2. Workflow</h2>}<WorkflowTab /></>)}
         {(printAll || activeTab === 'gates') && (<>{printAll && <h2 className="doc-print-section-title">3. Gates & Validation</h2>}<GatesTab /></>)}
