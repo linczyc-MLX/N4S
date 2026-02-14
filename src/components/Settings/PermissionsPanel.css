@@ -1,0 +1,289 @@
+/* ============================================
+   PermissionsPanel — Role Permissions Matrix
+   ============================================ */
+
+.permissions-panel {
+  margin-top: 0;
+}
+
+/* Header */
+.permissions-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.permissions-panel__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.permissions-panel__header-left h2 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.permissions-panel__header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Messages */
+.permissions-panel__msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  margin-bottom: 12px;
+}
+
+.permissions-panel__msg--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.permissions-panel__msg--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* Loading */
+.permissions-panel__loading {
+  padding: 32px;
+  text-align: center;
+  color: #6b6b6b;
+  font-size: 0.875rem;
+}
+
+/* Section titles */
+.permissions-panel__section-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.permissions-panel__section-desc {
+  font-size: 0.75rem;
+  color: #6b6b6b;
+  margin: 0 0 10px 0;
+}
+
+/* Table wrapper */
+.permissions-panel__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e5e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* Table */
+.permissions-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+/* Header cells */
+.permissions-panel__th-label {
+  text-align: left;
+  font-weight: 600;
+  color: #6b6b6b;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e5e0;
+  background: #fafaf8;
+  white-space: nowrap;
+  width: 140px;
+}
+
+.permissions-panel__th-role {
+  text-align: center;
+  font-weight: 600;
+  color: #6b6b6b;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e5e0;
+  background: #fafaf8;
+  white-space: nowrap;
+}
+
+.permissions-panel__th-role--locked {
+  background: #f0f0ee;
+  color: #999;
+}
+
+.permissions-panel__lock-icon {
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+/* Body cells */
+.permissions-panel__td-label {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.permissions-panel__td-toggle,
+.permissions-panel__td-select {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.permissions-panel__td--locked {
+  background: #fafaf8;
+  opacity: 0.6;
+}
+
+.permissions-panel__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.permissions-panel__table tbody tr:hover {
+  background: #fafaf8;
+}
+
+/* ── Toggle switch ── */
+.permissions-panel__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.permissions-panel__toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.permissions-panel__toggle-track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: #d1d5db;
+  border-radius: 9px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.permissions-panel__toggle input:checked + .permissions-panel__toggle-track {
+  background: #1e3a5f;
+}
+
+.permissions-panel__toggle input:disabled + .permissions-panel__toggle-track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permissions-panel__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.permissions-panel__toggle input:checked + .permissions-panel__toggle-track .permissions-panel__toggle-thumb {
+  transform: translateX(14px);
+}
+
+.permissions-panel__toggle-label {
+  font-size: 0.6875rem;
+  color: #999;
+  min-width: 38px;
+  text-align: left;
+}
+
+.permissions-panel__toggle-label--on {
+  color: #1e3a5f;
+  font-weight: 500;
+}
+
+/* ── Select dropdowns ── */
+.permissions-panel__select {
+  width: 100%;
+  max-width: 90px;
+  padding: 5px 6px;
+  background: #ffffff;
+  border: 1px solid #e5e5e0;
+  border-radius: 4px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.75rem;
+  color: #1a1a1a;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  text-align: center;
+}
+
+.permissions-panel__select:focus {
+  border-color: #1e3a5f;
+}
+
+.permissions-panel__select:disabled {
+  cursor: not-allowed;
+  background: #fafaf8;
+}
+
+/* Color-code by access level */
+.permissions-panel__select--full {
+  color: #166534;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.permissions-panel__select--own {
+  color: #92400e;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.permissions-panel__select--read {
+  color: #1e40af;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.permissions-panel__select--none {
+  color: #991b1b;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+/* ── Footer ── */
+.permissions-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}

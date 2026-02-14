@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Settings, AlertTriangle, Palette, ExternalLink, Users
+  Settings, AlertTriangle, Palette, ExternalLink, Users, Shield
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import UsersPanel from './UsersPanel';
+import PermissionsPanel from './PermissionsPanel';
 import './UsersPanel.css';
 import './SettingsModule.css';
 
@@ -154,16 +155,26 @@ const SettingsModule = () => {
         )}
       </section>
 
-      {/* Future sections placeholder */}
-      <section className="settings-section settings-section--disabled">
-        <div className="settings-section__header">
-          <div className="settings-section__header-left">
-            <Settings size={20} />
-            <h2>Application Defaults</h2>
+      {/* Application Defaults — Admin Only */}
+      {isAdmin && (
+        <section className="settings-section">
+          <div
+            className="settings-section__header settings-section__header--clickable"
+            onClick={() => toggleSection('app-defaults')}
+          >
+            <div className="settings-section__header-left">
+              <Shield size={20} />
+              <h2>Application Defaults</h2>
+            </div>
           </div>
-          <span className="settings-section__coming-soon">Coming Soon</span>
-        </div>
-      </section>
+
+          {expandedSection === 'app-defaults' && (
+            <div className="settings-section__content">
+              <PermissionsPanel />
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 };
