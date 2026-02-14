@@ -18,7 +18,7 @@ import {
   MapPin, Plus, Trash2, Edit2, Eye, Copy, ArrowLeft, ChevronRight, ChevronDown,
   Home, Sun, Shield, Users, TrendingUp, Target, FileText, Download, RefreshCw,
   AlertTriangle, CheckCircle2, XCircle, HelpCircle, BarChart2, Grid, List,
-  DollarSign, Maximize, Building2, Info, Save
+  DollarSign, Maximize, Building2, Info, Save, FileDown
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import KYSDocumentation from './KYSDocumentation';
@@ -26,6 +26,7 @@ import {
   CATEGORIES, DEAL_BREAKERS, calculateOverallAssessment, createEmptySiteAssessment,
   getTrafficLight, getTrafficLightColor, compareSites, getAllFactors
 } from './KYSScoringEngine';
+import { generateKYSReport } from './KYSReportGenerator';
 import './KYSModule.css';
 
 // N4S Brand Colors
@@ -675,9 +676,10 @@ const SiteAssessmentView = ({ site, onUpdateSite, onBack }) => {
 // =============================================================================
 
 const KYSModule = ({ showDocs, onCloseDocs }) => {
-  const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved, projects, activeProjectId, kycData } = useAppContext();
+  const { kysData, updateKYSData, hasUnsavedChanges, saveNow, isSaving, lastSaved, projects, activeProjectId, kycData, fyiData, mvpData } = useAppContext();
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'assessment' | 'comparison' | 'library'
+  const [isExporting, setIsExporting] = useState(false);
   
   // Site Library from KYM Land Acquisition
   const [siteLibrary, setSiteLibrary] = useState(() => {
@@ -786,6 +788,28 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
     setViewMode('list');
   }, []);
 
+  // Export PDF report
+  const handleExportReport = useCallback(async () => {
+    const sites = kysData?.sites || [];
+    if (sites.length === 0) return;
+
+    setIsExporting(true);
+    try {
+      await generateKYSReport({
+        kycData,
+        kysData,
+        fyiData,
+        mvpData,
+        siteId: selectedSiteId || null, // Export selected site or all sites
+      });
+      console.log('[KYS] Report exported successfully');
+    } catch (error) {
+      console.error('[KYS] Export error:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [kycData, kysData, fyiData, mvpData, selectedSiteId]);
+
   return (
     <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
       <div className="n4s-docs-layout__main">
@@ -799,6 +823,15 @@ const KYSModule = ({ showDocs, onCloseDocs }) => {
           </div>
 
           <div className="module-header__actions">
+            <button
+              className="kyc-export-btn"
+              onClick={handleExportReport}
+              disabled={isExporting || !kysData?.sites?.length}
+              title={selectedSiteId ? 'Export selected site report' : 'Export all sites report'}
+            >
+              <FileDown size={16} className={isExporting ? 'spinning' : ''} />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </button>
             <button
               className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
               onClick={saveNow}
