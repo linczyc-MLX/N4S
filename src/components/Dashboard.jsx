@@ -341,6 +341,101 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
       )}
 
       {/* ===================================================================
+          WELCOME SECTION
+          =================================================================== */}
+      <section className="dashboard__welcome">
+        <div className="dashboard__welcome-content">
+          <h1 className="dashboard__title">{principalName ? 'Welcome back' : 'Welcome to N4S'}</h1>
+          <p className="dashboard__subtitle">
+            {clientData.projectName ? `Managing: ${clientData.projectName}` : 'Ultra-Luxury Residential Advisory Platform'}
+          </p>
+        </div>
+        {activeProjectId && !principalName && (
+          <button className="btn btn--primary" onClick={() => togglePanel('stakeholders')}>
+            Configure Stakeholders <ArrowRight size={18} />
+          </button>
+        )}
+      </section>
+
+      {/* ===================================================================
+          TASK MATRIX
+          =================================================================== */}
+      <section className="dashboard__matrix">
+        <h2 className="dashboard__section-title">N4S Task Matrix</h2>
+        <div className="task-matrix">
+          <div className="task-matrix__header">
+            <div className="task-matrix__corner"></div>
+            {Object.entries(N4S_MODULES).map(([code, module]) => (
+              <div key={code} className={`task-matrix__module-header task-matrix__module-header--${module.color}`}>
+                <span className="task-matrix__code">{code}</span>
+                <span className="task-matrix__name">{module.name}</span>
+              </div>
+            ))}
+          </div>
+          {Object.entries(N4S_PHASES).map(([phaseCode, phase]) => (
+            <div key={phaseCode} className="task-matrix__row">
+              <div className="task-matrix__phase-header">
+                <span className="task-matrix__phase-code">{phaseCode}</span>
+                <span className="task-matrix__phase-name">{phase.name}</span>
+              </div>
+              {Object.entries(N4S_MODULES).map(([moduleCode, module]) => {
+                const status = getPhaseStatus(phaseCode, moduleCode);
+                const taskCode = `${phaseCode}.${moduleCode}`;
+                return (
+                  <div key={taskCode} className={`task-cell ${getStatusClass(status)}`}
+                    title={`${taskCode}: ${phase.name} - ${module.fullName}`}>
+                    <span className="task-cell__code">{taskCode}</span>
+                    {status === 'complete' && <CheckCircle2 size={14} />}
+                    {status === 'in-progress' && <Clock size={14} />}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="task-matrix__legend">
+          <span className="legend-item"><span className="legend-dot legend-dot--complete"></span> Complete</span>
+          <span className="legend-item"><span className="legend-dot legend-dot--active"></span> In Progress</span>
+          <span className="legend-item"><span className="legend-dot legend-dot--pending"></span> Pending</span>
+          <span className="legend-item"><span className="legend-dot legend-dot--locked"></span> Locked</span>
+        </div>
+      </section>
+
+      {/* Quick Stats */}
+      {principalName && (
+        <section className="dashboard__stats">
+          <div className="stat-card">
+            <div className="stat-card__icon stat-card__icon--blue"><Users size={24} /></div>
+            <div className="stat-card__content">
+              <span className="stat-card__value">{kycProgress}%</span>
+              <span className="stat-card__label">KYC Complete</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card__icon stat-card__icon--purple"><Building2 size={24} /></div>
+            <div className="stat-card__content">
+              <span className="stat-card__value">{fyiSelectionCount}</span>
+              <span className="stat-card__label">Spaces Selected</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card__icon stat-card__icon--teal"><Palette size={24} /></div>
+            <div className="stat-card__content">
+              <span className="stat-card__value">{fyiData.settings?.targetSF ? fyiData.settings.targetSF.toLocaleString() : '—'}</span>
+              <span className="stat-card__label">Target SF</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card__icon stat-card__icon--gold"><GitCompare size={24} /></div>
+            <div className="stat-card__content">
+              <span className="stat-card__value">{fyiData.settings?.programTier?.toUpperCase() || '—'}</span>
+              <span className="stat-card__label">Program Tier</span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===================================================================
           PANEL 1: PROJECT CONFIGURATION
           =================================================================== */}
       <section className="settings-section">
@@ -750,137 +845,6 @@ const Dashboard = ({ onNavigate, showDocs, onCloseDocs }) => {
             )}
           </div>
         )}
-      </section>
-
-      {/* ===================================================================
-          WELCOME SECTION
-          =================================================================== */}
-      <section className="dashboard__welcome">
-        <div className="dashboard__welcome-content">
-          <h1 className="dashboard__title">{principalName ? 'Welcome back' : 'Welcome to N4S'}</h1>
-          <p className="dashboard__subtitle">
-            {clientData.projectName ? `Managing: ${clientData.projectName}` : 'Ultra-Luxury Residential Advisory Platform'}
-          </p>
-        </div>
-        {activeProjectId && !principalName && (
-          <button className="btn btn--primary" onClick={() => togglePanel('stakeholders')}>
-            Configure Stakeholders <ArrowRight size={18} />
-          </button>
-        )}
-      </section>
-
-      {/* ===================================================================
-          TASK MATRIX
-          =================================================================== */}
-      <section className="dashboard__matrix">
-        <h2 className="dashboard__section-title">N4S Task Matrix</h2>
-        <div className="task-matrix">
-          <div className="task-matrix__header">
-            <div className="task-matrix__corner"></div>
-            {Object.entries(N4S_MODULES).map(([code, module]) => (
-              <div key={code} className={`task-matrix__module-header task-matrix__module-header--${module.color}`}>
-                <span className="task-matrix__code">{code}</span>
-                <span className="task-matrix__name">{module.name}</span>
-              </div>
-            ))}
-          </div>
-          {Object.entries(N4S_PHASES).map(([phaseCode, phase]) => (
-            <div key={phaseCode} className="task-matrix__row">
-              <div className="task-matrix__phase-header">
-                <span className="task-matrix__phase-code">{phaseCode}</span>
-                <span className="task-matrix__phase-name">{phase.name}</span>
-              </div>
-              {Object.entries(N4S_MODULES).map(([moduleCode, module]) => {
-                const status = getPhaseStatus(phaseCode, moduleCode);
-                const taskCode = `${phaseCode}.${moduleCode}`;
-                return (
-                  <div key={taskCode} className={`task-cell ${getStatusClass(status)}`}
-                    title={`${taskCode}: ${phase.name} - ${module.fullName}`}>
-                    <span className="task-cell__code">{taskCode}</span>
-                    {status === 'complete' && <CheckCircle2 size={14} />}
-                    {status === 'in-progress' && <Clock size={14} />}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div className="task-matrix__legend">
-          <span className="legend-item"><span className="legend-dot legend-dot--complete"></span> Complete</span>
-          <span className="legend-item"><span className="legend-dot legend-dot--active"></span> In Progress</span>
-          <span className="legend-item"><span className="legend-dot legend-dot--pending"></span> Pending</span>
-          <span className="legend-item"><span className="legend-dot legend-dot--locked"></span> Locked</span>
-        </div>
-      </section>
-
-      {/* Quick Stats */}
-      {principalName && (
-        <section className="dashboard__stats">
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--blue"><Users size={24} /></div>
-            <div className="stat-card__content">
-              <span className="stat-card__value">{kycProgress}%</span>
-              <span className="stat-card__label">KYC Complete</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--purple"><Building2 size={24} /></div>
-            <div className="stat-card__content">
-              <span className="stat-card__value">{fyiSelectionCount}</span>
-              <span className="stat-card__label">Spaces Selected</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--teal"><Palette size={24} /></div>
-            <div className="stat-card__content">
-              <span className="stat-card__value">{fyiData.settings?.targetSF ? fyiData.settings.targetSF.toLocaleString() : '—'}</span>
-              <span className="stat-card__label">Target SF</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--gold"><GitCompare size={24} /></div>
-            <div className="stat-card__content">
-              <span className="stat-card__value">{fyiData.settings?.programTier?.toUpperCase() || '—'}</span>
-              <span className="stat-card__label">Program Tier</span>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Module Cards */}
-      <section className="dashboard__modules">
-        <h2 className="dashboard__section-title">Modules</h2>
-        <div className="dashboard__module-grid">
-          {modules.map(module => {
-            const Icon = module.icon;
-            return (
-              <div key={module.id}
-                className={`module-card module-card--${module.color} ${module.comingSoon ? 'module-card--disabled' : ''} ${module.status === 'locked' ? 'module-card--locked' : ''}`}
-                onClick={() => module.enabled && onNavigate(module.id)}>
-                <div className="module-card__header">
-                  <div className="module-card__icon"><Icon size={28} /></div>
-                  {getStatusBadge(module.status, module.comingSoon)}
-                </div>
-                <h3 className="module-card__title">{module.title}</h3>
-                <p className="module-card__subtitle">{module.subtitle}</p>
-                <p className="module-card__description">{module.description}</p>
-                {!module.comingSoon && module.status !== 'locked' && (
-                  <>
-                    <div className="module-card__progress">
-                      <div className="progress-bar">
-                        <div className="progress-bar__fill" style={{ width: `${module.progress}%` }} />
-                      </div>
-                      <span className="progress-bar__label">{module.progress}% Complete</span>
-                    </div>
-                    <button className="module-card__cta">
-                      {module.status === 'not-started' ? 'Begin' : 'Continue'} <ArrowRight size={16} />
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </section>
 
       {/* Workflow Overview */}
