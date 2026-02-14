@@ -389,8 +389,6 @@ export const generateKYSReport = async (data) => {
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.textMuted);
   doc.text('"You make your money on the buy"', margin, currentY);
-  doc.setFont(FONTS.body, 'normal');
-  doc.text('— Arvin', margin + 85, currentY);
 
   addFooter(1);
 
@@ -608,7 +606,7 @@ export const generateKYSReport = async (data) => {
         drawTrafficDot(margin + textWidth + 5, currentY - 1.5, catLight, 2.5);
       }
 
-      currentY += 3;
+      currentY += 5;
 
       // Weight label
       doc.setFont(FONTS.body, 'normal');
