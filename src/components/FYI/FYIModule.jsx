@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Save } from 'lucide-react';
+import { Save, FileDown } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import useFYIState, { initializeSelectionsForTier } from './hooks/useFYIState';
 import { generateMVPFromFYI } from './utils/fyiBridges';
@@ -337,8 +337,26 @@ const FYIModule = ({ showDocs, onCloseDocs }) => {
             <p className="fyi-module__subtitle">Lifestyle Requirements Refinement</p>
           </div>
 
-          {/* SAVE BUTTON */}
+          {/* PDF DOWNLOADS + SAVE */}
           <div className="fyi-module__save-area">
+            <button
+              className="fyi-module__pdf-btn"
+              onClick={() => handleExportPDF('zone')}
+              disabled={isExporting}
+              title="Download Space Program PDF"
+            >
+              <FileDown size={16} />
+              Space Program
+            </button>
+            <button
+              className="fyi-module__pdf-btn"
+              onClick={() => handleExportPDF('level')}
+              disabled={isExporting}
+              title="Download Zone Breakdown PDF"
+            >
+              <FileDown size={16} />
+              Zone Breakdown
+            </button>
             <button
               className={`btn ${hasUnsavedChanges ? 'btn--primary' : 'btn--success'}`}
               onClick={handleSave}
