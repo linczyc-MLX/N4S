@@ -1533,30 +1533,88 @@ const spaces = (fyiProgram?.spaces?.length > 0) ? fyiProgram.spaces : (presetDat
 
 ---
 
+## Session: February 14, 2026 - KYS PDF Report Generator
+
+### User Request
+Create a PDF report generator for the KYS (Know Your Site) module. No existing PDF export existed for KYS. Used Thornwood Estate as test model.
+
+### Implementation
+
+#### KYSReportGenerator.js (NEW FILE — 620 lines)
+Full N4S-branded PDF report following established patterns from KYMReportGenerator.js:
+
+- **Cover Page**: N4S branding, client name (from kycData.principal.portfolioContext), project name, site name/location, validated program summary (SF + tier), quote
+- **Executive Summary**: Large traffic light verdict (GO/NO-GO/CAUTION), overall score with /5.0, completion percentage, deal-breaker alert banner when triggered
+- **Site Information**: autoTable with address, price, lot size, dimensions, zoning, MLS#, notes
+- **Category Summary Table**: 7 categories with weights, scores, color-coded status (GREEN/AMBER/RED)
+- **Detailed Category Breakdown**: Each of 7 categories with sub-heading, traffic dot, weight/description, then factor detail table (32 sub-factors with scores and notes)
+- **Deal-Breaker Analysis**: Triggered flags in red table, clear flags in green table
+- **Recommendation Box**: Verdict label + full recommendation text
+- **Handoff Notes**: Site constraints + KYM insights (when present)
+- **Multi-Site Comparison**: Ranking table + category-by-category matrix (when >1 site)
+
+Uses jsPDF + jspdf-autotable, same header/footer pattern, same N4S brand colors.
+
+#### KYSModule.jsx (MODIFIED — 3 changes)
+1. Added `FileDown` icon import + `generateKYSReport` import
+2. Added `fyiData`, `mvpData` to AppContext destructuring + `isExporting` state
+3. Added Export Report button in module header (same `kyc-export-btn` class as KYM)
+4. Smart context: exports selected site when in assessment view, all sites from list view
+
+### Follow-up Tweaks
+1. Removed "— Arvin" attribution from cover page quote (quote itself retained)
+2. Added extra padding (3→5mm) between category heading line (with colored dot) and weight/description text below
+
+### Files Changed
+- `src/components/KYS/KYSReportGenerator.js` — NEW
+- `src/components/KYS/KYSModule.jsx` — MODIFIED (imports + export button + handler)
+
+### Commits
+- c25b4f6: Add KYS Site Assessment PDF report generator
+- 20298f8: KYS Report: remove Arvin attribution, add padding below category headings
+
+### Other Notes
+- GitHub PAT token updated (old one expired). New fine-grained PAT provided during session.
+- Also created a consolidated N4S startup prompt document for future sessions.
+- Build verified clean before each push.
+
+---
+
 ## Next Session Start Prompt
 
 ```
 Continue N4S development. Session context:
 
-LAST SESSION (Feb 8, 2026): Data integrity audit — enforced Golden Rule across all MVP consumers.
+LAST SESSION (Feb 14, 2026): Created KYS PDF Report Generator.
 
 COMPLETED:
-1. Fixed white screen crash (pets.trim TypeError — type guard in mvp-bridge + KYC section)
-2. Fixed PersonalizationResult diagram/matrix (fromSpaceCode/toSpaceCode, not from/to)
-3. Fixed ProgramSummaryView using preset benchmark instead of FYI live data
-4. CRITICAL: Enforced Golden Rule across ALL 6 MVP space/SF consumers + both PDF reports
-5. Added FYI zone name compatibility (Z1_APB codes → display names via s.zoneName||s.zone)
-6. Added ZONE_POS mappings for FYI zones in both report generators
-7. Added circulation as virtual zone in report when using FYI data
-8. Created docs/DATA-INTEGRITY-SF-AUDIT.md with full data flow map + ITR items
+1. New KYSReportGenerator.js — full N4S-branded PDF with cover page, executive summary,
+   site info, 7-category scoring, deal-breaker analysis, recommendation, handoff notes,
+   multi-site comparison
+2. Export Report button added to KYS module header (smart: selected site or all sites)
+3. Minor tweaks: removed Arvin attribution, added padding below category headings
+
+CURRENT STATE:
+- N4S Dashboard: ✅ Working at website.not-4.sale (Thornwood Estate loaded)
+- LuXeBrief Portal: ✅ Working at thornwood-estate.luxebrief.not-4.sale (password: Kittyhawk90)
+- All 4 KYC PDFs: ✅ Working
+- KYS PDF Export: ✅ Working (deployed Feb 14)
+
+ARCHITECTURE REMINDERS:
+- N4S = Auto-deploy from GitHub (IONOS Deploy Now) to website.not-4.sale
+- LuXeBrief = MANUAL deploy via SSH to VPS (74.208.250.22)
+- PHP API = website.not-4.sale/api (NOT the Deploy Now URL)
+- Pushing to LuXeBrief GitHub does NOTHING until SSH deploy
 
 REMAINING ITR ITEMS (see docs/DATA-INTEGRITY-SF-AUDIT.md):
-- ITR-1: FYI shows two different deltas (net vs total) — confusing labels — Low priority
-- ITR-2: VMX manual SF entry not connected to FYI program — Medium (address during VMX integration)
-- ITR-5: Circulation calculation alignment verification — Low
-- ITR-6: Structure breakdown (Main/GH/PH) not shown in MVP Program Summary — Low
+- ITR-1: FYI shows two different deltas — Low priority
+- ITR-2: VMX manual SF entry not connected to FYI — Medium
+- ITR-5: Circulation calculation alignment — Low
+- ITR-6: Structure breakdown not shown in MVP Program Summary — Low
+- n4sDatabase.ts footer still has old "Confidential" text
+- Other 6 modules need data-pdf-card tagging for docs PDF system
 
-LATEST COMMITS: dca315c (Golden Rule enforcement), 052dbf6, 8d3b5d2, 5acf8fc
+LATEST COMMITS: 20298f8, c25b4f6
 
-Start by: git clone repo, read docs/DATA-INTEGRITY-SF-AUDIT.md, verify deploy status, then address any remaining ITR items or new requests.
+Start by: git clone repo, read docs/*.md, verify deploy status, then address new requests.
 ```
