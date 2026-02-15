@@ -580,6 +580,128 @@ Task Matrix cells use the same color mapping:
 
 ---
 
+## 14. Documentation PDF Standards
+
+All module documentation PDFs are generated using **ReportLab** with native text rendering (no html2canvas/screenshots). PDFs are pre-built and served as static files from `public/docs/`.
+
+### Generator Script
+
+- **Location**: `generate_all_docs_pdfs.py` (kept outside repo, run locally to regenerate)
+- **Fonts required**: Playfair Display (400/500/600/700), Inter (Regular/Medium/SemiBold/Bold) as `.ttf` files
+- **Output**: `public/docs/N4S-{MODULE}-Documentation.pdf` (7 files: Dashboard, KYC, FYI, MVP, KYM, KYS, VMX)
+
+### Page Setup
+
+| Property | Value |
+|----------|-------|
+| Page size | A4 (595 × 842 pt) |
+| Margins | Left 25mm, Right 25mm, Top 30mm, Bottom 20mm |
+| Content width | ~145mm (410 pt) |
+
+### Cover Page
+
+Each PDF starts with a branded cover page (no header/footer):
+- Gold rule (80pt wide, 1.5pt thick) at top
+- Module title in Playfair Display Bold 24pt, navy
+- Subtitle in Inter Regular 13pt, muted
+- Gold divider
+- Metadata: Date, Author "Not4Sale LLC", Document type "Documentation Guide"
+- Footer rule with copyright
+
+### Header & Footer (pages 2+)
+
+**Header**: Navy bar (full width, 22pt tall) with:
+- Left: "N4S" in Inter Bold 7pt white
+- Right: Module subtitle in Inter Regular 7pt white
+- Module-specific Soft Pillow accent stripe (3pt tall) below navy bar
+
+**Footer**: Navy bar (14pt tall) at bottom with:
+- Left: Copyright `© 2026 Not4Sale LLC — Luxury Residential Advisory`
+- Right: `Page X`
+- Both in Inter Regular 6.5pt white
+
+### Section Structure
+
+Every documentation PDF follows the 4-tab structure:
+1. **Overview** — What the module does and why
+2. **Workflow** — Step-by-step process
+3. **Gates & Validation** — Quality checkpoints and rules
+4. **Reference** — Terminology, codes, glossary
+
+### Custom Flowables
+
+| Flowable | Description |
+|----------|-------------|
+| `GoldRule(width)` | Gold horizontal line, 1.5pt thick, centered |
+| `NavyHeaderBar(text)` | Full-width navy bar with white text, acts as section divider |
+| `CardBox(flowables)` | Bordered content box with Soft Pillow accent left border (3pt) and light background |
+
+### Typography in PDFs
+
+| Element | Font | Size | Color |
+|---------|------|------|-------|
+| Cover title | Playfair Bold | 24pt | Navy |
+| Section title (h2) | Playfair SemiBold | 15pt | Navy |
+| Subsection (h3) | Playfair Medium | 12pt | Navy |
+| Sub-subsection (h4) | Inter SemiBold | 10pt | Navy |
+| Body text | Inter Regular | 9.5pt | `#1a1a1a` |
+| Muted text | Inter Regular | 9pt | `#6b6b6b` |
+| Table header | Inter SemiBold | 8.5pt | Navy on `#f5f0e8` |
+| Table body | Inter Regular | 8.5pt | `#1a1a1a` |
+| Bullet text | Inter Regular | 9pt | `#1a1a1a` |
+
+### Orphan Protection (Bottom-Quarter Rule)
+
+- **h2 headings**: `CondPageBreak(PAGE_H * 0.25)` — forces new page if less than 25% of page remains
+- **h3 headings**: `CondPageBreak(PAGE_H * 0.20)` — forces new page if less than 20% remains
+- Prevents orphaned headings at page bottom
+
+### Module Accent Colors in PDFs
+
+Same Soft Pillow palette as UI (see Section 13). Used for:
+- Header accent stripe below navy bar
+- CardBox left border
+- Cover page accent elements
+
+### Table Styling
+
+```python
+# Header row: navy text on warm cream background
+('BACKGROUND', (0, 0), (-1, 0), HexColor('#f5f0e8'))
+('TEXTCOLOR', (0, 0), (-1, 0), NAVY)
+('FONTNAME', (0, 0), (-1, 0), 'InterSB')
+
+# Body rows: alternating white/#fafaf8
+('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, HexColor('#fafaf8')])
+
+# Grid: light borders
+('GRID', (0, 0), (-1, -1), 0.5, HexColor('#e0e0e0'))
+```
+
+### Regenerating PDFs
+
+To regenerate after content changes in `*Documentation.jsx` files:
+1. Extract updated content from JSX into Python builder functions
+2. Run `python3 generate_all_docs_pdfs.py` with fonts in same directory
+3. Copy output PDFs to `public/docs/`
+4. Commit and push — GitHub Actions auto-deploys
+
+### Export Button Integration
+
+Each `*Documentation.jsx` component has a simple download handler:
+```javascript
+const handleExportPdf = () => {
+  const link = document.createElement('a');
+  link.href = '/docs/N4S-{MODULE}-Documentation.pdf';
+  link.download = 'N4S-{MODULE}-Documentation.pdf';
+  link.click();
+};
+```
+
+No runtime dependencies (html2canvas, jsPDF) required. The old `docsPdfExport.js` utility is no longer imported by any component.
+
+---
+
 ## Appendix A: Revision History
 
 | Date | Version | Changes |
@@ -588,6 +710,7 @@ Task Matrix cells use the same color mapping:
 | 2026-01-06 | 1.1 | Added Module Color System (Section 13) |
 | 2026-01-11 | 1.2 | Updated Module Colors to Soft Pillow palette |
 | 2026-01-13 | 1.3 | Added KYS (Know Your Site) module with Copper color |
+| 2026-02-14 | 1.4 | Added Documentation PDF Standards (Section 14) — ReportLab generation, typography, flowables, orphan protection |
 
 ---
 
