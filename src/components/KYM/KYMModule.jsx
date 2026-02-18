@@ -1327,6 +1327,10 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
           : 0,
         avgSqFt: sqfts.length > 0 ? Math.round(sqfts.reduce((a, b) => a + b, 0) / sqfts.length) : 0,
         avgDaysOnMarket: doms.length > 0 ? Math.round(doms.reduce((a, b) => a + b, 0) / doms.length) : null,
+        propertyCount: properties.length,
+        activeListings: properties.filter(p => p.status === 'active').length || 0,
+        growthRate: locationData.marketData?.growthRate || null,
+        demandIndex: locationData.marketData?.demandIndex || null,
       };
 
       const fullPersonaResults = personaResults.map(p => ({
@@ -1514,6 +1518,36 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   const formatNumber = (value) => new Intl.NumberFormat('en-US').format(value);
 
+  const formatPrice = (value) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+    return `$${value}`;
+  };
+
+  // Compute real stats from property data (matches portal + PDF)
+  const computedStats = useMemo(() => {
+    if (!locationData?.properties?.length) return null;
+    const properties = locationData.properties;
+    const prices = properties.map(p => p.askingPrice).filter(p => p > 0);
+    const sqfts = properties.map(p => p.sqft).filter(s => s > 0);
+    const doms = properties.map(p => p.daysOnMarket).filter(d => d !== null && d !== undefined);
+
+    const sortedPrices = [...prices].sort((a, b) => a - b);
+
+    return {
+      medianPrice: prices.length > 0 ? sortedPrices[Math.floor(prices.length / 2)] : 0,
+      avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+      avgPricePerSqFt: prices.length > 0 && sqfts.length > 0
+        ? Math.round(prices.reduce((a, b) => a + b, 0) / sqfts.reduce((a, b) => a + b, 0))
+        : 0,
+      avgDaysOnMarket: doms.length > 0 ? Math.round(doms.reduce((a, b) => a + b, 0) / doms.length) : null,
+      avgSqFt: sqfts.length > 0 ? Math.round(sqfts.reduce((a, b) => a + b, 0) / sqfts.length) : 0,
+      minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+      maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
+      propertyCount: properties.length,
+    };
+  }, [locationData?.properties]);
+
   return (
     <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
       <div className="n4s-docs-layout__main">
@@ -1656,32 +1690,24 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
               <>
                 <div className="kym-kpi-grid">
                   <KPICard
-                    title="Market Growth Rate"
-                    value={`${locationData.marketData.growthRate}%`}
-                    change={locationData.marketData.growthRate > 5 ? 2.3 : -1.5}
-                    changeLabel="vs last year"
-                    icon={<TrendingUp size={20} />}
-                  />
-                  <KPICard
-                    title="Median Price/SF"
-                    value={formatCurrency(locationData.marketData.medianPricePerSqFt)}
-                    change={8.5}
-                    changeLabel="vs last quarter"
+                    title="Median Price"
+                    value={computedStats ? formatPrice(computedStats.medianPrice) : '—'}
                     icon={<DollarSign size={20} />}
                   />
                   <KPICard
-                    title="Avg. Listing Duration"
-                    value={`${locationData.marketData.avgListingDuration} days`}
-                    change={-12}
-                    changeLabel="faster sales"
+                    title="Avg Price / SF"
+                    value={computedStats ? formatCurrency(computedStats.avgPricePerSqFt) : '—'}
+                    icon={<Home size={20} />}
+                  />
+                  <KPICard
+                    title="Avg Days on Market"
+                    value={computedStats?.avgDaysOnMarket != null ? `${computedStats.avgDaysOnMarket} days` : 'N/A'}
                     icon={<Clock size={20} />}
                   />
                   <KPICard
-                    title="Demand Index"
-                    value={locationData.marketData.demandIndex.toFixed(1)}
-                    change={5.2}
-                    changeLabel="buyer activity"
-                    icon={<Activity size={20} />}
+                    title="Properties Analyzed"
+                    value={computedStats ? formatNumber(computedStats.propertyCount) : '0'}
+                    icon={<BarChart2 size={20} />}
                   />
                 </div>
 
