@@ -1489,26 +1489,29 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     };
   }, [locationData?.properties]);
 
-  // Auto-set filter ranges when data loads
-  useEffect(() => {
-    if (locationData?.properties?.length > 0) {
-      setPriceRange([filterBounds.minPrice, filterBounds.maxPrice]);
-      setSqftRange([filterBounds.minSqft, filterBounds.maxSqft]);
-    }
-  }, [filterBounds]);
+  // Filter properties — use filterBounds as the effective max when slider is at initial wide default
+  // This ensures ALL properties show when sliders haven't been touched
+  const effectivePriceRange = [
+    Math.max(priceRange[0], filterBounds.minPrice),
+    Math.min(priceRange[1] >= 500000000 ? filterBounds.maxPrice : priceRange[1], filterBounds.maxPrice),
+  ];
+  const effectiveSqftRange = [
+    Math.max(sqftRange[0], filterBounds.minSqft),
+    Math.min(sqftRange[1] >= 100000 ? filterBounds.maxSqft : sqftRange[1], filterBounds.maxSqft),
+  ];
 
-  // Filter properties - handle missing sqft gracefully
   const filteredProperties = (locationData?.properties || []).filter(property => {
-    const matchesPrice = property.askingPrice >= priceRange[0] && property.askingPrice <= priceRange[1];
+    const price = property.askingPrice || 0;
+    const matchesPrice = price >= effectivePriceRange[0] && price <= effectivePriceRange[1];
     // Allow properties with no sqft data (land, etc.) or within range
-    const matchesSqft = !property.sqft || property.sqft === 0 || 
-      (property.sqft >= sqftRange[0] && property.sqft <= sqftRange[1]);
+    const matchesSqft = !property.sqft || property.sqft === 0 ||
+      (property.sqft >= effectiveSqftRange[0] && property.sqft <= effectiveSqftRange[1]);
     const matchesStatus = statusFilter.includes(property.status);
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.city.toLowerCase().includes(searchQuery.toLowerCase());
     // Feature filter: property must have ALL selected features
-    const matchesFeatures = featureFilter.length === 0 || 
+    const matchesFeatures = featureFilter.length === 0 ||
       featureFilter.every(feature => property.features?.includes(feature));
     return matchesPrice && matchesSqft && matchesStatus && matchesSearch && matchesFeatures;
   });
@@ -1524,8 +1527,8 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   // Clear all filters
   const clearAllFilters = () => {
-    setPriceRange([filterBounds.minPrice, filterBounds.maxPrice]);
-    setSqftRange([filterBounds.minSqft, filterBounds.maxSqft]);
+    setPriceRange([0, 500000000]);
+    setSqftRange([0, 100000]);
     setSearchQuery('');
     setStatusFilter(['active', 'pending', 'sold']);
     setFeatureFilter([]);
@@ -1806,46 +1809,64 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                   <div className="kym-filter-group">
                     <label>Price Range</label>
                     <div className="kym-range-display">
-                      {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
+                      {formatCurrency(effectivePriceRange[0])} - {formatCurrency(effectivePriceRange[1])}
+                    </div>
+                    <div className="kym-range-labels">
+                      <span>Min</span><span>Max</span>
                     </div>
                     <input
                       type="range"
                       min={filterBounds.minPrice}
                       max={filterBounds.maxPrice}
-                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 200))}
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 100))}
+                      value={Math.min(priceRange[0], priceRange[1])}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setPriceRange([Math.min(val, priceRange[1]), priceRange[1]]);
+                      }}
                     />
                     <input
                       type="range"
                       min={filterBounds.minPrice}
                       max={filterBounds.maxPrice}
-                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 200))}
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 100))}
+                      value={Math.max(priceRange[1], priceRange[0])}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setPriceRange([priceRange[0], Math.max(val, priceRange[0])]);
+                      }}
                     />
                   </div>
 
                   <div className="kym-filter-group">
                     <label>Square Footage</label>
                     <div className="kym-range-display">
-                      {formatNumber(sqftRange[0])} - {formatNumber(sqftRange[1])} SF
+                      {formatNumber(effectiveSqftRange[0])} - {formatNumber(effectiveSqftRange[1])} SF
+                    </div>
+                    <div className="kym-range-labels">
+                      <span>Min</span><span>Max</span>
                     </div>
                     <input
                       type="range"
                       min={filterBounds.minSqft}
                       max={filterBounds.maxSqft}
-                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 200))}
-                      value={sqftRange[0]}
-                      onChange={(e) => setSqftRange([parseInt(e.target.value), sqftRange[1]])}
+                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 100))}
+                      value={Math.min(sqftRange[0], sqftRange[1])}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setSqftRange([Math.min(val, sqftRange[1]), sqftRange[1]]);
+                      }}
                     />
                     <input
                       type="range"
                       min={filterBounds.minSqft}
                       max={filterBounds.maxSqft}
-                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 200))}
-                      value={sqftRange[1]}
-                      onChange={(e) => setSqftRange([sqftRange[0], parseInt(e.target.value)])}
+                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 100))}
+                      value={Math.max(sqftRange[1], sqftRange[0])}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setSqftRange([sqftRange[0], Math.max(val, sqftRange[0])]);
+                      }}
                     />
                   </div>
 

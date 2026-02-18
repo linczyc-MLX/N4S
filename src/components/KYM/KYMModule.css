@@ -564,6 +564,14 @@
   margin-bottom: 0.5rem;
 }
 
+.kym-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #999;
+  margin-bottom: 0.25rem;
+}
+
 .kym-filter-group input[type="range"] {
   width: 100%;
   margin-bottom: 0.25rem;
