@@ -1304,6 +1304,67 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     fetchLocationData(selectedZipCode);
   }, [selectedZipCode, fetchLocationData]);
 
+  // Auto-save KYM data to backend whenever market data loads (for portal PDF)
+  const kymSaveTimer = useRef(null);
+  useEffect(() => {
+    if (!activeProjectId || !locationData || !locationData.properties) return;
+
+    // Debounce: wait 2s after last change before saving
+    if (kymSaveTimer.current) clearTimeout(kymSaveTimer.current);
+    kymSaveTimer.current = setTimeout(() => {
+      const properties = locationData.properties || [];
+      const prices = properties.map(p => p.askingPrice).filter(p => p > 0);
+      const sqfts = properties.map(p => p.sqft).filter(s => s > 0);
+      const doms = properties.map(p => p.daysOnMarket).filter(d => d !== null && d !== undefined);
+
+      const marketData = {
+        medianPrice: prices.length > 0 ? prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)] : 0,
+        avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+        minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+        maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
+        avgPricePerSqFt: prices.length > 0 && sqfts.length > 0
+          ? Math.round(prices.reduce((a, b) => a + b, 0) / sqfts.reduce((a, b) => a + b, 0))
+          : 0,
+        avgSqFt: sqfts.length > 0 ? Math.round(sqfts.reduce((a, b) => a + b, 0) / sqfts.length) : 0,
+        avgDaysOnMarket: doms.length > 0 ? Math.round(doms.reduce((a, b) => a + b, 0) / doms.length) : null,
+      };
+
+      const fullPersonaResults = personaResults.map(p => ({
+        ...p,
+        ...PERSONAS[p.id],
+      }));
+
+      api.updateProject(activeProjectId, {
+        kymData: {
+          locationData,
+          marketData,
+          properties: properties.map(p => ({
+            address: p.address || p.street,
+            price: p.askingPrice || p.price,
+            sqft: p.sqft || p.livingArea,
+            beds: p.beds || p.bedrooms,
+            baths: p.baths || p.bathrooms,
+            daysOnMarket: p.daysOnMarket,
+            features: p.features || [],
+            status: p.status || 'Active',
+            pricePerSqFt: p.pricePerSqFt,
+          })),
+          demographics: locationData.demographics,
+          bamResults: bamScores,
+          personaResults: fullPersonaResults,
+          portfolioContext,
+          savedAt: new Date().toISOString(),
+        }
+      }).then(() => {
+        console.log('[KYM] Auto-saved to backend for portal');
+      }).catch(err => {
+        console.warn('[KYM] Auto-save failed:', err);
+      });
+    }, 2000);
+
+    return () => { if (kymSaveTimer.current) clearTimeout(kymSaveTimer.current); };
+  }, [locationData, bamScores, personaResults, portfolioContext, activeProjectId]);
+
   const handleLocationChange = (zipCode) => {
     setSelectedZipCode(zipCode);
   };
