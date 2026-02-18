@@ -19,6 +19,7 @@ import {
   Settings, Loader2, Target, FileDown, Map, Mountain, Waves, Plus
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
+import api from '../../services/api';
 import KYMDocumentation from './KYMDocumentation';
 import * as kymApi from './kymApiService';
 import { calculateAllPersonaScores, calculateBAMScores, extractClientData, PERSONAS } from './BAMScoring';
@@ -895,7 +896,7 @@ const LocationSelector = ({ selectedZipCode, onSelect, onZipSearch, clientLocati
 // =============================================================================
 
 const KYMModule = ({ showDocs, onCloseDocs }) => {
-  const { kycData, fyiData, mvpData } = useAppContext();
+  const { kycData, fyiData, mvpData, activeProjectId } = useAppContext();
   const [activeTab, setActiveTab] = useState('market');
   const [selectedZipCode, setSelectedZipCode] = useState('90210');
   const [locationData, setLocationData] = useState(null);
@@ -1353,8 +1354,39 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
         bamResults: bamScores,      // BAM v3.0 dual scoring results
         portfolioContext,           // Portfolio context for weighting
       });
-      
+
       console.log('[KYM] Report exported successfully');
+
+      // Persist KYM data to backend for portal access
+      if (activeProjectId) {
+        try {
+          await api.updateProject(activeProjectId, {
+            kymData: {
+              locationData,
+              marketData,
+              properties: properties.map(p => ({
+                address: p.address || p.street,
+                price: p.askingPrice || p.price,
+                sqft: p.sqft || p.livingArea,
+                beds: p.beds || p.bedrooms,
+                baths: p.baths || p.bathrooms,
+                daysOnMarket: p.daysOnMarket,
+                features: p.features || [],
+                status: p.status || 'Active',
+                pricePerSqFt: p.pricePerSqFt,
+              })),
+              demographics: locationData.demographics,
+              bamResults: bamScores,
+              personaResults: fullPersonaResults,
+              portfolioContext,
+              savedAt: new Date().toISOString(),
+            }
+          });
+          console.log('[KYM] Data saved to backend for portal');
+        } catch (saveErr) {
+          console.warn('[KYM] Failed to save data to backend:', saveErr);
+        }
+      }
     } catch (error) {
       console.error('[KYM] Export error:', error);
       setError('Failed to export report. Please try again.');
