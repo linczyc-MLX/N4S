@@ -1743,12 +1743,18 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                     <div className="kym-market-outlook">
                       <h4>Market Outlook</h4>
                       <p>
-                        {locationData.marketData.demandIndex > 7
-                          ? "Strong buyer demand with limited inventory creates favorable conditions for sellers."
-                          : locationData.marketData.demandIndex > 5
-                          ? "Balanced market conditions with steady appreciation potential."
-                          : "Buyer's market with negotiation opportunities available."}
+                        Luxury residential continues to outperform the broader market, driven by sustained wealth creation and less sensitivity to interest rate pressures. The generational wealth transfer — approximately $6 trillion in 2025 — is creating younger, well-capitalized buyers, while international buyer activity in the U.S. surged 44% year-over-year. Global prime residential prices rose 3.6% on average, with inventory returning to pre-pandemic norms.
                       </p>
+                      <div className="kym-outlook-sources" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e5e0' }}>
+                        <span style={{ fontSize: '11px', color: '#6b6b6b' }}>Sources: </span>
+                        <a href="https://www.sothebysrealty.com/eng/luxury-outlook" target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#1e3a5f', textDecoration: 'underline' }}>
+                          Sotheby's 2026 Luxury Outlook®
+                        </a>
+                        <span style={{ fontSize: '11px', color: '#6b6b6b' }}> · </span>
+                        <a href="https://www.knightfrank.com/wealthreport" target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#1e3a5f', textDecoration: 'underline' }}>
+                          Knight Frank Wealth Report
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
