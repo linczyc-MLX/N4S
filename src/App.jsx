@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Home, Users, Search, Settings, Menu, X,
-  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign, Monitor, LogOut
+  ChevronRight, Building2, ClipboardCheck, FileText, Map, MapPin, DollarSign, Monitor, Hammer, LogOut
 } from 'lucide-react';
 
 // Import modules
@@ -12,6 +12,7 @@ import MVPModule from './components/MVP/MVPModule';
 import FYIModule from './components/FYI/FYIModule';
 import KYMModule from './components/KYM/KYMModule';
 import VMXModule from './components/VMX/VMXModule';
+import GIDModule from './components/GID/GIDModule';
 import LCDModule from './components/LCD/LCDModule';
 import SettingsModule from './components/Settings/SettingsModule';
 import LoginPage from './components/LoginPage';
@@ -24,6 +25,7 @@ import MVPDocumentation from './components/MVP/MVPDocumentation';
 import KYMDocumentation from './components/KYM/KYMDocumentation';
 import KYSDocumentation from './components/KYS/KYSDocumentation';
 import VMXDocumentation from './components/VMX/VMXDocumentation';
+import GIDDocumentation from './components/GID/GIDDocumentation';
 
 // Import context providers
 import { AppProvider, useAppContext } from './contexts/AppContext';
@@ -75,6 +77,7 @@ const moduleColors = {
   mvp: { bg: '#AFBDB0', text: '#1a1a1a', accent: '#AFBDB0' },                   // Sage Green (Soft Pillow 3)
   kym: { bg: '#E4C0BE', text: '#1a1a1a', accent: '#E4C0BE' },                   // Dusty Rose (Soft Pillow 4)
   vmx: { bg: '#FBD0E0', text: '#1a1a1a', accent: '#FBD0E0' },                   // Light Pink (Soft Pillow 5)
+  gid: { bg: '#D4A574', text: '#1a1a1a', accent: '#D4A574' },                   // Warm Earth (P.1 Capstone)
   lcd: { bg: '#1a1a1a', text: '#ffffff', accent: '#c9a227' },                   // Black/Gold (PANDA branding)
   settings: { bg: '#374151', text: '#ffffff', accent: '#9ca3af' },              // Gray (utility) - KEEP
 };
@@ -87,6 +90,7 @@ const PRINT_DOC_COMPONENTS = {
   kym: KYMDocumentation,
   kys: KYSDocumentation,
   vmx: VMXDocumentation,
+  gid: GIDDocumentation,
 };
 
 const AppContent = () => {
@@ -114,12 +118,13 @@ const AppContent = () => {
     { id: 'kym', label: 'KYM', icon: Map, description: 'Know Your Market' },
     { id: 'kys', label: 'KYS', icon: MapPin, description: 'Know Your Site' },
     { id: 'vmx', label: 'VMX', icon: DollarSign, description: 'Vision Matrix' },
+    { id: 'gid', label: 'GID', icon: Hammer, description: 'Get It Done' },
     { id: 'lcd', label: 'LCD', icon: Monitor, description: 'LuXeBrief Portal' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'App Configuration' },
   ];
 
   // Modules that have documentation
-  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym', 'kys', 'vmx'];
+  const modulesWithDocs = ['dashboard', 'kyc', 'fyi', 'mvp', 'kym', 'kys', 'vmx', 'gid'];
 
   const renderModule = () => {
     switch (activeModule) {
@@ -135,6 +140,8 @@ const AppContent = () => {
         return <KYMModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'vmx':
         return <VMXModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
+      case 'gid':
+        return <GIDModule showDocs={showDocs} onCloseDocs={() => setShowDocs(false)} />;
       case 'lcd':
         return <LCDModule />;
       case 'settings':

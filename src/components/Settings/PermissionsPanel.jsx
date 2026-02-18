@@ -18,6 +18,7 @@ const MODULE_META = [
   { id: 'kym',       label: 'KYM',       fullName: 'Know Your Market',       color: '#E4C0BE' },
   { id: 'kys',       label: 'KYS',       fullName: 'Know Your Site',         color: '#C4A484' },
   { id: 'vmx',       label: 'VMX',       fullName: 'Vision Matrix',          color: '#FBD0E0' },
+  { id: 'gid',       label: 'GID',       fullName: 'Get It Done',            color: '#D4A574' },
   { id: 'lcd',       label: 'LCD',       fullName: 'LuXeBrief Portal',       color: '#1a1a1a' },
   { id: 'settings',  label: 'Settings',  fullName: 'App Configuration',      color: '#374151' },
 ];

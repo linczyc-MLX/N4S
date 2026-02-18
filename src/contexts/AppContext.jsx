@@ -130,6 +130,21 @@ const initialKYSData = {
   comparisonEnabled: false,  // Multi-site comparison mode
 };
 
+// Initial GID data (Get It Done — per-project team assembly)
+// Consultant registry lives in its own DB tables; this tracks project-specific selections
+const initialGIDData = {
+  currentMatches: {},          // { architect: [...], interior_designer: [...], pm: [...], gc: [...] }
+  engagements: [],             // Active engagements for this project
+  teamAssembly: {
+    architect: null,
+    interiorDesigner: null,
+    projectManager: null,
+    generalContractor: null,
+  },
+  filters: {},
+  lastMatchRun: null,
+};
+
 // Initial LCD data (LuXeBrief Client Dashboard)
 const initialLCDData = {
   // Portal activation
@@ -332,6 +347,7 @@ const getEmptyProjectData = () => ({
   mvpData: JSON.parse(JSON.stringify(initialMVPData)),
   kysData: JSON.parse(JSON.stringify(initialKYSData)),
   vmxData: JSON.parse(JSON.stringify(initialVMXData)),
+  gidData: JSON.parse(JSON.stringify(initialGIDData)),
   lcdData: JSON.parse(JSON.stringify(initialLCDData)),
   activeRespondent: 'principal',
 });
@@ -399,6 +415,7 @@ export const AppProvider = ({ children }) => {
   const mvpData = projectData.mvpData || initialMVPData;
   const kysData = projectData.kysData || initialKYSData;
   const vmxData = projectData.vmxData || initialVMXData;
+  const gidData = projectData.gidData || initialGIDData;
   const lcdData = projectData.lcdData || initialLCDData;
 
   // ---------------------------------------------------------------------------
@@ -462,6 +479,8 @@ export const AppProvider = ({ children }) => {
               const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
               // Load lcdData directly (first-class data type)
               const loadedLcdData = data.lcdData || initialLCDData;
+              // Load gidData (per-project team assembly)
+              const loadedGidData = data.gidData || initialGIDData;
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
@@ -477,6 +496,8 @@ export const AppProvider = ({ children }) => {
                 kysData: loadedKysData,
                 // Ensure vmxData is available at top level for component access
                 vmxData: loadedVmxData,
+                // Ensure gidData is available at top level for component access
+                gidData: loadedGidData,
                 // Ensure lcdData is available at top level for component access
                 lcdData: loadedLcdData,
               });
@@ -613,6 +634,8 @@ export const AppProvider = ({ children }) => {
         const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
         // Load lcdData directly (first-class data type)
         const loadedLcdData = data.lcdData || initialLCDData;
+        // Load gidData (per-project team assembly)
+        const loadedGidData = data.gidData || initialGIDData;
         setProjectData({
           ...getEmptyProjectData(),
           ...data,
@@ -628,6 +651,8 @@ export const AppProvider = ({ children }) => {
           kysData: loadedKysData,
           // Ensure vmxData is available at top level for component access
           vmxData: loadedVmxData,
+          // Ensure gidData is available at top level for component access
+          gidData: loadedGidData,
           // Ensure lcdData is available at top level for component access
           lcdData: loadedLcdData,
         });
@@ -993,6 +1018,36 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
+  // Update GID data (Get It Done — per-project team assembly)
+  const updateGIDData = useCallback((updates) => {
+    console.log('[APP] updateGIDData:', updates);
+    setProjectData(prev => {
+      const currentGidData = prev.gidData || initialGIDData;
+      return {
+        ...prev,
+        gidData: {
+          ...currentGidData,
+          ...updates,
+          // Deep merge teamAssembly if provided
+          ...(updates.teamAssembly && {
+            teamAssembly: {
+              ...currentGidData.teamAssembly,
+              ...updates.teamAssembly,
+            },
+          }),
+          // Deep merge currentMatches if provided
+          ...(updates.currentMatches && {
+            currentMatches: {
+              ...currentGidData.currentMatches,
+              ...updates.currentMatches,
+            },
+          }),
+        },
+      };
+    });
+    markChanged();
+  }, [markChanged]);
+
   // Update LCD data (LuXeBrief Client Dashboard)
   // NOTE: Stored in lcdData for PHP backend persistence
   const updateLCDData = useCallback((updates) => {
@@ -1229,6 +1284,7 @@ export const AppProvider = ({ children }) => {
     mvpData,
     kysData,
     vmxData,
+    gidData,
     lcdData,
 
     // Data updates
@@ -1245,6 +1301,7 @@ export const AppProvider = ({ children }) => {
     updateMVPDecisionAnswer,
     updateKYSData,
     updateVMXData,
+    updateGIDData,
     updateLCDData,
 
     // UI state
