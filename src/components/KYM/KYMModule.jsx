@@ -914,8 +914,8 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
   const debounceRef = useRef(null);
   
   // Filters for comparable properties
-  const [priceRange, setPriceRange] = useState([5000000, 25000000]);
-  const [sqftRange, setSqftRange] = useState([5500, 26000]);
+  const [priceRange, setPriceRange] = useState([0, 500000000]);
+  const [sqftRange, setSqftRange] = useState([0, 100000]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [statusFilter, setStatusFilter] = useState(['active', 'pending', 'sold']);
@@ -1473,6 +1473,30 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     }
   };
 
+  // Compute dynamic filter bounds from actual property data (no arbitrary caps)
+  const filterBounds = useMemo(() => {
+    const properties = locationData?.properties || [];
+    if (properties.length === 0) {
+      return { minPrice: 0, maxPrice: 500000000, minSqft: 0, maxSqft: 100000 };
+    }
+    const prices = properties.map(p => p.askingPrice || p.price || 0).filter(p => p > 0);
+    const sqfts = properties.map(p => p.sqft || 0).filter(s => s > 0);
+    return {
+      minPrice: Math.floor((Math.min(...prices) * 0.8) / 100000) * 100000, // 20% below min, rounded
+      maxPrice: Math.ceil((Math.max(...prices) * 1.2) / 100000) * 100000,  // 20% above max, rounded
+      minSqft: Math.floor((Math.min(...(sqfts.length ? sqfts : [0])) * 0.8) / 100) * 100,
+      maxSqft: Math.ceil((Math.max(...(sqfts.length ? sqfts : [50000])) * 1.2) / 100) * 100,
+    };
+  }, [locationData?.properties]);
+
+  // Auto-set filter ranges when data loads
+  useEffect(() => {
+    if (locationData?.properties?.length > 0) {
+      setPriceRange([filterBounds.minPrice, filterBounds.maxPrice]);
+      setSqftRange([filterBounds.minSqft, filterBounds.maxSqft]);
+    }
+  }, [filterBounds]);
+
   // Filter properties - handle missing sqft gracefully
   const filteredProperties = (locationData?.properties || []).filter(property => {
     const matchesPrice = property.askingPrice >= priceRange[0] && property.askingPrice <= priceRange[1];
@@ -1500,8 +1524,8 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
 
   // Clear all filters
   const clearAllFilters = () => {
-    setPriceRange([5000000, 25000000]);
-    setSqftRange([5500, 26000]);
+    setPriceRange([filterBounds.minPrice, filterBounds.maxPrice]);
+    setSqftRange([filterBounds.minSqft, filterBounds.maxSqft]);
     setSearchQuery('');
     setStatusFilter(['active', 'pending', 'sold']);
     setFeatureFilter([]);
@@ -1786,17 +1810,17 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                     </div>
                     <input
                       type="range"
-                      min={1000000}
-                      max={50000000}
-                      step={500000}
+                      min={filterBounds.minPrice}
+                      max={filterBounds.maxPrice}
+                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 200))}
                       value={priceRange[0]}
                       onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
                     />
                     <input
                       type="range"
-                      min={1000000}
-                      max={50000000}
-                      step={500000}
+                      min={filterBounds.minPrice}
+                      max={filterBounds.maxPrice}
+                      step={Math.max(100000, Math.round((filterBounds.maxPrice - filterBounds.minPrice) / 200))}
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     />
@@ -1809,17 +1833,17 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
                     </div>
                     <input
                       type="range"
-                      min={5000}
-                      max={30000}
-                      step={500}
+                      min={filterBounds.minSqft}
+                      max={filterBounds.maxSqft}
+                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 200))}
                       value={sqftRange[0]}
                       onChange={(e) => setSqftRange([parseInt(e.target.value), sqftRange[1]])}
                     />
                     <input
                       type="range"
-                      min={5000}
-                      max={30000}
-                      step={500}
+                      min={filterBounds.minSqft}
+                      max={filterBounds.maxSqft}
+                      step={Math.max(100, Math.round((filterBounds.maxSqft - filterBounds.minSqft) / 200))}
                       value={sqftRange[1]}
                       onChange={(e) => setSqftRange([sqftRange[0], parseInt(e.target.value)])}
                     />
