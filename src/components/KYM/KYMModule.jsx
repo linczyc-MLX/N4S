@@ -1349,6 +1349,19 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
             status: p.status || 'Active',
             pricePerSqFt: p.pricePerSqFt,
           })),
+          landParcels: (landData?.parcels || []).map(p => ({
+            address: p.address,
+            city: p.city,
+            state: p.state,
+            zipCode: p.zipCode,
+            acreage: p.acreage,
+            price: p.askingPrice || p.price,
+            pricePerAcre: p.pricePerAcre,
+            zoning: p.zoning || 'Residential',
+            features: p.features || [],
+            status: p.status || 'Active',
+            daysOnMarket: p.daysOnMarket,
+          })),
           demographics: locationData.demographics,
           bamResults: bamScores,
           personaResults: fullPersonaResults,
@@ -1363,7 +1376,7 @@ const KYMModule = ({ showDocs, onCloseDocs }) => {
     }, 2000);
 
     return () => { if (kymSaveTimer.current) clearTimeout(kymSaveTimer.current); };
-  }, [locationData, bamScores, personaResults, portfolioContext, activeProjectId]);
+  }, [locationData, bamScores, personaResults, portfolioContext, activeProjectId, landData]);
 
   const handleLocationChange = (zipCode) => {
     setSelectedZipCode(zipCode);
