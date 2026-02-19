@@ -1,14 +1,24 @@
 /**
  * AIDiscoveryForm.jsx — AI Discovery Criteria Form
- * 
+ *
+ * Phase 4: Added "Use Client Profile" toggle that auto-fills search criteria
+ * from the active client's KYC/FYI data (design identity, budget, geography,
+ * space program) and enriches the AI discovery prompt.
+ *
  * Collects search criteria for AI-powered consultant discovery:
  * discipline, geographic scope, budget tier, style keywords, result count.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  Search, Zap, Clock, MapPin, DollarSign, Palette, Hash, X,
+  Search, Zap, Clock, MapPin, DollarSign, Palette, Hash, X, Users, ToggleLeft, ToggleRight, Info,
 } from 'lucide-react';
+import {
+  extractState,
+  deriveStyleKeywords,
+  deriveBudgetTier,
+  checkMatchPrerequisites,
+} from '../utils/matchingAlgorithm';
 
 const DISCIPLINES = [
   { key: 'architect', label: 'Architect', color: '#315098', icon: '🏛' },
@@ -39,7 +49,7 @@ const STYLE_SUGGESTIONS = [
 
 const RESULT_COUNTS = [5, 10, 15, 20];
 
-const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
+const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, fyiData }) => {
   const [discipline, setDiscipline] = useState('architect');
   const [selectedStates, setSelectedStates] = useState([]);
   const [budgetTier, setBudgetTier] = useState('luxury');
@@ -47,6 +57,110 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
   const [styleInput, setStyleInput] = useState('');
   const [resultCount, setResultCount] = useState(10);
   const [showStatePicker, setShowStatePicker] = useState(false);
+
+  // Phase 4: Client profile toggle
+  const [useClientProfile, setUseClientProfile] = useState(false);
+
+  // Check prerequisites for profile toggle
+  const profilePrereqs = useMemo(() => {
+    return checkMatchPrerequisites(kycData, fyiData);
+  }, [kycData, fyiData]);
+
+  // Derive profile data when toggle is available
+  const profileData = useMemo(() => {
+    if (!kycData?.principal) return null;
+
+    const principal = kycData.principal;
+    const projectParams = principal.projectParameters || {};
+    const budgetFw = principal.budgetFramework || {};
+    const designId = principal.designIdentity || {};
+    const lifestyle = principal.lifestyleLiving || {};
+    const portfolioCtx = principal.portfolioContext || {};
+
+    // Client name
+    const clientName = [portfolioCtx.principalFirstName, portfolioCtx.principalLastName]
+      .filter(Boolean).join(' ') || 'Client';
+
+    // Extract state
+    const state = extractState(projectParams.projectCity, projectParams.projectCountry);
+
+    // Budget tier
+    const tier = deriveBudgetTier(budgetFw.totalProjectBudget);
+
+    // Style keywords from taste axes + tags
+    const styles = deriveStyleKeywords(designId);
+
+    // FYI included spaces
+    const includedSpaces = [];
+    if (fyiData?.selections) {
+      Object.entries(fyiData.selections).forEach(([code, space]) => {
+        if (space?.included) {
+          includedSpaces.push(space.displayName || space.name || code);
+        }
+      });
+    }
+
+    // Budget formatted
+    const budgetNum = Number(budgetFw.totalProjectBudget) || 0;
+    const budgetFormatted = budgetNum >= 1000000
+      ? '$' + (budgetNum / 1000000).toFixed(1) + 'M'
+      : budgetNum > 0
+        ? '$' + budgetNum.toLocaleString()
+        : null;
+
+    return {
+      clientName,
+      projectCity: projectParams.projectCity || '',
+      projectCountry: projectParams.projectCountry || '',
+      propertyType: projectParams.propertyType || '',
+      targetGSF: projectParams.targetGSF || fyiData?.settings?.targetSF || null,
+      state,
+      budgetTier: tier,
+      budgetFormatted,
+      totalBudget: budgetNum,
+      styleKeywords: styles,
+      includedSpaces,
+      designIdentity: designId,
+      lifestyle,
+    };
+  }, [kycData, fyiData]);
+
+  // Auto-fill when toggle is turned ON
+  useEffect(() => {
+    if (!useClientProfile || !profileData) return;
+
+    // Auto-select state
+    if (profileData.state) {
+      setSelectedStates(prev => {
+        if (prev.includes(profileData.state)) return prev;
+        return [profileData.state];
+      });
+    }
+
+    // Auto-select budget tier
+    if (profileData.budgetTier) {
+      setBudgetTier(profileData.budgetTier);
+    }
+
+    // Auto-populate style keywords
+    if (profileData.styleKeywords.length > 0) {
+      setStyleKeywords(profileData.styleKeywords);
+    }
+  }, [useClientProfile, profileData]);
+
+  // Clear auto-filled values when toggle is turned OFF
+  const handleToggleProfile = useCallback(() => {
+    if (useClientProfile) {
+      // Turning OFF — clear auto-filled values
+      setSelectedStates([]);
+      setBudgetTier('luxury');
+      setStyleKeywords([]);
+      setUseClientProfile(false);
+    } else {
+      // Turning ON
+      setUseClientProfile(true);
+    }
+  }, [useClientProfile]);
 
   const toggleState = useCallback((st) => {
     setSelectedStates(prev =>
@@ -81,8 +195,10 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
       budgetTier,
       styleKeywords,
       limit: resultCount,
+      useClientProfile,
+      profileData: useClientProfile ? profileData : null,
     });
-  }, [discipline, selectedStates, budgetTier, styleKeywords, resultCount, onSearch, isSearching]);
+  }, [discipline, selectedStates, budgetTier, styleKeywords, resultCount, onSearch, isSearching, useClientProfile, profileData]);
 
   const loadPreviousSearch = useCallback((search) => {
     if (search.discipline) setDiscipline(search.discipline);
@@ -90,10 +206,70 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
     if (search.budgetTier) setBudgetTier(search.budgetTier);
     if (search.styleKeywords) setStyleKeywords(search.styleKeywords);
     if (search.limit) setResultCount(search.limit);
+    // Don't restore profile toggle — user should re-enable explicitly
+    setUseClientProfile(false);
   }, []);
+
+  const profileToggleDisabled = !profilePrereqs.ready;
 
   return (
     <div className="gid-ai-form">
+      {/* Phase 4: Client Profile Toggle */}
+      <div className={`gid-profile-toggle ${useClientProfile ? 'gid-profile-toggle--active' : ''} ${profileToggleDisabled ? 'gid-profile-toggle--disabled' : ''}`}>
+        <div className="gid-profile-toggle__header">
+          <div className="gid-profile-toggle__label-row">
+            <Users size={16} />
+            <span className="gid-profile-toggle__label">Use Client Profile</span>
+          </div>
+          <button
+            className="gid-profile-toggle__switch"
+            onClick={handleToggleProfile}
+            disabled={profileToggleDisabled}
+            aria-label={useClientProfile ? 'Disable client profile' : 'Enable client profile'}
+          >
+            {useClientProfile
+              ? <ToggleRight size={28} className="gid-profile-toggle__icon gid-profile-toggle__icon--on" />
+              : <ToggleLeft size={28} className="gid-profile-toggle__icon gid-profile-toggle__icon--off" />
+            }
+          </button>
+        </div>
+
+        <p className="gid-profile-toggle__subtitle">
+          {profileToggleDisabled
+            ? 'Complete KYC Project City and Budget to enable profile-based search'
+            : useClientProfile
+              ? 'Search criteria derived from ' + (profileData?.clientName || 'client') + '\u2019s KYC & FYI data'
+              : 'Manual search \u2014 select your own criteria'
+          }
+        </p>
+
+        {/* Profile Summary Box */}
+        {useClientProfile && profileData && (
+          <div className="gid-profile-toggle__info">
+            <div className="gid-profile-toggle__info-header">
+              <Info size={14} />
+              <span>Profile Data Applied</span>
+            </div>
+            <div className="gid-profile-toggle__info-details">
+              <span>
+                {profileData.projectCity && profileData.projectCity}
+                {profileData.state && ', ' + profileData.state}
+                {profileData.budgetFormatted && ' \u00b7 Budget: ' + profileData.budgetFormatted}
+              </span>
+              <span>
+                {profileData.styleKeywords.length} style signal{profileData.styleKeywords.length !== 1 ? 's' : ''} detected
+              </span>
+              {profileData.includedSpaces.length > 0 && (
+                <span className="gid-profile-toggle__info-spaces">
+                  Spaces: {profileData.includedSpaces.slice(0, 8).join(', ')}
+                  {profileData.includedSpaces.length > 8 && ' +' + (profileData.includedSpaces.length - 8) + ' more'}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Discipline selector */}
       <div className="gid-ai-form__section">
         <label className="gid-ai-form__label">Discipline</label>
@@ -117,6 +293,9 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
         <label className="gid-ai-form__label">
           <MapPin size={14} />
           Geographic Focus
+          {useClientProfile && profileData?.state && (
+            <span className="gid-profile-badge">From KYC</span>
+          )}
         </label>
         <div className="gid-ai-form__state-controls">
           <button
@@ -125,7 +304,7 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
           >
             {selectedStates.length === 0
               ? 'National (all states)'
-              : `${selectedStates.length} state${selectedStates.length !== 1 ? 's' : ''} selected`
+              : selectedStates.length + ' state' + (selectedStates.length !== 1 ? 's' : '') + ' selected'
             }
           </button>
           {selectedStates.length > 0 && (
@@ -166,6 +345,9 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
         <label className="gid-ai-form__label">
           <DollarSign size={14} />
           Budget Tier
+          {useClientProfile && profileData?.budgetTier && (
+            <span className="gid-profile-badge">From KYC</span>
+          )}
         </label>
         <div className="gid-ai-form__budget-grid">
           {BUDGET_TIERS.map(bt => (
@@ -187,6 +369,9 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
         <label className="gid-ai-form__label">
           <Palette size={14} />
           Style Keywords
+          {useClientProfile && profileData?.styleKeywords.length > 0 && (
+            <span className="gid-profile-badge">From KYC</span>
+          )}
         </label>
         <div className="gid-ai-form__style-input-row">
           <input
@@ -262,12 +447,15 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [] }) => {
           ) : (
             <>
               <Zap size={16} />
-              Run AI Discovery
+              {useClientProfile ? 'Run Profile-Aware Discovery' : 'Run AI Discovery'}
             </>
           )}
         </button>
         <p className="gid-ai-form__hint">
-          AI will search for real, verifiable {DISCIPLINES.find(d => d.key === discipline)?.label.toLowerCase() || 'consultant'} firms matching your criteria.
+          {useClientProfile
+            ? 'AI will search for ' + (DISCIPLINES.find(d => d.key === discipline)?.label.toLowerCase() || 'consultant') + ' firms aligned with ' + (profileData?.clientName || 'client') + '\u2019s full design identity and project parameters.'
+            : 'AI will search for real, verifiable ' + (DISCIPLINES.find(d => d.key === discipline)?.label.toLowerCase() || 'consultant') + ' firms matching your criteria.'
+          }
         </p>
       </div>
 
