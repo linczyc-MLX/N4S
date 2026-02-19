@@ -1657,3 +1657,31 @@ LATEST COMMITS: 20298f8, c25b4f6
 
 Start by: git clone repo, read docs/*.md, verify deploy status, then address new requests.
 ```
+
+### February 19, 2026 — Session 2 (continued)
+
+**GID Phase 3 Deployment & Phase 4 Handover**
+
+#### Deployment Fixes
+- IONOS shared hosting blocks outbound cURL from PHP → switched AI Discovery to client-side Anthropic API calls
+- Created `api/gid-ai-config.php` endpoint to serve API key from `config-secrets.php` (gitignored)
+- Added `config-secrets.php` loader to `config.php` with direct fallback
+- Resolved GitHub push protection blocking secrets in git
+- Verified API key works via end-to-end Python test before deployment
+- GID Phase 3 Discovery screen fully operational
+
+#### Files Changed (deployment fixes)
+- `api/gid-ai-config.php` — NEW: serves API key for client-side calls
+- `api/config.php` — Added config-secrets.php auto-loader
+- `api/gid-discovery-ai.php` — Updated to check constant then env var
+- `src/components/GID/screens/GIDDiscoveryScreen.jsx` — Client-side Anthropic API integration with key caching
+- `.gitignore` — Added api/config-secrets.php
+
+#### Phase 4 Handover
+- Created `docs/GID-PHASE4-HANDOVER.md` — Client-Profile-Aware Discovery
+- Adds "Use Client Profile" toggle to AI Discovery form
+- Auto-fills from KYC (project city/state, budget, 7 taste axes, style tags, materials, lifestyle)
+- Auto-fills from FYI (included spaces, target SF, features)
+- Enriched AI prompt with full client context for targeted matching
+- Reuses TASTE_STYLE_MAP from matchingAlgorithm.js for style derivation
+- No backend changes needed — all client-side
