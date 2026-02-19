@@ -2475,6 +2475,138 @@
   text-align: center;
 }
 
+/* ---- Phase 4: Client Profile Toggle ---- */
+
+.gid-profile-toggle {
+  background: #ffffff;
+  border: 1.5px solid #e5e5e0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.gid-profile-toggle--active {
+  border-color: #1e3a5f;
+  background: #f8fafc;
+}
+
+.gid-profile-toggle--disabled {
+  opacity: 0.6;
+}
+
+.gid-profile-toggle__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gid-profile-toggle__label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e3a5f;
+}
+
+.gid-profile-toggle__label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.gid-profile-toggle__switch {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.gid-profile-toggle__switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.gid-profile-toggle__icon--on {
+  color: #1e3a5f;
+}
+
+.gid-profile-toggle__icon--off {
+  color: #b0b0b0;
+}
+
+.gid-profile-toggle__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: #6b6b6b;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
+.gid-profile-toggle--disabled .gid-profile-toggle__subtitle {
+  font-style: italic;
+  color: #999;
+}
+
+.gid-profile-toggle__info {
+  margin-top: 12px;
+  background: #eef2f7;
+  border: 1px solid #d0dbe8;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.gid-profile-toggle__info-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1e3a5f;
+  margin-bottom: 6px;
+}
+
+.gid-profile-toggle__info-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gid-profile-toggle__info-details span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.gid-profile-toggle__info-spaces {
+  color: #6b6b6b !important;
+  font-size: 0.75rem !important;
+}
+
+/* Profile source badges on auto-filled fields */
+.gid-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: #eef2f7;
+  border: 1px solid #d0dbe8;
+  border-radius: 3px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1e3a5f;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 /* ---- Responsive Discovery ---- */
 
 @media (max-width: 768px) {
@@ -2512,5 +2644,14 @@
 
   .gid-discovery-manual__row {
     flex-direction: column;
+  }
+
+  .gid-profile-toggle__header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .gid-profile-toggle__info-details span {
+    font-size: 0.75rem;
   }
 }
