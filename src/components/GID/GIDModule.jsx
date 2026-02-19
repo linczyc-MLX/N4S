@@ -23,6 +23,7 @@ import AddConsultantForm from './components/AddConsultantForm';
 import ConsultantDetailModal from './components/ConsultantDetailModal';
 import GIDMatchScreen from './screens/GIDMatchScreen';
 import GIDDiscoveryScreen from './screens/GIDDiscoveryScreen';
+import GIDAssemblyScreen from './screens/GIDAssemblyScreen';
 import './GIDModule.css';
 
 // N4S Brand Colors
@@ -491,7 +492,10 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               <Filter size={16} />
               Matchmaking
             </button>
-            <button className="gid-screen-tab gid-screen-tab--disabled" disabled title="Phase 4">
+            <button
+              className={`gid-screen-tab ${viewMode === 'assembly' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('assembly'); setSelectedConsultant(null); }}
+            >
               <Briefcase size={16} />
               Assembly
             </button>
@@ -624,6 +628,11 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
                 setViewMode('add');
               }}
             />
+          )}
+
+          {/* Assembly Screen */}
+          {viewMode === 'assembly' && (
+            <GIDAssemblyScreen />
           )}
 
           {/* Detail Modal */}

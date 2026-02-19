@@ -554,8 +554,8 @@ if ($entity === 'engagements') {
             $params = [];
 
             $updatable = ['contact_status', 'team_notes', 'client_feedback', 'chemistry_score',
-                          'date_contacted', 'date_responded', 'date_meeting', 'date_proposal',
-                          'date_engaged', 'date_contracted'];
+                          'project_outcome', 'date_contacted', 'date_responded', 'date_meeting',
+                          'date_proposal', 'date_engaged', 'date_contracted'];
 
             foreach ($updatable as $field) {
                 if (isset($body[$field])) {
