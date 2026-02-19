@@ -31,10 +31,12 @@ jobs:
       - name: Prepare API files
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           mkdir -p build/api
           cp api/* build/api/
           sed -i "s|\$DB_PASS = getenv('DB_PASS') ?: '';|\$DB_PASS = getenv('DB_PASS') ?: '$DB_PASSWORD';|" build/api/config.php
+          printf '<?php\ndefine('"'"'ANTHROPIC_API_KEY'"'"', '"'"'%s'"'"');\n' "$ANTHROPIC_API_KEY" > build/api/config-secrets.php
           echo "Files to deploy:"
           ls -la build/
           ls -la build/api/

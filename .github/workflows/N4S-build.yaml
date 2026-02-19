@@ -37,10 +37,12 @@ jobs:
           CI: true
           SITE_URL: ${{ inputs.site-url }}
           REACT_APP_RAPIDAPI_KEY: ${{ secrets.REACT_APP_RAPIDAPI_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           npm install
           CI=false npm run build
           cp -r api build/api
+          printf '<?php\ndefine('"'"'ANTHROPIC_API_KEY'"'"', '"'"'%s'"'"');\n' "$ANTHROPIC_API_KEY" > build/api/config-secrets.php
 
 # Please do not touch the following action
       - name: Store deployment content
