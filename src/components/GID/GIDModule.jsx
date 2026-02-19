@@ -21,6 +21,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import GIDDocumentation from './GIDDocumentation';
 import AddConsultantForm from './components/AddConsultantForm';
 import ConsultantDetailModal from './components/ConsultantDetailModal';
+import GIDMatchScreen from './screens/GIDMatchScreen';
 import './GIDModule.css';
 
 // N4S Brand Colors
@@ -460,7 +461,10 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               <Search size={16} />
               Discovery
             </button>
-            <button className="gid-screen-tab gid-screen-tab--disabled" disabled title="Phase 2">
+            <button
+              className={`gid-screen-tab ${viewMode === 'match' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('match'); setSelectedConsultant(null); }}
+            >
               <Filter size={16} />
               Matchmaking
             </button>
@@ -581,6 +585,11 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               onCancel={handleCancelForm}
               isEditing={viewMode === 'edit'}
             />
+          )}
+
+          {/* Matchmaking Screen */}
+          {viewMode === 'match' && (
+            <GIDMatchScreen />
           )}
 
           {/* Detail Modal */}

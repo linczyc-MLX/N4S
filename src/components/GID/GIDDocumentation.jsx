@@ -146,27 +146,36 @@ const GIDDocumentation = ({ onClose }) => {
 
         {activeTab === 3 && (
           <div className="n4s-docs-content">
-            <h3>Matching Algorithm</h3>
+            <h3>Matching Algorithm (Live — Phase 2)</h3>
             <table className="n4s-docs-table">
               <thead>
                 <tr><th>Dimension</th><th>Max</th><th>Source</th></tr>
               </thead>
               <tbody>
-                <tr><td>Geographic Relevance</td><td>20</td><td>KYC location vs service areas</td></tr>
-                <tr><td>Budget Alignment</td><td>25</td><td>KYC budget vs consultant range</td></tr>
-                <tr><td>Style Compatibility</td><td>20</td><td>Taste Exploration vs specialties</td></tr>
-                <tr><td>Experience Tier</td><td>15</td><td>Years of experience</td></tr>
-                <tr><td>Quality Signal</td><td>20</td><td>Average rating × 4</td></tr>
-                <tr><td>Feature Specialization</td><td>10</td><td>FYI features vs portfolio</td></tr>
+                <tr><td>Geographic Relevance</td><td>20</td><td>KYC location vs service areas &amp; HQ state</td></tr>
+                <tr><td>Budget Alignment</td><td>25</td><td>KYC total budget vs consultant min/max range</td></tr>
+                <tr><td>Style Compatibility</td><td>20</td><td>Taste axes &amp; style tags vs consultant specialties</td></tr>
+                <tr><td>Experience Tier</td><td>15</td><td>Years of experience (20+/12+/8+/5+)</td></tr>
+                <tr><td>Quality Signal</td><td>20</td><td>Average rating × 4 (unrated = 10 baseline)</td></tr>
+                <tr><td>Feature Specialization</td><td>10</td><td>FYI included space features vs portfolio features</td></tr>
               </tbody>
             </table>
-            <p>Total: 110 points, normalized to 100.</p>
+            <p>Total: 110 raw points, normalized to 100 per score.</p>
+
+            <h3>Dual Scoring (Mirrors BAM v3.0)</h3>
+            <p><strong>Client Fit Score:</strong> Weighted toward Style (×1.5), Quality (×1.2). Measures how well the consultant matches the client's taste, lifestyle, and quality expectations.</p>
+            <p><strong>Project Fit Score:</strong> Weighted toward Budget (×1.5), Geography (×1.2), Features (×1.2). Measures practical alignment with project requirements and logistics.</p>
+            <p><strong>Combined Score:</strong> Average of Client Fit and Project Fit.</p>
 
             <h3>Match Tiers</h3>
-            <p><strong>Top Match (80–100):</strong> High confidence — present to client.</p>
-            <p><strong>Good Fit (60–79):</strong> Strong candidate with minor gaps.</p>
-            <p><strong>Consider (40–59):</strong> Worth discussion, may need compromise.</p>
+            <p><strong>Top Match (80–100):</strong> High confidence — present to client. Gold badge.</p>
+            <p><strong>Good Fit (60–79):</strong> Strong candidate with minor gaps. Navy badge.</p>
+            <p><strong>Consider (40–59):</strong> Worth discussion, may need compromise. Muted badge.</p>
             <p><strong>Below Threshold (&lt;40):</strong> Filtered out unless manually overridden.</p>
+
+            <h3>Prerequisite Gates</h3>
+            <p><strong>Required:</strong> Project City (KYC), Total Project Budget (KYC).</p>
+            <p><strong>Recommended:</strong> Taste axes, style tags, FYI space selections, target SF. Matching runs with available data — more data yields better scores.</p>
 
             <h3>Data Source Tiers</h3>
             <p><strong>Tier 1:</strong> Public records (building permits, planning commissions)</p>

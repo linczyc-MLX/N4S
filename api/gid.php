@@ -504,7 +504,119 @@ if ($entity === 'stats') {
     jsonResponse($stats);
 }
 
+// ============================================================================
+// ENGAGEMENTS (Shortlisting & Pipeline Tracking)
+// ============================================================================
+
+if ($entity === 'engagements') {
+
+    // GET — List engagements for a project
+    if ($method === 'GET') {
+        $projectId = $_GET['project_id'] ?? null;
+        $discipline = $_GET['discipline'] ?? null;
+
+        $sql = "SELECT e.*, c.firm_name, c.first_name, c.last_name, c.role, c.hq_city, c.hq_state
+                FROM gid_engagements e
+                LEFT JOIN gid_consultants c ON e.consultant_id = c.id
+                WHERE 1=1";
+        $params = [];
+
+        if ($projectId) {
+            $sql .= " AND e.n4s_project_id = ?";
+            $params[] = $projectId;
+        }
+        if ($discipline) {
+            $sql .= " AND e.discipline = ?";
+            $params[] = $discipline;
+        }
+
+        $sql .= " ORDER BY e.match_score DESC, e.date_shortlisted DESC";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $engagements = $stmt->fetchAll();
+
+        // Parse JSON fields
+        foreach ($engagements as &$eng) {
+            $eng['match_breakdown'] = json_decode($eng['match_breakdown'] ?? '[]', true);
+        }
+
+        jsonResponse(['engagements' => $engagements]);
+    }
+
+    // POST — Create or update engagement
+    if ($method === 'POST') {
+        $body = getBody();
+
+        // Update existing
+        if ($id && $action === 'update') {
+            $fields = [];
+            $params = [];
+
+            $updatable = ['contact_status', 'team_notes', 'client_feedback', 'chemistry_score',
+                          'date_contacted', 'date_responded', 'date_meeting', 'date_proposal',
+                          'date_engaged', 'date_contracted'];
+
+            foreach ($updatable as $field) {
+                if (isset($body[$field])) {
+                    $fields[] = "$field = ?";
+                    $params[] = $body[$field];
+                }
+            }
+
+            if (empty($fields)) {
+                errorResponse('No updatable fields provided');
+            }
+
+            $fields[] = "updated_at = CURRENT_TIMESTAMP";
+            $params[] = $id;
+
+            $sql = "UPDATE gid_engagements SET " . implode(', ', $fields) . " WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+
+            jsonResponse(['success' => true, 'id' => $id]);
+        }
+
+        // Delete (soft)
+        if ($id && $action === 'delete') {
+            $stmt = $pdo->prepare("DELETE FROM gid_engagements WHERE id = ?");
+            $stmt->execute([$id]);
+            jsonResponse(['success' => true, 'deleted' => $id]);
+        }
+
+        // Create new engagement
+        $required = ['consultant_id', 'discipline'];
+        foreach ($required as $field) {
+            if (empty($body[$field])) {
+                errorResponse("Missing required field: $field");
+            }
+        }
+
+        $engId = generateUUID();
+        $stmt = $pdo->prepare("INSERT INTO gid_engagements
+            (id, n4s_project_id, consultant_id, discipline, match_score, client_fit_score,
+             project_fit_score, match_breakdown, recommended_by, contact_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        $stmt->execute([
+            $engId,
+            $body['n4s_project_id'] ?? 'default',
+            $body['consultant_id'],
+            $body['discipline'],
+            $body['match_score'] ?? null,
+            $body['client_fit_score'] ?? null,
+            $body['project_fit_score'] ?? null,
+            $body['match_breakdown'] ?? null,
+            $body['recommended_by'] ?? 'matching_algorithm',
+            $body['contact_status'] ?? 'shortlisted',
+        ]);
+
+        jsonResponse(['success' => true, 'id' => $engId], 201);
+    }
+}
+
 // If no entity matched
 if (empty($entity)) {
-    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats');
+    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements');
 }
