@@ -1685,3 +1685,66 @@ Start by: git clone repo, read docs/*.md, verify deploy status, then address new
 - Enriched AI prompt with full client context for targeted matching
 - Reuses TASTE_STYLE_MAP from matchingAlgorithm.js for style derivation
 - No backend changes needed — all client-side
+
+### February 19, 2026 — Session 3
+
+**GID Phase 4: Client-Profile-Aware Discovery + AS Spectrum + PM Data Quality**
+
+#### Phase 4.0 — Profile-Aware Discovery (452 additions, 4 files)
+- Added "Use Client Profile" toggle to AI Discovery form
+- Auto-fills from KYC: projectCity→state, totalProjectBudget→budgetTier, designIdentity→styleKeywords
+- Auto-fills from FYI: included spaces list
+- Enriched AI prompt with full design identity, taste axes, lifestyle signals, space program
+- New functions: `deriveStyleKeywords()`, `deriveBudgetTier()`, `extractState()` exported from matchingAlgorithm.js
+- Profile summary info box shows location, budget, style signals, spaces
+- "FROM KYC" badges on auto-filled form sections
+- Submit passes `useClientProfile` + `profileData` to search handler
+
+#### Phase 4.1 — Architectural Style Spectrum (AS1–AS9)
+- New `deriveArchitecturalStyles()` function maps tradition score to 9-point spectrum
+- Always returns 3 adjacent styles (primary + 2 neighbors), edge-clamped
+- Sources: Taste Exploration profile scores (high confidence) → KYC slider fallback
+- Profile summary shows architectural style categories with AS position
+- AI prompt gets `ARCHITECTURAL STYLE SPECTRUM MATCH` priority block
+- Fixed `deriveStyleKeywords()` to read from `principalTasteResults` (was returning "0 style signals")
+
+#### Phase 4.2 — Discipline-Specific Prompt Enrichment
+- Added `getDisciplineGuidance()` with 40-80 lines per discipline
+- PM/Owner's Rep: Deep boutique niche calibration — excludes commercial builders, targets Owner's Reps, Development Managers, CMAA-certified, exemplar firms
+- GC: Luxury residential builder focus, excludes commercial/national
+- Architect: AIA, AD100, portfolio-driven
+- Interior Designer: AD100, ELLE DECOR, Luxe Gold List
+- Created `api/gid-ai-proxy.php` (server-side proxy) — FAILED on IONOS (outbound HTTPS blocked)
+- Reverted to client-side API calls (stable now that config-secrets.php is gitignored)
+
+#### Security Fix (Claude Code)
+- Removed `api/config-secrets.php` from git tracking
+- Added to `.gitignore` — deploys no longer overwrite FTP key with stale git copy
+- ROOT CAUSE of recurring key failures: every deploy was overwriting the fresh FTP key
+- Key rotated after fix
+
+#### ITR Items Added
+- ITR-7: BYOK API Marketplace for SaaS/3rd-party deployment
+- ITR-8: PM/Owner's Rep Discovery data quality tracking
+
+#### Documentation
+- `docs/Luxury-Construction-Data-Search.md` — PM/GC data source research
+- `docs/GID-ASSEMBLY-HANDOVER.md` — Handoff for Assembly screen implementation
+
+#### Files Changed
+| File | Action | Notes |
+|------|--------|-------|
+| `src/components/GID/utils/matchingAlgorithm.js` | MODIFIED | +deriveArchitecturalStyles, +AS_SPECTRUM, fixed deriveStyleKeywords |
+| `src/components/GID/components/AIDiscoveryForm.jsx` | MODIFIED | Profile toggle, auto-fill, arch styles display |
+| `src/components/GID/screens/GIDDiscoveryScreen.jsx` | MODIFIED | getDisciplineGuidance(), enriched prompts, AS context, proxy→revert |
+| `src/components/GID/GIDModule.css` | MODIFIED | Profile toggle styles, arch styles info CSS |
+| `api/gid-ai-proxy.php` | NEW | Server-side proxy (kept for future hosting upgrade) |
+| `docs/DATA-INTEGRITY-SF-AUDIT.md` | MODIFIED | +ITR-7, +ITR-8 |
+| `docs/Luxury-Construction-Data-Search.md` | NEW | PM/GC data source research |
+| `docs/GID-ASSEMBLY-HANDOVER.md` | NEW | Assembly module handoff |
+
+#### Key Technical Learnings
+- IONOS shared hosting blocks ALL outbound HTTPS from PHP (cURL AND file_get_contents)
+- `anthropic-dangerous-direct-browser-access` header is the only option on IONOS
+- config-secrets.php was being overwritten by every deploy (was tracked in git despite comment saying otherwise)
+- Taste Exploration scores live in `principalTasteResults.profile.scores` (1-10 scale), NOT in flat KYC axis fields
