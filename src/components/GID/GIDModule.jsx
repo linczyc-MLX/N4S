@@ -22,6 +22,7 @@ import GIDDocumentation from './GIDDocumentation';
 import AddConsultantForm from './components/AddConsultantForm';
 import ConsultantDetailModal from './components/ConsultantDetailModal';
 import GIDMatchScreen from './screens/GIDMatchScreen';
+import GIDDiscoveryScreen from './screens/GIDDiscoveryScreen';
 import './GIDModule.css';
 
 // N4S Brand Colors
@@ -295,9 +296,10 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
   const [error, setError] = useState(null);
 
   // View state
-  const [viewMode, setViewMode] = useState('registry'); // 'registry' | 'add' | 'edit'
+  const [viewMode, setViewMode] = useState('registry'); // 'registry' | 'add' | 'edit' | 'match' | 'discovery'
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [queueCount, setQueueCount] = useState(0);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,6 +334,23 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
   useEffect(() => {
     loadConsultants();
   }, [loadConsultants]);
+
+  // Fetch discovery queue count for badge
+  const loadQueueCount = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/gid.php?entity=discovery&action=queue_stats`, { credentials: 'include' });
+      if (res.ok) {
+        const stats = await res.json();
+        setQueueCount(stats.queue || 0);
+      }
+    } catch (err) {
+      // Silently fail — badge is non-critical
+    }
+  }, []);
+
+  useEffect(() => {
+    loadQueueCount();
+  }, [loadQueueCount]);
 
   // Handlers
   const handleViewConsultant = useCallback(async (consultant) => {
@@ -457,9 +476,13 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               <Users size={16} />
               Registry
             </button>
-            <button className="gid-screen-tab gid-screen-tab--disabled" disabled title="Phase 3">
+            <button
+              className={`gid-screen-tab ${viewMode === 'discovery' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('discovery'); setSelectedConsultant(null); }}
+            >
               <Search size={16} />
               Discovery
+              {queueCount > 0 && <span className="gid-queue-badge">{queueCount}</span>}
             </button>
             <button
               className={`gid-screen-tab ${viewMode === 'match' ? 'gid-screen-tab--active' : ''}`}
@@ -590,6 +613,17 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
           {/* Matchmaking Screen */}
           {viewMode === 'match' && (
             <GIDMatchScreen />
+          )}
+
+          {/* Discovery Screen */}
+          {viewMode === 'discovery' && (
+            <GIDDiscoveryScreen
+              onImportComplete={() => { loadConsultants(); loadQueueCount(); }}
+              onQuickAdd={(prefill) => {
+                setSelectedConsultant(prefill);
+                setViewMode('add');
+              }}
+            />
           )}
 
           {/* Detail Modal */}

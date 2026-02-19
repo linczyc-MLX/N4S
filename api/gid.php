@@ -616,7 +616,269 @@ if ($entity === 'engagements') {
     }
 }
 
+// ============================================================================
+// DISCOVERY CANDIDATES (Phase 3)
+// ============================================================================
+
+if ($entity === 'discovery') {
+
+    // GET — Queue stats (must check before listing)
+    if ($method === 'GET' && $action === 'queue_stats') {
+        $stmt = $pdo->query("SELECT status, COUNT(*) as count FROM gid_discovery_candidates GROUP BY status");
+        $rows = $stmt->fetchAll();
+        $stats = ['pending' => 0, 'reviewing' => 0, 'approved' => 0, 'dismissed' => 0, 'imported' => 0, 'total' => 0];
+        foreach ($rows as $r) {
+            $stats[$r['status']] = (int)$r['count'];
+            $stats['total'] += (int)$r['count'];
+        }
+        $stats['queue'] = $stats['pending'] + $stats['reviewing'] + $stats['approved'];
+        jsonResponse($stats);
+    }
+
+    // GET — List candidates or single candidate
+    if ($method === 'GET') {
+
+        // Single candidate
+        if ($id) {
+            $stmt = $pdo->prepare("SELECT * FROM gid_discovery_candidates WHERE id = ?");
+            $stmt->execute([$id]);
+            $candidate = $stmt->fetch();
+            if (!$candidate) errorResponse('Candidate not found', 404);
+
+            // Parse JSON fields
+            foreach (['specialties', 'service_areas', 'notable_projects', 'awards', 'publications'] as $jf) {
+                $candidate[$jf] = json_decode($candidate[$jf] ?? '[]', true);
+            }
+            jsonResponse($candidate);
+        }
+
+        // List with filters
+        $where = ["1=1"];
+        $params = [];
+
+        if (!empty($_GET['status'])) {
+            // Support comma-separated statuses
+            $statuses = explode(',', $_GET['status']);
+            $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+            $where[] = "status IN ($placeholders)";
+            $params = array_merge($params, $statuses);
+        }
+        if (!empty($_GET['discipline'])) {
+            $where[] = "discipline = ?";
+            $params[] = $_GET['discipline'];
+        }
+        if (!empty($_GET['source_tier'])) {
+            $where[] = "source_tier = ?";
+            $params[] = (int)$_GET['source_tier'];
+        }
+        if (!empty($_GET['state'])) {
+            $where[] = "hq_state = ?";
+            $params[] = $_GET['state'];
+        }
+
+        $limit = min((int)($_GET['limit'] ?? 50), 200);
+        $offset = max((int)($_GET['offset'] ?? 0), 0);
+
+        $whereClause = implode(' AND ', $where);
+        $sql = "SELECT * FROM gid_discovery_candidates WHERE $whereClause ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $candidates = $stmt->fetchAll();
+
+        foreach ($candidates as &$c) {
+            foreach (['specialties', 'service_areas', 'notable_projects', 'awards', 'publications'] as $jf) {
+                $c[$jf] = json_decode($c[$jf] ?? '[]', true);
+            }
+        }
+
+        $countSql = "SELECT COUNT(*) FROM gid_discovery_candidates WHERE $whereClause";
+        $countStmt = $pdo->prepare($countSql);
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetchColumn();
+
+        jsonResponse(['candidates' => $candidates, 'total' => $total, 'limit' => $limit, 'offset' => $offset]);
+    }
+
+    // POST actions
+    if ($method === 'POST') {
+        $body = getBody();
+
+        // Review a candidate (approve/dismiss)
+        if ($id && $action === 'review') {
+            $newStatus = $body['status'] ?? null;
+            if (!in_array($newStatus, ['pending', 'reviewing', 'approved', 'dismissed'])) {
+                errorResponse('Invalid status. Use: pending, reviewing, approved, dismissed');
+            }
+            $stmt = $pdo->prepare("UPDATE gid_discovery_candidates SET status = ?, reviewed_by = ?, review_notes = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([
+                $newStatus,
+                $body['reviewed_by'] ?? 'LRA Team',
+                $body['review_notes'] ?? null,
+                $id
+            ]);
+            jsonResponse(['success' => true, 'id' => $id, 'status' => $newStatus]);
+        }
+
+        // Import candidate to registry
+        if ($id && $action === 'import') {
+            // Load candidate
+            $stmt = $pdo->prepare("SELECT * FROM gid_discovery_candidates WHERE id = ?");
+            $stmt->execute([$id]);
+            $candidate = $stmt->fetch();
+            if (!$candidate) errorResponse('Candidate not found', 404);
+            if ($candidate['status'] === 'imported') errorResponse('Already imported');
+
+            // Parse principal name
+            $nameParts = explode(' ', trim($candidate['principal_name'] ?? ''), 2);
+            $firstName = $nameParts[0] ?? null;
+            $lastName = $nameParts[1] ?? null;
+
+            // Map budget tier to values
+            $budgetMap = [
+                'ultra_luxury' => [10000000, 50000000],
+                'luxury'       => [5000000, 15000000],
+                'high_end'     => [2000000, 8000000],
+                'mid_range'    => [1000000, 3000000],
+            ];
+            $budgetRange = $budgetMap[$candidate['estimated_budget_tier']] ?? [null, null];
+
+            // Create consultant
+            $consultantId = generateUUID();
+            $sourceAttribution = json_encode([
+                'source_tier' => $candidate['source_tier'],
+                'source_type' => $candidate['source_type'],
+                'source_url' => $candidate['source_url'],
+                'source_name' => $candidate['source_name'],
+                'discovery_query' => $candidate['discovery_query'],
+                'confidence_score' => $candidate['confidence_score'],
+                'discovery_candidate_id' => $candidate['id'],
+            ]);
+
+            $stmt = $pdo->prepare("INSERT INTO gid_consultants (
+                id, role, first_name, last_name, firm_name,
+                specialties, service_areas, hq_city, hq_state, hq_country,
+                min_budget, max_budget, website, linkedin_url,
+                years_experience, verification_status, active,
+                source_of_discovery, source_attribution, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, ?, ?, 'gid_discovery')");
+
+            $stmt->execute([
+                $consultantId,
+                $candidate['discipline'],
+                $firstName,
+                $lastName,
+                $candidate['firm_name'],
+                $candidate['specialties'] ?? '[]',
+                $candidate['service_areas'] ?? '[]',
+                $candidate['hq_city'],
+                $candidate['hq_state'],
+                $candidate['hq_country'],
+                $budgetRange[0],
+                $budgetRange[1],
+                $candidate['website'],
+                $candidate['linkedin_url'],
+                $candidate['years_experience'],
+                $candidate['source_type'],
+                $sourceAttribution,
+            ]);
+
+            // Create source record
+            $sourceId = generateUUID();
+            $stmt = $pdo->prepare("INSERT INTO gid_sources (id, consultant_id, source_type, source_name, source_url, discovery_date, notes)
+                VALUES (?, ?, ?, ?, ?, CURDATE(), ?)");
+            $stmt->execute([
+                $sourceId,
+                $consultantId,
+                $candidate['source_type'],
+                $candidate['source_name'],
+                $candidate['source_url'],
+                'Imported from GID Discovery. Query: ' . ($candidate['discovery_query'] ?? 'Manual'),
+            ]);
+
+            // Update candidate record
+            $stmt = $pdo->prepare("UPDATE gid_discovery_candidates SET status = 'imported', imported_consultant_id = ?, imported_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$consultantId, $id]);
+
+            jsonResponse(['success' => true, 'consultant_id' => $consultantId, 'candidate_id' => $id], 201);
+        }
+
+        // Batch review (approve/dismiss multiple)
+        if (!$id && $action === 'batch_review') {
+            $ids = $body['ids'] ?? [];
+            $newStatus = $body['status'] ?? null;
+            if (empty($ids) || !in_array($newStatus, ['approved', 'dismissed'])) {
+                errorResponse('Provide ids array and valid status (approved/dismissed)');
+            }
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $pdo->prepare("UPDATE gid_discovery_candidates SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id IN ($placeholders) AND status != 'imported'");
+            $stmt->execute(array_merge([$newStatus, $body['reviewed_by'] ?? 'LRA Team'], $ids));
+            jsonResponse(['success' => true, 'updated' => count($ids), 'status' => $newStatus]);
+        }
+
+        // Create candidate (manual or from AI)
+        if (!$id && !$action) {
+            $newId = $body['id'] ?? generateUUID();
+
+            // Check for duplicates (same firm_name + hq_state)
+            if (!empty($body['firm_name'])) {
+                $stmt = $pdo->prepare("SELECT id, status FROM gid_discovery_candidates WHERE firm_name = ? AND hq_state = ? LIMIT 1");
+                $stmt->execute([$body['firm_name'], $body['hq_state'] ?? '']);
+                $existing = $stmt->fetch();
+                if ($existing) {
+                    jsonResponse(['warning' => 'duplicate', 'existing_id' => $existing['id'], 'existing_status' => $existing['status']], 200);
+                }
+                // Also check main registry
+                $stmt = $pdo->prepare("SELECT id FROM gid_consultants WHERE firm_name = ? AND hq_state = ? AND active = 1 LIMIT 1");
+                $stmt->execute([$body['firm_name'], $body['hq_state'] ?? '']);
+                $existingReg = $stmt->fetch();
+                if ($existingReg) {
+                    jsonResponse(['warning' => 'already_in_registry', 'consultant_id' => $existingReg['id']], 200);
+                }
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO gid_discovery_candidates (
+                id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
+                website, linkedin_url, specialties, service_areas, estimated_budget_tier,
+                years_experience, notable_projects, awards, publications,
+                source_tier, source_type, source_url, source_name, discovery_query,
+                confidence_score, source_rationale, status, discovered_by, project_context
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            $stmt->execute([
+                $newId,
+                $body['discipline'] ?? 'architect',
+                $body['firm_name'] ?? 'Unknown Firm',
+                $body['principal_name'] ?? null,
+                $body['hq_city'] ?? null,
+                $body['hq_state'] ?? null,
+                $body['hq_country'] ?? 'USA',
+                $body['website'] ?? null,
+                $body['linkedin_url'] ?? null,
+                json_encode($body['specialties'] ?? []),
+                json_encode($body['service_areas'] ?? []),
+                $body['estimated_budget_tier'] ?? null,
+                $body['years_experience'] ?? null,
+                json_encode($body['notable_projects'] ?? []),
+                json_encode($body['awards'] ?? []),
+                json_encode($body['publications'] ?? []),
+                $body['source_tier'] ?? 3,
+                $body['source_type'] ?? 'ai_discovery',
+                $body['source_url'] ?? null,
+                $body['source_name'] ?? null,
+                $body['discovery_query'] ?? null,
+                $body['confidence_score'] ?? null,
+                $body['source_rationale'] ?? null,
+                'pending',
+                $body['discovered_by'] ?? 'LRA Team',
+                $body['project_context'] ?? null,
+            ]);
+
+            jsonResponse(['success' => true, 'id' => $newId], 201);
+        }
+    }
+}
+
 // If no entity matched
 if (empty($entity)) {
-    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements');
+    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements, discovery');
 }

@@ -1,5 +1,44 @@
 # N4S Session Log
 
+## Session: February 19, 2026 - GID Phase 3: Discovery Screen Implementation
+
+### Changes Made
+
+**Backend — Database**
+- `api/gid-setup.php` — Added `gid_discovery_candidates` table (Table 6) with full schema: discipline, firm info, source tracking, review workflow, import tracking, 7 indexes
+
+**Backend — API Endpoints**
+- `api/gid.php` — Added `entity=discovery` with 7 endpoints:
+  - GET list/single candidates with filters (status, discipline, source_tier, state)
+  - GET queue_stats (counts by status)
+  - POST create candidate (with duplicate detection against both discovery table and registry)
+  - POST review candidate (approve/dismiss with notes)
+  - POST import candidate (full field mapping to gid_consultants + gid_sources creation)
+  - POST batch_review (approve/dismiss multiple)
+- `api/gid-discovery-ai.php` — NEW file. Server-side AI discovery endpoint using Claude Sonnet via Anthropic API. Builds structured prompt from criteria, calls API, parses JSON response, inserts candidates with duplicate detection, returns results.
+
+**Frontend — New Components**
+- `src/components/GID/screens/GIDDiscoveryScreen.jsx` — Main Discovery screen with 3 sub-modes:
+  - Manual Search — Quick firm lookup + redirect to AddConsultantForm
+  - AI Discovery — Criteria form + results display with approve/dismiss/import actions
+  - Import Queue — Filterable candidate list with batch operations
+- `src/components/GID/components/CandidateCard.jsx` — Discovery candidate card with source tier badge (T1-T5 color-coded), confidence bar, expandable notable projects/awards, status indicators, action buttons
+- `src/components/GID/components/AIDiscoveryForm.jsx` — AI search criteria form: 4-discipline selector, US state multi-picker, 4 budget tiers, style keyword tagging with suggestions, result count selector, recent search history
+
+**Frontend — Modified**
+- `src/components/GID/GIDModule.jsx` — Enabled Discovery tab (removed disabled state), added queue badge counter, wired GIDDiscoveryScreen with onImportComplete and onQuickAdd callbacks
+- `src/components/GID/GIDModule.css` — Added ~925 lines of Discovery CSS: candidate cards, source tier badges, confidence bars, AI form layout, state picker, batch actions bar, queue filters, responsive breakpoints
+
+### Build Status
+- ✅ `CI=false npm run build` passes cleanly
+
+### Deployment Notes
+- New PHP file `api/gid-discovery-ai.php` needs `ANTHROPIC_API_KEY` environment variable set on server
+- New DB table: hit `api/gid-setup.php` endpoint to create `gid_discovery_candidates` table
+- Standard push → GitHub Actions auto-deploy
+
+---
+
 ## Session: February 7, 2026 - MVP ITR Batch Implementation
 
 ### User Request

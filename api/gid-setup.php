@@ -159,6 +159,58 @@ $queries[] = "CREATE TABLE IF NOT EXISTS gid_sources (
   FOREIGN KEY (consultant_id) REFERENCES gid_consultants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
+// Table 6: gid_discovery_candidates (Phase 3)
+$queries[] = "CREATE TABLE IF NOT EXISTS gid_discovery_candidates (
+  id VARCHAR(36) PRIMARY KEY,
+  discipline VARCHAR(50) NOT NULL COMMENT 'architect | interior_designer | pm | gc',
+  firm_name VARCHAR(200) NOT NULL,
+  principal_name VARCHAR(200),
+  hq_city VARCHAR(100),
+  hq_state VARCHAR(50),
+  hq_country VARCHAR(100) DEFAULT 'USA',
+  website VARCHAR(255),
+  linkedin_url VARCHAR(255),
+  specialties JSON DEFAULT NULL,
+  service_areas JSON DEFAULT NULL,
+  estimated_budget_tier VARCHAR(50) COMMENT 'ultra_luxury | luxury | high_end | mid_range',
+  years_experience INT DEFAULT NULL,
+  notable_projects JSON DEFAULT NULL COMMENT '[{name, location, year}]',
+  awards JSON DEFAULT NULL COMMENT '[{name, year}]',
+  publications JSON DEFAULT NULL COMMENT '[{publication, year, url}]',
+  
+  -- Source tracking
+  source_tier INT NOT NULL COMMENT '1-5 per GID tier system',
+  source_type VARCHAR(100) NOT NULL,
+  source_url VARCHAR(500),
+  source_name VARCHAR(255),
+  discovery_query TEXT COMMENT 'The search query or AI prompt that found this candidate',
+  confidence_score INT DEFAULT NULL COMMENT '0-100, AI confidence in relevance',
+  source_rationale TEXT COMMENT 'AI explanation for why this candidate was identified',
+  
+  -- Review workflow
+  status VARCHAR(50) DEFAULT 'pending' COMMENT 'pending | reviewing | approved | dismissed | imported',
+  reviewed_by VARCHAR(100),
+  review_notes TEXT,
+  reviewed_at TIMESTAMP NULL DEFAULT NULL,
+  
+  -- Import tracking
+  imported_consultant_id VARCHAR(36) DEFAULT NULL COMMENT 'FK to gid_consultants after import',
+  imported_at TIMESTAMP NULL DEFAULT NULL,
+  
+  -- Metadata
+  discovered_by VARCHAR(100),
+  project_context VARCHAR(100) COMMENT 'N4S project ID that triggered discovery, if any',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  INDEX idx_discipline (discipline),
+  INDEX idx_status (status),
+  INDEX idx_source_tier (source_tier),
+  INDEX idx_state (hq_state),
+  INDEX idx_project (project_context),
+  FOREIGN KEY (imported_consultant_id) REFERENCES gid_consultants(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
 // Execute all queries
 $results = [];
 foreach ($queries as $i => $sql) {
