@@ -21,6 +21,18 @@ const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
   : '/api';
 
+// AI key (loaded once from server, cached in memory only)
+let GID_AI_KEY = null;
+async function getAIKey() {
+  if (GID_AI_KEY) return GID_AI_KEY;
+  const res = await fetch(`${API_BASE}/gid-ai-config.php`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to load AI configuration');
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  GID_AI_KEY = data.key;
+  return GID_AI_KEY;
+}
+
 // ============================================================================
 // DISCIPLINE-SPECIFIC SEARCH GUIDANCE
 // Dramatically improves AI discovery quality for non-architecture disciplines
@@ -178,6 +190,9 @@ const discoveryApi = {
   },
 
   async runAISearch(criteria) {
+    // Load API key from server (key served from FTP config-secrets.php, not in git)
+    await getAIKey();
+
     const { discipline, states, budgetTier, styleKeywords, limit, useClientProfile, profileData } = criteria;
 
     const disciplineLabels = {
@@ -306,11 +321,16 @@ CRITICAL RULES:
 4. Prioritize firms with demonstrated luxury residential experience.
 5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.${useClientProfile ? '\n6. Weight firms that demonstrate alignment with the FULL client design identity above, not just keyword overlap.' : ''}`;
 
-    // Call AI via server-side proxy (key never leaves server)
-    const apiRes = await fetch(`${API_BASE}/gid-ai-proxy.php`, {
+    // Call Anthropic API directly (IONOS blocks outbound PHP, so client-side is required)
+    // Key is safe: config-secrets.php is gitignored, persists on FTP through deploys
+    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': GID_AI_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
