@@ -87,7 +87,7 @@ const discoveryApi = {
     // Load API key from server
     await getAIKey();
 
-    const { discipline, states, budgetTier, styleKeywords, limit } = criteria;
+    const { discipline, states, budgetTier, styleKeywords, limit, useClientProfile, profileData } = criteria;
 
     const disciplineLabels = {
       architect: 'architecture',
@@ -105,7 +105,60 @@ const discoveryApi = {
       mid_range: 'Mid-Range ($1M–$3M projects)',
     };
     const budgetLabel = budgetLabels[budgetTier] || budgetTier;
-    const discoveryQuery = `Find ${limit} ${disciplineLabel} firms | Geo: ${geoFocus} | Budget: ${budgetLabel} | Style: ${styleFocus}`;
+    const discoveryQuery = `Find ${limit} ${disciplineLabel} firms | Geo: ${geoFocus} | Budget: ${budgetLabel} | Style: ${styleFocus}${useClientProfile ? ' | Profile-Aware' : ''}`;
+
+    // Build enriched client context block when profile is active
+    let enrichedContext = '';
+    if (useClientProfile && profileData) {
+      const di = profileData.designIdentity || {};
+      const ls = profileData.lifestyle || {};
+
+      const axisDescriptions = [];
+      if (di.axisContemporaryTraditional != null) axisDescriptions.push(`  Contemporary ↔ Traditional: ${di.axisContemporaryTraditional} ${di.axisContemporaryTraditional <= 3 ? '(leans contemporary)' : di.axisContemporaryTraditional >= 7 ? '(leans traditional)' : '(balanced)'}`);
+      if (di.axisMinimalLayered != null) axisDescriptions.push(`  Minimal ↔ Layered: ${di.axisMinimalLayered} ${di.axisMinimalLayered <= 3 ? '(leans minimal)' : di.axisMinimalLayered >= 7 ? '(leans layered)' : '(balanced)'}`);
+      if (di.axisWarmCool != null) axisDescriptions.push(`  Warm ↔ Cool: ${di.axisWarmCool} ${di.axisWarmCool <= 3 ? '(cool)' : di.axisWarmCool >= 7 ? '(warm)' : '(neutral)'}`);
+      if (di.axisOrganicGeometric != null) axisDescriptions.push(`  Organic ↔ Geometric: ${di.axisOrganicGeometric} ${di.axisOrganicGeometric <= 3 ? '(organic/natural)' : di.axisOrganicGeometric >= 7 ? '(geometric)' : '(balanced)'}`);
+      if (di.axisRefinedEclectic != null) axisDescriptions.push(`  Refined ↔ Eclectic: ${di.axisRefinedEclectic} ${di.axisRefinedEclectic <= 3 ? '(refined)' : di.axisRefinedEclectic >= 7 ? '(eclectic)' : '(balanced)'}`);
+      if (di.axisArchMinimalOrnate != null) axisDescriptions.push(`  Arch Minimal ↔ Ornate: ${di.axisArchMinimalOrnate} ${di.axisArchMinimalOrnate <= 3 ? '(minimal)' : di.axisArchMinimalOrnate >= 7 ? '(ornate)' : '(moderate)'}`);
+      if (di.axisArchRegionalInternational != null) axisDescriptions.push(`  Regional ↔ International: ${di.axisArchRegionalInternational} ${di.axisArchRegionalInternational <= 3 ? '(regional/contextual)' : di.axisArchRegionalInternational >= 7 ? '(international)' : '(balanced)'}`);
+
+      const sections = [];
+      sections.push(`Project Location: ${profileData.projectCity || 'Not specified'}${profileData.state ? ', ' + profileData.state : ''}`);
+      if (profileData.propertyType) sections.push(`Property Type: ${profileData.propertyType}`);
+      if (profileData.targetGSF) sections.push(`Target Size: ${Number(profileData.targetGSF).toLocaleString()} SF`);
+      if (profileData.totalBudget) sections.push(`Total Project Budget: $${Number(profileData.totalBudget).toLocaleString()}`);
+      sections.push(`Budget Tier: ${budgetLabel}`);
+
+      if (axisDescriptions.length > 0) {
+        sections.push(`\nDesign Identity (Taste Axes — scale 1-10):\n${axisDescriptions.join('\n')}`);
+      }
+
+      if (di.architectureStyleTags?.length > 0) sections.push(`Architecture Style Tags: [${di.architectureStyleTags.join(', ')}]`);
+      if (di.interiorStyleTags?.length > 0) sections.push(`Interior Style Tags: [${di.interiorStyleTags.join(', ')}]`);
+      if (di.materialAffinities?.length > 0) sections.push(`Material Affinities: [${di.materialAffinities.join(', ')}]`);
+      if (di.materialAversions?.length > 0) sections.push(`Material Aversions: [${di.materialAversions.join(', ')}]`);
+      if (di.massingPreference) sections.push(`Massing Preference: ${di.massingPreference}`);
+      if (di.roofFormPreference) sections.push(`Roof Form: ${di.roofFormPreference}`);
+      if (di.structuralAmbition) sections.push(`Structural Ambition: ${di.structuralAmbition}`);
+
+      // Lifestyle signals
+      const lifestyleSignals = [];
+      if (ls.entertainingFrequency) lifestyleSignals.push(`Entertaining: ${ls.entertainingFrequency}${ls.typicalGuestCount ? ', ' + ls.typicalGuestCount + ' guests' : ''}`);
+      if (ls.wellnessPriorities?.length > 0) lifestyleSignals.push(`Wellness: ${ls.wellnessPriorities.join(', ')}`);
+      if (ls.indoorOutdoorLiving) lifestyleSignals.push(`Indoor-Outdoor: ${ls.indoorOutdoorLiving}/10`);
+      if (ls.privacyLevelRequired) lifestyleSignals.push(`Privacy: ${ls.privacyLevelRequired}/10`);
+      if (lifestyleSignals.length > 0) {
+        sections.push(`\nLifestyle Signals:\n  ${lifestyleSignals.join('\n  ')}`);
+      }
+
+      // FYI spaces
+      if (profileData.includedSpaces.length > 0) {
+        sections.push(`\nSpace Program (from FYI):\n  Included: ${profileData.includedSpaces.join(', ')}`);
+        if (profileData.targetGSF) sections.push(`  Target SF: ${Number(profileData.targetGSF).toLocaleString()}`);
+      }
+
+      enrichedContext = `\n\nENRICHED CLIENT CONTEXT (Profile-Aware Mode):\n${'—'.repeat(60)}\n${sections.join('\n')}\n\nMATCHING PRIORITY:\nFind firms whose portfolio demonstrates ALIGNMENT with this specific client's\ndesign identity — not just the style keywords, but the full sensibility\n(warmth level, material language, massing approach, lifestyle integration).\nPrioritize firms with verified luxury residential experience at ${budgetLabel} scale${profileData.state ? '\nin the ' + profileData.state + ' region and surrounding areas' : ''}.`;
+    }
 
     const systemPrompt = `You are a luxury residential consultant researcher for N4S (Not-4-Sale), an advisory platform serving ultra-high-net-worth families and family offices.
 
@@ -113,7 +166,7 @@ Your task is to identify real, verifiable ${disciplineLabel} firms matching thes
 - Geographic focus: ${geoFocus}
 - Budget tier: ${budgetLabel}
 - Style specialization: ${styleFocus}
-- Number of results requested: ${limit}
+- Number of results requested: ${limit}${enrichedContext}
 
 For each firm, provide:
 - firm_name (official business name — must be a real, verifiable firm)
@@ -136,7 +189,7 @@ CRITICAL RULES:
 2. If you cannot find ${limit} qualifying firms, return fewer. Quality over quantity.
 3. Return ONLY a valid JSON array. No markdown, no backticks, no explanatory text.
 4. Prioritize firms with demonstrated luxury residential experience.
-5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.`;
+5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.${useClientProfile ? '\n6. Weight firms that demonstrate alignment with the FULL client design identity above, not just keyword overlap.' : ''}`;
 
     // Call Anthropic API client-side
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -387,6 +440,9 @@ const BatchActionsBar = ({ selectedCount, onBatchApprove, onBatchDismiss, onClea
 // ============================================================================
 
 const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
+  // App context for client profile data (Phase 4)
+  const { kycData, fyiData } = useAppContext();
+
   // Sub-mode
   const [subMode, setSubMode] = useState('ai');
 
@@ -589,6 +645,8 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
             onSearch={handleAISearch}
             isSearching={aiSearching}
             recentSearches={recentSearches}
+            kycData={kycData}
+            fyiData={fyiData}
           />
 
           {/* AI Results */}
