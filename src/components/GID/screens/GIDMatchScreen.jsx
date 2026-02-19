@@ -105,7 +105,9 @@ const MatchResultCard = ({
   onToggleCompare, onShortlist, onViewDetail, onExpandScore,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const discipline = DISCIPLINES[consultant?.role] || {};
+  // Use consultant prop if available, fall back to embedded snapshot
+  const c = consultant || matchResult?.consultantSnapshot || {};
+  const discipline = DISCIPLINES[c?.role] || {};
 
   return (
     <div className={`gid-match-result-card ${isSelected ? 'gid-match-result-card--selected' : ''} ${isShortlisted ? 'gid-match-result-card--shortlisted' : ''}`}>
@@ -118,29 +120,29 @@ const MatchResultCard = ({
         {/* Header row */}
         <div className="gid-match-result-card__header">
           <div className="gid-match-result-card__info">
-            <h3 className="gid-match-result-card__firm">{consultant?.firm_name}</h3>
-            {(consultant?.first_name || consultant?.last_name) && (
+            <h3 className="gid-match-result-card__firm">{c?.firm_name}</h3>
+            {(c?.first_name || c?.last_name) && (
               <p className="gid-match-result-card__name">
-                {consultant?.first_name} {consultant?.last_name}
+                {c?.first_name} {c?.last_name}
               </p>
             )}
             <div className="gid-match-result-card__meta">
-              {consultant?.hq_city && (
+              {c?.hq_city && (
                 <span className="gid-meta-item">
                   <MapPin size={12} />
-                  {consultant.hq_city}{consultant.hq_state ? `, ${consultant.hq_state}` : ''}
+                  {c.hq_city}{c.hq_state ? `, ${c.hq_state}` : ''}
                 </span>
               )}
-              {consultant?.years_experience && (
+              {c?.years_experience && (
                 <span className="gid-meta-item">
                   <Briefcase size={12} />
-                  {consultant.years_experience} yrs
+                  {c.years_experience} yrs
                 </span>
               )}
-              {consultant?.avg_rating > 0 && (
+              {c?.avg_rating > 0 && (
                 <span className="gid-meta-item">
                   <Star size={12} />
-                  {Number(consultant.avg_rating).toFixed(1)}
+                  {Number(c.avg_rating).toFixed(1)}
                 </span>
               )}
             </div>
@@ -151,13 +153,13 @@ const MatchResultCard = ({
         </div>
 
         {/* Specialty tags */}
-        {consultant?.specialties?.length > 0 && (
+        {c?.specialties?.length > 0 && (
           <div className="gid-match-result-card__tags">
-            {consultant.specialties.slice(0, 5).map((s, i) => (
+            {c.specialties.slice(0, 5).map((s, i) => (
               <span key={i} className="gid-tag">{s}</span>
             ))}
-            {consultant.specialties.length > 5 && (
-              <span className="gid-tag gid-tag--more">+{consultant.specialties.length - 5}</span>
+            {c.specialties.length > 5 && (
+              <span className="gid-tag gid-tag--more">+{c.specialties.length - 5}</span>
             )}
           </div>
         )}
@@ -300,9 +302,12 @@ const GIDMatchScreen = () => {
       setMatchResults(results);
       setHasRun(true);
 
-      // Persist to AppContext
+      // Persist to AppContext (merge with existing disciplines)
       updateGIDData({
-        currentMatches: { [selectedDiscipline]: results },
+        currentMatches: {
+          ...(gidData?.currentMatches || {}),
+          [selectedDiscipline]: results,
+        },
         lastMatchRun: new Date().toISOString(),
       });
 
@@ -312,7 +317,7 @@ const GIDMatchScreen = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [prerequisites.ready, selectedDiscipline, kycData, fyiData, minScore, updateGIDData]);
+  }, [prerequisites.ready, selectedDiscipline, kycData, fyiData, minScore, gidData?.currentMatches, updateGIDData]);
 
   // --------------------------------------------------
   // Comparison toggle
