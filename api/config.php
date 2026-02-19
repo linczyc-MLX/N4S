@@ -8,6 +8,12 @@ $DB_USER = getenv('DB_USER') ?: 'dbu2492912';
 $DB_PASS = getenv('DB_PASS') ?: 'reMarkable2026!'; // Set via environment or replace during deploy
 $DB_PORT = getenv('DB_PORT') ?: 3306;
 
+// Load secrets file (API keys etc.) — not tracked in git
+$secretsFile = __DIR__ . '/config-secrets.php';
+if (file_exists($secretsFile)) {
+    require_once $secretsFile;
+}
+
 // CORS headers for API access (credentials require specific origin, not wildcard)
 $allowed_origins = [
     'https://website.not-4.sale',

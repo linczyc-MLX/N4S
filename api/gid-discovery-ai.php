@@ -17,9 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     errorResponse('POST method required', 405);
 }
 
-// Anthropic API key — store securely
-// Set via environment variable or define here for deployment
-$ANTHROPIC_API_KEY = getenv('ANTHROPIC_API_KEY') ?: '';
+// Anthropic API key — check constant (from config-secrets.php) first, then env var
+$ANTHROPIC_API_KEY = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : (getenv('ANTHROPIC_API_KEY') ?: '');
 
 if (empty($ANTHROPIC_API_KEY)) {
     errorResponse('Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable or update api/config.php.', 500);

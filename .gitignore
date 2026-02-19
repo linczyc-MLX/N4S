@@ -6,6 +6,9 @@ node_modules/
 build/
 dist/
 
+# API secrets (uploaded to server via FTP, not tracked in git)
+api/config-secrets.php
+
 # Taste app
 taste-app/node_modules/
 taste-app/dist/
