@@ -2607,6 +2607,12 @@
   vertical-align: middle;
 }
 
+.gid-profile-toggle__info-arch {
+  display: block;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
 /* ---- Responsive Discovery ---- */
 
 @media (max-width: 768px) {

@@ -572,9 +572,46 @@ export function deriveStyleKeywords(designIdentity) {
   if (!designIdentity) return [];
   const keywords = new Set();
 
-  // From taste axes
+  // From taste axes — check both manual KYC sliders AND taste exploration results
+  const getAxisValue = (axisKey) => {
+    // FIRST: Direct KYC slider value
+    const directVal = designIdentity?.[axisKey];
+    if (directVal != null && directVal !== 5) return directVal;
+
+    // SECOND: Derive from Taste Exploration profile scores (1–10 scale)
+    const tasteResults = designIdentity?.principalTasteResults;
+    const scores = tasteResults?.profile?.scores || tasteResults?.session?.profile?.scores;
+    if (scores) {
+      const scoreMap = {
+        axisContemporaryTraditional: scores.tradition,
+        axisMinimalLayered: scores.formality,
+        axisWarmCool: scores.warmth,
+        axisOrganicGeometric: scores.openness,
+        axisRefinedEclectic: scores.drama,
+        axisArchMinimalOrnate: scores.art_focus,
+      };
+      return scoreMap[axisKey] ?? null;
+    }
+
+    // THIRD: Try old LuXeBrief format (1–100 scale → convert to 1–10)
+    const oldProfile = tasteResults?.profile;
+    if (oldProfile) {
+      const oldMap = {
+        axisContemporaryTraditional: oldProfile.traditionScore ? oldProfile.traditionScore / 10 : null,
+        axisMinimalLayered: oldProfile.formalityScore ? oldProfile.formalityScore / 10 : null,
+        axisWarmCool: oldProfile.warmthScore ? oldProfile.warmthScore / 10 : null,
+        axisOrganicGeometric: oldProfile.opennessScore ? oldProfile.opennessScore / 10 : null,
+        axisRefinedEclectic: oldProfile.dramaScore ? oldProfile.dramaScore / 10 : null,
+        axisArchMinimalOrnate: oldProfile.artFocusScore ? oldProfile.artFocusScore / 10 : null,
+      };
+      return oldMap[axisKey] ?? null;
+    }
+
+    return directVal; // return whatever we have, even default 5
+  };
+
   Object.entries(TASTE_STYLE_MAP).forEach(([axisKey, mapping]) => {
-    const value = designIdentity?.[axisKey];
+    const value = getAxisValue(axisKey);
     if (value == null) return;
     let styles;
     if (value <= 3)       styles = mapping.low;
@@ -604,4 +641,106 @@ export function deriveBudgetTier(totalProjectBudget) {
   if (budget >= 2000000)  return 'high_end';
   if (budget >= 1000000)  return 'mid_range';
   return null;
+}
+
+// Architectural Style Spectrum (AS1–AS9) — labels must match tasteConfig.js
+const AS_SPECTRUM = [
+  { id: 'AS1', name: 'Avant-Contemporary' },
+  { id: 'AS2', name: 'Architectural Modern' },
+  { id: 'AS3', name: 'Curated Minimalism' },
+  { id: 'AS4', name: 'Nordic Contemporary' },
+  { id: 'AS5', name: 'Mid-Century Refined' },
+  { id: 'AS6', name: 'Modern Classic' },
+  { id: 'AS7', name: 'Classical Contemporary' },
+  { id: 'AS8', name: 'Formal Classical' },
+  { id: 'AS9', name: 'Heritage Estate' },
+];
+
+/**
+ * Derive the 3 closest Architectural Style Spectrum categories from taste data.
+ *
+ * Pipeline:
+ *  1. Extract tradition score (1–10) from principalTasteResults, or fall back
+ *     to axisContemporaryTraditional from KYC sliders.
+ *  2. Convert to continuous AS position (1–9):
+ *       styleEra = tradition / 2          (1–5 scale)
+ *       AS_pos   = (styleEra - 1) * 2 + 1 (1–9 scale)
+ *  3. Find nearest integer AS, then pick that + 2 adjacent (always 3),
+ *     biased toward the side the fractional part leans.
+ *
+ * @param {Object} designIdentity - kycData.principal.designIdentity
+ * @returns {{ styles: { id: string, name: string, isPrimary: boolean }[], asPosition: number, source: string } | null}
+ */
+export function deriveArchitecturalStyles(designIdentity) {
+  if (!designIdentity) return null;
+
+  let traditionScore = null;
+  let source = 'none';
+
+  // FIRST: Try principalTasteResults (most accurate — from actual Taste Exploration)
+  const tasteResults = designIdentity.principalTasteResults;
+  if (tasteResults) {
+    // New format: profile.scores.tradition (1–10)
+    const scores = tasteResults?.profile?.scores || tasteResults?.session?.profile?.scores;
+    if (scores?.tradition != null) {
+      traditionScore = Number(scores.tradition);
+      source = 'taste_exploration';
+    }
+    // Old LuXeBrief format: profile.traditionScore (1–100 → convert to 1–10)
+    if (traditionScore == null) {
+      const oldProfile = tasteResults?.profile;
+      if (oldProfile?.traditionScore != null) {
+        traditionScore = Number(oldProfile.traditionScore) / 10;
+        source = 'taste_exploration';
+      }
+    }
+  }
+
+  // SECOND: Fall back to KYC axis slider (axisContemporaryTraditional, 1–10)
+  if (traditionScore == null && designIdentity.axisContemporaryTraditional != null) {
+    const axisVal = Number(designIdentity.axisContemporaryTraditional);
+    // Only use if it's been moved from the default 5
+    if (axisVal !== 5) {
+      traditionScore = axisVal;
+      source = 'kyc_slider';
+    }
+  }
+
+  if (traditionScore == null) return null;
+
+  // Clamp to valid range
+  traditionScore = Math.max(1, Math.min(10, traditionScore));
+
+  // Convert: tradition (1–10) → styleEra (1–5) → AS position (1–9)
+  const styleEra = traditionScore / 2;
+  const asPosition = (styleEra - 1) * 2 + 1;
+
+  // Find nearest integer index (0-based for array access)
+  const nearestIdx = Math.round(asPosition) - 1; // 0–8
+  const clampedIdx = Math.max(0, Math.min(8, nearestIdx));
+
+  // Pick 3 adjacent: primary + 2 neighbors
+  let indices;
+  if (clampedIdx === 0) {
+    // At the Contemporary end — pick 0, 1, 2
+    indices = [0, 1, 2];
+  } else if (clampedIdx === 8) {
+    // At the Traditional end — pick 6, 7, 8
+    indices = [6, 7, 8];
+  } else {
+    // Middle — primary + both neighbors
+    indices = [clampedIdx - 1, clampedIdx, clampedIdx + 1];
+  }
+
+  const styles = indices.map(i => ({
+    id: AS_SPECTRUM[i].id,
+    name: AS_SPECTRUM[i].name,
+    isPrimary: i === clampedIdx,
+  }));
+
+  return {
+    styles,
+    asPosition: Math.round(asPosition * 10) / 10,
+    source,
+  };
 }

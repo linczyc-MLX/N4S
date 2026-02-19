@@ -17,6 +17,7 @@ import {
   extractState,
   deriveStyleKeywords,
   deriveBudgetTier,
+  deriveArchitecturalStyles,
   checkMatchPrerequisites,
 } from '../utils/matchingAlgorithm';
 
@@ -90,6 +91,9 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
     // Style keywords from taste axes + tags
     const styles = deriveStyleKeywords(designId);
 
+    // Architectural Style Spectrum (AS1–AS9) — 3 closest styles
+    const archStyles = deriveArchitecturalStyles(designId);
+
     // FYI included spaces
     const includedSpaces = [];
     if (fyiData?.selections) {
@@ -119,6 +123,7 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       budgetFormatted,
       totalBudget: budgetNum,
       styleKeywords: styles,
+      architecturalStyles: archStyles,
       includedSpaces,
       designIdentity: designId,
       lifestyle,
@@ -256,6 +261,14 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
                 {profileData.state && ', ' + profileData.state}
                 {profileData.budgetFormatted && ' \u00b7 Budget: ' + profileData.budgetFormatted}
               </span>
+              {profileData.architecturalStyles && (
+                <span className="gid-profile-toggle__info-arch">
+                  Architectural Style: {profileData.architecturalStyles.styles.map(s =>
+                    s.isPrimary ? s.name : s.name
+                  ).join(' \u2022 ')}
+                  {' '}(AS{profileData.architecturalStyles.asPosition.toFixed(1)})
+                </span>
+              )}
               <span>
                 {profileData.styleKeywords.length} style signal{profileData.styleKeywords.length !== 1 ? 's' : ''} detected
               </span>

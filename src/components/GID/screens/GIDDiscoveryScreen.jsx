@@ -135,6 +135,18 @@ const discoveryApi = {
 
       if (di.architectureStyleTags?.length > 0) sections.push(`Architecture Style Tags: [${di.architectureStyleTags.join(', ')}]`);
       if (di.interiorStyleTags?.length > 0) sections.push(`Interior Style Tags: [${di.interiorStyleTags.join(', ')}]`);
+
+      // Architectural Style Spectrum (AS1–AS9) — 3 closest categories from Taste Exploration
+      if (profileData.architecturalStyles) {
+        const as = profileData.architecturalStyles;
+        const primary = as.styles.find(s => s.isPrimary);
+        const others = as.styles.filter(s => !s.isPrimary);
+        sections.push(`\nArchitectural Style Spectrum Position: ${as.asPosition.toFixed(1)} / 9.0`);
+        sections.push(`Primary Style: ${primary?.name || 'Unknown'} (${primary?.id || ''})`);
+        sections.push(`Adjacent Styles: ${others.map(s => s.name + ' (' + s.id + ')').join(', ')}`);
+        sections.push(`Source: ${as.source === 'taste_exploration' ? 'Taste Exploration (high confidence)' : 'KYC Slider (indicative)'}`);
+      }
+
       if (di.materialAffinities?.length > 0) sections.push(`Material Affinities: [${di.materialAffinities.join(', ')}]`);
       if (di.materialAversions?.length > 0) sections.push(`Material Aversions: [${di.materialAversions.join(', ')}]`);
       if (di.massingPreference) sections.push(`Massing Preference: ${di.massingPreference}`);
@@ -157,7 +169,19 @@ const discoveryApi = {
         if (profileData.targetGSF) sections.push(`  Target SF: ${Number(profileData.targetGSF).toLocaleString()}`);
       }
 
-      enrichedContext = `\n\nENRICHED CLIENT CONTEXT (Profile-Aware Mode):\n${'—'.repeat(60)}\n${sections.join('\n')}\n\nMATCHING PRIORITY:\nFind firms whose portfolio demonstrates ALIGNMENT with this specific client's\ndesign identity — not just the style keywords, but the full sensibility\n(warmth level, material language, massing approach, lifestyle integration).\nPrioritize firms with verified luxury residential experience at ${budgetLabel} scale${profileData.state ? '\nin the ' + profileData.state + ' region and surrounding areas' : ''}.`;
+      // Build matching priority with arch styles if available
+      let matchingPriority = `\n\nMATCHING PRIORITY:\nFind firms whose portfolio demonstrates ALIGNMENT with this specific client's\ndesign identity — not just the style keywords, but the full sensibility\n(warmth level, material language, massing approach, lifestyle integration).`;
+
+      if (profileData.architecturalStyles) {
+        const as = profileData.architecturalStyles;
+        const primary = as.styles.find(s => s.isPrimary);
+        const others = as.styles.filter(s => !s.isPrimary);
+        matchingPriority += `\n\nARCHITECTURAL STYLE SPECTRUM MATCH (Critical):\nThe client's Taste Exploration places them at position ${as.asPosition.toFixed(1)} on the AS1–AS9 spectrum.\nPrimary style category: ${primary?.name} (${primary?.id})\nAdjacent categories: ${others.map(s => s.name + ' (' + s.id + ')').join(', ')}\nStrongly prefer firms whose built work falls within these three categories.\nDo NOT recommend firms primarily known for styles outside this range\n(e.g., do NOT suggest Classical or Heritage firms for a Contemporary client).`;
+      }
+
+      matchingPriority += `\nPrioritize firms with verified luxury residential experience at ${budgetLabel} scale${profileData.state ? '\nin the ' + profileData.state + ' region and surrounding areas' : ''}.`;
+
+      enrichedContext = `\n\nENRICHED CLIENT CONTEXT (Profile-Aware Mode):\n${'—'.repeat(60)}\n${sections.join('\n')}${matchingPriority}`;
     }
 
     const systemPrompt = `You are a luxury residential consultant researcher for N4S (Not-4-Sale), an advisory platform serving ultra-high-net-worth families and family offices.
