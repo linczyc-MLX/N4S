@@ -21,6 +21,18 @@ const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
   : '/api';
 
+// AI key (loaded once from server, cached)
+let GID_AI_KEY = null;
+async function getAIKey() {
+  if (GID_AI_KEY) return GID_AI_KEY;
+  const res = await fetch(`${API_BASE}/gid-ai-config.php`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to load AI configuration');
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  GID_AI_KEY = data.key;
+  return GID_AI_KEY;
+}
+
 // ============================================================================
 // API HELPERS
 // ============================================================================
@@ -72,17 +84,151 @@ const discoveryApi = {
   },
 
   async runAISearch(criteria) {
-    const res = await fetch(`${API_BASE}/gid-discovery-ai.php`, {
+    // Load API key from server
+    await getAIKey();
+
+    const { discipline, states, budgetTier, styleKeywords, limit } = criteria;
+
+    const disciplineLabels = {
+      architect: 'architecture',
+      interior_designer: 'interior design',
+      pm: 'project management (luxury residential)',
+      gc: 'general contracting (luxury residential)',
+    };
+    const disciplineLabel = disciplineLabels[discipline] || discipline;
+    const geoFocus = states?.length > 0 ? states.join(', ') : 'Nationwide (USA)';
+    const styleFocus = styleKeywords?.length > 0 ? styleKeywords.join(', ') : 'Contemporary, Traditional, Transitional';
+    const budgetLabels = {
+      ultra_luxury: 'Ultra-Luxury ($10M+ projects)',
+      luxury: 'Luxury ($5M–$15M projects)',
+      high_end: 'High-End ($2M–$8M projects)',
+      mid_range: 'Mid-Range ($1M–$3M projects)',
+    };
+    const budgetLabel = budgetLabels[budgetTier] || budgetTier;
+    const discoveryQuery = `Find ${limit} ${disciplineLabel} firms | Geo: ${geoFocus} | Budget: ${budgetLabel} | Style: ${styleFocus}`;
+
+    const systemPrompt = `You are a luxury residential consultant researcher for N4S (Not-4-Sale), an advisory platform serving ultra-high-net-worth families and family offices.
+
+Your task is to identify real, verifiable ${disciplineLabel} firms matching these criteria:
+- Geographic focus: ${geoFocus}
+- Budget tier: ${budgetLabel}
+- Style specialization: ${styleFocus}
+- Number of results requested: ${limit}
+
+For each firm, provide:
+- firm_name (official business name — must be a real, verifiable firm)
+- principal_name (lead partner/principal)
+- hq_city (headquarters city)
+- hq_state (headquarters state abbreviation, e.g., "CT", "NY")
+- website (URL — must be a real URL you are confident exists)
+- specialties (array of 3–5 style/specialty tags)
+- service_areas (array of states where they actively work)
+- years_experience (estimated years the firm has been operating)
+- notable_projects (array of objects: [{name, location, year}] — real projects only)
+- awards (array of objects: [{name, year}] — real awards only)
+- publications (array of objects: [{publication, year}] — real publications only)
+- estimated_budget_tier (one of: ultra_luxury, luxury, high_end, mid_range)
+- confidence_score (0–100, your confidence this firm genuinely matches the criteria)
+- source_rationale (1–2 sentences explaining why this firm was identified)
+
+CRITICAL RULES:
+1. Every firm MUST be real and verifiable. Do not fabricate firm names, projects, or awards.
+2. If you cannot find ${limit} qualifying firms, return fewer. Quality over quantity.
+3. Return ONLY a valid JSON array. No markdown, no backticks, no explanatory text.
+4. Prioritize firms with demonstrated luxury residential experience.
+5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.`;
+
+    // Call Anthropic API client-side
+    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(criteria),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': GID_AI_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: `Find ${limit} ${disciplineLabel} firms matching: Geographic focus: ${geoFocus}, Budget tier: ${budgetLabel}, Style: ${styleFocus}. Return only the JSON array.` }
+        ],
+      }),
     });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `AI search failed: ${res.status}`);
+
+    if (!apiRes.ok) {
+      const errBody = await apiRes.json().catch(() => ({}));
+      throw new Error(errBody?.error?.message || `AI API error: ${apiRes.status}`);
     }
-    return res.json();
+
+    const apiResult = await apiRes.json();
+    let textContent = (apiResult.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('');
+
+    // Strip markdown fencing if present
+    textContent = textContent.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+    const candidates = JSON.parse(textContent);
+    if (!Array.isArray(candidates)) throw new Error('AI returned invalid format');
+
+    // Save each candidate to backend
+    const insertedCandidates = [];
+    const duplicatesSkipped = [];
+
+    for (const c of candidates) {
+      const candidateData = {
+        discipline,
+        firm_name: c.firm_name || 'Unknown',
+        principal_name: c.principal_name || null,
+        hq_city: c.hq_city || null,
+        hq_state: c.hq_state || null,
+        hq_country: 'USA',
+        website: c.website || null,
+        specialties: c.specialties || [],
+        service_areas: c.service_areas || [],
+        estimated_budget_tier: c.estimated_budget_tier || budgetTier,
+        years_experience: c.years_experience || null,
+        notable_projects: c.notable_projects || [],
+        awards: c.awards || [],
+        publications: c.publications || [],
+        source_tier: 3,
+        source_type: 'ai_discovery',
+        source_url: c.website || null,
+        source_name: 'Claude Sonnet',
+        discovery_query: discoveryQuery,
+        confidence_score: c.confidence_score || null,
+        source_rationale: c.source_rationale || null,
+        discovered_by: 'LRA Team',
+        project_context: criteria.projectContext || null,
+      };
+
+      try {
+        const saveRes = await fetch(`${API_BASE}/gid.php?entity=discovery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(candidateData),
+        });
+        const saveData = await saveRes.json();
+        if (saveData.warning) {
+          duplicatesSkipped.push(c.firm_name + (saveData.warning === 'already_in_registry' ? ' (already in registry)' : ''));
+        } else if (saveData.id) {
+          insertedCandidates.push({ ...candidateData, id: saveData.id, status: 'pending' });
+        }
+      } catch (err) {
+        console.error('[GID Discovery] Save candidate error:', c.firm_name, err);
+      }
+    }
+
+    return {
+      success: true,
+      candidates: insertedCandidates,
+      inserted: insertedCandidates.length,
+      duplicates_skipped: duplicatesSkipped,
+      query: discoveryQuery,
+    };
   },
 };
 
