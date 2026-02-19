@@ -80,6 +80,28 @@ MVP Module (MVPModule.jsx)
 - **Recommendation**: Add collapsible structure cards matching FYI sidebar format (Main: net + circulation, GH: net, PH: net)
 - **Priority**: Low (cosmetic)
 
+### ITR-7: GID — BYOK API Marketplace for SaaS/3rd-Party Use
+- **Location**: GID Discovery, Settings
+- **Issue**: All AI and data API calls currently use platform-owner keys. For SaaS or standalone deployment, end users must be able to bring their own keys (BYOK) for cost control, usage tracking, and confidentiality.
+- **Scope**: 
+  - Per-discipline API source selection (e.g., Dodge for architects, CMAA directory for PMs)
+  - BYOK key management in Settings → API Connections (encrypted storage, key validation)
+  - Tiered access: Free (AI-only discovery) → Pro (adds Dodge/Building Radar) → Enterprise (full API stack)
+  - Usage metering and cost attribution per client/project
+  - Data source provenance tracking in discovery results (which API sourced each candidate)
+- **Platforms to integrate when ready**: Dodge Construction Network (REST), Building Radar (REST), Cherre (GraphQL/REST), Procore (Public API), LinkedIn (Sales Navigator API), Public permit APIs (Socrata/city-specific)
+- **Priority**: Medium-High (required for SaaS viability)
+
+### ITR-8: GID — PM/Owner's Rep Discovery Data Quality
+- **Location**: GID AI Discovery prompt, PM and GC disciplines
+- **Issue**: AI discovery for Project Managers and General Contractors returns generic construction companies rather than the specialized boutique consultants who serve UHNW clients ($10M+). The prompt lacks discipline-specific vocabulary and exemplar calibration.
+- **Near-term fix (implemented)**: Discipline-specific prompt enrichment with UHNW terminology, exclusion filters, and exemplar firm references. See `GIDDiscoveryScreen.jsx` runAISearch.
+- **Future enhancements**: 
+  - Integrate public building permit APIs (NYC DOB NOW via Socrata, LA LADBS) to cross-reference high-value permit holders
+  - CMAA / NAHB directory scraping for Certified Construction Managers
+  - LinkedIn Boolean search integration (see `/docs/Luxury-Construction-Data-Search.md`)
+- **Priority**: High (data quality directly impacts advisory credibility)
+
 ---
 
 ## SF Value Reference (Current Test Data)

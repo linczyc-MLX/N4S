@@ -21,16 +21,110 @@ const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
   : '/api';
 
-// AI key (loaded once from server, cached)
-let GID_AI_KEY = null;
-async function getAIKey() {
-  if (GID_AI_KEY) return GID_AI_KEY;
-  const res = await fetch(`${API_BASE}/gid-ai-config.php`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load AI configuration');
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  GID_AI_KEY = data.key;
-  return GID_AI_KEY;
+// ============================================================================
+// DISCIPLINE-SPECIFIC SEARCH GUIDANCE
+// Dramatically improves AI discovery quality for non-architecture disciplines
+// ============================================================================
+function getDisciplineGuidance(discipline, budgetLabel) {
+  const guidance = {
+    architect: `
+DISCIPLINE CONTEXT — Architecture:
+Search for licensed architecture firms (AIA members preferred) with a demonstrated 
+luxury residential portfolio. Prioritize firms whose BUILT WORK (not just renderings) 
+includes completed private residences at the ${budgetLabel} scale. Consider both 
+established practices and emerging studios with exceptional design recognition.
+Look for: Design awards (AIA Honor Awards, AD100, Architectural Record Houses), 
+published residential work, and evidence of bespoke single-family commissions.
+`,
+    interior_designer: `
+DISCIPLINE CONTEXT — Interior Design:
+Search for interior design firms specializing in LUXURY RESIDENTIAL interiors — not 
+commercial hospitality, not retail, not corporate. Prioritize firms whose portfolio 
+shows completed private residences at the ${budgetLabel} scale with evidence of 
+bespoke furniture specification, custom millwork, and curated art programs.
+Look for: AD100 listings, ELLE DECOR A-List, Architectural Digest features, Luxe 
+Interiors + Design Gold List, and evidence of ongoing high-net-worth private client 
+relationships. Prefer principals who are personally involved in residential projects.
+`,
+    pm: `
+DISCIPLINE CONTEXT — Project Management / Owner's Representative:
+THIS IS A SPECIALIZED NICHE. You are NOT looking for generic construction companies 
+or large commercial builders. You are searching for BOUTIQUE FIRMS that serve as the 
+OWNER'S ADVOCATE during luxury residential construction.
+
+KEY DISTINCTIONS:
+- "Owner's Representative" / "Owner's Rep" — a consultant who represents the 
+  homeowner's interests, NOT a contractor who builds
+- "Development Manager" — manages the entire development process on behalf of 
+  the owner, from design through construction
+- "Construction Consultant" — independent advisory, NOT a builder
+- These firms are typically SMALL (5–25 people), work on 2–5 projects at a time, 
+  and charge professional fees, not construction markups
+
+WHAT TO LOOK FOR:
+- Firms that explicitly identify as "Owner's Representative" or "Development Manager"
+- Principals with backgrounds in architecture, real estate development, or 
+  construction management (often MBA + technical degree)
+- Demonstrated experience managing $10M+ RESIDENTIAL projects specifically 
+  (not commercial, not institutional, not infrastructure)
+- CMAA (Construction Management Association of America) certification
+- Memberships: ULI, NAHB Custom Builder Council, ICAA
+- Firms known in luxury markets: Hamptons, Palm Beach, Aspen, Beverly Hills, 
+  Greenwich, Manhattan penthouses, Malibu, etc.
+
+EXCLUDE:
+- Large commercial general contractors (Turner, Skanska, etc.)
+- National homebuilders (Toll Brothers, Lennar)
+- Construction companies that "also do" residential
+- Firms whose primary business is commercial or institutional
+- Property management companies (they manage EXISTING buildings, not construction)
+
+EXEMPLAR FIRMS (for calibration — include these if they match geography):
+- Plus Development (LA, NYC, Miami, Aspen) — $10M-$100M+ residential
+- CPM Link Enterprises (NYC area) — high-value residential PM
+- Corcoran Expositions / luxury Owner's Rep divisions
+- Boutique development managers affiliated with family offices
+
+The right candidates will have LinkedIn profiles mentioning: "Owner's Representative", 
+"private residence", "estate construction", "UHNW", "family office", "bespoke", 
+"ground-up luxury residential", or "custom home development management."
+`,
+    gc: `
+DISCIPLINE CONTEXT — General Contractor (Luxury Residential):
+You are NOT looking for commercial construction companies. You are searching for 
+LUXURY RESIDENTIAL BUILDERS who specialize in bespoke, architect-designed homes 
+at the ${budgetLabel} scale.
+
+KEY DISTINCTIONS:
+- "Custom Home Builder" or "Luxury Residential Builder" — NOT tract housing
+- These firms build 3–10 homes per year, each highly customized
+- They work closely with architects and interior designers on complex detailing
+- They employ or subcontract specialized craft trades: custom millwork, stone 
+  masonry, ornamental metalwork, imported materials, smart home systems
+
+WHAT TO LOOK FOR:
+- Firms whose portfolio shows COMPLETED architect-designed residences at $10M+
+- Experience with complex structural systems (cantilevers, large-span glass, 
+  infinity edges, underground construction)
+- Relationships with recognized luxury architects (evidence of repeat collaboration)
+- NAHB Custom Builder Council membership
+- Custom Builder of the Year awards, local HBA awards
+- Firms known in luxury markets: Hamptons, Palm Beach, Aspen, Bel Air, 
+  Greenwich, Napa Valley, etc.
+- Evidence of handling imported materials, European fixtures, museum-grade 
+  environmental controls
+
+EXCLUDE:
+- Commercial general contractors
+- National production homebuilders
+- Remodeling/renovation-only firms (unless they also do ground-up at scale)
+- Firms whose largest project is under $5M
+- Design-build firms that impose their own design (we need builders who execute 
+  an architect's vision)
+`
+  };
+
+  return guidance[discipline] || '';
 }
 
 // ============================================================================
@@ -84,9 +178,6 @@ const discoveryApi = {
   },
 
   async runAISearch(criteria) {
-    // Load API key from server
-    await getAIKey();
-
     const { discipline, states, budgetTier, styleKeywords, limit, useClientProfile, profileData } = criteria;
 
     const disciplineLabels = {
@@ -191,7 +282,7 @@ Your task is to identify real, verifiable ${disciplineLabel} firms matching thes
 - Budget tier: ${budgetLabel}
 - Style specialization: ${styleFocus}
 - Number of results requested: ${limit}${enrichedContext}
-
+${getDisciplineGuidance(discipline, budgetLabel)}
 For each firm, provide:
 - firm_name (official business name — must be a real, verifiable firm)
 - principal_name (lead partner/principal)
@@ -215,15 +306,11 @@ CRITICAL RULES:
 4. Prioritize firms with demonstrated luxury residential experience.
 5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.${useClientProfile ? '\n6. Weight firms that demonstrate alignment with the FULL client design identity above, not just keyword overlap.' : ''}`;
 
-    // Call Anthropic API client-side
-    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
+    // Call AI via server-side proxy (key never leaves server)
+    const apiRes = await fetch(`${API_BASE}/gid-ai-proxy.php`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': GID_AI_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
