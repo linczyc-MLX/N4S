@@ -76,8 +76,8 @@ const STATE_REGIONS = {
   mountain: ['ID', 'MT', 'WY'],
 };
 
-// Taste axis → specialty tag mapping
-const TASTE_STYLE_MAP = {
+// Taste axis → specialty tag mapping (exported for Discovery Phase 4)
+export const TASTE_STYLE_MAP = {
   axisContemporaryTraditional: {
     low:  ['Contemporary', 'Modern', 'Minimalist'],
     mid:  ['Transitional'],
@@ -511,7 +511,7 @@ function getTier(score) {
  * Extract state from a city string (e.g., "Greenwich, CT" → "CT")
  * Falls back to checking known city→state mappings for UHNW markets
  */
-function extractState(cityStr, country) {
+export function extractState(cityStr, country) {
   if (!cityStr) return '';
 
   // Check for "City, ST" or "City, State" pattern
@@ -555,3 +555,53 @@ const FULL_STATE_NAMES = {
   'TENNESSEE': 'TN', 'ILLINOIS': 'IL', 'WASHINGTON': 'WA', 'OREGON': 'OR',
   'NEVADA': 'NV', 'HAWAII': 'HI',
 };
+
+
+// =============================================================================
+// DISCOVERY HELPERS (Phase 4)
+// =============================================================================
+
+/**
+ * Derive style keywords from a client's design identity (taste axes + style tags).
+ * Used by AI Discovery to auto-populate style criteria from client profile.
+ *
+ * @param {Object} designIdentity - kycData.principal.designIdentity
+ * @returns {string[]} Unique style keywords
+ */
+export function deriveStyleKeywords(designIdentity) {
+  if (!designIdentity) return [];
+  const keywords = new Set();
+
+  // From taste axes
+  Object.entries(TASTE_STYLE_MAP).forEach(([axisKey, mapping]) => {
+    const value = designIdentity?.[axisKey];
+    if (value == null) return;
+    let styles;
+    if (value <= 3)       styles = mapping.low;
+    else if (value >= 7)  styles = mapping.high;
+    else                  styles = mapping.mid;
+    styles.forEach(s => keywords.add(s));
+  });
+
+  // From direct style tags
+  (designIdentity?.architectureStyleTags || []).forEach(t => keywords.add(t));
+  (designIdentity?.interiorStyleTags || []).forEach(t => keywords.add(t));
+
+  return Array.from(keywords);
+}
+
+/**
+ * Derive budget tier from total project budget.
+ * Returns a tier key matching BUDGET_TIERS in AIDiscoveryForm, or null if too low.
+ *
+ * @param {number|string} totalProjectBudget
+ * @returns {string|null} 'ultra_luxury' | 'luxury' | 'high_end' | 'mid_range' | null
+ */
+export function deriveBudgetTier(totalProjectBudget) {
+  const budget = Number(totalProjectBudget) || 0;
+  if (budget >= 10000000) return 'ultra_luxury';
+  if (budget >= 5000000)  return 'luxury';
+  if (budget >= 2000000)  return 'high_end';
+  if (budget >= 1000000)  return 'mid_range';
+  return null;
+}
