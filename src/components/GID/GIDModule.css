@@ -3799,6 +3799,202 @@
 }
 
 /* ============================================================
+   RFQ DISPATCH MODAL
+   ============================================================ */
+
+.gid-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.gid-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.gid-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e5e0;
+}
+
+.gid-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 4px;
+}
+
+.gid-modal__close:hover {
+  color: #333;
+}
+
+.gid-modal__body {
+  padding: 24px;
+}
+
+.gid-rfq-modal__target {
+  padding: 16px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.gid-rfq-modal__target-firm {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.gid-rfq-modal__target-name {
+  font-size: 14px;
+  color: #333;
+  margin-top: 2px;
+}
+
+.gid-rfq-modal__target-disc {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.gid-rfq-modal__info {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.gid-rfq-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gid-rfq-modal__credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.gid-rfq-cred {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gid-rfq-cred__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gid-rfq-cred__value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.gid-rfq-cred__value code {
+  flex: 1;
+  font-size: 12px;
+  color: #1e3a5f;
+  word-break: break-all;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.gid-rfq-cred__password {
+  font-size: 16px !important;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.gid-rfq-cred__copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.gid-rfq-cred__copy:hover {
+  color: #1e3a5f;
+}
+
+/* Pipeline action row in shortlisted cards */
+.gid-shortlist-card__pipeline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gid-shortlist-card__rfq-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Gold button variant */
+.gid-btn--gold {
+  background: #c9a227;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.15s ease;
+}
+
+.gid-btn--gold:hover:not(:disabled) {
+  background: #b8921f;
+}
+
+.gid-btn--gold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
    SYNERGY SANDBOX — Tab 5
    ============================================================ */
 

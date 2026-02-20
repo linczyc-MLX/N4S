@@ -23,9 +23,14 @@ import {
   MapPin, Briefcase, Star, Award, MessageSquare, GripVertical,
   FileText, Search as SearchIcon, Zap, Eye, ArrowRight,
   Clipboard, Clock, Filter as FilterIcon, Users, Globe,
+  Send, Copy, ExternalLink, Key, Mail
 } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import AlignmentBadges, { computeAlignmentBadges } from '../components/AlignmentBadges';
+import {
+  rfqCreateInvitation, rfqListInvitations, rfqSyncProject,
+  rfqRegeneratePassword, rfqHealthCheck
+} from '../../../services/rfqApi';
 
 // N4S Brand Colors
 const COLORS = {
@@ -72,7 +77,7 @@ const API_BASE = window.location.hostname.includes('ionos.space')
 const ShortlistCandidateCard = ({
   consultant, discoveryData, engagement, kycData, fyiData,
   isShortlisted, isPassed, rank,
-  onShortlist, onPass, onRequestInfo, onExpand,
+  onShortlist, onPass, onRequestInfo, onExpand, onSendRFQ,
   dragHandlers,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -319,9 +324,28 @@ const ShortlistCandidateCard = ({
                 </button>
               </>
             ) : (
-              <span className="gid-shortlist-card__status-label" style={{ color: COLORS.success }}>
-                <CheckCircle2 size={14} /> Shortlisted
-              </span>
+              <div className="gid-shortlist-card__pipeline-actions">
+                <span className="gid-shortlist-card__status-label" style={{ color: COLORS.success }}>
+                  <CheckCircle2 size={14} /> Shortlisted
+                </span>
+                {onSendRFQ && engagement?.pipeline_stage !== 'questionnaire_sent' && engagement?.pipeline_stage !== 'questionnaire_received' && (
+                  <button
+                    className="gid-btn gid-btn--gold gid-btn--sm"
+                    onClick={(e) => { e.stopPropagation(); onSendRFQ(consultant); }}
+                    title="Send Request for Qualifications"
+                  >
+                    <Send size={13} /> Send RFQ
+                  </button>
+                )}
+                {(engagement?.pipeline_stage === 'questionnaire_sent' || engagement?.pipeline_stage === 'questionnaire_received') && (
+                  <span className="gid-shortlist-card__rfq-status" style={{
+                    color: engagement.pipeline_stage === 'questionnaire_received' ? COLORS.warning : '#5c6bc0'
+                  }}>
+                    <FileText size={13} />
+                    {engagement.pipeline_stage === 'questionnaire_received' ? 'Response Received' : 'RFQ Sent'}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -368,6 +392,17 @@ const GIDShortlistScreen = () => {
   // Filter
   const [showPassed, setShowPassed] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+
+  // RFQ Dispatch
+  const [rfqModalOpen, setRfqModalOpen] = useState(false);
+  const [rfqTarget, setRfqTarget] = useState(null);
+  const [rfqResult, setRfqResult] = useState(null);
+  const [rfqSending, setRfqSending] = useState(false);
+  const [rfqError, setRfqError] = useState('');
+  const [rfqInvitations, setRfqInvitations] = useState({}); // consultant_id → invitation data
+  const [rfqApiAvailable, setRfqApiAvailable] = useState(null);
+  const [copied, setCopied] = useState('');
+
 
   // Drag state
   const [dragIndex, setDragIndex] = useState(null);
@@ -637,6 +672,102 @@ const GIDShortlistScreen = () => {
   }, []);
 
   // --------------------------------------------------
+  // RFQ Dispatch
+  // --------------------------------------------------
+
+  // Check RFQ API availability on mount
+  useEffect(() => {
+    rfqHealthCheck().then(ok => setRfqApiAvailable(ok)).catch(() => setRfqApiAvailable(false));
+  }, []);
+
+  // Load existing RFQ invitations for this project
+  useEffect(() => {
+    if (!activeProjectId || !rfqApiAvailable) return;
+    rfqListInvitations({ project_id: activeProjectId })
+      .then(data => {
+        const map = {};
+        for (const inv of (data.invitations || [])) {
+          // Map by consultant name+discipline for matching
+          const key = `${inv.consultant_name}_${inv.discipline}`;
+          map[key] = inv;
+        }
+        setRfqInvitations(map);
+      })
+      .catch(() => {});
+  }, [activeProjectId, rfqApiAvailable, selectedDiscipline]);
+
+  // Get RFQ invitation for a consultant
+  const getRfqInvitation = useCallback((consultant) => {
+    const name = `${consultant.first_name || ''} ${consultant.last_name || ''}`.trim() || consultant.firm_name;
+    const key = `${name}_${consultant.role}`;
+    return rfqInvitations[key] || null;
+  }, [rfqInvitations]);
+
+  // Open RFQ dispatch modal
+  const handleSendRFQ = useCallback((consultant) => {
+    setRfqTarget(consultant);
+    setRfqResult(null);
+    setRfqError('');
+    setRfqModalOpen(true);
+  }, []);
+
+  // Create RFQ invitation
+  const handleDispatchRFQ = useCallback(async () => {
+    if (!rfqTarget || !activeProjectId) return;
+    setRfqSending(true);
+    setRfqError('');
+
+    try {
+      // Sync project to RFQ backend first
+      await rfqSyncProject({
+        n4s_project_id: activeProjectId,
+        project_name: gidData?.project_name || `Project ${activeProjectId}`,
+        fyi_features: fyiData?.spaces?.map(s => s.displayName || s.name) || []
+      });
+
+      // Create invitation
+      const name = `${rfqTarget.first_name || ''} ${rfqTarget.last_name || ''}`.trim() || rfqTarget.firm_name;
+      const result = await rfqCreateInvitation({
+        n4s_project_id: activeProjectId,
+        consultant_name: name,
+        firm_name: rfqTarget.firm_name,
+        discipline: rfqTarget.role,
+        email: rfqTarget.email || '',
+        expires_days: 14
+      });
+
+      setRfqResult(result);
+
+      // Update pipeline stage
+      const existing = engagementMap[rfqTarget.id];
+      if (existing) {
+        await fetch(`${API_BASE}/gid.php?entity=engagements&id=${existing.id}&action=update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pipeline_stage: 'questionnaire_sent' })
+        });
+      }
+
+      // Refresh invitations map
+      const key = `${name}_${rfqTarget.role}`;
+      setRfqInvitations(prev => ({ ...prev, [key]: result.invitation }));
+
+    } catch (err) {
+      setRfqError(err.message || 'Failed to create RFQ invitation');
+    } finally {
+      setRfqSending(false);
+    }
+  }, [rfqTarget, activeProjectId, gidData, fyiData, engagementMap]);
+
+  // Copy to clipboard helper
+  const handleCopy = useCallback((text, label) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(label);
+      setTimeout(() => setCopied(''), 2000);
+    });
+  }, []);
+
+  // --------------------------------------------------
   // Stats
   // --------------------------------------------------
   const stats = useMemo(() => ({
@@ -832,6 +963,7 @@ const GIDShortlistScreen = () => {
                       onShortlist={handleShortlist}
                       onPass={handlePass}
                       onRequestInfo={handleRequestInfo}
+                      onSendRFQ={handleSendRFQ}
                     />
                   </div>
                 ))}
@@ -900,6 +1032,157 @@ const GIDShortlistScreen = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* RFQ Dispatch Modal */}
+      {rfqModalOpen && rfqTarget && (
+        <div className="gid-modal-overlay" onClick={() => setRfqModalOpen(false)}>
+          <div className="gid-modal gid-rfq-modal" onClick={e => e.stopPropagation()}>
+            <div className="gid-modal__header">
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.navy, margin: 0 }}>
+                <Send size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                Send RFQ
+              </h3>
+              <button className="gid-modal__close" onClick={() => setRfqModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="gid-modal__body">
+              {!rfqResult ? (
+                <>
+                  <div className="gid-rfq-modal__target">
+                    <div className="gid-rfq-modal__target-firm">{rfqTarget.firm_name}</div>
+                    <div className="gid-rfq-modal__target-name">
+                      {rfqTarget.first_name} {rfqTarget.last_name}
+                    </div>
+                    <div className="gid-rfq-modal__target-disc">
+                      {DISCIPLINES[rfqTarget.role]?.label} • {rfqTarget.email || 'No email on file'}
+                    </div>
+                  </div>
+
+                  <div className="gid-rfq-modal__info">
+                    This will create a secure questionnaire invitation for this consultant.
+                    You'll receive a unique link and password to send them.
+                    The questionnaire includes:
+                    <ul style={{ marginTop: 8, paddingLeft: 20, fontSize: 13, color: '#555' }}>
+                      <li>Firm baseline & financials</li>
+                      <li>{DISCIPLINES[rfqTarget.role]?.label}-specific questions</li>
+                      <li>Portfolio evidence (3–5 projects)</li>
+                      <li>Team synergy & working style</li>
+                      <li>Project-specific capabilities</li>
+                    </ul>
+                  </div>
+
+                  {rfqError && (
+                    <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#d32f2f', borderRadius: 6, fontSize: 13, marginTop: 12 }}>
+                      {rfqError}
+                    </div>
+                  )}
+
+                  {!rfqApiAvailable && (
+                    <div style={{ padding: '10px 14px', background: '#fffbeb', color: '#f57c00', borderRadius: 6, fontSize: 13, marginTop: 12 }}>
+                      ⚠ RFQ API not available. Ensure rfq.not-4.sale is deployed and admin API key is configured.
+                    </div>
+                  )}
+
+                  <div className="gid-rfq-modal__actions">
+                    <button className="gid-btn gid-btn--ghost" onClick={() => setRfqModalOpen(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="gid-btn gid-btn--gold"
+                      onClick={handleDispatchRFQ}
+                      disabled={rfqSending || !rfqApiAvailable}
+                    >
+                      {rfqSending ? 'Creating...' : 'Create Invitation'}
+                      <Send size={14} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                    <CheckCircle2 size={36} style={{ color: COLORS.success }} />
+                    <h4 style={{ fontFamily: "'Playfair Display', serif", color: COLORS.navy, marginTop: 12 }}>
+                      Invitation Created
+                    </h4>
+                    <p style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                      Send the following credentials to the consultant.
+                    </p>
+                  </div>
+
+                  <div className="gid-rfq-modal__credentials">
+                    <div className="gid-rfq-cred">
+                      <label className="gid-rfq-cred__label">
+                        <ExternalLink size={12} /> Portal Link
+                      </label>
+                      <div className="gid-rfq-cred__value">
+                        <code>{rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`}</code>
+                        <button
+                          className="gid-rfq-cred__copy"
+                          onClick={() => handleCopy(rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`, 'link')}
+                        >
+                          {copied === 'link' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="gid-rfq-cred">
+                      <label className="gid-rfq-cred__label">
+                        <Key size={12} /> Password
+                      </label>
+                      <div className="gid-rfq-cred__value">
+                        <code className="gid-rfq-cred__password">{rfqResult.plain_password}</code>
+                        <button
+                          className="gid-rfq-cred__copy"
+                          onClick={() => handleCopy(rfqResult.plain_password, 'password')}
+                        >
+                          {copied === 'password' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="gid-rfq-cred">
+                      <label className="gid-rfq-cred__label">
+                        <Clock size={12} /> Expires
+                      </label>
+                      <div className="gid-rfq-cred__value">
+                        <span style={{ fontSize: 13 }}>
+                          {rfqResult.invitation?.expires_at
+                            ? new Date(rfqResult.invitation.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                            : '14 days'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 12, color: '#166534', marginTop: 12 }}>
+                    <strong>Important:</strong> The password is shown only this once. Copy it now and include it in your 
+                    email to the consultant. If lost, you can regenerate a new password from the Matchmaking tab.
+                  </div>
+
+                  {rfqTarget.email && (
+                    <a
+                      href={`mailto:${rfqTarget.email}?subject=${encodeURIComponent('Request for Qualifications — Luxury Residential Advisory')}&body=${encodeURIComponent(`Dear ${rfqTarget.first_name || 'Colleague'},\n\nYou have been invited to complete a confidential Request for Qualifications questionnaire for an ultra-luxury residential engagement.\n\nPlease access the portal here:\n${rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`}\n\nYour access password: ${rfqResult.plain_password}\n\nThis invitation expires on ${rfqResult.invitation?.expires_at ? new Date(rfqResult.invitation.expires_at).toLocaleDateString() : '14 days'}.\n\nYour responses are confidential and will be evaluated as part of our team selection process.\n\nBest regards,\nLuxury Residential Advisory Team\nNot4Sale`)}`}
+                      className="gid-btn gid-btn--primary"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 16, textDecoration: 'none', width: '100%' }}
+                    >
+                      <Mail size={14} /> Open Email Draft
+                    </a>
+                  )}
+
+                  <div className="gid-rfq-modal__actions" style={{ marginTop: 12 }}>
+                    <button className="gid-btn gid-btn--primary" onClick={() => setRfqModalOpen(false)}>
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
