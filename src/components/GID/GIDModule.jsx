@@ -2,13 +2,12 @@
  * GIDModule.jsx — Get It Done
  * 
  * Curate and match creative, project management, and delivery team consultants.
- * Phase 1: Consultant Registry CRUD + Portfolio management.
  * 
  * Screens:
  * 1. Registry — Master consultant database with CRUD
- * 2. Discovery — Search & discover (Phase 3)
- * 3. Match — Run matching algorithm (Phase 2)
- * 4. Assembly — Team assembly + tracking (Phase 4)
+ * 2. Discovery — AI-powered sourcing (finds candidates)
+ * 3. Shortlist — Curation, alignment badges, outreach pipeline
+ * 4. Matchmaking — Deep scoring from questionnaires, team chemistry, assembly
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -21,9 +20,9 @@ import { useAppContext } from '../../contexts/AppContext';
 import GIDDocumentation from './GIDDocumentation';
 import AddConsultantForm from './components/AddConsultantForm';
 import ConsultantDetailModal from './components/ConsultantDetailModal';
-import GIDMatchScreen from './screens/GIDMatchScreen';
+import GIDShortlistScreen from './screens/GIDShortlistScreen';
 import GIDDiscoveryScreen from './screens/GIDDiscoveryScreen';
-import GIDAssemblyScreen from './screens/GIDAssemblyScreen';
+import GIDMatchmakingScreen from './screens/GIDMatchmakingScreen';
 import './GIDModule.css';
 
 // N4S Brand Colors
@@ -297,7 +296,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
   const [error, setError] = useState(null);
 
   // View state
-  const [viewMode, setViewMode] = useState('registry'); // 'registry' | 'add' | 'edit' | 'match' | 'discovery'
+  const [viewMode, setViewMode] = useState('registry'); // 'registry' | 'add' | 'edit' | 'shortlist' | 'discovery' | 'matchmaking'
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
@@ -468,7 +467,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
             </div>
           </header>
 
-          {/* Screen Tabs (Phase 1: only Registry active) */}
+          {/* Screen Tabs */}
           <div className="gid-screen-tabs">
             <button
               className={`gid-screen-tab ${viewMode === 'registry' || viewMode === 'add' || viewMode === 'edit' ? 'gid-screen-tab--active' : ''}`}
@@ -486,18 +485,18 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               {queueCount > 0 && <span className="gid-queue-badge">{queueCount}</span>}
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'match' ? 'gid-screen-tab--active' : ''}`}
-              onClick={() => { setViewMode('match'); setSelectedConsultant(null); }}
+              className={`gid-screen-tab ${viewMode === 'shortlist' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('shortlist'); setSelectedConsultant(null); }}
             >
               <Filter size={16} />
-              Matchmaking
+              Shortlist
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'assembly' ? 'gid-screen-tab--active' : ''}`}
-              onClick={() => { setViewMode('assembly'); setSelectedConsultant(null); }}
+              className={`gid-screen-tab ${viewMode === 'matchmaking' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('matchmaking'); setSelectedConsultant(null); }}
             >
               <Briefcase size={16} />
-              Assembly
+              Matchmaking
             </button>
           </div>
 
@@ -614,9 +613,9 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
             />
           )}
 
-          {/* Matchmaking Screen */}
-          {viewMode === 'match' && (
-            <GIDMatchScreen />
+          {/* Shortlist Screen */}
+          {viewMode === 'shortlist' && (
+            <GIDShortlistScreen />
           )}
 
           {/* Discovery Screen */}
@@ -630,9 +629,9 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
             />
           )}
 
-          {/* Assembly Screen */}
-          {viewMode === 'assembly' && (
-            <GIDAssemblyScreen />
+          {/* Matchmaking Screen */}
+          {viewMode === 'matchmaking' && (
+            <GIDMatchmakingScreen />
           )}
 
           {/* Detail Modal */}
