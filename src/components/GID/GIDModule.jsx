@@ -7,14 +7,15 @@
  * 1. Registry — Master consultant database with CRUD
  * 2. Discovery — AI-powered sourcing (finds candidates)
  * 3. Shortlist — Curation, alignment badges, outreach pipeline
- * 4. Matchmaking — Deep scoring from questionnaires, team chemistry, assembly
+ * 4. Matchmaking — Deep scoring from RFQ responses
+ * 5. Synergy Sandbox — Team combination testing & conflict mapping
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Users, Plus, Search, Filter, Save, FileDown, Edit2, Trash2, Eye,
   Star, MapPin, Briefcase, Award, ChevronDown, ChevronRight, X,
-  Building2, CheckCircle2, Clock, AlertTriangle, RefreshCw, Upload
+  Building2, CheckCircle2, Clock, AlertTriangle, RefreshCw, Upload, Zap
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import GIDDocumentation from './GIDDocumentation';
@@ -23,6 +24,7 @@ import ConsultantDetailModal from './components/ConsultantDetailModal';
 import GIDShortlistScreen from './screens/GIDShortlistScreen';
 import GIDDiscoveryScreen from './screens/GIDDiscoveryScreen';
 import GIDMatchmakingScreen from './screens/GIDMatchmakingScreen';
+import GIDSynergySandboxScreen from './screens/GIDSynergySandboxScreen';
 import './GIDModule.css';
 
 // N4S Brand Colors
@@ -498,6 +500,13 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
               <Briefcase size={16} />
               Matchmaking
             </button>
+            <button
+              className={`gid-screen-tab ${viewMode === 'synergy' ? 'gid-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('synergy'); setSelectedConsultant(null); }}
+            >
+              <Zap size={16} />
+              Synergy Sandbox
+            </button>
           </div>
 
           {/* Stats Bar */}
@@ -632,6 +641,11 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
           {/* Matchmaking Screen */}
           {viewMode === 'matchmaking' && (
             <GIDMatchmakingScreen />
+          )}
+
+          {/* Synergy Sandbox Screen */}
+          {viewMode === 'synergy' && (
+            <GIDSynergySandboxScreen />
           )}
 
           {/* Detail Modal */}
