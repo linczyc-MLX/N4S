@@ -374,7 +374,7 @@ const ShortlistCandidateCard = ({
 // =============================================================================
 
 const GIDShortlistScreen = () => {
-  const { kycData, fyiData, gidData, updateGIDData, activeProjectId } = useAppContext();
+  const { kycData, fyiData, gidData, updateGIDData, activeProjectId, projectData } = useAppContext();
 
   // State
   const [selectedDiscipline, setSelectedDiscipline] = useState('architect');
@@ -721,19 +721,20 @@ const GIDShortlistScreen = () => {
       // Sync project to RFQ backend first
       await rfqSyncProject({
         n4s_project_id: activeProjectId,
-        project_name: gidData?.project_name || `Project ${activeProjectId}`,
-        fyi_features: fyiData?.spaces?.map(s => s.displayName || s.name) || []
+        project_name: projectData?.projectName || gidData?.project_name || `Project ${activeProjectId}`,
+        project_features: fyiData?.spaces?.map(s => s.displayName || s.name) || []
       });
 
       // Create invitation
       const name = `${rfqTarget.first_name || ''} ${rfqTarget.last_name || ''}`.trim() || rfqTarget.firm_name;
       const result = await rfqCreateInvitation({
         n4s_project_id: activeProjectId,
+        consultant_id: String(rfqTarget.id),
         consultant_name: name,
         firm_name: rfqTarget.firm_name,
         discipline: rfqTarget.role,
         email: rfqTarget.email || '',
-        expires_days: 14
+        expires_in_days: 14
       });
 
       setRfqResult(result);
