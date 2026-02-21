@@ -293,44 +293,88 @@ const ScoreBreakdown = ({ score }) => {
 const PipelineProgress = ({ currentStatus, compact = false }) => {
   const currentIdx = PIPELINE_STAGES.findIndex(s => s.key === currentStatus);
 
-  return (
-    <div className={`gid-pipeline-progress ${compact ? 'gid-pipeline-progress--compact' : ''}`}>
-      {PIPELINE_STAGES.map((stage, idx) => {
-        const isComplete = idx < currentIdx;
-        const isCurrent = idx === currentIdx;
-        const StageIcon = stage.icon;
+  if (compact) {
+    return (
+      <div className="gid-pipeline-progress gid-pipeline-progress--compact">
+        {PIPELINE_STAGES.map((stage, idx) => {
+          const isComplete = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          const StageIcon = stage.icon;
+          return (
+            <React.Fragment key={stage.key}>
+              <div
+                className={`gid-pipeline-step ${isComplete ? 'gid-pipeline-step--complete' : ''} ${isCurrent ? 'gid-pipeline-step--current' : ''}`}
+                title={stage.label}
+              >
+                <div className="gid-pipeline-step__dot"
+                  style={{
+                    backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border,
+                    borderColor: isCurrent ? stage.color : 'transparent',
+                  }}>
+                  {isComplete ? (
+                    <CheckCircle2 size={10} color="#fff" />
+                  ) : (
+                    <StageIcon size={10} color={isCurrent ? '#fff' : COLORS.textMuted} />
+                  )}
+                </div>
+              </div>
+              {idx < PIPELINE_STAGES.length - 1 && (
+                <div className="gid-pipeline-connector"
+                  style={{ backgroundColor: idx < currentIdx ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  }
 
-        return (
-          <React.Fragment key={stage.key}>
-            <div
-              className={`gid-pipeline-step ${isComplete ? 'gid-pipeline-step--complete' : ''} ${isCurrent ? 'gid-pipeline-step--current' : ''}`}
-              title={stage.label}
-            >
-              <div className="gid-pipeline-step__dot"
+  // Full (non-compact): grid layout with icons + labels aligned
+  return (
+    <div className="gid-pipeline-full-grid">
+      {/* Connector line row */}
+      <div className="gid-pipeline-full-grid__line">
+        {PIPELINE_STAGES.map((stage, idx) => {
+          const isComplete = idx < currentIdx;
+          return (
+            <React.Fragment key={stage.key}>
+              <div className="gid-pipeline-full-grid__dot-cell" />
+              {idx < PIPELINE_STAGES.length - 1 && (
+                <div className="gid-pipeline-full-grid__connector"
+                  style={{ backgroundColor: isComplete ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+      {/* Icons row */}
+      <div className="gid-pipeline-full-grid__icons">
+        {PIPELINE_STAGES.map((stage, idx) => {
+          const isComplete = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          const StageIcon = stage.icon;
+          return (
+            <div key={stage.key} className="gid-pipeline-full-grid__col">
+              <div className={`gid-pipeline-full-grid__dot ${isComplete ? 'gid-pipeline-full-grid__dot--complete' : ''} ${isCurrent ? 'gid-pipeline-full-grid__dot--current' : ''}`}
                 style={{
                   backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border,
                   borderColor: isCurrent ? stage.color : 'transparent',
                 }}>
                 {isComplete ? (
-                  <CheckCircle2 size={compact ? 10 : 12} color="#fff" />
+                  <CheckCircle2 size={14} color="#fff" />
                 ) : (
-                  <StageIcon size={compact ? 10 : 12} color={isCurrent ? '#fff' : COLORS.textMuted} />
+                  <StageIcon size={14} color={isCurrent ? '#fff' : COLORS.textMuted} />
                 )}
               </div>
-              {!compact && (
-                <span className="gid-pipeline-step__label"
-                  style={{ color: isComplete || isCurrent ? COLORS.text : COLORS.textMuted }}>
-                  {stage.label}
-                </span>
-              )}
+              <span className="gid-pipeline-full-grid__label"
+                style={{ color: isComplete || isCurrent ? COLORS.text : COLORS.textMuted,
+                         fontWeight: isCurrent ? 600 : 400 }}>
+                {stage.label}
+              </span>
             </div>
-            {idx < PIPELINE_STAGES.length - 1 && (
-              <div className="gid-pipeline-connector"
-                style={{ backgroundColor: idx < currentIdx ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
-            )}
-          </React.Fragment>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -476,19 +520,52 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
             </div>
           )}
 
-          {/* Full pipeline with dates */}
+          {/* Full pipeline with dates — unified grid */}
           <div className="gid-engagement-card__pipeline-full">
-            <PipelineProgress currentStatus={engagement.contact_status} />
-            <div className="gid-engagement-card__dates">
-              {PIPELINE_STAGES.map(stage => {
-                const dateVal = engagement[stage.dateField];
-                const stageIdx = PIPELINE_STAGES.findIndex(s => s.key === stage.key);
+            <div className="gid-pipeline-dated-grid">
+              {PIPELINE_STAGES.map((stage, idx) => {
+                const stageIdx = idx;
+                const isComplete = stageIdx < currentStageIdx;
+                const isCurrent = stageIdx === currentStageIdx;
                 const isReached = stageIdx <= currentStageIdx;
+                const StageIcon = stage.icon;
+                const dateVal = engagement[stage.dateField];
+
                 return (
-                  <div key={stage.key}
-                    className={`gid-engagement-card__date-item ${isReached ? 'gid-engagement-card__date-item--reached' : ''}`}>
-                    <span className="gid-engagement-card__date-label">{stage.label}</span>
-                    <span className="gid-engagement-card__date-value">{dateVal ? formatDate(dateVal) : '—'}</span>
+                  <div key={stage.key} className="gid-pipeline-dated-grid__col">
+                    {/* Dot + connector */}
+                    <div className="gid-pipeline-dated-grid__dot-row">
+                      {idx > 0 && (
+                        <div className="gid-pipeline-dated-grid__connector-left"
+                          style={{ backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border }} />
+                      )}
+                      <div className={`gid-pipeline-dated-grid__dot ${isComplete ? 'gid-pipeline-dated-grid__dot--complete' : ''} ${isCurrent ? 'gid-pipeline-dated-grid__dot--current' : ''}`}
+                        style={{
+                          backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border,
+                          borderColor: isCurrent ? stage.color : 'transparent',
+                        }}>
+                        {isComplete ? (
+                          <CheckCircle2 size={14} color="#fff" />
+                        ) : (
+                          <StageIcon size={14} color={isCurrent ? '#fff' : COLORS.textMuted} />
+                        )}
+                      </div>
+                      {idx < PIPELINE_STAGES.length - 1 && (
+                        <div className="gid-pipeline-dated-grid__connector-right"
+                          style={{ backgroundColor: isComplete ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
+                      )}
+                    </div>
+                    {/* Label */}
+                    <span className="gid-pipeline-dated-grid__label"
+                      style={{ color: isReached ? COLORS.text : COLORS.textMuted,
+                               fontWeight: isCurrent ? 600 : 400 }}>
+                      {stage.label}
+                    </span>
+                    {/* Date */}
+                    <span className="gid-pipeline-dated-grid__date"
+                      style={{ color: isReached ? COLORS.text : COLORS.textMuted }}>
+                      {dateVal ? formatDate(dateVal) : '—'}
+                    </span>
                   </div>
                 );
               })}
@@ -924,6 +1001,112 @@ const GIDMatchmakingScreen = () => {
 // =============================================================================
 
 const mmStyles = `
+/* ============================================================
+   UNIFIED PIPELINE DATED GRID
+   Icons, labels, and dates all in one aligned grid
+   ============================================================ */
+.gid-pipeline-dated-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0;
+  width: 100%;
+  margin: 8px 0;
+}
+.gid-pipeline-dated-grid__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+.gid-pipeline-dated-grid__dot-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  height: 32px;
+  position: relative;
+}
+.gid-pipeline-dated-grid__connector-left {
+  position: absolute;
+  left: 0;
+  right: 50%;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+.gid-pipeline-dated-grid__connector-right {
+  position: absolute;
+  left: 50%;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+.gid-pipeline-dated-grid__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+.gid-pipeline-dated-grid__dot--current {
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+}
+.gid-pipeline-dated-grid__label {
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.gid-pipeline-dated-grid__date {
+  font-size: 10px;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   FULL PIPELINE GRID (standalone, non-dated - used in PipelineProgress full)
+   ============================================================ */
+.gid-pipeline-full-grid__icons {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0;
+  width: 100%;
+}
+.gid-pipeline-full-grid__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.gid-pipeline-full-grid__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+.gid-pipeline-full-grid__dot--current {
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+}
+.gid-pipeline-full-grid__label {
+  font-size: 11px;
+  margin-top: 4px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   SCORE BREAKDOWN
+   ============================================================ */
 .gid-mm-breakdown {
   background: #fafaf8;
   border: 1px solid #e5e5e0;
@@ -1004,6 +1187,10 @@ const mmStyles = `
 }
 @media (max-width: 768px) {
   .gid-mm-dim { grid-template-columns: 1fr; gap: 2px; }
+  .gid-pipeline-dated-grid { grid-template-columns: repeat(4, 1fr); row-gap: 12px; }
+  .gid-pipeline-full-grid__icons { grid-template-columns: repeat(4, 1fr); row-gap: 8px; }
+  .gid-pipeline-dated-grid__connector-left,
+  .gid-pipeline-dated-grid__connector-right { display: none; }
 }
 `;
 
