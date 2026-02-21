@@ -1,20 +1,15 @@
 /**
- * GIDMatchmakingScreen.jsx — Deep Matchmaking & Team Assembly Screen
+ * GIDMatchmakingScreen.jsx — Deep Matchmaking & Scoring Screen
  *
- * Tab 4 of GID module (renamed from Assembly in GID Restructure).
- * Manages the engagement pipeline for shortlisted consultants.
- * 
- * Phase 3 will add: questionnaire-based scoring, team chemistry analysis,
- * and team builder UI. For now, retains Assembly's pipeline management.
- * 
- * Features:
- * - Team Composition Summary (4 discipline slots, readiness %)
- * - Discipline-grouped engagement rows with pipeline status
- * - Status progression through stages with auto-dated milestones
- * - Expandable detail: team notes, client feedback, chemistry score, project outcome
- * - Remove/archive action
+ * Tab 4 of GID module. Combines:
+ * 1. VPS scoring engine results (quantitative + qualitative from RFQ responses)
+ * 2. IONOS engagement pipeline tracking (shortlisted → contracted)
  *
- * Data source: gid_engagements table (records created by Shortlist tab actions)
+ * Scores are computed on the VPS via rfqComputeAllScores / rfqComputeScore.
+ * Candidates with submitted RFQ responses get scored; others show pipeline only.
+ *
+ * Data flow:
+ *   IONOS gid_engagements (pipeline) + VPS rfq scoring (match scores) → merged view
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -22,10 +17,14 @@ import {
   Users, Briefcase, ChevronDown, ChevronUp, X, RefreshCw,
   AlertTriangle, CheckCircle2, Clock, ArrowRight, Phone,
   MessageSquare, Calendar, FileText, UserCheck, Shield,
-  MapPin, Star, Edit2, Save, Trash2, Award,
-  ChevronRight,
+  MapPin, Star, Edit2, Save, Trash2, Award, Zap,
+  ChevronRight, BarChart3, Target, Play
 } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
+import {
+  rfqGetScores, rfqComputeAllScores, rfqComputeScore,
+  rfqListInvitations
+} from '../../../services/rfqApi';
 
 // N4S Brand Colors
 const COLORS = {
@@ -43,20 +42,20 @@ const COLORS = {
   info: '#1976d2',
 };
 
-// Discipline definitions (matching GIDModule.jsx)
+// Discipline definitions
 const DISCIPLINES = {
-  architect:          { label: 'Architect',          color: '#315098', icon: '🏛',  slot: 'architect' },
-  interior_designer:  { label: 'Interior Designer',  color: '#8CA8BE', icon: '🎨',  slot: 'interiorDesigner' },
-  pm:                 { label: 'PM / Owner\'s Rep',  color: '#AFBDB0', icon: '📋',  slot: 'projectManager' },
-  gc:                 { label: 'General Contractor', color: '#C4A484', icon: '🔨',  slot: 'generalContractor' },
+  architect:          { label: 'Architect',          color: '#315098', icon: '🏛' },
+  interior_designer:  { label: 'Interior Designer',  color: '#8CA8BE', icon: '🎨' },
+  pm:                 { label: "PM / Owner's Rep",   color: '#AFBDB0', icon: '📋' },
+  gc:                 { label: 'General Contractor',  color: '#C4A484', icon: '🔨' },
 };
 
-// Pipeline stages with metadata (updated for GID Restructure)
+// Pipeline stages
 const PIPELINE_STAGES = [
   { key: 'shortlisted',              label: 'Shortlisted',          icon: Star,           dateField: 'date_shortlisted',           color: COLORS.textMuted },
   { key: 'contacted',                label: 'Contacted',            icon: Phone,          dateField: 'date_contacted',             color: COLORS.info },
-  { key: 'questionnaire_sent',       label: 'Questionnaire Sent',   icon: FileText,       dateField: 'questionnaire_sent_at',      color: '#5c6bc0' },
-  { key: 'questionnaire_received',   label: 'Response Received',    icon: MessageSquare,  dateField: 'questionnaire_received_at',  color: COLORS.warning },
+  { key: 'questionnaire_sent',       label: 'RFQ Sent',             icon: FileText,       dateField: 'questionnaire_sent_at',      color: '#5c6bc0' },
+  { key: 'questionnaire_received',   label: 'Response In',          icon: MessageSquare,  dateField: 'questionnaire_received_at',  color: COLORS.warning },
   { key: 'under_review',             label: 'Under Review',         icon: Calendar,       dateField: 'date_meeting',               color: '#7b1fa2' },
   { key: 'proposal',                 label: 'Proposal',             icon: FileText,       dateField: 'date_proposal',              color: '#7b1fa2' },
   { key: 'engaged',                  label: 'Engaged',              icon: UserCheck,      dateField: 'date_engaged',               color: COLORS.success },
@@ -72,14 +71,43 @@ const PROJECT_OUTCOMES = [
   { value: 'declined',     label: 'Declined' },
 ];
 
+// Scoring dimension labels (from VPS scoring engine)
+const SCORE_DIMENSIONS = [
+  { key: 'scale_match',          label: 'Scale Match',           weight: '15%', icon: Target },
+  { key: 'financial_resilience', label: 'Financial Resilience',  weight: '10%', icon: Shield },
+  { key: 'geographic_alignment', label: 'Geographic Alignment',  weight: '10%', icon: MapPin },
+  { key: 'capability_coverage',  label: 'Capability Coverage',   weight: '20%', icon: CheckCircle2 },
+  { key: 'portfolio_relevance',  label: 'Portfolio Relevance',   weight: '15%', icon: Briefcase },
+  { key: 'tech_compatibility',   label: 'Tech Compatibility',    weight: '5%',  icon: Zap },
+  { key: 'credentials',          label: 'Credentials',           weight: '5%',  icon: Award },
+  { key: 'philosophy_alignment', label: 'Philosophy Alignment',  weight: '10%', icon: Star },
+  { key: 'methodology_fit',      label: 'Methodology Fit',       weight: '5%',  icon: Calendar },
+  { key: 'collaboration_maturity', label: 'Collaboration',       weight: '5%',  icon: Users },
+];
+
 // API base URL
 const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
   : '/api';
 
+// Score tier helpers
+const tierColor = (score) => {
+  if (score >= 80) return COLORS.gold;
+  if (score >= 60) return COLORS.navy;
+  if (score >= 40) return COLORS.warning;
+  return COLORS.error;
+};
+
+const tierLabel = (score) => {
+  if (score >= 80) return 'Top Match';
+  if (score >= 60) return 'Good Fit';
+  if (score >= 40) return 'Consider';
+  return 'Below Threshold';
+};
+
 
 // =============================================================================
-// ENGAGEMENT API HELPERS
+// ENGAGEMENT API HELPERS (IONOS)
 // =============================================================================
 
 const engagementApi = {
@@ -118,8 +146,7 @@ const engagementApi = {
 // TEAM COMPOSITION SUMMARY
 // =============================================================================
 
-const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
-  // For each discipline, find the most advanced engagement
+const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap }) => {
   const slots = Object.entries(DISCIPLINES).map(([key, disc]) => {
     const engagements = engagementsByDiscipline[key] || [];
     const mostAdvanced = engagements.reduce((best, eng) => {
@@ -130,20 +157,13 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
 
     const isFilled = mostAdvanced && ['engaged', 'contracted'].includes(mostAdvanced.contact_status);
     const isInProgress = mostAdvanced && !isFilled;
+    const score = mostAdvanced ? scoreMap[mostAdvanced.consultant_id] : null;
 
-    return {
-      key,
-      disc,
-      count: engagements.length,
-      mostAdvanced,
-      isFilled,
-      isInProgress,
-      status: isFilled ? 'filled' : isInProgress ? 'in_progress' : 'open',
-    };
+    return { key, disc, count: engagements.length, mostAdvanced, isFilled, isInProgress, score,
+      status: isFilled ? 'filled' : isInProgress ? 'in_progress' : 'open' };
   });
 
   const filledCount = slots.filter(s => s.isFilled).length;
-  const inProgressCount = slots.filter(s => s.isInProgress).length;
   const readiness = Math.round((filledCount / 4) * 100);
 
   return (
@@ -153,21 +173,13 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
           <h3 className="gid-assembly-composition__title">Team Composition</h3>
           <div className="gid-assembly-composition__readiness">
             <div className="gid-assembly-composition__readiness-bar">
-              <div
-                className="gid-assembly-composition__readiness-fill"
-                style={{ width: `${readiness}%` }}
-              />
+              <div className="gid-assembly-composition__readiness-fill" style={{ width: `${readiness}%` }} />
             </div>
             <span className="gid-assembly-composition__readiness-label">
               {filledCount}/4 roles filled ({readiness}%)
             </span>
           </div>
         </div>
-        {inProgressCount > 0 && (
-          <span className="gid-assembly-composition__progress-note">
-            {inProgressCount} role{inProgressCount > 1 ? 's' : ''} in pipeline
-          </span>
-        )}
       </div>
 
       <div className="gid-assembly-composition__slots">
@@ -178,11 +190,8 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
           const StageIcon = stageInfo?.icon || Clock;
 
           return (
-            <div
-              key={slot.key}
-              className={`gid-assembly-slot gid-assembly-slot--${slot.status}`}
-              style={{ borderTopColor: slot.disc.color }}
-            >
+            <div key={slot.key} className={`gid-assembly-slot gid-assembly-slot--${slot.status}`}
+              style={{ borderTopColor: slot.disc.color }}>
               <div className="gid-assembly-slot__icon">{slot.disc.icon}</div>
               <div className="gid-assembly-slot__info">
                 <span className="gid-assembly-slot__discipline">{slot.disc.label}</span>
@@ -191,27 +200,87 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
                     <span className="gid-assembly-slot__firm">
                       {slot.mostAdvanced.firm_name || 'Unknown Firm'}
                     </span>
-                    <span
-                      className="gid-assembly-slot__status"
-                      style={{ color: stageInfo?.color }}
-                    >
+                    <span className="gid-assembly-slot__status" style={{ color: stageInfo?.color }}>
                       <StageIcon size={12} />
                       {stageInfo?.label || slot.mostAdvanced.contact_status}
                     </span>
+                    {slot.score && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: tierColor(slot.score.overall_score || 0) }}>
+                        Score: {Math.round(slot.score.overall_score || 0)}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="gid-assembly-slot__empty">No candidates yet</span>
                 )}
               </div>
               {slot.count > 1 && (
-                <span className="gid-assembly-slot__count">
-                  +{slot.count - 1} more
-                </span>
+                <span className="gid-assembly-slot__count">+{slot.count - 1} more</span>
               )}
             </div>
           );
         })}
       </div>
+    </div>
+  );
+};
+
+
+// =============================================================================
+// SCORE BREAKDOWN PANEL
+// =============================================================================
+
+const ScoreBreakdown = ({ score }) => {
+  if (!score || !score.dimensions) return null;
+  const dims = score.dimensions;
+
+  return (
+    <div className="gid-mm-breakdown">
+      <div className="gid-mm-breakdown__header">
+        <BarChart3 size={14} />
+        <span>Score Breakdown</span>
+        <span className="gid-mm-breakdown__split">
+          Quantitative {Math.round(score.quantitative_score || 0)} · Qualitative {Math.round(score.qualitative_score || 0)}
+        </span>
+      </div>
+
+      <div className="gid-mm-breakdown__dims">
+        {SCORE_DIMENSIONS.map(dim => {
+          const val = dims[dim.key];
+          if (val === undefined || val === null) return null;
+          const normalizedVal = Math.min(100, Math.max(0, Number(val)));
+          const DimIcon = dim.icon;
+          return (
+            <div key={dim.key} className="gid-mm-dim">
+              <div className="gid-mm-dim__label">
+                <DimIcon size={12} />
+                <span>{dim.label}</span>
+                <span className="gid-mm-dim__weight">{dim.weight}</span>
+              </div>
+              <div className="gid-mm-dim__bar">
+                <div className="gid-mm-dim__fill"
+                  style={{ width: `${normalizedVal}%`, background: tierColor(normalizedVal) }} />
+              </div>
+              <div className="gid-mm-dim__value" style={{ color: tierColor(normalizedVal) }}>
+                {Math.round(normalizedVal)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {score.match_tier && (
+        <div className="gid-mm-breakdown__tier" style={{ color: tierColor(score.overall_score || 0) }}>
+          <Award size={14} /> {score.match_tier}
+        </div>
+      )}
+
+      {score.notes && (
+        <div className="gid-mm-breakdown__notes">
+          <span style={{ fontWeight: 600, fontSize: 12 }}>Scoring Notes:</span>
+          <p style={{ fontSize: 12, color: '#555', margin: '4px 0 0' }}>{score.notes}</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -237,13 +306,11 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
               className={`gid-pipeline-step ${isComplete ? 'gid-pipeline-step--complete' : ''} ${isCurrent ? 'gid-pipeline-step--current' : ''}`}
               title={stage.label}
             >
-              <div
-                className="gid-pipeline-step__dot"
+              <div className="gid-pipeline-step__dot"
                 style={{
                   backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border,
                   borderColor: isCurrent ? stage.color : 'transparent',
-                }}
-              >
+                }}>
                 {isComplete ? (
                   <CheckCircle2 size={compact ? 10 : 12} color="#fff" />
                 ) : (
@@ -251,21 +318,15 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
                 )}
               </div>
               {!compact && (
-                <span
-                  className="gid-pipeline-step__label"
-                  style={{ color: isComplete || isCurrent ? COLORS.text : COLORS.textMuted }}
-                >
+                <span className="gid-pipeline-step__label"
+                  style={{ color: isComplete || isCurrent ? COLORS.text : COLORS.textMuted }}>
                   {stage.label}
                 </span>
               )}
             </div>
             {idx < PIPELINE_STAGES.length - 1 && (
-              <div
-                className="gid-pipeline-connector"
-                style={{
-                  backgroundColor: idx < currentIdx ? PIPELINE_STAGES[idx + 1].color : COLORS.border,
-                }}
-              />
+              <div className="gid-pipeline-connector"
+                style={{ backgroundColor: idx < currentIdx ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
             )}
           </React.Fragment>
         );
@@ -276,10 +337,10 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
 
 
 // =============================================================================
-// ENGAGEMENT CARD
+// ENGAGEMENT CARD (with scoring integration)
 // =============================================================================
 
-const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
+const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore }) => {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -289,66 +350,55 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
     project_outcome: engagement.project_outcome || 'pending',
   });
   const [saving, setSaving] = useState(false);
+  const [computing, setComputing] = useState(false);
 
   const currentStageIdx = PIPELINE_STAGES.findIndex(s => s.key === engagement.contact_status);
   const currentStage = PIPELINE_STAGES[currentStageIdx];
-  const nextStage = currentStageIdx < PIPELINE_STAGES.length - 1
-    ? PIPELINE_STAGES[currentStageIdx + 1]
-    : null;
+  const nextStage = currentStageIdx < PIPELINE_STAGES.length - 1 ? PIPELINE_STAGES[currentStageIdx + 1] : null;
 
-  // Score color
-  const scoreColor = (engagement.match_score || 0) >= 80
-    ? COLORS.gold
-    : (engagement.match_score || 0) >= 60
-      ? COLORS.navy
-      : COLORS.textMuted;
+  const displayScore = score?.overall_score || engagement.match_score || null;
+  const scoreColor = displayScore ? tierColor(displayScore) : COLORS.textMuted;
 
-  // Advance to next stage
+  const hasResponse = ['questionnaire_received', 'under_review', 'proposal', 'engaged', 'contracted']
+    .includes(engagement.contact_status);
+
   const handleAdvanceStage = useCallback(async () => {
     if (!nextStage) return;
     const now = new Date().toISOString();
-    await onUpdate(engagement.id, {
-      contact_status: nextStage.key,
-      [nextStage.dateField]: now,
-    });
+    await onUpdate(engagement.id, { contact_status: nextStage.key, [nextStage.dateField]: now });
   }, [engagement.id, nextStage, onUpdate]);
 
-  // Save edits
   const handleSaveEdits = useCallback(async () => {
     setSaving(true);
     try {
-      const updatePayload = {};
-      if (editData.team_notes !== (engagement.team_notes || '')) {
-        updatePayload.team_notes = editData.team_notes;
-      }
-      if (editData.client_feedback !== (engagement.client_feedback || '')) {
-        updatePayload.client_feedback = editData.client_feedback;
-      }
+      const payload = {};
+      if (editData.team_notes !== (engagement.team_notes || '')) payload.team_notes = editData.team_notes;
+      if (editData.client_feedback !== (engagement.client_feedback || '')) payload.client_feedback = editData.client_feedback;
       if (editData.chemistry_score !== (engagement.chemistry_score || '')) {
-        updatePayload.chemistry_score = editData.chemistry_score ? parseInt(editData.chemistry_score) : null;
+        payload.chemistry_score = editData.chemistry_score ? parseInt(editData.chemistry_score) : null;
       }
       if (editData.project_outcome !== (engagement.project_outcome || 'pending')) {
-        updatePayload.project_outcome = editData.project_outcome;
+        payload.project_outcome = editData.project_outcome;
       }
-
-      if (Object.keys(updatePayload).length > 0) {
-        await onUpdate(engagement.id, updatePayload);
-      }
+      if (Object.keys(payload).length > 0) await onUpdate(engagement.id, payload);
       setEditing(false);
     } catch (err) {
       console.error('[Matchmaking] Save error:', err);
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }, [editData, engagement, onUpdate]);
 
-  // Remove engagement
+  const handleComputeScore = useCallback(async () => {
+    if (!onComputeScore) return;
+    setComputing(true);
+    try { await onComputeScore(engagement); }
+    finally { setComputing(false); }
+  }, [engagement, onComputeScore]);
+
   const handleRemove = useCallback(() => {
-    if (!window.confirm(`Remove ${engagement.firm_name || 'this consultant'} from the team assembly?`)) return;
+    if (!window.confirm(`Remove ${engagement.firm_name || 'this consultant'} from the matchmaking pipeline?`)) return;
     onRemove(engagement.id);
   }, [engagement, onRemove]);
 
-  // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -360,7 +410,14 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
       <div className="gid-engagement-card__header" onClick={() => setExpanded(!expanded)}>
         <div className="gid-engagement-card__left">
           <div className="gid-engagement-card__score" style={{ borderColor: scoreColor }}>
-            <span style={{ color: scoreColor }}>{engagement.match_score || '—'}</span>
+            <span style={{ color: scoreColor, fontSize: displayScore ? 16 : 12 }}>
+              {displayScore ? Math.round(displayScore) : '—'}
+            </span>
+            {score?.match_tier && (
+              <span style={{ fontSize: 8, color: scoreColor, fontWeight: 600 }}>
+                {score.match_tier.split(' ')[0]}
+              </span>
+            )}
           </div>
           <div className="gid-engagement-card__info">
             <h4 className="gid-engagement-card__firm">{engagement.firm_name || 'Unknown Firm'}</h4>
@@ -372,14 +429,18 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
             <div className="gid-engagement-card__meta">
               {engagement.hq_city && (
                 <span className="gid-meta-item">
-                  <MapPin size={11} />
-                  {engagement.hq_city}{engagement.hq_state ? `, ${engagement.hq_state}` : ''}
+                  <MapPin size={11} /> {engagement.hq_city}{engagement.hq_state ? `, ${engagement.hq_state}` : ''}
                 </span>
               )}
               <span className="gid-meta-item" style={{ color: currentStage?.color }}>
                 {currentStage?.icon && React.createElement(currentStage.icon, { size: 11 })}
                 {currentStage?.label}
               </span>
+              {hasResponse && !score && (
+                <span className="gid-meta-item" style={{ color: COLORS.warning }}>
+                  <Zap size={11} /> Score pending
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -395,6 +456,26 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
       {/* Expanded Detail */}
       {expanded && (
         <div className="gid-engagement-card__detail">
+          {/* VPS Score Breakdown */}
+          {score && <ScoreBreakdown score={score} />}
+
+          {/* Compute score prompt */}
+          {hasResponse && !score && (
+            <div style={{ padding: '12px', background: '#fffbeb', borderRadius: 8, border: '1px solid #fde68a', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Zap size={16} style={{ color: COLORS.warning }} />
+                <span style={{ fontSize: 13, color: '#92400e' }}>
+                  RFQ response received — ready for scoring
+                </span>
+                <button className="gid-btn gid-btn--gold gid-btn--sm"
+                  onClick={(e) => { e.stopPropagation(); handleComputeScore(); }}
+                  disabled={computing} style={{ marginLeft: 'auto' }}>
+                  <Play size={13} /> {computing ? 'Computing...' : 'Compute Score'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Full pipeline with dates */}
           <div className="gid-engagement-card__pipeline-full">
             <PipelineProgress currentStatus={engagement.contact_status} />
@@ -404,51 +485,43 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                 const stageIdx = PIPELINE_STAGES.findIndex(s => s.key === stage.key);
                 const isReached = stageIdx <= currentStageIdx;
                 return (
-                  <div
-                    key={stage.key}
-                    className={`gid-engagement-card__date-item ${isReached ? 'gid-engagement-card__date-item--reached' : ''}`}
-                  >
+                  <div key={stage.key}
+                    className={`gid-engagement-card__date-item ${isReached ? 'gid-engagement-card__date-item--reached' : ''}`}>
                     <span className="gid-engagement-card__date-label">{stage.label}</span>
-                    <span className="gid-engagement-card__date-value">
-                      {dateVal ? formatDate(dateVal) : '—'}
-                    </span>
+                    <span className="gid-engagement-card__date-value">{dateVal ? formatDate(dateVal) : '—'}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Scores */}
-          <div className="gid-engagement-card__scores-row">
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Combined</span>
-              <span className="gid-engagement-card__score-value" style={{ color: scoreColor }}>
-                {engagement.match_score || '—'}
-              </span>
+          {/* Legacy scores (backward compat with old IONOS-only scores) */}
+          {(engagement.client_fit_score || engagement.project_fit_score || engagement.chemistry_score) && (
+            <div className="gid-engagement-card__scores-row">
+              {engagement.client_fit_score && (
+                <div className="gid-engagement-card__score-item">
+                  <span className="gid-engagement-card__score-label">Client Fit</span>
+                  <span className="gid-engagement-card__score-value">{engagement.client_fit_score}</span>
+                </div>
+              )}
+              {engagement.project_fit_score && (
+                <div className="gid-engagement-card__score-item">
+                  <span className="gid-engagement-card__score-label">Project Fit</span>
+                  <span className="gid-engagement-card__score-value">{engagement.project_fit_score}</span>
+                </div>
+              )}
+              {engagement.chemistry_score && (
+                <div className="gid-engagement-card__score-item">
+                  <span className="gid-engagement-card__score-label">Chemistry</span>
+                  <span className="gid-engagement-card__score-value" style={{ color: COLORS.gold }}>
+                    {engagement.chemistry_score}/10
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Client Fit</span>
-              <span className="gid-engagement-card__score-value">
-                {engagement.client_fit_score || '—'}
-              </span>
-            </div>
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Project Fit</span>
-              <span className="gid-engagement-card__score-value">
-                {engagement.project_fit_score || '—'}
-              </span>
-            </div>
-            {engagement.chemistry_score && (
-              <div className="gid-engagement-card__score-item">
-                <span className="gid-engagement-card__score-label">Chemistry</span>
-                <span className="gid-engagement-card__score-value" style={{ color: COLORS.gold }}>
-                  {engagement.chemistry_score}/10
-                </span>
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* Notes & Feedback — View/Edit Mode */}
+          {/* Notes & Feedback */}
           {!editing ? (
             <div className="gid-engagement-card__notes-section">
               {engagement.team_notes && (
@@ -476,40 +549,27 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
             <div className="gid-engagement-card__edit-section">
               <div className="gid-engagement-card__edit-field">
                 <label>Team Notes</label>
-                <textarea
-                  value={editData.team_notes}
+                <textarea value={editData.team_notes}
                   onChange={(e) => setEditData(prev => ({ ...prev, team_notes: e.target.value }))}
-                  placeholder="Internal notes about this engagement..."
-                  rows={3}
-                />
+                  placeholder="Internal notes about this engagement..." rows={3} />
               </div>
               <div className="gid-engagement-card__edit-field">
                 <label>Client Feedback</label>
-                <textarea
-                  value={editData.client_feedback}
+                <textarea value={editData.client_feedback}
                   onChange={(e) => setEditData(prev => ({ ...prev, client_feedback: e.target.value }))}
-                  placeholder="Client's feedback after meetings..."
-                  rows={3}
-                />
+                  placeholder="Client's feedback after meetings..." rows={3} />
               </div>
               <div className="gid-engagement-card__edit-row">
                 <div className="gid-engagement-card__edit-field gid-engagement-card__edit-field--half">
                   <label>Chemistry Score (1-10)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={editData.chemistry_score}
+                  <input type="number" min="1" max="10" value={editData.chemistry_score}
                     onChange={(e) => setEditData(prev => ({ ...prev, chemistry_score: e.target.value }))}
-                    placeholder="—"
-                  />
+                    placeholder="—" />
                 </div>
                 <div className="gid-engagement-card__edit-field gid-engagement-card__edit-field--half">
                   <label>Project Outcome</label>
-                  <select
-                    value={editData.project_outcome}
-                    onChange={(e) => setEditData(prev => ({ ...prev, project_outcome: e.target.value }))}
-                  >
+                  <select value={editData.project_outcome}
+                    onChange={(e) => setEditData(prev => ({ ...prev, project_outcome: e.target.value }))}>
                     {PROJECT_OUTCOMES.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
@@ -523,17 +583,13 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
           <div className="gid-engagement-card__actions">
             {!editing ? (
               <>
-                <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
-                  onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-                >
+                <button className="gid-btn gid-btn--ghost gid-btn--sm"
+                  onClick={(e) => { e.stopPropagation(); setEditing(true); }}>
                   <Edit2 size={14} /> Edit Notes
                 </button>
                 {nextStage && (
-                  <button
-                    className="gid-btn gid-btn--primary gid-btn--sm"
-                    onClick={(e) => { e.stopPropagation(); handleAdvanceStage(); }}
-                  >
+                  <button className="gid-btn gid-btn--primary gid-btn--sm"
+                    onClick={(e) => { e.stopPropagation(); handleAdvanceStage(); }}>
                     <ArrowRight size={14} /> Move to {nextStage.label}
                   </button>
                 )}
@@ -542,27 +598,19 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                     <Shield size={14} /> Contracted
                   </span>
                 )}
-                <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm gid-btn--danger"
-                  onClick={(e) => { e.stopPropagation(); handleRemove(); }}
-                >
+                <button className="gid-btn gid-btn--ghost gid-btn--sm gid-btn--danger"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(); }}>
                   <Trash2 size={14} /> Remove
                 </button>
               </>
             ) : (
               <>
-                <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
-                  onClick={(e) => { e.stopPropagation(); setEditing(false); }}
-                  disabled={saving}
-                >
+                <button className="gid-btn gid-btn--ghost gid-btn--sm"
+                  onClick={(e) => { e.stopPropagation(); setEditing(false); }} disabled={saving}>
                   <X size={14} /> Cancel
                 </button>
-                <button
-                  className="gid-btn gid-btn--primary gid-btn--sm"
-                  onClick={(e) => { e.stopPropagation(); handleSaveEdits(); }}
-                  disabled={saving}
-                >
+                <button className="gid-btn gid-btn--primary gid-btn--sm"
+                  onClick={(e) => { e.stopPropagation(); handleSaveEdits(); }} disabled={saving}>
                   <Save size={14} /> {saving ? 'Saving...' : 'Save'}
                 </button>
               </>
@@ -579,32 +627,44 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
 // DISCIPLINE GROUP
 // =============================================================================
 
-const DisciplineGroup = ({ disciplineKey, engagements, onUpdate, onRemove }) => {
+const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRemove, onComputeScore }) => {
   const disc = DISCIPLINES[disciplineKey];
   const [collapsed, setCollapsed] = useState(false);
-
   if (!disc) return null;
 
-  // Sort engagements: contracted first, then by score desc
+  const stageOrder = { contracted: 7, engaged: 6, proposal: 5, under_review: 4, questionnaire_received: 3, questionnaire_sent: 2, contacted: 1, shortlisted: 0 };
   const sorted = [...engagements].sort((a, b) => {
-    const stageOrder = { contracted: 7, engaged: 6, proposal: 5, meeting: 4, responded: 3, contacted: 2, shortlisted: 1 };
-    const aOrder = stageOrder[a.contact_status] || 0;
-    const bOrder = stageOrder[b.contact_status] || 0;
-    if (aOrder !== bOrder) return bOrder - aOrder;
-    return (b.match_score || 0) - (a.match_score || 0);
+    const aScore = scoreMap[a.consultant_id]?.overall_score || 0;
+    const bScore = scoreMap[b.consultant_id]?.overall_score || 0;
+    if (aScore && !bScore) return -1;
+    if (!aScore && bScore) return 1;
+    if (aScore && bScore) return bScore - aScore;
+    return (stageOrder[b.contact_status] || 0) - (stageOrder[a.contact_status] || 0);
   });
+
+  const scoredCount = sorted.filter(e => scoreMap[e.consultant_id]).length;
+  const responseCount = sorted.filter(e =>
+    ['questionnaire_received', 'under_review', 'proposal', 'engaged', 'contracted'].includes(e.contact_status)
+  ).length;
 
   return (
     <div className="gid-assembly-discipline-group">
-      <div
-        className="gid-assembly-discipline-group__header"
-        onClick={() => setCollapsed(!collapsed)}
-        style={{ borderLeftColor: disc.color }}
-      >
+      <div className="gid-assembly-discipline-group__header"
+        onClick={() => setCollapsed(!collapsed)} style={{ borderLeftColor: disc.color }}>
         <div className="gid-assembly-discipline-group__title-row">
           <span className="gid-assembly-discipline-group__icon">{disc.icon}</span>
           <h3 className="gid-assembly-discipline-group__title">{disc.label}</h3>
-          <span className="gid-assembly-discipline-group__count">{engagements.length} candidate{engagements.length !== 1 ? 's' : ''}</span>
+          <span className="gid-assembly-discipline-group__count">
+            {engagements.length} candidate{engagements.length !== 1 ? 's' : ''}
+            {scoredCount > 0 && (
+              <span style={{ color: COLORS.gold, marginLeft: 8 }}>· {scoredCount} scored</span>
+            )}
+            {responseCount > scoredCount && (
+              <span style={{ color: COLORS.warning, marginLeft: 8 }}>
+                · {responseCount - scoredCount} awaiting score
+              </span>
+            )}
+          </span>
         </div>
         <span className="gid-assembly-discipline-group__toggle">
           {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
@@ -619,12 +679,9 @@ const DisciplineGroup = ({ disciplineKey, engagements, onUpdate, onRemove }) => 
             </div>
           ) : (
             sorted.map(eng => (
-              <EngagementCard
-                key={eng.id}
-                engagement={eng}
-                onUpdate={onUpdate}
-                onRemove={onRemove}
-              />
+              <EngagementCard key={eng.id} engagement={eng}
+                score={scoreMap[eng.consultant_id] || null}
+                onUpdate={onUpdate} onRemove={onRemove} onComputeScore={onComputeScore} />
             ))
           )}
         </div>
@@ -635,34 +692,49 @@ const DisciplineGroup = ({ disciplineKey, engagements, onUpdate, onRemove }) => 
 
 
 // =============================================================================
-// MAIN ASSEMBLY SCREEN
+// MAIN MATCHMAKING SCREEN
 // =============================================================================
 
 const GIDMatchmakingScreen = () => {
-  const { activeProjectId } = useAppContext();
+  const { activeProjectId, projectData } = useAppContext();
+  const projectId = projectData?.project_id || activeProjectId;
 
   const [engagements, setEngagements] = useState([]);
+  const [vpsScores, setVpsScores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scoringAll, setScoringAll] = useState(false);
   const [error, setError] = useState(null);
+  const [scoringError, setScoringError] = useState(null);
 
-  // Load engagements from API
-  const loadEngagements = useCallback(async () => {
+  // Load engagements from IONOS + scores from VPS
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await engagementApi.fetchAll(activeProjectId || 'default');
-      setEngagements(data.engagements || []);
+      const [engData, scoreData] = await Promise.all([
+        engagementApi.fetchAll(projectId || 'default'),
+        projectId
+          ? rfqGetScores(projectId).catch(() => ({ scores: [] }))
+          : Promise.resolve({ scores: [] })
+      ]);
+      setEngagements(engData.engagements || []);
+      setVpsScores(scoreData.scores || []);
     } catch (err) {
       console.error('[Matchmaking] Load error:', err);
       setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeProjectId]);
+    } finally { setLoading(false); }
+  }, [projectId]);
 
-  useEffect(() => {
-    loadEngagements();
-  }, [loadEngagements]);
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Score lookup: consultant_id → score object
+  const scoreMap = useMemo(() => {
+    const map = {};
+    for (const s of vpsScores) {
+      if (s.consultant_id) map[s.consultant_id] = s;
+    }
+    return map;
+  }, [vpsScores]);
 
   // Group by discipline
   const engagementsByDiscipline = useMemo(() => {
@@ -680,13 +752,12 @@ const GIDMatchmakingScreen = () => {
   const handleUpdate = useCallback(async (engagementId, updateData) => {
     try {
       await engagementApi.update(engagementId, updateData);
-      // Refresh from API to get clean state
-      await loadEngagements();
+      await loadData();
     } catch (err) {
       console.error('[Matchmaking] Update error:', err);
       alert('Failed to update engagement: ' + err.message);
     }
-  }, [loadEngagements]);
+  }, [loadData]);
 
   // Remove engagement
   const handleRemove = useCallback(async (engagementId) => {
@@ -699,43 +770,105 @@ const GIDMatchmakingScreen = () => {
     }
   }, []);
 
+  // Compute all scores via VPS
+  const handleComputeAllScores = useCallback(async () => {
+    if (!projectId) return;
+    setScoringAll(true);
+    setScoringError(null);
+    try {
+      await rfqComputeAllScores(projectId);
+      const scoreData = await rfqGetScores(projectId).catch(() => ({ scores: [] }));
+      setVpsScores(scoreData.scores || []);
+    } catch (err) {
+      console.error('[Matchmaking] Score all error:', err);
+      setScoringError(err.message);
+    } finally { setScoringAll(false); }
+  }, [projectId]);
+
+  // Compute score for a single candidate
+  const handleComputeScore = useCallback(async (engagement) => {
+    if (!projectId) return;
+    try {
+      const invData = await rfqListInvitations({
+        project_id: projectId,
+        consultant_id: String(engagement.consultant_id)
+      }).catch(() => ({ invitations: [] }));
+
+      const invitation = (invData.invitations || []).find(
+        inv => String(inv.consultant_id) === String(engagement.consultant_id) && inv.status === 'submitted'
+      );
+
+      if (!invitation) {
+        alert('No submitted RFQ response found for this consultant.');
+        return;
+      }
+      await rfqComputeScore(invitation.id);
+      const scoreData = await rfqGetScores(projectId).catch(() => ({ scores: [] }));
+      setVpsScores(scoreData.scores || []);
+    } catch (err) {
+      console.error('[Matchmaking] Single score error:', err);
+      alert('Scoring failed: ' + err.message);
+    }
+  }, [projectId]);
+
   // Stats
   const totalEngagements = engagements.length;
   const contractedCount = engagements.filter(e => e.contact_status === 'contracted').length;
   const engagedCount = engagements.filter(e => e.contact_status === 'engaged').length;
+  const scoredCount = Object.keys(scoreMap).length;
+  const responseCount = engagements.filter(e =>
+    ['questionnaire_received', 'under_review', 'proposal', 'engaged', 'contracted'].includes(e.contact_status)
+  ).length;
 
   return (
     <div className="gid-assembly-screen">
 
       {/* Team Composition Summary */}
-      <TeamCompositionSummary engagementsByDiscipline={engagementsByDiscipline} />
+      <TeamCompositionSummary engagementsByDiscipline={engagementsByDiscipline} scoreMap={scoreMap} />
 
-      {/* Quick Stats Bar */}
-      {totalEngagements > 0 && (
-        <div className="gid-assembly-stats-bar">
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value">{totalEngagements}</span>
-            <span className="gid-assembly-stat__label">Total Candidates</span>
-          </div>
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value" style={{ color: COLORS.gold }}>
-              {contractedCount}
-            </span>
-            <span className="gid-assembly-stat__label">Contracted</span>
-          </div>
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value" style={{ color: COLORS.success }}>
-              {engagedCount}
-            </span>
-            <span className="gid-assembly-stat__label">Engaged</span>
-          </div>
-          <button
-            className="gid-btn gid-btn--ghost gid-btn--sm"
-            onClick={loadEngagements}
-            title="Refresh"
-          >
+      {/* Stats + Scoring Controls */}
+      <div className="gid-assembly-stats-bar">
+        <div className="gid-assembly-stat">
+          <span className="gid-assembly-stat__value">{totalEngagements}</span>
+          <span className="gid-assembly-stat__label">Total</span>
+        </div>
+        <div className="gid-assembly-stat">
+          <span className="gid-assembly-stat__value" style={{ color: COLORS.gold }}>{scoredCount}</span>
+          <span className="gid-assembly-stat__label">Scored</span>
+        </div>
+        <div className="gid-assembly-stat">
+          <span className="gid-assembly-stat__value" style={{ color: COLORS.warning }}>{responseCount}</span>
+          <span className="gid-assembly-stat__label">Responses</span>
+        </div>
+        <div className="gid-assembly-stat">
+          <span className="gid-assembly-stat__value" style={{ color: COLORS.success }}>{engagedCount}</span>
+          <span className="gid-assembly-stat__label">Engaged</span>
+        </div>
+        <div className="gid-assembly-stat">
+          <span className="gid-assembly-stat__value" style={{ color: COLORS.gold }}>{contractedCount}</span>
+          <span className="gid-assembly-stat__label">Contracted</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+          {responseCount > scoredCount && (
+            <button className="gid-btn gid-btn--gold gid-btn--sm"
+              onClick={handleComputeAllScores} disabled={scoringAll}
+              title="Score all candidates with submitted RFQ responses">
+              <Zap size={14} />
+              {scoringAll ? 'Scoring...' : `Score All (${responseCount - scoredCount} pending)`}
+            </button>
+          )}
+          <button className="gid-btn gid-btn--ghost gid-btn--sm" onClick={loadData} title="Refresh">
             <RefreshCw size={14} /> Refresh
           </button>
+        </div>
+      </div>
+
+      {/* Scoring error */}
+      {scoringError && (
+        <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#d32f2f', borderRadius: 6, fontSize: 13, margin: '0 0 12px' }}>
+          <AlertTriangle size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+          Scoring error: {scoringError}
         </div>
       )}
 
@@ -752,7 +885,7 @@ const GIDMatchmakingScreen = () => {
         <div className="gid-error">
           <AlertTriangle size={20} />
           <p>{error}</p>
-          <button className="gid-btn gid-btn--primary" onClick={loadEngagements}>Retry</button>
+          <button className="gid-btn gid-btn--primary" onClick={loadData}>Retry</button>
         </div>
       )}
 
@@ -760,30 +893,119 @@ const GIDMatchmakingScreen = () => {
       {!loading && !error && (
         <div className="gid-assembly-groups">
           {Object.keys(DISCIPLINES).map(key => (
-            <DisciplineGroup
-              key={key}
-              disciplineKey={key}
-              engagements={engagementsByDiscipline[key]}
-              onUpdate={handleUpdate}
-              onRemove={handleRemove}
-            />
+            <DisciplineGroup key={key} disciplineKey={key}
+              engagements={engagementsByDiscipline[key]} scoreMap={scoreMap}
+              onUpdate={handleUpdate} onRemove={handleRemove} onComputeScore={handleComputeScore} />
           ))}
         </div>
       )}
 
-      {/* Empty State (only if no engagements at all) */}
+      {/* Empty State */}
       {!loading && !error && totalEngagements === 0 && (
         <div className="gid-empty" style={{ marginTop: '1rem' }}>
           <Briefcase size={48} />
           <h3>No Team Members Yet</h3>
           <p>
-            Use the Shortlist tab to curate candidates from Discovery.
-            Shortlisted candidates will appear here for deep matchmaking and pipeline management.
+            Use the Shortlist tab to curate candidates from Discovery, then send RFQ questionnaires.
+            Once responses are received, scoring becomes available here.
           </p>
         </div>
       )}
+
+      {/* Scoped Styles for Scoring UI */}
+      <style>{mmStyles}</style>
     </div>
   );
 };
+
+
+// =============================================================================
+// SCORING BREAKDOWN STYLES
+// =============================================================================
+
+const mmStyles = `
+.gid-mm-breakdown {
+  background: #fafaf8;
+  border: 1px solid #e5e5e0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.gid-mm-breakdown__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin-bottom: 10px;
+}
+.gid-mm-breakdown__split {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b6b6b;
+}
+.gid-mm-breakdown__dims {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gid-mm-dim {
+  display: grid;
+  grid-template-columns: 180px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+}
+.gid-mm-dim__label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #1a1a1a;
+}
+.gid-mm-dim__weight {
+  font-size: 10px;
+  color: #999;
+  margin-left: auto;
+}
+.gid-mm-dim__bar {
+  height: 6px;
+  background: #e5e5e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.gid-mm-dim__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.gid-mm-dim__value {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+.gid-mm-breakdown__tier {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e5e0;
+}
+.gid-mm-breakdown__notes {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #e5e5e0;
+}
+@media (max-width: 768px) {
+  .gid-mm-dim { grid-template-columns: 1fr; gap: 2px; }
+}
+`;
+
 
 export default GIDMatchmakingScreen;

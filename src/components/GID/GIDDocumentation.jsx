@@ -2,15 +2,15 @@
  * GIDDocumentation.jsx
  *
  * In-app documentation for the GID (Get It Done) module.
- * Updated for Phase 2: Matching Engine with Dual Scoring.
+ * Updated for Phase 5: Full 5-tab structure with RFQ Pipeline & Synergy Sandbox.
  *
  * REFORMATTED to match N4S standard documentation pattern (KYC, FYI, KYM style).
  *
  * Tabs:
- * - Overview: What GID does, disciplines, data flow
- * - Workflow: Step-by-step from registry to team assembly
+ * - Overview: What GID does, disciplines, data flow, architecture
+ * - Workflow: Step-by-step from registry to team synergy
  * - Gates: Prerequisite gates for matching
- * - Reference: Matching algorithm details, terminology
+ * - Reference: Scoring engine details, RFQ pipeline, terminology
  */
 
 import React, { useState } from 'react';
@@ -90,7 +90,58 @@ function OverviewTab() {
           to support the client's luxury residential project. Instead of "who do we know?", GID asks
           <strong> "who's actually delivering at this level, in this location, right now?"</strong>
         </p>
+        <p className="doc-paragraph">
+          The module operates across <strong>5 tabs</strong> that form a complete pipeline from
+          sourcing through team chemistry validation.
+        </p>
       </div>
+
+      <ExpandableSection title="Five-Tab Structure" defaultOpen={true}>
+        <div className="doc-substeps">
+          <div className="doc-substep">
+            <span className="doc-substep-num">1</span>
+            <div className="doc-substep-content">
+              <strong>Registry</strong>
+              <p>Consultant database — full CRUD for firms across all four disciplines.
+              Portfolio projects, service areas, specialties, and verification status.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">2</span>
+            <div className="doc-substep-content">
+              <strong>Discovery</strong>
+              <p>AI-assisted sourcing — discovers candidates from permits, publications,
+              award lists, and directories. Queue management for review and import.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">3</span>
+            <div className="doc-substep-content">
+              <strong>Shortlist</strong>
+              <p>Curation layer — rank candidates, view alignment badges, send RFQ
+              questionnaire invitations via the external portal (rfq.not-4.sale).
+              Auto-polls for response status every 30 seconds.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">4</span>
+            <div className="doc-substep-content">
+              <strong>Matchmaking</strong>
+              <p>Deep scoring engine — computes quantitative + qualitative match scores
+              from RFQ responses. Dimension breakdowns across 10 scoring axes.
+              Pipeline management from shortlisted through contracted.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">5</span>
+            <div className="doc-substep-content">
+              <strong>Synergy Sandbox</strong>
+              <p>Team chemistry simulation — tests 4-person team combinations across disciplines.
+              Conflict node detection, collaboration scoring, and team config persistence.</p>
+            </div>
+          </div>
+        </div>
+      </ExpandableSection>
 
       <ExpandableSection title="Four Disciplines" defaultOpen={true}>
         <div className="doc-dual-score">
@@ -129,6 +180,49 @@ function OverviewTab() {
         </div>
       </ExpandableSection>
 
+      <ExpandableSection title="Architecture — Dual Backend">
+        <p className="doc-paragraph">
+          GID spans two backends. The main N4S app on IONOS handles the consultant registry
+          and engagement pipeline. The RFQ scoring engine runs on a dedicated VPS with PostgreSQL.
+        </p>
+
+        <div className="doc-context-table">
+          <div className="doc-context-row doc-context-row--header">
+            <span>Component</span>
+            <span>Location</span>
+            <span>Purpose</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>N4S Main App</strong></span>
+            <span>IONOS (React + PHP)</span>
+            <span>Registry, Discovery, Shortlist UI, Engagement pipeline</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>RFQ API</strong></span>
+            <span>VPS (Node.js + PostgreSQL)</span>
+            <span>Invitation management, scoring engine, synergy simulation</span>
+          </div>
+          <div className="doc-context-row">
+            <span><strong>RFQ Portal</strong></span>
+            <span>VPS (Vite React)</span>
+            <span>Consultant-facing questionnaire (rfq.not-4.sale)</span>
+          </div>
+        </div>
+
+        <div className="doc-formula">
+          <strong>Data Flow</strong>
+          <code>Registry (IONOS) → Shortlist → Send RFQ (VPS) → Consultant Portal → Score (VPS) → Matchmaking (merged view)</code>
+        </div>
+
+        <div className="doc-warning">
+          <AlertTriangle size={16} />
+          <span>
+            IONOS cannot make outbound HTTPS calls from PHP. All VPS communication happens
+            client-side via <code>rfqApi.js</code> fetch calls, bypassing the server restriction.
+          </span>
+        </div>
+      </ExpandableSection>
+
       <ExpandableSection title="Data Flow">
         <p className="doc-paragraph">
           GID reads from <strong>KYC</strong> (location, budget, style preferences), <strong>FYI</strong> (program
@@ -136,12 +230,12 @@ function OverviewTab() {
         </p>
         <p className="doc-paragraph">
           Results feed downstream to <strong>LCD Portal</strong> ("Meet Your Team")
-          and <strong>Parker AI</strong> (client can ask about their team).
+          and inform the <strong>Synergy Sandbox</strong> chemistry simulations.
         </p>
 
         <div className="doc-formula">
           <strong>Data Path Summary</strong>
-          <code>KYC → Location + Budget + Style → GID Matching → Shortlist → Engagements → LCD Portal</code>
+          <code>KYC → Location + Budget + Style → GID Shortlist → Send RFQ → Score Response → Matchmaking → Synergy → LCD Portal</code>
         </div>
       </ExpandableSection>
 
@@ -200,9 +294,9 @@ function WorkflowTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">GID Workflow</h2>
         <p className="doc-paragraph">
-          The GID module has 4 screens: <strong>Registry</strong> (consultant database),
-          <strong> Discovery</strong> (AI-assisted search), <strong>Matchmaking</strong> (scoring engine),
-          and <strong>Assembly</strong> (team selection & tracking).
+          The GID module has <strong>5 tabs</strong>: Registry (consultant database),
+          Discovery (AI-assisted search), Shortlist (curation + RFQ dispatch),
+          Matchmaking (scoring + pipeline), and Synergy Sandbox (team chemistry).
         </p>
       </div>
 
@@ -218,19 +312,20 @@ function WorkflowTab() {
         </p>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 2: Discovery (Phase 3)">
+      <ExpandableSection title="Step 2: AI Discovery">
         <ol className="doc-steps">
           <li>AI-assisted search discovers candidates from permits, publications, award lists, and directories</li>
-          <li>Review and approve additions before they enter the registry</li>
+          <li>Candidates appear in the Discovery queue with confidence scores</li>
+          <li>Review and approve to import into the Registry</li>
           <li>Source attribution is automatically tracked</li>
         </ol>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 3: Run Matching (Phase 2 — Live)" defaultOpen={true}>
+      <ExpandableSection title="Step 3: Shortlist & Send RFQ" defaultOpen={true}>
         <div className="doc-step-intro">
           <Info size={16} />
-          <span>The matching engine scores every consultant in the registry against the
-          current project's KYC and FYI data using a dual scoring system.</span>
+          <span>The Shortlist tab is where curation meets action. After ranking candidates,
+          you dispatch RFQ questionnaires via the external portal.</span>
         </div>
 
         <div className="doc-substeps">
@@ -238,57 +333,96 @@ function WorkflowTab() {
             <span className="doc-substep-num">3.1</span>
             <div className="doc-substep-content">
               <strong>Select a discipline</strong>
-              <p>Choose Architect, Interior Designer, PM, or GC to match against.</p>
+              <p>Choose Architect, Interior Designer, PM, or GC.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">3.2</span>
             <div className="doc-substep-content">
-              <strong>Check prerequisite gates</strong>
-              <p>Verify that required KYC fields (city, budget) are filled.
-              Optional fields improve score accuracy.</p>
+              <strong>Review & rank candidates</strong>
+              <p>View alignment badges (Style, Budget, Geographic, Scale).
+              Drag to reorder priority. Pass on weak candidates.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">3.3</span>
             <div className="doc-substep-content">
-              <strong>Run the match</strong>
-              <p>The algorithm scores all eligible consultants across 6 dimensions,
-              producing dual Client Fit and Project Fit scores.</p>
+              <strong>Send RFQ</strong>
+              <p>Click "Send RFQ" on a shortlisted candidate. This creates a secure invitation
+              on the VPS with a unique link and password. The invitation syncs the current
+              project data (name, features from FYI) to the RFQ backend.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">3.4</span>
             <div className="doc-substep-content">
-              <strong>Review ranked results</strong>
-              <p>Consultants are sorted by combined score. Expand any result
-              to see the full dimension breakdown.</p>
+              <strong>Email credentials</strong>
+              <p>Copy the portal link and password. Use the "Open Email Draft" button
+              to send via your email client. The password is shown only once.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">3.5</span>
             <div className="doc-substep-content">
-              <strong>Compare side-by-side</strong>
-              <p>Select 2–3 consultants for direct comparison across all scoring dimensions.</p>
+              <strong>Monitor responses</strong>
+              <p>Shortlist auto-polls every 30 seconds. When a consultant submits their
+              questionnaire, the badge updates from "RFQ Sent" to "Response Received"
+              and the IONOS engagement record is auto-synced.</p>
             </div>
           </div>
         </div>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 4: Shortlisting">
-        <ol className="doc-steps">
-          <li>Click "Shortlist" on top-ranked consultants</li>
-          <li>This creates engagement records that track the outreach pipeline</li>
-          <li>Pipeline stages: Shortlisted → Reached Out → Responded → Meeting → Proposal → Engaged → Contracted</li>
-        </ol>
+      <ExpandableSection title="Step 4: Matchmaking & Scoring" defaultOpen={true}>
+        <div className="doc-step-intro">
+          <Info size={16} />
+          <span>The Matchmaking tab pulls scores from the VPS scoring engine and merges them
+          with the IONOS engagement pipeline for a unified view.</span>
+        </div>
+
+        <div className="doc-substeps">
+          <div className="doc-substep">
+            <span className="doc-substep-num">4.1</span>
+            <div className="doc-substep-content">
+              <strong>Compute scores</strong>
+              <p>Click "Score All" to run the VPS scoring engine across all candidates with
+              submitted RFQ responses. Scoring is two-pass: quantitative (algorithmic)
+              and qualitative (AI-parsed from questionnaire text).</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">4.2</span>
+            <div className="doc-substep-content">
+              <strong>Review dimension breakdowns</strong>
+              <p>Expand any candidate to see their score across 10 dimensions:
+              Scale Match, Financial Resilience, Geographic Alignment, Capability Coverage,
+              Portfolio Relevance, Tech Compatibility, Credentials, Philosophy Alignment,
+              Methodology Fit, and Collaboration Maturity.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">4.3</span>
+            <div className="doc-substep-content">
+              <strong>Advance pipeline</strong>
+              <p>Move candidates through stages: Under Review → Proposal → Engaged → Contracted.
+              Add team notes, client feedback, and chemistry scores (1-10).</p>
+            </div>
+          </div>
+        </div>
       </ExpandableSection>
 
-      <ExpandableSection title="Step 5: Team Assembly (Phase 4)">
+      <ExpandableSection title="Step 5: Synergy Sandbox">
         <ol className="doc-steps">
-          <li>Advisory team and client select final team across all four disciplines</li>
-          <li>Chemistry notes from client introductions inform the final choice</li>
-          <li>Assembled team is exported to the LCD Portal ("Meet Your Team")</li>
+          <li>Select one candidate per discipline to form a 4-person team</li>
+          <li>Run synergy simulation to compute team chemistry scores</li>
+          <li>Review conflict nodes (where team members may clash)</li>
+          <li>Save and compare multiple team configurations</li>
+          <li>Final assembled team exports to the LCD Portal ("Meet Your Team")</li>
         </ol>
+        <p className="doc-note">
+          Synergy scoring factors: communication style compatibility, work methodology overlap,
+          geographic proximity, past collaboration history, and design philosophy alignment.
+        </p>
       </ExpandableSection>
     </div>
   );
@@ -305,12 +439,11 @@ function GatesTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">Prerequisite Gates</h2>
         <p className="doc-paragraph">
-          Before GID matching can run, specific KYC and FYI fields must be populated.
-          Required gates block matching; optional gates improve score quality.
+          GID operates across multiple systems. Different features require different prerequisites.
         </p>
       </div>
 
-      <ExpandableSection title="Matching Prerequisites" defaultOpen={true}>
+      <ExpandableSection title="Shortlist & Alignment Prerequisites" defaultOpen={true}>
         <div className="doc-gates-table">
           <div className="doc-gates-row doc-gates-row--header">
             <span>Gate</span>
@@ -322,31 +455,31 @@ function GatesTab() {
             <span><strong>Project City</strong></span>
             <span>KYC</span>
             <span><StatusBadge status="REQUIRED" /></span>
-            <span>Geographic scoring uses this as the primary location reference</span>
+            <span>Geographic alignment badges and scoring</span>
           </div>
           <div className="doc-gates-row">
             <span><strong>Total Project Budget</strong></span>
             <span>KYC</span>
             <span><StatusBadge status="REQUIRED" /></span>
-            <span>Budget alignment scoring compares against consultant ranges</span>
+            <span>Budget alignment badges and scoring</span>
           </div>
           <div className="doc-gates-row">
             <span><strong>Taste Axes</strong></span>
             <span>KYC</span>
             <span>Optional</span>
-            <span>Enables style compatibility scoring via taste-to-specialty mapping</span>
+            <span>Style compatibility scoring via taste-to-specialty mapping</span>
           </div>
           <div className="doc-gates-row">
             <span><strong>Style Tags</strong></span>
             <span>KYC</span>
             <span>Optional</span>
-            <span>Direct matching of architecture/interior tags against specialties</span>
+            <span>Direct matching of architecture/interior tags</span>
           </div>
           <div className="doc-gates-row">
             <span><strong>FYI Space Selections</strong></span>
             <span>FYI</span>
             <span>Optional</span>
-            <span>Feature specialization scoring uses included space features</span>
+            <span>Feature specialization and scale assessment</span>
           </div>
           <div className="doc-gates-row">
             <span><strong>Target SF</strong></span>
@@ -355,12 +488,46 @@ function GatesTab() {
             <span>Scale assessment for project complexity matching</span>
           </div>
         </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="RFQ Pipeline Prerequisites" defaultOpen={true}>
+        <div className="doc-gates-table">
+          <div className="doc-gates-row doc-gates-row--header">
+            <span>Gate</span>
+            <span>Source</span>
+            <span>Status</span>
+            <span>Impact</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>RFQ API Available</strong></span>
+            <span>VPS</span>
+            <span><StatusBadge status="REQUIRED" /></span>
+            <span>rfq.not-4.sale must be reachable. Health-checked on mount.</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Admin API Key</strong></span>
+            <span>rfqApi.js</span>
+            <span><StatusBadge status="REQUIRED" /></span>
+            <span>Hardcoded in rfqApi.js. Required for all admin endpoints.</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Active Project ID</strong></span>
+            <span>AppContext</span>
+            <span><StatusBadge status="REQUIRED" /></span>
+            <span>Project must be selected. RFQ invitations are project-scoped.</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Consultant Shortlisted</strong></span>
+            <span>Engagement</span>
+            <span><StatusBadge status="REQUIRED" /></span>
+            <span>Must have engagement record before RFQ can be dispatched.</span>
+          </div>
+        </div>
 
         <div className="doc-warning">
           <AlertTriangle size={16} />
-          <span><strong>Required gates must be filled</strong> before the "Run Match" button becomes
-          active. Optional data improves match quality — the more data available, the more
-          accurate the scores.</span>
+          <span><strong>RFQ scoring requires submitted responses.</strong> The "Compute Score" button
+          only appears for candidates at <code>questionnaire_received</code> status or beyond.</span>
         </div>
       </ExpandableSection>
 
@@ -370,8 +537,7 @@ function GatesTab() {
           <dd>Every consultant must have at least one discovery source documented (Tier 1–5).</dd>
 
           <dt>No Hard Deletes</dt>
-          <dd>Consultants are archived (soft-deleted), never permanently removed. Archived
-          consultants are hidden from searches but data is preserved.</dd>
+          <dd>Consultants are archived (soft-deleted), never permanently removed.</dd>
 
           <dt>Verification Tiers</dt>
           <dd>
@@ -431,192 +597,134 @@ function ReferenceTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">Reference Guide</h2>
         <p className="doc-paragraph">
-          Matching algorithm details, scoring dimensions, and terminology for the
-          GID dual scoring system (mirrors BAM v3.0 pattern).
+          Scoring engine architecture, RFQ pipeline details, and terminology for
+          the GID system spanning IONOS and VPS backends.
         </p>
       </div>
 
-      <ExpandableSection title="Scoring Dimensions (110 Raw → 100 Normalized)" defaultOpen={true}>
+      <ExpandableSection title="VPS Scoring Dimensions (10-axis)" defaultOpen={true}>
+        <p className="doc-paragraph">
+          Scores are computed on the VPS from submitted RFQ questionnaire responses.
+          Two-pass system: quantitative (algorithmic from structured data) and
+          qualitative (AI-parsed from text responses).
+        </p>
+
         <div className="doc-gates-table">
           <div className="doc-gates-row doc-gates-row--header">
             <span>Dimension</span>
-            <span>Max Pts</span>
+            <span>Weight</span>
             <span>Source</span>
             <span>Logic</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Geographic Relevance</strong></span>
-            <span>20</span>
-            <span>KYC + Consultant</span>
-            <span>Same state = 20, region = 12, partner = 8</span>
+            <span><strong>Scale Match</strong></span>
+            <span>15%</span>
+            <span>RFQ §1 + FYI</span>
+            <span>Comparable project sizes vs. client target SF</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Budget Alignment</strong></span>
-            <span>25</span>
-            <span>KYC Budget</span>
-            <span>Within range = 25, ±10% = 22, ±25% = 18, ±50% = 12</span>
+            <span><strong>Financial Resilience</strong></span>
+            <span>10%</span>
+            <span>RFQ §1</span>
+            <span>Annual revenue, insurance, financial stability signals</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Style Compatibility</strong></span>
-            <span>20</span>
-            <span>KYC Taste + Tags</span>
-            <span>Taste axes mapped to specialties + direct tag matching</span>
+            <span><strong>Geographic Alignment</strong></span>
+            <span>10%</span>
+            <span>RFQ §1 + KYC</span>
+            <span>Office proximity to project site, service area coverage</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Experience Tier</strong></span>
-            <span>15</span>
-            <span>Consultant</span>
-            <span>20+ yrs = 15, 12+ = 12, 8+ = 8, 5+ = 4</span>
+            <span><strong>Capability Coverage</strong></span>
+            <span>20%</span>
+            <span>RFQ §2</span>
+            <span>Discipline-specific capabilities vs. project requirements</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Quality Signal</strong></span>
-            <span>20</span>
-            <span>Reviews</span>
-            <span>avg_rating × 4 (unrated = 10 baseline)</span>
+            <span><strong>Portfolio Relevance</strong></span>
+            <span>15%</span>
+            <span>RFQ §3</span>
+            <span>Similar completed projects, luxury experience depth</span>
           </div>
           <div className="doc-gates-row">
-            <span><strong>Feature Specialization</strong></span>
-            <span>10</span>
-            <span>FYI + Portfolio</span>
-            <span>Feature overlap ratio × 10</span>
+            <span><strong>Tech Compatibility</strong></span>
+            <span>5%</span>
+            <span>RFQ §2</span>
+            <span>Software tools, BIM capability, delivery platforms</span>
           </div>
-        </div>
-      </ExpandableSection>
-
-      <ExpandableSection title="Dual Scoring (Mirrors BAM v3.0)" defaultOpen={true}>
-        <div className="doc-dual-score">
-          <div className="doc-score-box doc-score-box--client">
-            <h4>Client Fit Score</h4>
-            <p className="doc-score-question">
-              "Does this consultant match the client's taste and expectations?"
-            </p>
-            <ul className="doc-score-list">
-              <li>Style Compatibility: <strong>×1.5</strong> weight</li>
-              <li>Quality Signal: <strong>×1.2</strong> weight</li>
-              <li>Geographic, Budget, Experience, Features: ×1.0</li>
-            </ul>
-            <p className="doc-score-source">
-              <strong>Emphasis:</strong> Taste, lifestyle, cultural alignment
-            </p>
+          <div className="doc-gates-row">
+            <span><strong>Credentials</strong></span>
+            <span>5%</span>
+            <span>RFQ §1</span>
+            <span>Licenses, certifications, professional memberships</span>
           </div>
-          <div className="doc-score-box doc-score-box--market">
-            <h4>Project Fit Score</h4>
-            <p className="doc-score-question">
-              "Is this consultant practically suited for the project?"
-            </p>
-            <ul className="doc-score-list">
-              <li>Budget Alignment: <strong>×1.5</strong> weight</li>
-              <li>Geographic Relevance: <strong>×1.2</strong> weight</li>
-              <li>Feature Specialization: <strong>×1.2</strong> weight</li>
-              <li>Style, Experience, Quality: varied</li>
-            </ul>
-            <p className="doc-score-source">
-              <strong>Emphasis:</strong> Logistics, budget, geography, scale
-            </p>
+          <div className="doc-gates-row">
+            <span><strong>Philosophy Alignment</strong></span>
+            <span>10%</span>
+            <span>RFQ §4</span>
+            <span>Design philosophy, client communication approach</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Methodology Fit</strong></span>
+            <span>5%</span>
+            <span>RFQ §4</span>
+            <span>Project management approach, timeline methodology</span>
+          </div>
+          <div className="doc-gates-row">
+            <span><strong>Collaboration Maturity</strong></span>
+            <span>5%</span>
+            <span>RFQ §4</span>
+            <span>Team integration, conflict resolution, communication style</span>
           </div>
         </div>
 
         <div className="doc-formula">
-          <strong>Combined Score</strong>
-          <code>Combined = (Client Fit Score + Project Fit Score) / 2</code>
+          <strong>Overall Score</strong>
+          <code>Overall = Σ(dimension_score × weight) → normalized 0–100</code>
           <p className="doc-example">
-            Example: Client Fit 78 + Project Fit 84 = Combined <strong>81</strong> (Top Match)
+            Quantitative and Qualitative sub-scores are also returned for transparency.
           </p>
         </div>
       </ExpandableSection>
 
-      <ExpandableSection title="Style Compatibility Mapping">
+      <ExpandableSection title="RFQ Questionnaire Structure" defaultOpen={true}>
         <p className="doc-paragraph">
-          KYC taste axes are mapped to consultant specialty tags. Values ≤3 map to one style
-          cluster, 4–6 to transitional, and ≥7 to the opposite cluster.
+          55 question templates seeded across 4 disciplines × 5 sections. Each discipline
+          receives a tailored questionnaire with discipline-specific questions in Section 2.
         </p>
-        <div className="doc-archetype-table">
-          <div className="doc-archetype-row doc-archetype-row--header">
-            <span>Taste Axis</span>
-            <span>Low (≤3)</span>
-            <span>High (≥7)</span>
+
+        <div className="doc-context-table">
+          <div className="doc-context-row doc-context-row--header">
+            <span>Section</span>
+            <span>Title</span>
+            <span>Purpose</span>
           </div>
-          <div className="doc-archetype-row">
-            <span>Contemporary ↔ Traditional</span>
-            <span>Contemporary, Modern, Minimalist</span>
-            <span>Traditional, Colonial, Georgian</span>
+          <div className="doc-context-row">
+            <span><strong>§1</strong></span>
+            <span>Firm Baseline & Financials</span>
+            <span>Revenue, team size, insurance, years in business</span>
           </div>
-          <div className="doc-archetype-row">
-            <span>Minimal ↔ Layered</span>
-            <span>Minimalist, Scandinavian</span>
-            <span>Maximalist, Eclectic, Art Deco</span>
+          <div className="doc-context-row">
+            <span><strong>§2</strong></span>
+            <span>Discipline-Specific</span>
+            <span>Capabilities tailored to Architect / ID / PM / GC</span>
           </div>
-          <div className="doc-archetype-row">
-            <span>Warm ↔ Cool</span>
-            <span>Industrial, Scandinavian</span>
-            <span>Mediterranean, Tuscan, Rustic</span>
+          <div className="doc-context-row">
+            <span><strong>§3</strong></span>
+            <span>Portfolio Evidence</span>
+            <span>3–5 comparable projects with budget, SF, features</span>
           </div>
-          <div className="doc-archetype-row">
-            <span>Arch: Minimal ↔ Ornate</span>
-            <span>Modern, Minimalist</span>
-            <span>Art Deco, Craftsman, Victorian</span>
+          <div className="doc-context-row">
+            <span><strong>§4</strong></span>
+            <span>Team Synergy & Style</span>
+            <span>Working style, communication, conflict resolution</span>
           </div>
-          <div className="doc-archetype-row">
-            <span>Arch: Regional ↔ International</span>
-            <span>Coastal, Mountain, Ranch</span>
-            <span>International, Contemporary</span>
+          <div className="doc-context-row">
+            <span><strong>§5</strong></span>
+            <span>Project-Specific</span>
+            <span>Custom questions based on project features from FYI</span>
           </div>
         </div>
-        <p className="doc-note">
-          Additionally, architectureStyleTags[] and interiorStyleTags[] from KYC are matched
-          directly against consultant specialties[].
-        </p>
-      </ExpandableSection>
-
-      <ExpandableSection title="GID Terminology">
-        <dl className="doc-glossary">
-          <dt>Client Fit Score</dt>
-          <dd>
-            A score (0–100) measuring how well a consultant matches the client's taste,
-            style preferences, and quality expectations.
-          </dd>
-
-          <dt>Project Fit Score</dt>
-          <dd>
-            A score (0–100) measuring practical alignment: budget range, geographic
-            proximity, feature specialization, and project scale.
-          </dd>
-
-          <dt>Combined Score</dt>
-          <dd>
-            The average of Client Fit and Project Fit scores. Determines the match tier.
-          </dd>
-
-          <dt>Match Tier</dt>
-          <dd>
-            Classification based on combined score: Top Match (80+), Good Fit (60–79),
-            Consider (40–59), Below Threshold (&lt;40).
-          </dd>
-
-          <dt>Engagement</dt>
-          <dd>
-            A record linking a shortlisted consultant to a project with pipeline tracking
-            from shortlist through contracted status.
-          </dd>
-
-          <dt>Verification Status</dt>
-          <dd>
-            Consultant data quality indicator: Pending (unconfirmed), Verified (team-confirmed),
-            Partner (active N4S relationship — receives geographic scoring bonus).
-          </dd>
-
-          <dt>Service Areas</dt>
-          <dd>
-            US states or regions where a consultant actively works. Used for geographic scoring.
-            "NATIONAL" or 5+ areas indicates nationwide coverage.
-          </dd>
-
-          <dt>Specialties</dt>
-          <dd>
-            Design style tags associated with a consultant (e.g., "Contemporary", "Traditional",
-            "Art Deco"). Matched against client taste axes and style tags.
-          </dd>
-        </dl>
       </ExpandableSection>
 
       <ExpandableSection title="Engagement Pipeline">
@@ -625,52 +733,114 @@ function ReferenceTab() {
             <span className="doc-substep-num">1</span>
             <div className="doc-substep-content">
               <strong>Shortlisted</strong>
-              <p>Consultant added to project shortlist from match results.</p>
+              <p>Consultant added to project shortlist from Shortlist tab.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">2</span>
             <div className="doc-substep-content">
-              <strong>Reached Out</strong>
+              <strong>Contacted</strong>
               <p>Initial contact made by advisory team.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">3</span>
             <div className="doc-substep-content">
-              <strong>Responded</strong>
-              <p>Consultant has responded with interest.</p>
+              <strong>Questionnaire Sent</strong>
+              <p>RFQ invitation dispatched via rfq.not-4.sale. Consultant receives secure link + password.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">4</span>
             <div className="doc-substep-content">
-              <strong>Meeting Scheduled</strong>
-              <p>Introduction meeting with client arranged.</p>
+              <strong>Response Received</strong>
+              <p>Consultant has submitted their questionnaire. Auto-detected by 30-second polling.
+              Candidate is now eligible for VPS scoring.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">5</span>
             <div className="doc-substep-content">
-              <strong>Proposal Received</strong>
-              <p>Formal proposal or scope of work submitted.</p>
+              <strong>Under Review</strong>
+              <p>Advisory team reviewing scores and RFQ responses. May schedule meetings.</p>
             </div>
           </div>
           <div className="doc-substep">
             <span className="doc-substep-num">6</span>
+            <div className="doc-substep-content">
+              <strong>Proposal</strong>
+              <p>Formal proposal or scope of work submitted by consultant.</p>
+            </div>
+          </div>
+          <div className="doc-substep">
+            <span className="doc-substep-num">7</span>
             <div className="doc-substep-content">
               <strong>Engaged</strong>
               <p>Client has selected this consultant; terms being finalized.</p>
             </div>
           </div>
           <div className="doc-substep">
-            <span className="doc-substep-num">7</span>
+            <span className="doc-substep-num">8</span>
             <div className="doc-substep-content">
               <strong>Contracted</strong>
               <p>Agreement signed. Consultant is part of the project team.</p>
             </div>
           </div>
         </div>
+      </ExpandableSection>
+
+      <ExpandableSection title="Synergy Sandbox">
+        <p className="doc-paragraph">
+          The Synergy Sandbox (Tab 5) tests team chemistry by simulating how 4-person teams
+          would work together across disciplines. It calls the VPS synergy engine.
+        </p>
+        <dl className="doc-glossary">
+          <dt>Team Configuration</dt>
+          <dd>One candidate per discipline slot. Saved configs can be compared side-by-side.</dd>
+
+          <dt>Synergy Score</dt>
+          <dd>Overall team chemistry rating (0–100) computed from pairwise compatibility.</dd>
+
+          <dt>Conflict Nodes</dt>
+          <dd>Detected potential friction points between team members (e.g., competing
+          design philosophies, overlapping territorial claims).</dd>
+
+          <dt>Collaboration Score</dt>
+          <dd>How well the team communicates, based on working style overlap from RFQ §4.</dd>
+        </dl>
+      </ExpandableSection>
+
+      <ExpandableSection title="GID Terminology">
+        <dl className="doc-glossary">
+          <dt>RFQ</dt>
+          <dd>Request for Qualifications — a structured questionnaire sent to shortlisted
+          consultants via the external portal (rfq.not-4.sale).</dd>
+
+          <dt>Invitation</dt>
+          <dd>A secure access record created by the Shortlist tab. Contains access token,
+          hashed password, expiry date, and project scope.</dd>
+
+          <dt>Quantitative Score</dt>
+          <dd>Algorithmic score computed from structured RFQ data (numbers, selections, ranges).</dd>
+
+          <dt>Qualitative Score</dt>
+          <dd>AI-parsed score from text responses in the questionnaire (philosophy, approach descriptions).</dd>
+
+          <dt>Overall Score</dt>
+          <dd>Weighted combination of all 10 scoring dimensions, normalized to 0–100.</dd>
+
+          <dt>Match Tier</dt>
+          <dd>Classification: Top Match (80+), Good Fit (60–79), Consider (40–59), Below Threshold (&lt;40).</dd>
+
+          <dt>Engagement</dt>
+          <dd>IONOS record linking a consultant to a project with pipeline tracking.</dd>
+
+          <dt>Team Config</dt>
+          <dd>A saved Synergy Sandbox configuration with one candidate per discipline slot.</dd>
+
+          <dt>Conflict Node</dt>
+          <dd>A detected potential friction point between two team members in the synergy simulation.</dd>
+        </dl>
       </ExpandableSection>
     </div>
   );
@@ -966,25 +1136,10 @@ const gidDocumentationStyles = `
   letter-spacing: 0.5px;
 }
 
-.doc-status--pass {
-  background: rgba(46, 125, 50, 0.15);
-  color: ${COLORS.success};
-}
-
-.doc-status--caution {
-  background: rgba(245, 124, 0, 0.15);
-  color: ${COLORS.warning};
-}
-
-.doc-status--fail {
-  background: rgba(211, 47, 47, 0.15);
-  color: ${COLORS.error};
-}
-
-.doc-status--required {
-  background: rgba(211, 47, 47, 0.15);
-  color: ${COLORS.error};
-}
+.doc-status--pass { background: rgba(46, 125, 50, 0.15); color: ${COLORS.success}; }
+.doc-status--caution { background: rgba(245, 124, 0, 0.15); color: ${COLORS.warning}; }
+.doc-status--fail { background: rgba(211, 47, 47, 0.15); color: ${COLORS.error}; }
+.doc-status--required { background: rgba(211, 47, 47, 0.15); color: ${COLORS.error}; }
 
 /* Dual Score Display */
 .doc-dual-score {
@@ -1006,47 +1161,11 @@ const gidDocumentationStyles = `
   font-weight: 600;
 }
 
-.doc-score-box--client {
-  background: linear-gradient(135deg, rgba(30, 58, 95, 0.05), rgba(30, 58, 95, 0.1));
-  border-color: ${COLORS.navy};
-}
-
-.doc-score-box--client h4 {
-  color: ${COLORS.navy};
-}
-
-.doc-score-box--market {
-  background: linear-gradient(135deg, rgba(201, 162, 39, 0.05), rgba(201, 162, 39, 0.15));
-  border-color: ${COLORS.gold};
-}
-
-.doc-score-box--market h4 {
-  color: #8a7020;
-}
-
 .doc-score-question {
   font-style: italic;
   color: ${COLORS.textMuted};
   font-size: 0.8125rem;
   margin-bottom: 0.75rem;
-}
-
-.doc-score-list {
-  margin: 0 0 0.75rem;
-  padding-left: 1.125rem;
-}
-
-.doc-score-list li {
-  font-size: 0.8125rem;
-  margin-bottom: 0.25rem;
-}
-
-.doc-score-source {
-  font-size: 0.75rem;
-  color: ${COLORS.textMuted};
-  margin: 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid ${COLORS.border};
 }
 
 /* Context Table */
@@ -1061,7 +1180,7 @@ const gidDocumentationStyles = `
 
 .doc-context-row {
   display: grid;
-  grid-template-columns: 80px 160px 1fr;
+  grid-template-columns: 120px 180px 1fr;
   gap: 0.75rem;
   padding: 0.625rem 0.75rem;
   border-bottom: 1px solid ${COLORS.border};
@@ -1069,11 +1188,38 @@ const gidDocumentationStyles = `
   align-items: center;
 }
 
-.doc-context-row:last-child {
-  border-bottom: none;
-}
+.doc-context-row:last-child { border-bottom: none; }
 
 .doc-context-row--header {
+  background-color: ${COLORS.navy};
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Gates Table */
+.doc-gates-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid ${COLORS.border};
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.doc-gates-row {
+  display: grid;
+  grid-template-columns: 160px 80px 100px 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid ${COLORS.border};
+  font-size: 0.8125rem;
+  align-items: center;
+}
+
+.doc-gates-row:last-child { border-bottom: none; }
+
+.doc-gates-row--header {
   background-color: ${COLORS.navy};
   color: #fff;
   font-weight: 600;
@@ -1099,9 +1245,7 @@ const gidDocumentationStyles = `
   align-items: center;
 }
 
-.doc-threshold-row:last-child {
-  border-bottom: none;
-}
+.doc-threshold-row:last-child { border-bottom: none; }
 
 .doc-threshold-row--header {
   background-color: ${COLORS.navy};
@@ -1141,37 +1285,6 @@ const gidDocumentationStyles = `
   margin: 0.75rem 0 0;
   font-size: 0.8125rem;
   color: ${COLORS.textMuted};
-}
-
-/* Gates Table */
-.doc-gates-table {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 1rem 0;
-}
-
-.doc-gates-row {
-  display: grid;
-  grid-template-columns: 160px 80px 100px 1fr;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-bottom: 1px solid ${COLORS.border};
-  font-size: 0.8125rem;
-  align-items: center;
-}
-
-.doc-gates-row:last-child {
-  border-bottom: none;
-}
-
-.doc-gates-row--header {
-  background-color: ${COLORS.navy};
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.75rem;
 }
 
 /* Warning Box */
@@ -1270,9 +1383,7 @@ const gidDocumentationStyles = `
 }
 
 /* Glossary */
-.doc-glossary {
-  margin: 0;
-}
+.doc-glossary { margin: 0; }
 
 .doc-glossary dt {
   font-weight: 600;
@@ -1280,46 +1391,13 @@ const gidDocumentationStyles = `
   margin-top: 1rem;
 }
 
-.doc-glossary dt:first-child {
-  margin-top: 0;
-}
+.doc-glossary dt:first-child { margin-top: 0; }
 
 .doc-glossary dd {
   margin: 0.25rem 0 0 0;
   font-size: 0.875rem;
   color: ${COLORS.textMuted};
   line-height: 1.5;
-}
-
-/* Archetype/Reference Tables */
-.doc-archetype-table {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid ${COLORS.border};
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 1rem 0;
-}
-
-.doc-archetype-row {
-  display: grid;
-  grid-template-columns: 200px 1fr 1fr;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-bottom: 1px solid ${COLORS.border};
-  font-size: 0.8125rem;
-  align-items: center;
-}
-
-.doc-archetype-row:last-child {
-  border-bottom: none;
-}
-
-.doc-archetype-row--header {
-  background-color: ${COLORS.navy};
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.75rem;
 }
 
 /* Notes */
@@ -1332,76 +1410,33 @@ const gidDocumentationStyles = `
 
 /* Responsive */
 @media (max-width: 768px) {
-  .doc-dual-score {
-    grid-template-columns: 1fr;
-  }
-
+  .doc-dual-score { grid-template-columns: 1fr; }
   .doc-threshold-row,
   .doc-context-row,
-  .doc-gates-row,
-  .doc-archetype-row {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-  }
-
-  .doc-tabs {
-    flex-wrap: wrap;
-  }
-
-  .doc-tab {
-    flex: 1;
-    min-width: 80px;
-    text-align: center;
-  }
+  .doc-gates-row { grid-template-columns: 1fr; gap: 0.25rem; }
+  .doc-tabs { flex-wrap: wrap; }
+  .doc-tab { flex: 1; min-width: 80px; text-align: center; }
 }
 
 /* Print Mode */
-.doc-print-mode {
-  max-width: 100%;
-  padding: 0 2rem;
-}
-.doc-print-mode .doc-content {
-  max-width: 100%;
-  padding: 1rem 0;
-}
-.doc-print-header {
-  padding: 2rem 0 1.5rem;
-  border-bottom: 2px solid #1e3a5f;
-  margin-bottom: 1rem;
-}
+.doc-print-mode { max-width: 100%; padding: 0 2rem; }
+.doc-print-mode .doc-content { max-width: 100%; padding: 1rem 0; }
+.doc-print-header { padding: 2rem 0 1.5rem; border-bottom: 2px solid #1e3a5f; margin-bottom: 1rem; }
 .doc-print-header__title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e3a5f;
-  margin: 0;
+  font-size: 1.75rem; font-weight: 700; color: #1e3a5f; margin: 0;
 }
 .doc-print-header__subtitle {
   font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  color: #6b6b6b;
-  margin: 0.5rem 0 0;
+  font-size: 0.875rem; color: #6b6b6b; margin: 0.5rem 0 0;
 }
 .doc-print-section-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e3a5f;
-  border-bottom: 1px solid #e5e5e0;
-  padding: 1.5rem 0 0.5rem;
-  margin: 2rem 0 1rem;
-  page-break-after: avoid;
+  font-size: 1.25rem; font-weight: 600; color: #1e3a5f;
+  border-bottom: 1px solid #e5e5e0; padding: 1.5rem 0 0.5rem;
+  margin: 2rem 0 1rem; page-break-after: avoid;
 }
-.doc-print-section-title:first-of-type {
-  margin-top: 0;
-}
-.doc-print-mode .doc-card {
-  break-inside: avoid;
-  page-break-inside: avoid;
-  overflow: hidden;
-}
-.doc-print-mode .doc-expandable {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
+.doc-print-section-title:first-of-type { margin-top: 0; }
+.doc-print-mode .doc-card { break-inside: avoid; page-break-inside: avoid; overflow: hidden; }
+.doc-print-mode .doc-expandable { break-inside: avoid; page-break-inside: avoid; }
 `;

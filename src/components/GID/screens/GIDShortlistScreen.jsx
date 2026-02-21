@@ -328,7 +328,7 @@ const ShortlistCandidateCard = ({
                 <span className="gid-shortlist-card__status-label" style={{ color: COLORS.success }}>
                   <CheckCircle2 size={14} /> Shortlisted
                 </span>
-                {onSendRFQ && engagement?.pipeline_stage !== 'questionnaire_sent' && engagement?.pipeline_stage !== 'questionnaire_received' && (
+                {onSendRFQ && engagement?.contact_status !== 'questionnaire_sent' && engagement?.contact_status !== 'questionnaire_received' && (
                   <button
                     className="gid-btn gid-btn--gold gid-btn--sm"
                     onClick={(e) => { e.stopPropagation(); onSendRFQ(consultant); }}
@@ -337,12 +337,12 @@ const ShortlistCandidateCard = ({
                     <Send size={13} /> Send RFQ
                   </button>
                 )}
-                {(engagement?.pipeline_stage === 'questionnaire_sent' || engagement?.pipeline_stage === 'questionnaire_received') && (
+                {(engagement?.contact_status === 'questionnaire_sent' || engagement?.contact_status === 'questionnaire_received') && (
                   <span className="gid-shortlist-card__rfq-status" style={{
-                    color: engagement.pipeline_stage === 'questionnaire_received' ? COLORS.warning : '#5c6bc0'
+                    color: engagement.contact_status === 'questionnaire_received' ? COLORS.warning : '#5c6bc0'
                   }}>
                     <FileText size={13} />
-                    {engagement.pipeline_stage === 'questionnaire_received' ? 'Response Received' : 'RFQ Sent'}
+                    {engagement.contact_status === 'questionnaire_received' ? 'Response Received' : 'RFQ Sent'}
                   </span>
                 )}
               </div>
@@ -696,6 +696,49 @@ const GIDShortlistScreen = () => {
       .catch(() => {});
   }, [activeProjectId, rfqApiAvailable, selectedDiscipline]);
 
+  // Poll RFQ API for status changes (every 30 seconds)
+  useEffect(() => {
+    if (!activeProjectId || !rfqApiAvailable) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const data = await rfqListInvitations({ project_id: activeProjectId });
+        const invitations = data.invitations || [];
+        const updatedMap = {};
+
+        for (const inv of invitations) {
+          const key = `${inv.consultant_name}_${inv.discipline}`;
+          updatedMap[key] = inv;
+
+          // If invitation is submitted but engagement isn't updated, sync it
+          if (inv.status === 'submitted') {
+            // Find the matching engagement by consultant_id
+            const eng = engagements.find(e =>
+              String(e.consultant_id) === String(inv.consultant_id) &&
+              e.contact_status === 'questionnaire_sent'
+            );
+            if (eng) {
+              await fetch(`${API_BASE}/gid.php?entity=engagements&id=${eng.id}&action=update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ contact_status: 'questionnaire_received' }),
+              });
+              // Refresh engagements to pick up the change
+              loadData();
+            }
+          }
+        }
+
+        setRfqInvitations(updatedMap);
+      } catch {
+        // Silent failure — polling is non-critical
+      }
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, [activeProjectId, rfqApiAvailable, engagements, loadData]);
+
   // Get RFQ invitation for a consultant
   const getRfqInvitation = useCallback((consultant) => {
     const name = `${consultant.first_name || ''} ${consultant.last_name || ''}`.trim() || consultant.firm_name;
@@ -745,7 +788,8 @@ const GIDShortlistScreen = () => {
         await fetch(`${API_BASE}/gid.php?entity=engagements&id=${existing.id}&action=update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pipeline_stage: 'questionnaire_sent' })
+          credentials: 'include',
+          body: JSON.stringify({ contact_status: 'questionnaire_sent' })
         });
       }
 
