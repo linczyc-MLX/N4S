@@ -10,9 +10,11 @@
 // RFQ API base URL — the VPS-hosted backend
 const RFQ_API_BASE = 'https://rfq.not-4.sale/api';
 
-// Admin API key — stored in localStorage by admin user
+// Admin API key — embedded for internal admin tool
+const ADMIN_API_KEY = '5a9a262b2f6577325c2d188b1844f0695fb7db8f1106d7d3d5da6f78cda3424a';
+
 function getAdminApiKey() {
-  return localStorage.getItem('rfq_admin_api_key') || '';
+  return ADMIN_API_KEY;
 }
 
 export function setAdminApiKey(key) {
