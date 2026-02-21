@@ -878,7 +878,151 @@ if ($entity === 'discovery') {
     }
 }
 
+// ============================================================================
+// ADMIN CONFIG — Global + project-level BYT configuration
+// ============================================================================
+
+if ($entity === 'admin_config') {
+    $scope = $_GET['scope'] ?? '';
+    $configKey = $_GET['key'] ?? '';
+    $configAction = $action ?? '';
+
+    // Ensure byt_global_config table exists
+    $pdo->exec("CREATE TABLE IF NOT EXISTS byt_global_config (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        config_key VARCHAR(100) NOT NULL UNIQUE,
+        config_value JSON NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        updated_by VARCHAR(100)
+    )");
+
+    // GET — Read global config
+    if ($method === 'GET' && $scope === 'global') {
+        if ($configKey) {
+            // Single key
+            $stmt = $pdo->prepare("SELECT config_value FROM byt_global_config WHERE config_key = ?");
+            $stmt->execute([$configKey]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                jsonResponse(['key' => $configKey, 'value' => json_decode($row['config_value'], true)]);
+            } else {
+                jsonResponse(['key' => $configKey, 'value' => null]);
+            }
+        } else {
+            // All global config as a nested object
+            $stmt = $pdo->query("SELECT config_key, config_value, updated_at FROM byt_global_config ORDER BY config_key");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $config = [];
+            foreach ($rows as $row) {
+                $parts = explode('.', $row['config_key']);
+                $ref = &$config;
+                for ($i = 0; $i < count($parts) - 1; $i++) {
+                    if (!isset($ref[$parts[$i]])) $ref[$parts[$i]] = [];
+                    $ref = &$ref[$parts[$i]];
+                }
+                $ref[$parts[count($parts) - 1]] = json_decode($row['config_value'], true);
+            }
+            jsonResponse(['config' => $config]);
+        }
+    }
+
+    // POST — Update global config
+    if ($method === 'POST' && $scope === 'global' && $configAction === 'update') {
+        $body = getBody();
+        $key = $body['key'] ?? '';
+        $value = $body['value'] ?? null;
+
+        if (!$key) {
+            errorResponse('Missing config key');
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO byt_global_config (config_key, config_value, updated_by) 
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)");
+        $stmt->execute([$key, json_encode($value), 'admin']);
+        jsonResponse(['success' => true, 'key' => $key]);
+    }
+
+    // POST — Test API connection
+    if ($method === 'POST' && $configAction === 'test_api') {
+        $provider = $_GET['provider'] ?? '';
+        
+        if ($provider === 'anthropic') {
+            // Read key from config-secrets
+            $keyFile = __DIR__ . '/config-secrets.php';
+            if (file_exists($keyFile)) {
+                include $keyFile;
+                $key = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : null;
+                if ($key) {
+                    jsonResponse(['ok' => true, 'message' => 'API key configured (server-side validation not available due to IONOS restrictions)']);
+                } else {
+                    jsonResponse(['error' => 'API key not found in config-secrets.php']);
+                }
+            } else {
+                jsonResponse(['error' => 'config-secrets.php not found']);
+            }
+        } elseif ($provider === 'rfq') {
+            // Can't test outbound from IONOS, return static status
+            jsonResponse(['ok' => true, 'message' => 'RFQ endpoint configured (client-side connection test recommended)']);
+        } else {
+            jsonResponse(['error' => "Unknown provider: $provider"]);
+        }
+    }
+
+    // GET — Stats for data management card
+    if ($method === 'GET' && $configAction === 'stats') {
+        $projectId = $_GET['project_id'] ?? 'default';
+        
+        // Consultant counts
+        $stmt = $pdo->query("SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
+            SUM(CASE WHEN verification_status = 'pending' OR verification_status IS NULL THEN 1 ELSE 0 END) as pending
+            FROM gid_consultants WHERE archived = 0");
+        $consultants = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Engagement counts
+        $engStmt = $pdo->prepare("SELECT 
+            SUM(CASE WHEN pipeline_stage NOT IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN pipeline_stage IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as archived
+            FROM gid_engagements WHERE project_id = ?");
+        $engStmt->execute([$projectId]);
+        $engagements = $engStmt->fetch(PDO::FETCH_ASSOC);
+
+        // Discovery counts
+        $discStmt = $pdo->prepare("SELECT 
+            SUM(CASE WHEN review_status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN review_status = 'imported' THEN 1 ELSE 0 END) as imported,
+            SUM(CASE WHEN review_status = 'rejected' THEN 1 ELSE 0 END) as rejected
+            FROM gid_discovery WHERE project_id = ?");
+        $discStmt->execute([$projectId]);
+        $discovery = $discStmt->fetch(PDO::FETCH_ASSOC);
+
+        jsonResponse([
+            'consultants' => [
+                'total' => (int)($consultants['total'] ?? 0),
+                'verified' => (int)($consultants['verified'] ?? 0),
+                'pending' => (int)($consultants['pending'] ?? 0),
+            ],
+            'engagements' => [
+                'active' => (int)($engagements['active'] ?? 0),
+                'archived' => (int)($engagements['archived'] ?? 0),
+            ],
+            'discovery' => [
+                'pending' => (int)($discovery['pending'] ?? 0),
+                'imported' => (int)($discovery['imported'] ?? 0),
+                'rejected' => (int)($discovery['rejected'] ?? 0),
+            ],
+            'rfq' => [
+                'sent' => 0,
+                'submitted' => 0,
+                'scored' => 0,
+            ],
+        ]);
+    }
+}
+
 // If no entity matched
 if (empty($entity)) {
-    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements, discovery');
+    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements, discovery, admin_config');
 }

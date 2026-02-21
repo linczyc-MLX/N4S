@@ -15,7 +15,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Users, Plus, Search, Filter, Save, FileDown, Edit2, Trash2, Eye,
   Star, MapPin, Briefcase, Award, ChevronDown, ChevronRight, X,
-  Building2, CheckCircle2, Clock, AlertTriangle, RefreshCw, Upload, Zap
+  Building2, CheckCircle2, Clock, AlertTriangle, RefreshCw, Upload, Zap, Settings2
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
 import BYTDocumentation from './BYTDocumentation';
@@ -25,6 +25,7 @@ import BYTShortlistScreen from './screens/BYTShortlistScreen';
 import BYTDiscoveryScreen from './screens/BYTDiscoveryScreen';
 import BYTMatchmakingScreen from './screens/BYTMatchmakingScreen';
 import BYTSynergySandboxScreen from './screens/BYTSynergySandboxScreen';
+import BYTAdminScreen from './screens/BYTAdminScreen';
 import './BYTModule.css';
 
 // N4S Brand Colors
@@ -507,6 +508,13 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
               <Zap size={16} />
               Synergy Sandbox
             </button>
+            <button
+              className={`byt-screen-tab ${viewMode === 'admin' ? 'byt-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('admin'); setSelectedConsultant(null); }}
+            >
+              <Settings2 size={16} />
+              Admin
+            </button>
           </div>
 
           {/* Stats Bar */}
@@ -646,6 +654,11 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
           {/* Synergy Sandbox Screen */}
           {viewMode === 'synergy' && (
             <BYTSynergySandboxScreen />
+          )}
+
+          {/* Admin Screen */}
+          {viewMode === 'admin' && (
+            <BYTAdminScreen />
           )}
 
           {/* Detail Modal */}
