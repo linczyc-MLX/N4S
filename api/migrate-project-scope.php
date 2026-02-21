@@ -58,7 +58,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS gid_project_consultants (
     UNIQUE KEY uq_project_consultant (project_id, consultant_id),
     KEY idx_project (project_id),
     KEY idx_consultant (consultant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
 // Step 3: Count existing consultants
 $stmt = $pdo->query("SELECT id, role, firm_name, source_of_discovery FROM gid_consultants WHERE active = 1");

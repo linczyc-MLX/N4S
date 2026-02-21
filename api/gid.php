@@ -64,7 +64,9 @@ try {
         UNIQUE KEY uq_project_consultant (project_id, consultant_id),
         KEY idx_project (project_id),
         KEY idx_consultant (consultant_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Fix collation if table already existed with wrong collation
+    $pdo->exec("ALTER TABLE gid_project_consultants CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     $hasJunctionTable = true;
 } catch (Exception $e) {
     // Log but continue — junction table features will be disabled
