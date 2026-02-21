@@ -1120,10 +1120,10 @@ const GIDShortlistScreen = () => {
                         <ExternalLink size={12} /> Portal Link
                       </label>
                       <div className="gid-rfq-cred__value">
-                        <code>{rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`}</code>
+                        <code>{rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`}</code>
                         <button
                           className="gid-rfq-cred__copy"
-                          onClick={() => handleCopy(rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`, 'link')}
+                          onClick={() => handleCopy(rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`, 'link')}
                         >
                           {copied === 'link' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                         </button>
@@ -1135,10 +1135,10 @@ const GIDShortlistScreen = () => {
                         <Key size={12} /> Password
                       </label>
                       <div className="gid-rfq-cred__value">
-                        <code className="gid-rfq-cred__password">{rfqResult.plain_password}</code>
+                        <code className="gid-rfq-cred__password">{rfqResult.invitation?.plain_password}</code>
                         <button
                           className="gid-rfq-cred__copy"
-                          onClick={() => handleCopy(rfqResult.plain_password, 'password')}
+                          onClick={() => handleCopy(rfqResult.invitation?.plain_password, 'password')}
                         >
                           {copied === 'password' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                         </button>
@@ -1167,7 +1167,7 @@ const GIDShortlistScreen = () => {
 
                   {rfqTarget.email && (
                     <a
-                      href={`mailto:${rfqTarget.email}?subject=${encodeURIComponent('Request for Qualifications — Luxury Residential Advisory')}&body=${encodeURIComponent(`Dear ${rfqTarget.first_name || 'Colleague'},\n\nYou have been invited to complete a confidential Request for Qualifications questionnaire for an ultra-luxury residential engagement.\n\nPlease access the portal here:\n${rfqResult.portal_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.token}`}\n\nYour access password: ${rfqResult.plain_password}\n\nThis invitation expires on ${rfqResult.invitation?.expires_at ? new Date(rfqResult.invitation.expires_at).toLocaleDateString() : '14 days'}.\n\nYour responses are confidential and will be evaluated as part of our team selection process.\n\nBest regards,\nLuxury Residential Advisory Team\nNot4Sale`)}`}
+                      href={`mailto:${rfqTarget.email}?subject=${encodeURIComponent('Request for Qualifications — Luxury Residential Advisory')}&body=${encodeURIComponent(`Dear ${rfqTarget.first_name || 'Colleague'},\n\nYou have been invited to complete a confidential Request for Qualifications questionnaire for an ultra-luxury residential engagement.\n\nPlease access the portal here:\n${rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`}\n\nYour access password: ${rfqResult.invitation?.plain_password}\n\nThis invitation expires on ${rfqResult.invitation?.expires_at ? new Date(rfqResult.invitation.expires_at).toLocaleDateString() : '14 days'}.\n\nYour responses are confidential and will be evaluated as part of our team selection process.\n\nBest regards,\nLuxury Residential Advisory Team\nNot4Sale`)}`}
                       className="gid-btn gid-btn--primary"
                       style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 16, textDecoration: 'none', width: '100%' }}
                     >
