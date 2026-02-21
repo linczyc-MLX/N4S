@@ -51,7 +51,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS gid_project_consultants (
     project_id VARCHAR(100) NOT NULL,
     consultant_id VARCHAR(36) NOT NULL,
     discipline VARCHAR(30) DEFAULT NULL,
-    source ENUM('manual','discovery','imported_from_global') DEFAULT 'manual',
+    source VARCHAR(30) DEFAULT 'manual',
     source_project_id VARCHAR(100) DEFAULT NULL,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     added_by VARCHAR(100) DEFAULT NULL,
@@ -72,9 +72,18 @@ $untagged = array_filter($candidates, fn($c) => empty($c['project_id']));
 $report['discovery_candidates_total'] = count($candidates);
 $report['discovery_candidates_untagged'] = count($untagged);
 
-// Step 5: Check for project_id column on discovery
+// Step 5: Check for project_id column on discovery, add if missing
 $cols = $pdo->query("SHOW COLUMNS FROM gid_discovery_candidates LIKE 'project_id'")->fetchAll();
 $hasDiscProjectCol = !empty($cols);
+if (!$hasDiscProjectCol && !$dryRun) {
+    try {
+        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD COLUMN project_id VARCHAR(100) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD KEY idx_disc_project (project_id)");
+        $hasDiscProjectCol = true;
+    } catch (Exception $e) {
+        $report['discovery_column_error'] = $e->getMessage();
+    }
+}
 $report['discovery_has_project_id_column'] = $hasDiscProjectCol;
 
 if ($dryRun) {

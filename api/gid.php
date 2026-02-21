@@ -49,6 +49,7 @@ function getBody() {
 // AUTO-MIGRATION: Project-scoped tables
 // ============================================================================
 
+$hasJunctionTable = false;
 try {
     // Junction table: links consultants to projects
     $pdo->exec("CREATE TABLE IF NOT EXISTS gid_project_consultants (
@@ -56,7 +57,7 @@ try {
         project_id VARCHAR(100) NOT NULL,
         consultant_id VARCHAR(36) NOT NULL,
         discipline VARCHAR(30) DEFAULT NULL,
-        source ENUM('manual','discovery','imported_from_global') DEFAULT 'manual',
+        source VARCHAR(30) DEFAULT 'manual',
         source_project_id VARCHAR(100) DEFAULT NULL,
         added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         added_by VARCHAR(100) DEFAULT NULL,
@@ -64,15 +65,24 @@ try {
         KEY idx_project (project_id),
         KEY idx_consultant (consultant_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $hasJunctionTable = true;
+} catch (Exception $e) {
+    // Log but continue — junction table features will be disabled
+    error_log('[BYT Migration] Junction table creation failed: ' . $e->getMessage());
+}
 
+$hasDiscProjectCol = false;
+try {
     // Add project_id to discovery candidates if not present
     $cols = $pdo->query("SHOW COLUMNS FROM gid_discovery_candidates LIKE 'project_id'")->fetchAll();
     if (empty($cols)) {
-        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD COLUMN project_id VARCHAR(100) DEFAULT NULL AFTER id");
+        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD COLUMN project_id VARCHAR(100) DEFAULT NULL");
         $pdo->exec("ALTER TABLE gid_discovery_candidates ADD KEY idx_disc_project (project_id)");
     }
+    $hasDiscProjectCol = true;
 } catch (Exception $e) {
-    // Tables may not exist yet on fresh install — silent fail
+    // Discovery table may not exist yet — that's fine
+    error_log('[BYT Migration] Discovery column migration: ' . $e->getMessage());
 }
 
 // ============================================================================
@@ -140,9 +150,9 @@ if ($entity === 'consultants') {
         $joinClause = "";
         $selectPrefix = "c.*";
         
-        // PROJECT SCOPING: When project_id provided, only show consultants linked to this project
+        // PROJECT SCOPING: When project_id provided AND junction table exists, filter
         $projectId = $_GET['project_id'] ?? null;
-        if ($projectId) {
+        if ($projectId && $hasJunctionTable) {
             $joinClause = "INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id AND pc.project_id = ?";
             $params[] = $projectId;
             $selectPrefix = "c.*, pc.source as project_source, pc.added_at as project_added_at";
@@ -323,8 +333,8 @@ if ($entity === 'consultants') {
                 $body['created_by'] ?? null,
             ]);
             
-            // Link to project if project_id provided
-            if (!empty($body['project_id'])) {
+            // Link to project if project_id provided and junction table exists
+            if (!empty($body['project_id']) && $hasJunctionTable) {
                 try {
                     $stmt = $pdo->prepare("INSERT IGNORE INTO gid_project_consultants 
                         (project_id, consultant_id, discipline, source, added_by) 
@@ -533,7 +543,7 @@ if ($entity === 'stats') {
     $stats = [];
     $projectId = $_GET['project_id'] ?? null;
     
-    if ($projectId) {
+    if ($projectId && $hasJunctionTable) {
         // PROJECT-SCOPED stats: only count consultants linked to this project
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM gid_consultants c 
             INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id 
@@ -702,6 +712,10 @@ if ($entity === 'engagements') {
 
 if ($entity === 'project_consultants') {
 
+    if (!$hasJunctionTable) {
+        errorResponse('Project-consultant linking not available (migration pending)', 503);
+    }
+
     // GET — List consultant links for a project
     if ($method === 'GET') {
         $projectId = $_GET['project_id'] ?? null;
@@ -748,7 +762,7 @@ if ($entity === 'discovery') {
     // GET — Queue stats (must check before listing)
     if ($method === 'GET' && $action === 'queue_stats') {
         $discProjectId = $_GET['project_id'] ?? null;
-        if ($discProjectId) {
+        if ($discProjectId && $hasDiscProjectCol) {
             $stmt = $pdo->prepare("SELECT status, COUNT(*) as count FROM gid_discovery_candidates WHERE project_id = ? GROUP BY status");
             $stmt->execute([$discProjectId]);
         } else {
@@ -785,8 +799,8 @@ if ($entity === 'discovery') {
         $where = ["1=1"];
         $params = [];
 
-        // PROJECT SCOPING: filter by project_id
-        if (!empty($_GET['project_id'])) {
+        // PROJECT SCOPING: filter by project_id (only if column exists)
+        if (!empty($_GET['project_id']) && $hasDiscProjectCol) {
             $where[] = "project_id = ?";
             $params[] = $_GET['project_id'];
         }
@@ -936,7 +950,7 @@ if ($entity === 'discovery') {
 
             // Link consultant to the project that discovered them
             $discProjectId = $candidate['project_id'] ?? ($body['project_id'] ?? null);
-            if ($discProjectId) {
+            if ($discProjectId && $hasJunctionTable) {
                 try {
                     $stmt = $pdo->prepare("INSERT IGNORE INTO gid_project_consultants 
                         (project_id, consultant_id, discipline, source, added_by) 
@@ -986,18 +1000,19 @@ if ($entity === 'discovery') {
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO gid_discovery_candidates (
-                id, project_id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
-                website, linkedin_url, specialties, service_areas, estimated_budget_tier,
-                years_experience, notable_projects, awards, publications,
-                source_tier, source_type, source_url, source_name, discovery_query,
-                confidence_score, source_rationale, status, discovered_by, project_context
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if ($hasDiscProjectCol) {
+                $stmt = $pdo->prepare("INSERT INTO gid_discovery_candidates (
+                    id, project_id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
+                    website, linkedin_url, specialties, service_areas, estimated_budget_tier,
+                    years_experience, notable_projects, awards, publications,
+                    source_tier, source_type, source_url, source_name, discovery_query,
+                    confidence_score, source_rationale, status, discovered_by, project_context
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            $stmt->execute([
-                $newId,
-                $body['project_id'] ?? null,
-                $body['discipline'] ?? 'architect',
+                $stmt->execute([
+                    $newId,
+                    $body['project_id'] ?? null,
+                    $body['discipline'] ?? 'architect',
                 $body['firm_name'] ?? 'Unknown Firm',
                 $body['principal_name'] ?? null,
                 $body['hq_city'] ?? null,
@@ -1023,6 +1038,45 @@ if ($entity === 'discovery') {
                 $body['discovered_by'] ?? 'LRA Team',
                 $body['project_context'] ?? null,
             ]);
+            } else {
+                // Fallback: no project_id column available
+                $stmt = $pdo->prepare("INSERT INTO gid_discovery_candidates (
+                    id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
+                    website, linkedin_url, specialties, service_areas, estimated_budget_tier,
+                    years_experience, notable_projects, awards, publications,
+                    source_tier, source_type, source_url, source_name, discovery_query,
+                    confidence_score, source_rationale, status, discovered_by, project_context
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+                $stmt->execute([
+                    $newId,
+                    $body['discipline'] ?? 'architect',
+                    $body['firm_name'] ?? 'Unknown Firm',
+                    $body['principal_name'] ?? null,
+                    $body['hq_city'] ?? null,
+                    $body['hq_state'] ?? null,
+                    $body['hq_country'] ?? 'USA',
+                    $body['website'] ?? null,
+                    $body['linkedin_url'] ?? null,
+                    json_encode($body['specialties'] ?? []),
+                    json_encode($body['service_areas'] ?? []),
+                    $body['estimated_budget_tier'] ?? null,
+                    $body['years_experience'] ?? null,
+                    json_encode($body['notable_projects'] ?? []),
+                    json_encode($body['awards'] ?? []),
+                    json_encode($body['publications'] ?? []),
+                    $body['source_tier'] ?? 3,
+                    $body['source_type'] ?? 'ai_discovery',
+                    $body['source_url'] ?? null,
+                    $body['source_name'] ?? null,
+                    $body['discovery_query'] ?? null,
+                    $body['confidence_score'] ?? null,
+                    $body['source_rationale'] ?? null,
+                    'pending',
+                    $body['discovered_by'] ?? 'LRA Team',
+                    $body['project_context'] ?? null,
+                ]);
+            }
 
             jsonResponse(['success' => true, 'id' => $newId], 201);
         }
@@ -1125,7 +1179,7 @@ if ($entity === 'admin_config') {
         $projectId = $_GET['project_id'] ?? 'default';
         
         // Consultant counts — project-scoped if project_id provided
-        if ($projectId && $projectId !== 'default') {
+        if ($projectId && $projectId !== 'default' && $hasJunctionTable) {
             $stmt = $pdo->prepare("SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN c.verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
@@ -1158,7 +1212,7 @@ if ($entity === 'admin_config') {
         // Discovery counts — project-scoped
         $discovery = ['pending' => 0, 'imported' => 0, 'rejected' => 0];
         try {
-            if ($projectId && $projectId !== 'default') {
+            if ($projectId && $projectId !== 'default' && $hasDiscProjectCol) {
                 $discStmt = $pdo->prepare("SELECT 
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
                     SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) as imported,
