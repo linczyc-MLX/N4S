@@ -973,30 +973,35 @@ if ($entity === 'admin_config') {
     if ($method === 'GET' && $configAction === 'stats') {
         $projectId = $_GET['project_id'] ?? 'default';
         
-        // Consultant counts
+        // Consultant counts (global registry — not project-scoped)
         $stmt = $pdo->query("SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
             SUM(CASE WHEN verification_status = 'pending' OR verification_status IS NULL THEN 1 ELSE 0 END) as pending
-            FROM gid_consultants WHERE archived = 0");
+            FROM gid_consultants WHERE active = 1");
         $consultants = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Engagement counts
-        $engStmt = $pdo->prepare("SELECT 
-            SUM(CASE WHEN pipeline_stage NOT IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN pipeline_stage IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as archived
-            FROM gid_engagements WHERE project_id = ?");
-        $engStmt->execute([$projectId]);
-        $engagements = $engStmt->fetch(PDO::FETCH_ASSOC);
+        // Engagement counts (project-scoped via n4s_project_id)
+        $engagements = ['active' => 0, 'archived' => 0];
+        try {
+            $engStmt = $pdo->prepare("SELECT 
+                SUM(CASE WHEN contact_status NOT IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN contact_status IN ('contracted','withdrawn','declined') THEN 1 ELSE 0 END) as archived
+                FROM gid_engagements WHERE n4s_project_id = ?");
+            $engStmt->execute([$projectId]);
+            $engagements = $engStmt->fetch(PDO::FETCH_ASSOC) ?: $engagements;
+        } catch (Exception $e) { /* table may not exist yet */ }
 
-        // Discovery counts
-        $discStmt = $pdo->prepare("SELECT 
-            SUM(CASE WHEN review_status = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN review_status = 'imported' THEN 1 ELSE 0 END) as imported,
-            SUM(CASE WHEN review_status = 'rejected' THEN 1 ELSE 0 END) as rejected
-            FROM gid_discovery WHERE project_id = ?");
-        $discStmt->execute([$projectId]);
-        $discovery = $discStmt->fetch(PDO::FETCH_ASSOC);
+        // Discovery counts (global queue — no project_id column)
+        $discovery = ['pending' => 0, 'imported' => 0, 'rejected' => 0];
+        try {
+            $discStmt = $pdo->query("SELECT 
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) as imported,
+                SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END) as rejected
+                FROM gid_discovery_candidates");
+            $discovery = $discStmt->fetch(PDO::FETCH_ASSOC) ?: $discovery;
+        } catch (Exception $e) { /* table may not exist yet */ }
 
         jsonResponse([
             'consultants' => [

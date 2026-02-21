@@ -89,19 +89,40 @@ export function getProjectContext(appContext) {
   const portfolioCtx = kycPrincipal.portfolioContext || {};
   const designId = kycPrincipal.designIdentity || {};
 
-  const projectCity = overrides.projectCity || projectParams.projectCity || '';
-  const projectState = overrides.projectState || extractState(projectCity, projectParams.projectCountry || '');
+  // --- Project Name: robust fallback chain ---
+  // 1. Manual override (standalone mode)
+  // 2. clientData.projectName (Dashboard-level, synced with projects DB table)
+  // 3. Active project from projects list (DB project_name column)
+  // 4. KYC project parameters
+  const activeProject = (appContext?.projects || []).find(p => p.id === appContext?.activeProjectId);
+  const projectName = overrides.projectName
+    || appContext?.clientData?.projectName
+    || activeProject?.name
+    || projectParams.projectName
+    || '';
+
+  // --- Location: extract city and state without duplication ---
+  const rawCity = overrides.projectCity || projectParams.projectCity || '';
+  const rawState = overrides.projectState || extractState(rawCity, projectParams.projectCountry || '');
+  // Strip state from city string if city already contains it (e.g., "Malibu, CA" → "Malibu")
+  const projectCity = rawState && rawCity.endsWith(`, ${rawState}`)
+    ? rawCity.slice(0, -(rawState.length + 2))
+    : rawCity;
+  const projectState = rawState;
 
   return {
     // Core identifiers
-    projectName: overrides.projectName || appContext?.projectData?.projectName || '',
+    projectName,
     projectCity,
     projectState,
     projectCountry: overrides.projectCountry || projectParams.projectCountry || '',
 
     // Financials
     totalBudget: overrides.totalBudget || Number(budgetFw.totalProjectBudget) || 0,
-    constructionBudget: overrides.constructionBudget || Number(appContext?.fyiData?.budgetRange?.constructionBudget) || 0,
+    constructionBudget: overrides.constructionBudget
+      || Number(appContext?.fyiData?.budgetRange?.constructionBudget)
+      || Number(budgetFw.constructionBudget)
+      || 0,
 
     // Scale
     targetSF: overrides.targetSF || appContext?.fyiData?.settings?.targetSF || null,
@@ -120,6 +141,9 @@ export function getProjectContext(appContext) {
 
     // Source tracking
     source: hasOverrides ? 'manual' : (appContext?.kycData ? 'n4s' : 'empty'),
+
+    // Project identity (for API calls that need project scoping)
+    activeProjectId: appContext?.activeProjectId || null,
 
     // Raw references (for N4S mode - used by components that need full KYC/FYI data)
     _raw: {

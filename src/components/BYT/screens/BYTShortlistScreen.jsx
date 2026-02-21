@@ -374,7 +374,7 @@ const ShortlistCandidateCard = ({
 // =============================================================================
 
 const BYTShortlistScreen = () => {
-  const { kycData, fyiData, bytData, updateBYTData, activeProjectId, projectData } = useAppContext();
+  const { kycData, fyiData, bytData, updateBYTData, activeProjectId, clientData, projects } = useAppContext();
 
   // State
   const [selectedDiscipline, setSelectedDiscipline] = useState('architect');
@@ -764,7 +764,7 @@ const BYTShortlistScreen = () => {
       // Sync project to RFQ backend first
       await rfqSyncProject({
         n4s_project_id: activeProjectId,
-        project_name: projectData?.projectName || bytData?.project_name || `Project ${activeProjectId}`,
+        project_name: clientData?.projectName || (projects || []).find(p => p.id === activeProjectId)?.name || bytData?.project_name || `Project ${activeProjectId}`,
         project_features: fyiData?.spaces?.map(s => s.displayName || s.name) || []
       });
 

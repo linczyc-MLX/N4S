@@ -773,8 +773,8 @@ const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRem
 // =============================================================================
 
 const BYTMatchmakingScreen = () => {
-  const { activeProjectId, projectData } = useAppContext();
-  const projectId = projectData?.project_id || activeProjectId;
+  const { activeProjectId } = useAppContext();
+  const projectId = activeProjectId;
 
   const [engagements, setEngagements] = useState([]);
   const [vpsScores, setVpsScores] = useState([]);
