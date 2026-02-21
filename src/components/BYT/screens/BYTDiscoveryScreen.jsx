@@ -1,5 +1,5 @@
 /**
- * GIDDiscoveryScreen.jsx — Discovery Screen (Phase 3)
+ * BYTDiscoveryScreen.jsx — Discovery Screen (Phase 3)
  *
  * AI-assisted consultant sourcing tool with three sub-modes:
  * 1. Manual Search — Quick lookup + pre-fill AddConsultantForm
@@ -22,15 +22,15 @@ const API_BASE = window.location.hostname.includes('ionos.space')
   : '/api';
 
 // AI key (loaded once from server, cached in memory only)
-let GID_AI_KEY = null;
+let BYT_AI_KEY = null;
 async function getAIKey() {
-  if (GID_AI_KEY) return GID_AI_KEY;
-  const res = await fetch(`${API_BASE}/gid-ai-config.php`, { credentials: 'include' });
+  if (BYT_AI_KEY) return BYT_AI_KEY;
+  const res = await fetch(`${API_BASE}/byt-ai-config.php`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to load AI configuration');
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  GID_AI_KEY = data.key;
-  return GID_AI_KEY;
+  BYT_AI_KEY = data.key;
+  return BYT_AI_KEY;
 }
 
 // ============================================================================
@@ -327,7 +327,7 @@ CRITICAL RULES:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': GID_AI_KEY,
+        'x-api-key': BYT_AI_KEY,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
@@ -402,7 +402,7 @@ CRITICAL RULES:
           insertedCandidates.push({ ...candidateData, id: saveData.id, status: 'pending' });
         }
       } catch (err) {
-        console.error('[GID Discovery] Save candidate error:', c.firm_name, err);
+        console.error('[BYT Discovery] Save candidate error:', c.firm_name, err);
       }
     }
 
@@ -424,28 +424,28 @@ const SubModeTabs = ({ subMode, setSubMode, queueStats }) => {
   const queueCount = queueStats?.queue || 0;
 
   return (
-    <div className="gid-discovery-subtabs">
+    <div className="byt-discovery-subtabs">
       <button
-        className={`gid-discovery-subtab ${subMode === 'manual' ? 'gid-discovery-subtab--active' : ''}`}
+        className={`byt-discovery-subtab ${subMode === 'manual' ? 'byt-discovery-subtab--active' : ''}`}
         onClick={() => setSubMode('manual')}
       >
         <Search size={14} />
         Manual Search
       </button>
       <button
-        className={`gid-discovery-subtab ${subMode === 'ai' ? 'gid-discovery-subtab--active' : ''}`}
+        className={`byt-discovery-subtab ${subMode === 'ai' ? 'byt-discovery-subtab--active' : ''}`}
         onClick={() => setSubMode('ai')}
       >
         <Zap size={14} />
         AI Discovery
       </button>
       <button
-        className={`gid-discovery-subtab ${subMode === 'queue' ? 'gid-discovery-subtab--active' : ''}`}
+        className={`byt-discovery-subtab ${subMode === 'queue' ? 'byt-discovery-subtab--active' : ''}`}
         onClick={() => setSubMode('queue')}
       >
         <Inbox size={14} />
         Import Queue
-        {queueCount > 0 && <span className="gid-queue-badge">{queueCount}</span>}
+        {queueCount > 0 && <span className="byt-queue-badge">{queueCount}</span>}
       </button>
     </div>
   );
@@ -460,25 +460,25 @@ const ManualSearchPanel = ({ onQuickAdd }) => {
   const [searchDiscipline, setSearchDiscipline] = useState('');
 
   return (
-    <div className="gid-discovery-manual">
-      <div className="gid-discovery-manual__info">
+    <div className="byt-discovery-manual">
+      <div className="byt-discovery-manual__info">
         <h3>Manual Consultant Search</h3>
         <p>Use this to quickly add a consultant you already know about. Enter their details and they'll be added directly to the Registry via the Add Consultant form.</p>
       </div>
 
-      <div className="gid-discovery-manual__form">
-        <div className="gid-discovery-manual__row">
+      <div className="byt-discovery-manual__form">
+        <div className="byt-discovery-manual__row">
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Firm name or principal name..."
-            className="gid-discovery-manual__input"
+            className="byt-discovery-manual__input"
           />
           <select
             value={searchDiscipline}
             onChange={(e) => setSearchDiscipline(e.target.value)}
-            className="gid-filter-select"
+            className="byt-filter-select"
           >
             <option value="">All Disciplines</option>
             <option value="architect">Architect</option>
@@ -489,7 +489,7 @@ const ManualSearchPanel = ({ onQuickAdd }) => {
         </div>
 
         <button
-          className="gid-btn gid-btn--primary"
+          className="byt-btn byt-btn--primary"
           onClick={() => onQuickAdd({
             firm_name: searchInput,
             role: searchDiscipline || 'architect',
@@ -501,7 +501,7 @@ const ManualSearchPanel = ({ onQuickAdd }) => {
         </button>
       </div>
 
-      <div className="gid-discovery-manual__tips">
+      <div className="byt-discovery-manual__tips">
         <h4>Discovery Tips</h4>
         <p>For comprehensive discovery, use the <strong>AI Discovery</strong> tab to find qualified firms based on your project criteria. The AI will search for real, verifiable firms and provide confidence scores.</p>
         <p>For known firms, use <strong>Quick Add</strong> above to go directly to the Add Consultant form with pre-filled information.</p>
@@ -515,10 +515,10 @@ const ManualSearchPanel = ({ onQuickAdd }) => {
 // ============================================================================
 
 const QueueFilterBar = ({ statusFilter, setStatusFilter, disciplineFilter, setDisciplineFilter, queueStats }) => (
-  <div className="gid-discovery-filters">
-    <div className="gid-discovery-filters__group">
+  <div className="byt-discovery-filters">
+    <div className="byt-discovery-filters__group">
       <label>Status:</label>
-      <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="gid-filter-select">
+      <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="byt-filter-select">
         <option value="pending,reviewing,approved">Queue (active)</option>
         <option value="pending">Pending ({queueStats?.pending || 0})</option>
         <option value="reviewing">Reviewing ({queueStats?.reviewing || 0})</option>
@@ -528,9 +528,9 @@ const QueueFilterBar = ({ statusFilter, setStatusFilter, disciplineFilter, setDi
         <option value="">All</option>
       </select>
     </div>
-    <div className="gid-discovery-filters__group">
+    <div className="byt-discovery-filters__group">
       <label>Discipline:</label>
-      <select value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value)} className="gid-filter-select">
+      <select value={disciplineFilter} onChange={(e) => setDisciplineFilter(e.target.value)} className="byt-filter-select">
         <option value="">All</option>
         <option value="architect">Architects</option>
         <option value="interior_designer">Interior Designers</option>
@@ -549,16 +549,16 @@ const BatchActionsBar = ({ selectedCount, onBatchApprove, onBatchDismiss, onClea
   if (selectedCount === 0) return null;
 
   return (
-    <div className="gid-batch-actions">
-      <span className="gid-batch-actions__count">{selectedCount} selected</span>
-      <div className="gid-batch-actions__buttons">
-        <button className="gid-btn gid-btn--success-sm" onClick={onBatchApprove}>
+    <div className="byt-batch-actions">
+      <span className="byt-batch-actions__count">{selectedCount} selected</span>
+      <div className="byt-batch-actions__buttons">
+        <button className="byt-btn byt-btn--success-sm" onClick={onBatchApprove}>
           <Check size={14} /> Approve All
         </button>
-        <button className="gid-btn gid-btn--ghost gid-btn--danger" onClick={onBatchDismiss}>
+        <button className="byt-btn byt-btn--ghost byt-btn--danger" onClick={onBatchDismiss}>
           <X size={14} /> Dismiss All
         </button>
-        <button className="gid-btn gid-btn--ghost" onClick={onClearSelection}>
+        <button className="byt-btn byt-btn--ghost" onClick={onClearSelection}>
           Clear
         </button>
       </div>
@@ -570,7 +570,7 @@ const BatchActionsBar = ({ selectedCount, onBatchApprove, onBatchDismiss, onClea
 // MAIN DISCOVERY SCREEN
 // ============================================================================
 
-const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
+const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   // App context for client profile data (Phase 4)
   const { kycData, fyiData } = useAppContext();
 
@@ -601,7 +601,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       const stats = await discoveryApi.fetchQueueStats();
       setQueueStats(stats);
     } catch (err) {
-      console.error('[GID Discovery] Stats error:', err);
+      console.error('[BYT Discovery] Stats error:', err);
     }
   }, []);
 
@@ -616,7 +616,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       const data = await discoveryApi.fetchCandidates(filters);
       setCandidates(data.candidates || []);
     } catch (err) {
-      console.error('[GID Discovery] Load error:', err);
+      console.error('[BYT Discovery] Load error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -655,7 +655,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       // Refresh queue stats
       loadQueueStats();
     } catch (err) {
-      console.error('[GID Discovery] AI search error:', err);
+      console.error('[BYT Discovery] AI search error:', err);
       setError(err.message);
     } finally {
       setAiSearching(false);
@@ -675,7 +675,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       }
       loadQueueStats();
     } catch (err) {
-      console.error('[GID Discovery] Approve error:', err);
+      console.error('[BYT Discovery] Approve error:', err);
       alert('Failed to approve: ' + err.message);
     }
   }, [aiResults, loadQueueStats]);
@@ -694,13 +694,13 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       }
       loadQueueStats();
     } catch (err) {
-      console.error('[GID Discovery] Dismiss error:', err);
+      console.error('[BYT Discovery] Dismiss error:', err);
       alert('Failed to dismiss: ' + err.message);
     }
   }, [aiResults, loadQueueStats]);
 
   const handleImport = useCallback(async (candidate) => {
-    if (!window.confirm(`Import "${candidate.firm_name}" to the GID Registry?`)) return;
+    if (!window.confirm(`Import "${candidate.firm_name}" to the BYT Registry?`)) return;
     try {
       const result = await discoveryApi.importCandidate(candidate.id);
       setCandidates(prev => prev.map(c =>
@@ -709,7 +709,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       loadQueueStats();
       if (onImportComplete) onImportComplete();
     } catch (err) {
-      console.error('[GID Discovery] Import error:', err);
+      console.error('[BYT Discovery] Import error:', err);
       alert('Failed to import: ' + err.message);
     }
   }, [loadQueueStats, onImportComplete]);
@@ -750,15 +750,15 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   }, [selectedIds, loadQueueStats]);
 
   return (
-    <div className="gid-discovery">
+    <div className="byt-discovery">
       <SubModeTabs subMode={subMode} setSubMode={setSubMode} queueStats={queueStats} />
 
       {/* Error display */}
       {error && (
-        <div className="gid-error">
+        <div className="byt-error">
           <AlertTriangle size={20} />
           <p>{error}</p>
-          <button className="gid-btn gid-btn--ghost" onClick={() => setError(null)}>
+          <button className="byt-btn byt-btn--ghost" onClick={() => setError(null)}>
             <X size={14} /> Dismiss
           </button>
         </div>
@@ -771,7 +771,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
 
       {/* AI Discovery */}
       {subMode === 'ai' && (
-        <div className="gid-discovery-ai">
+        <div className="byt-discovery-ai">
           <AIDiscoveryForm
             onSearch={handleAISearch}
             isSearching={aiSearching}
@@ -782,28 +782,28 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
 
           {/* AI Results */}
           {aiResults && (
-            <div className="gid-discovery-ai__results">
-              <div className="gid-discovery-ai__results-header">
+            <div className="byt-discovery-ai__results">
+              <div className="byt-discovery-ai__results-header">
                 <h3>
                   Discovery Results
-                  <span className="gid-discovery-ai__results-count">
+                  <span className="byt-discovery-ai__results-count">
                     {aiResults.inserted} new candidate{aiResults.inserted !== 1 ? 's' : ''} found
                   </span>
                 </h3>
                 {aiResults.duplicates_skipped?.length > 0 && (
-                  <p className="gid-discovery-ai__duplicates">
+                  <p className="byt-discovery-ai__duplicates">
                     {aiResults.duplicates_skipped.length} duplicate{aiResults.duplicates_skipped.length !== 1 ? 's' : ''} skipped: {aiResults.duplicates_skipped.join(', ')}
                   </p>
                 )}
               </div>
 
               {(aiResults.candidates || []).length === 0 && (
-                <div className="gid-empty gid-empty--compact">
+                <div className="byt-empty byt-empty--compact">
                   <p>No new candidates found. Try broadening your criteria.</p>
                 </div>
               )}
 
-              <div className="gid-candidate-grid">
+              <div className="byt-candidate-grid">
                 {(aiResults.candidates || []).map(candidate => (
                   <CandidateCard
                     key={candidate.id}
@@ -821,7 +821,7 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
 
       {/* Import Queue */}
       {subMode === 'queue' && (
-        <div className="gid-discovery-queue">
+        <div className="byt-discovery-queue">
           <QueueFilterBar
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
@@ -838,18 +838,18 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
           />
 
           {loading && (
-            <div className="gid-loading">
+            <div className="byt-loading">
               <RefreshCw size={24} className="spinning" />
               <p>Loading discovery queue...</p>
             </div>
           )}
 
           {!loading && candidates.length === 0 && (
-            <div className="gid-empty">
+            <div className="byt-empty">
               <Inbox size={48} />
               <h3>Import Queue Empty</h3>
               <p>Run an AI Discovery search to find consultant candidates, or add candidates manually.</p>
-              <button className="gid-btn gid-btn--primary" onClick={() => setSubMode('ai')}>
+              <button className="byt-btn byt-btn--primary" onClick={() => setSubMode('ai')}>
                 <Zap size={16} /> Start AI Discovery
               </button>
             </div>
@@ -857,13 +857,13 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
 
           {!loading && candidates.length > 0 && (
             <>
-              <div className="gid-discovery-queue__summary">
+              <div className="byt-discovery-queue__summary">
                 Showing {candidates.length} candidate{candidates.length !== 1 ? 's' : ''}
-                <button className="gid-btn gid-btn--ghost" onClick={loadCandidates}>
+                <button className="byt-btn byt-btn--ghost" onClick={loadCandidates}>
                   <RefreshCw size={14} /> Refresh
                 </button>
               </div>
-              <div className="gid-candidate-grid">
+              <div className="byt-candidate-grid">
                 {candidates.map(candidate => (
                   <CandidateCard
                     key={candidate.id}
@@ -884,4 +884,4 @@ const GIDDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   );
 };
 
-export default GIDDiscoveryScreen;
+export default BYTDiscoveryScreen;

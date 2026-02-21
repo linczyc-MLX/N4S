@@ -1,13 +1,13 @@
 /**
- * GIDDocumentation.jsx
+ * BYTDocumentation.jsx
  *
- * In-app documentation for the GID (Get It Done) module.
+ * In-app documentation for the BYT (Build Your Team) module.
  * Updated for Phase 5: Full 5-tab structure with RFQ Pipeline & Synergy Sandbox.
  *
  * REFORMATTED to match N4S standard documentation pattern (KYC, FYI, KYM style).
  *
  * Tabs:
- * - Overview: What GID does, disciplines, data flow, architecture
+ * - Overview: What BYT does, disciplines, data flow, architecture
  * - Workflow: Step-by-step from registry to team synergy
  * - Gates: Prerequisite gates for matching
  * - Reference: Scoring engine details, RFQ pipeline, terminology
@@ -84,10 +84,10 @@ function OverviewTab() {
   return (
     <div className="doc-tab-content">
       <div className="doc-card">
-        <h2 className="doc-section-title">What Is GID?</h2>
+        <h2 className="doc-section-title">What Is BYT?</h2>
         <p className="doc-paragraph">
-          GID (Get It Done) curates and matches creative, project management, and delivery team consultants
-          to support the client's luxury residential project. Instead of "who do we know?", GID asks
+          BYT (Build Your Team) curates and matches creative, project management, and delivery team consultants
+          to support the client's luxury residential project. Instead of "who do we know?", BYT asks
           <strong> "who's actually delivering at this level, in this location, right now?"</strong>
         </p>
         <p className="doc-paragraph">
@@ -182,7 +182,7 @@ function OverviewTab() {
 
       <ExpandableSection title="Architecture — Dual Backend">
         <p className="doc-paragraph">
-          GID spans two backends. The main N4S app on IONOS handles the consultant registry
+          BYT spans two backends. The main N4S app on IONOS handles the consultant registry
           and engagement pipeline. The RFQ scoring engine runs on a dedicated VPS with PostgreSQL.
         </p>
 
@@ -225,7 +225,7 @@ function OverviewTab() {
 
       <ExpandableSection title="Data Flow">
         <p className="doc-paragraph">
-          GID reads from <strong>KYC</strong> (location, budget, style preferences), <strong>FYI</strong> (program
+          BYT reads from <strong>KYC</strong> (location, budget, style preferences), <strong>FYI</strong> (program
           complexity, features), and <strong>MVP</strong> (design brief) to match consultants.
         </p>
         <p className="doc-paragraph">
@@ -235,13 +235,13 @@ function OverviewTab() {
 
         <div className="doc-formula">
           <strong>Data Path Summary</strong>
-          <code>KYC → Location + Budget + Style → GID Shortlist → Send RFQ → Score Response → Matchmaking → Synergy → LCD Portal</code>
+          <code>KYC → Location + Budget + Style → BYT Shortlist → Send RFQ → Score Response → Matchmaking → Synergy → LCD Portal</code>
         </div>
       </ExpandableSection>
 
       <ExpandableSection title="Evidence-Based Curation">
         <p className="doc-paragraph">
-          Every consultant in the GID Registry is backed by verifiable data — building permits,
+          Every consultant in the BYT Registry is backed by verifiable data — building permits,
           publication features, award records, professional directories, and real estate reverse-engineering.
           Source attribution is tracked for every entry.
         </p>
@@ -292,9 +292,9 @@ function WorkflowTab() {
   return (
     <div className="doc-tab-content">
       <div className="doc-card">
-        <h2 className="doc-section-title">GID Workflow</h2>
+        <h2 className="doc-section-title">BYT Workflow</h2>
         <p className="doc-paragraph">
-          The GID module has <strong>5 tabs</strong>: Registry (consultant database),
+          The BYT module has <strong>5 tabs</strong>: Registry (consultant database),
           Discovery (AI-assisted search), Shortlist (curation + RFQ dispatch),
           Matchmaking (scoring + pipeline), and Synergy Sandbox (team chemistry).
         </p>
@@ -439,7 +439,7 @@ function GatesTab() {
       <div className="doc-card">
         <h2 className="doc-section-title">Prerequisite Gates</h2>
         <p className="doc-paragraph">
-          GID operates across multiple systems. Different features require different prerequisites.
+          BYT operates across multiple systems. Different features require different prerequisites.
         </p>
       </div>
 
@@ -598,7 +598,7 @@ function ReferenceTab() {
         <h2 className="doc-section-title">Reference Guide</h2>
         <p className="doc-paragraph">
           Scoring engine architecture, RFQ pipeline details, and terminology for
-          the GID system spanning IONOS and VPS backends.
+          the BYT system spanning IONOS and VPS backends.
         </p>
       </div>
 
@@ -810,7 +810,7 @@ function ReferenceTab() {
         </dl>
       </ExpandableSection>
 
-      <ExpandableSection title="GID Terminology">
+      <ExpandableSection title="BYT Terminology">
         <dl className="doc-glossary">
           <dt>RFQ</dt>
           <dd>Request for Qualifications — a structured questionnaire sent to shortlisted
@@ -851,13 +851,13 @@ function ReferenceTab() {
 // MAIN DOCUMENTATION COMPONENT
 // =============================================================================
 
-export default function GIDDocumentation({ onClose, printAll }) {
+export default function BYTDocumentation({ onClose, printAll }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const handleExportPdf = () => {
     const link = document.createElement('a');
-    link.href = '/docs/N4S-GID-Documentation.pdf';
-    link.download = 'N4S-GID-Documentation.pdf';
+    link.href = '/docs/N4S-BYT-Documentation.pdf';
+    link.download = 'N4S-BYT-Documentation.pdf';
     link.click();
   };
 
@@ -872,7 +872,7 @@ export default function GIDDocumentation({ onClose, printAll }) {
     <div className={`doc-container ${printAll ? 'doc-print-mode' : ''}`}>
       {printAll && (
         <div className="doc-print-header">
-          <h1 className="doc-print-header__title">GID (Get It Done) — Documentation</h1>
+          <h1 className="doc-print-header__title">BYT (Build Your Team) — Documentation</h1>
           <p className="doc-print-header__subtitle">N4S — Luxury Residential Advisory Platform</p>
         </div>
       )}
@@ -882,7 +882,7 @@ export default function GIDDocumentation({ onClose, printAll }) {
             {onClose && (
               <button className="doc-close-btn" onClick={onClose}>
                 <ArrowLeft size={16} />
-                Back to GID
+                Back to BYT
               </button>
             )}
             <button className="doc-export-btn" onClick={handleExportPdf}>
@@ -891,7 +891,7 @@ export default function GIDDocumentation({ onClose, printAll }) {
             </button>
           </div>
           <h1 className="doc-title">Documentation</h1>
-          <p className="doc-subtitle">N4S GID — Get It Done Guide</p>
+          <p className="doc-subtitle">N4S BYT — Build Your Team Guide</p>
 
           {/* Tabs */}
           <div className="doc-tabs">

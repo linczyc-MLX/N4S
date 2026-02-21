@@ -1,5 +1,5 @@
 /**
- * matchingAlgorithm.js — GID Matching Engine v2.0
+ * matchingAlgorithm.js — BYT Matching Engine v2.0
  *
  * 8-dimension scoring with discipline-specific weight matrices.
  *

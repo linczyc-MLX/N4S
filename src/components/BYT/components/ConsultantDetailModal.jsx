@@ -24,31 +24,31 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
   const sources = consultant.sources || [];
 
   return (
-    <div className="gid-modal-overlay" onClick={onClose}>
-      <div className="gid-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="gid-modal__header">
+    <div className="byt-modal-overlay" onClick={onClose}>
+      <div className="byt-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="byt-modal__header">
           <div>
-            <span className="gid-modal__discipline" style={{ background: discipline.color }}>
+            <span className="byt-modal__discipline" style={{ background: discipline.color }}>
               {discipline.label}
             </span>
-            <h2 className="gid-modal__title">{consultant.firm_name}</h2>
+            <h2 className="byt-modal__title">{consultant.firm_name}</h2>
             {(consultant.first_name || consultant.last_name) && (
-              <p className="gid-modal__subtitle">{consultant.first_name} {consultant.last_name}</p>
+              <p className="byt-modal__subtitle">{consultant.first_name} {consultant.last_name}</p>
             )}
           </div>
-          <div className="gid-modal__header-actions">
-            <button className="gid-btn gid-btn--outline" onClick={() => onEdit(consultant)}>
+          <div className="byt-modal__header-actions">
+            <button className="byt-btn byt-btn--outline" onClick={() => onEdit(consultant)}>
               <Edit2 size={14} /> Edit
             </button>
-            <button className="gid-btn gid-btn--ghost" onClick={onClose}>
+            <button className="byt-btn byt-btn--ghost" onClick={onClose}>
               <X size={18} />
             </button>
           </div>
         </div>
 
-        <div className="gid-modal__body">
+        <div className="byt-modal__body">
           {/* Quick Stats */}
-          <div className="gid-detail-stats">
+          <div className="byt-detail-stats">
             {consultant.hq_city && (
               <span><MapPin size={14} /> {consultant.hq_city}{consultant.hq_state ? `, ${consultant.hq_state}` : ''}</span>
             )}
@@ -68,16 +68,16 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Bio */}
           {consultant.bio && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>About</h3>
               <p>{consultant.bio}</p>
             </div>
           )}
 
           {/* Contact */}
-          <div className="gid-detail-section">
+          <div className="byt-detail-section">
             <h3>Contact</h3>
-            <div className="gid-detail-contact">
+            <div className="byt-detail-contact">
               {consultant.phone && <a href={`tel:${consultant.phone}`}><Phone size={14} /> {consultant.phone}</a>}
               {consultant.email && <a href={`mailto:${consultant.email}`}><Mail size={14} /> {consultant.email}</a>}
               {consultant.website && <a href={consultant.website} target="_blank" rel="noopener noreferrer"><Globe size={14} /> Website <ExternalLink size={10} /></a>}
@@ -87,19 +87,19 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Specialties & Certifications */}
           {((consultant.specialties?.length > 0) || (consultant.certifications?.length > 0)) && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Specialties & Certifications</h3>
               {consultant.specialties?.length > 0 && (
-                <div className="gid-detail-tags">
+                <div className="byt-detail-tags">
                   {consultant.specialties.map((s, i) => (
-                    <span key={i} className="gid-tag">{s}</span>
+                    <span key={i} className="byt-tag">{s}</span>
                   ))}
                 </div>
               )}
               {consultant.certifications?.length > 0 && (
-                <div className="gid-detail-tags" style={{ marginTop: '0.5rem' }}>
+                <div className="byt-detail-tags" style={{ marginTop: '0.5rem' }}>
                   {consultant.certifications.map((c, i) => (
-                    <span key={i} className="gid-tag gid-tag--cert"><Award size={10} /> {c}</span>
+                    <span key={i} className="byt-tag byt-tag--cert"><Award size={10} /> {c}</span>
                   ))}
                 </div>
               )}
@@ -108,11 +108,11 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Service Areas */}
           {consultant.service_areas?.length > 0 && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Service Areas</h3>
-              <div className="gid-detail-tags">
+              <div className="byt-detail-tags">
                 {consultant.service_areas.map((s, i) => (
-                  <span key={i} className="gid-tag gid-tag--area">{s}</span>
+                  <span key={i} className="byt-tag byt-tag--area">{s}</span>
                 ))}
               </div>
             </div>
@@ -120,9 +120,9 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Budget Range */}
           {(consultant.min_budget || consultant.max_budget) && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Project Budget Range</h3>
-              <p className="gid-detail-budget">
+              <p className="byt-detail-budget">
                 ${((consultant.min_budget || 0) / 1e6).toFixed(1)}M – ${((consultant.max_budget || 0) / 1e6).toFixed(1)}M
               </p>
             </div>
@@ -130,25 +130,25 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Portfolio */}
           {portfolio.length > 0 && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Portfolio ({portfolio.length} projects)</h3>
-              <div className="gid-portfolio-list">
+              <div className="byt-portfolio-list">
                 {portfolio.map(p => (
-                  <div key={p.id} className="gid-portfolio-item">
-                    <div className="gid-portfolio-item__header">
+                  <div key={p.id} className="byt-portfolio-item">
+                    <div className="byt-portfolio-item__header">
                       <h4>{p.project_name}</h4>
-                      {p.award_winner && <Award size={14} className="gid-gold" />}
+                      {p.award_winner && <Award size={14} className="byt-gold" />}
                     </div>
-                    <div className="gid-portfolio-item__meta">
+                    <div className="byt-portfolio-item__meta">
                       {p.location_city && <span>{p.location_city}{p.location_state ? `, ${p.location_state}` : ''}</span>}
                       {p.completion_year && <span>{p.completion_year}</span>}
                       {p.square_footage && <span>{Number(p.square_footage).toLocaleString()} SF</span>}
                       {p.architectural_style && <span>{p.architectural_style}</span>}
                     </div>
-                    {p.description && <p className="gid-portfolio-item__desc">{p.description}</p>}
+                    {p.description && <p className="byt-portfolio-item__desc">{p.description}</p>}
                     {p.features?.length > 0 && (
-                      <div className="gid-detail-tags">
-                        {p.features.map((f, i) => <span key={i} className="gid-tag gid-tag--small">{f}</span>)}
+                      <div className="byt-detail-tags">
+                        {p.features.map((f, i) => <span key={i} className="byt-tag byt-tag--small">{f}</span>)}
                       </div>
                     )}
                   </div>
@@ -159,18 +159,18 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Reviews */}
           {reviews.length > 0 && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Reviews ({reviews.length})</h3>
               {reviews.map(r => (
-                <div key={r.id} className="gid-review-item">
-                  <div className="gid-review-item__header">
-                    <div className="gid-review-item__stars">
+                <div key={r.id} className="byt-review-item">
+                  <div className="byt-review-item__header">
+                    <div className="byt-review-item__stars">
                       {[1,2,3,4,5].map(i => (
                         <Star key={i} size={14} fill={i <= r.rating ? '#c9a227' : 'none'} color={i <= r.rating ? '#c9a227' : '#e5e5e0'} />
                       ))}
                     </div>
-                    {r.reviewer_name && <span className="gid-review-item__author">{r.reviewer_name}</span>}
-                    {r.verified_client && <CheckCircle2 size={12} className="gid-green" />}
+                    {r.reviewer_name && <span className="byt-review-item__author">{r.reviewer_name}</span>}
+                    {r.verified_client && <CheckCircle2 size={12} className="byt-green" />}
                   </div>
                   {r.review_text && <p>{r.review_text}</p>}
                 </div>
@@ -180,11 +180,11 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Sources */}
           {sources.length > 0 && (
-            <div className="gid-detail-section">
+            <div className="byt-detail-section">
               <h3>Discovery Sources</h3>
               {sources.map(s => (
-                <div key={s.id} className="gid-source-item">
-                  <span className="gid-tag">{s.source_type}</span>
+                <div key={s.id} className="byt-source-item">
+                  <span className="byt-tag">{s.source_type}</span>
                   <span>{s.source_name}</span>
                   {s.source_url && (
                     <a href={s.source_url} target="_blank" rel="noopener noreferrer">
@@ -198,7 +198,7 @@ const ConsultantDetailModal = ({ consultant, onClose, onEdit }) => {
 
           {/* Internal Notes */}
           {consultant.notes && (
-            <div className="gid-detail-section gid-detail-section--notes">
+            <div className="byt-detail-section byt-detail-section--notes">
               <h3>Internal Notes</h3>
               <p>{consultant.notes}</p>
             </div>

@@ -1,5 +1,5 @@
 /**
- * GIDSynergySandboxScreen.jsx — Tab 5: Synergy Sandbox
+ * BYTSynergySandboxScreen.jsx — Tab 5: Synergy Sandbox
  * 
  * Team combination testing with real-time chemistry scoring.
  * Drag candidates into 4 discipline slots, see synergy score,
@@ -24,7 +24,7 @@ const DISCIPLINE_META = {
   gc: { label: 'General Contractor', color: '#C4A484', abbrev: 'GC' }
 };
 
-export default function GIDSynergySandboxScreen() {
+export default function BYTSynergySandboxScreen() {
   const { projectData } = useAppContext();
   const projectId = projectData?.project_id;
 
@@ -194,9 +194,9 @@ export default function GIDSynergySandboxScreen() {
   const totalCandidates = Object.values(candidates).reduce((sum, arr) => sum + arr.length, 0);
 
   return (
-    <div className="gid-synergy">
+    <div className="byt-synergy">
       {/* Header */}
-      <div className="gid-synergy__header">
+      <div className="byt-synergy__header">
         <div>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: '#1e3a5f', margin: 0 }}>
             Synergy Sandbox
@@ -206,7 +206,7 @@ export default function GIDSynergySandboxScreen() {
           </p>
         </div>
         <button
-          className="gid-btn gid-btn--primary"
+          className="byt-btn byt-btn--primary"
           onClick={handleSimulate}
           disabled={simulating || Object.values(teamSlots).filter(Boolean).length < 2}
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
@@ -223,20 +223,20 @@ export default function GIDSynergySandboxScreen() {
       )}
 
       {/* Team Slots */}
-      <div className="gid-synergy__slots">
+      <div className="byt-synergy__slots">
         {Object.entries(DISCIPLINE_META).map(([disc, meta]) => {
           const assigned = teamSlots[disc];
           const pool = candidates[disc] || [];
 
           return (
-            <div key={disc} className="gid-synergy__slot" style={{ borderTopColor: meta.color }}>
-              <div className="gid-synergy__slot-label" style={{ color: meta.color }}>
+            <div key={disc} className="byt-synergy__slot" style={{ borderTopColor: meta.color }}>
+              <div className="byt-synergy__slot-label" style={{ color: meta.color }}>
                 {meta.abbrev}
               </div>
-              <div className="gid-synergy__slot-title">{meta.label}</div>
+              <div className="byt-synergy__slot-title">{meta.label}</div>
 
               {assigned ? (
-                <div className="gid-synergy__assigned">
+                <div className="byt-synergy__assigned">
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{assigned.consultant_name}</div>
                   <div style={{ fontSize: 12, color: '#6b6b6b' }}>{assigned.firm_name}</div>
                   {assigned.score && (
@@ -252,10 +252,10 @@ export default function GIDSynergySandboxScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="gid-synergy__empty">
+                <div className="byt-synergy__empty">
                   {pool.length > 0 ? (
                     <select
-                      className="gid-synergy__select"
+                      className="byt-synergy__select"
                       value=""
                       onChange={(e) => {
                         const cand = pool.find(c => c.id === e.target.value);
@@ -281,17 +281,17 @@ export default function GIDSynergySandboxScreen() {
 
       {/* Synergy Results */}
       {synergyResult && (
-        <div className="gid-synergy__results">
+        <div className="byt-synergy__results">
           {/* Overall Score */}
-          <div className="gid-synergy__score-card">
-            <div className="gid-synergy__score-label">Team Synergy Score</div>
-            <div className="gid-synergy__score-value" style={{ color: tierColor(synergyResult.overall_score) }}>
+          <div className="byt-synergy__score-card">
+            <div className="byt-synergy__score-label">Team Synergy Score</div>
+            <div className="byt-synergy__score-value" style={{ color: tierColor(synergyResult.overall_score) }}>
               {synergyResult.overall_score}
               <span style={{ fontSize: 16, color: '#999' }}>/100</span>
             </div>
 
             {/* Dimension breakdown */}
-            <div className="gid-synergy__dimensions">
+            <div className="byt-synergy__dimensions">
               {[
                 { key: 'cadence_compatibility', label: 'Communication' },
                 { key: 'meeting_compatibility', label: 'Meeting Format' },
@@ -302,15 +302,15 @@ export default function GIDSynergySandboxScreen() {
               ].map(dim => {
                 const val = synergyResult.dimensions?.[dim.key] || 0;
                 return (
-                  <div key={dim.key} className="gid-synergy__dim">
-                    <div className="gid-synergy__dim-label">{dim.label}</div>
-                    <div className="gid-synergy__dim-bar">
+                  <div key={dim.key} className="byt-synergy__dim">
+                    <div className="byt-synergy__dim-label">{dim.label}</div>
+                    <div className="byt-synergy__dim-bar">
                       <div
-                        className="gid-synergy__dim-fill"
+                        className="byt-synergy__dim-fill"
                         style={{ width: `${val}%`, background: tierColor(val) }}
                       />
                     </div>
-                    <div className="gid-synergy__dim-value">{Math.round(val)}</div>
+                    <div className="byt-synergy__dim-value">{Math.round(val)}</div>
                   </div>
                 );
               })}
@@ -319,9 +319,9 @@ export default function GIDSynergySandboxScreen() {
 
           {/* Conflict Nodes */}
           {synergyResult.conflict_nodes?.length > 0 && (
-            <div className="gid-synergy__panel">
+            <div className="byt-synergy__panel">
               <div
-                className="gid-synergy__panel-header"
+                className="byt-synergy__panel-header"
                 onClick={() => setExpandedNodes(!expandedNodes)}
                 style={{ cursor: 'pointer' }}
               >
@@ -330,9 +330,9 @@ export default function GIDSynergySandboxScreen() {
                 {expandedNodes ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </div>
               {expandedNodes && (
-                <div className="gid-synergy__panel-body">
+                <div className="byt-synergy__panel-body">
                   {synergyResult.conflict_nodes.map((node, i) => (
-                    <div key={i} className="gid-synergy__node">
+                    <div key={i} className="byt-synergy__node">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong style={{ fontSize: 13 }}>{node.pair}</strong>
                         <span style={{ fontSize: 11, color: riskColor(node.risk_level), fontWeight: 600, textTransform: 'uppercase' }}>
@@ -354,9 +354,9 @@ export default function GIDSynergySandboxScreen() {
 
           {/* Complementary Signals */}
           {synergyResult.complementary_signals?.length > 0 && (
-            <div className="gid-synergy__panel">
+            <div className="byt-synergy__panel">
               <div
-                className="gid-synergy__panel-header"
+                className="byt-synergy__panel-header"
                 onClick={() => setExpandedSignals(!expandedSignals)}
                 style={{ cursor: 'pointer' }}
               >
@@ -365,9 +365,9 @@ export default function GIDSynergySandboxScreen() {
                 {expandedSignals ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </div>
               {expandedSignals && (
-                <div className="gid-synergy__panel-body">
+                <div className="byt-synergy__panel-body">
                   {synergyResult.complementary_signals.map((signal, i) => (
-                    <div key={i} className="gid-synergy__signal">
+                    <div key={i} className="byt-synergy__signal">
                       <strong style={{ fontSize: 13 }}>{signal.pair}</strong>
                       <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{signal.description}</div>
                     </div>
@@ -379,8 +379,8 @@ export default function GIDSynergySandboxScreen() {
 
           {/* Feature Coverage */}
           {synergyResult.feature_coverage && (
-            <div className="gid-synergy__panel">
-              <div className="gid-synergy__panel-header">
+            <div className="byt-synergy__panel">
+              <div className="byt-synergy__panel-header">
                 <Target size={16} style={{ color: '#1e3a5f' }} />
                 <span>
                   FYI Feature Coverage: {synergyResult.feature_coverage.coverage_pct}%
@@ -388,7 +388,7 @@ export default function GIDSynergySandboxScreen() {
                 </span>
               </div>
               {synergyResult.feature_coverage.gaps?.length > 0 && (
-                <div className="gid-synergy__panel-body">
+                <div className="byt-synergy__panel-body">
                   <div style={{ fontSize: 12, color: '#d32f2f', fontWeight: 500, marginBottom: 4 }}>
                     Missing coverage:
                   </div>
@@ -412,7 +412,7 @@ export default function GIDSynergySandboxScreen() {
                 borderRadius: 6, fontSize: 13, fontFamily: 'Inter, sans-serif'
               }}
             />
-            <button className="gid-btn gid-btn--secondary" onClick={handleSaveConfig} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button className="byt-btn byt-btn--secondary" onClick={handleSaveConfig} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Save size={14} /> Save Team
             </button>
           </div>
@@ -421,13 +421,13 @@ export default function GIDSynergySandboxScreen() {
 
       {/* Saved Configurations */}
       {savedConfigs.length > 0 && (
-        <div className="gid-synergy__saved">
+        <div className="byt-synergy__saved">
           <h4 style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, color: '#1e3a5f', marginBottom: 12 }}>
             Saved Configurations
           </h4>
-          <div className="gid-synergy__config-list">
+          <div className="byt-synergy__config-list">
             {savedConfigs.map(config => (
-              <div key={config.id} className="gid-synergy__config-card">
+              <div key={config.id} className="byt-synergy__config-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <strong style={{ fontSize: 14 }}>{config.config_name}</strong>

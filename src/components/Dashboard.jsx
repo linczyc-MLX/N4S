@@ -56,7 +56,7 @@ const N4S_MODULES = {
 const N4S_PHASES = {
   P1: { name: 'Ask the Right Questions', description: 'Discovery & Requirements' },
   P2: { name: 'Have a Story to Tell', description: 'Analysis & Synthesis' },
-  P3: { name: 'Get It Done', description: 'Execution & Delivery' },
+  P3: { name: 'Build Your Team', description: 'Execution & Delivery' },
 };
 
 // ============================================================================

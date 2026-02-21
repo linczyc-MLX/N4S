@@ -1,5 +1,5 @@
 /**
- * GIDModule.jsx — Get It Done
+ * BYTModule.jsx — Build Your Team
  * 
  * Curate and match creative, project management, and delivery team consultants.
  * 
@@ -18,14 +18,14 @@ import {
   Building2, CheckCircle2, Clock, AlertTriangle, RefreshCw, Upload, Zap
 } from 'lucide-react';
 import { useAppContext } from '../../contexts/AppContext';
-import GIDDocumentation from './GIDDocumentation';
+import BYTDocumentation from './BYTDocumentation';
 import AddConsultantForm from './components/AddConsultantForm';
 import ConsultantDetailModal from './components/ConsultantDetailModal';
-import GIDShortlistScreen from './screens/GIDShortlistScreen';
-import GIDDiscoveryScreen from './screens/GIDDiscoveryScreen';
-import GIDMatchmakingScreen from './screens/GIDMatchmakingScreen';
-import GIDSynergySandboxScreen from './screens/GIDSynergySandboxScreen';
-import './GIDModule.css';
+import BYTShortlistScreen from './screens/BYTShortlistScreen';
+import BYTDiscoveryScreen from './screens/BYTDiscoveryScreen';
+import BYTMatchmakingScreen from './screens/BYTMatchmakingScreen';
+import BYTSynergySandboxScreen from './screens/BYTSynergySandboxScreen';
+import './BYTModule.css';
 
 // N4S Brand Colors
 const COLORS = {
@@ -171,40 +171,40 @@ const ConsultantCard = ({ consultant, onView, onEdit, onArchive }) => {
   const VerifIcon = verification.icon;
 
   return (
-    <div className="gid-consultant-card">
-      <div className="gid-consultant-card__header">
-        <div className="gid-consultant-card__discipline" style={{ background: discipline.color }}>
+    <div className="byt-consultant-card">
+      <div className="byt-consultant-card__header">
+        <div className="byt-consultant-card__discipline" style={{ background: discipline.color }}>
           {discipline.label}
         </div>
-        <div className="gid-consultant-card__verification" style={{ color: verification.color }}>
+        <div className="byt-consultant-card__verification" style={{ color: verification.color }}>
           <VerifIcon size={14} />
           <span>{verification.label}</span>
         </div>
       </div>
 
-      <div className="gid-consultant-card__body">
-        <h3 className="gid-consultant-card__firm">{consultant.firm_name}</h3>
+      <div className="byt-consultant-card__body">
+        <h3 className="byt-consultant-card__firm">{consultant.firm_name}</h3>
         {(consultant.first_name || consultant.last_name) && (
-          <p className="gid-consultant-card__name">
+          <p className="byt-consultant-card__name">
             {consultant.first_name} {consultant.last_name}
           </p>
         )}
 
-        <div className="gid-consultant-card__meta">
+        <div className="byt-consultant-card__meta">
           {consultant.hq_city && (
-            <span className="gid-meta-item">
+            <span className="byt-meta-item">
               <MapPin size={12} />
               {consultant.hq_city}{consultant.hq_state ? `, ${consultant.hq_state}` : ''}
             </span>
           )}
           {consultant.years_experience && (
-            <span className="gid-meta-item">
+            <span className="byt-meta-item">
               <Briefcase size={12} />
               {consultant.years_experience} yrs
             </span>
           )}
           {consultant.avg_rating > 0 && (
-            <span className="gid-meta-item">
+            <span className="byt-meta-item">
               <Star size={12} />
               {Number(consultant.avg_rating).toFixed(1)} ({consultant.review_count})
             </span>
@@ -212,31 +212,31 @@ const ConsultantCard = ({ consultant, onView, onEdit, onArchive }) => {
         </div>
 
         {consultant.specialties && consultant.specialties.length > 0 && (
-          <div className="gid-consultant-card__tags">
+          <div className="byt-consultant-card__tags">
             {consultant.specialties.slice(0, 4).map((s, i) => (
-              <span key={i} className="gid-tag">{s}</span>
+              <span key={i} className="byt-tag">{s}</span>
             ))}
             {consultant.specialties.length > 4 && (
-              <span className="gid-tag gid-tag--more">+{consultant.specialties.length - 4}</span>
+              <span className="byt-tag byt-tag--more">+{consultant.specialties.length - 4}</span>
             )}
           </div>
         )}
 
         {(consultant.min_budget || consultant.max_budget) && (
-          <p className="gid-consultant-card__budget">
+          <p className="byt-consultant-card__budget">
             Budget range: ${((consultant.min_budget || 0) / 1e6).toFixed(1)}M – ${((consultant.max_budget || 0) / 1e6).toFixed(1)}M
           </p>
         )}
       </div>
 
-      <div className="gid-consultant-card__actions">
-        <button className="gid-btn gid-btn--ghost" onClick={() => onView(consultant)} title="View details">
+      <div className="byt-consultant-card__actions">
+        <button className="byt-btn byt-btn--ghost" onClick={() => onView(consultant)} title="View details">
           <Eye size={14} /> View
         </button>
-        <button className="gid-btn gid-btn--ghost" onClick={() => onEdit(consultant)} title="Edit">
+        <button className="byt-btn byt-btn--ghost" onClick={() => onEdit(consultant)} title="Edit">
           <Edit2 size={14} /> Edit
         </button>
-        <button className="gid-btn gid-btn--ghost gid-btn--danger" onClick={() => onArchive(consultant)} title="Archive">
+        <button className="byt-btn byt-btn--ghost byt-btn--danger" onClick={() => onArchive(consultant)} title="Archive">
           <Trash2 size={14} />
         </button>
       </div>
@@ -255,30 +255,30 @@ const StatsBar = ({ stats }) => {
   (stats.byRole || []).forEach(r => { roleMap[r.role] = parseInt(r.count); });
 
   return (
-    <div className="gid-stats-bar">
-      <div className="gid-stat">
-        <span className="gid-stat__value">{stats.totalActive || 0}</span>
-        <span className="gid-stat__label">Total Active</span>
+    <div className="byt-stats-bar">
+      <div className="byt-stat">
+        <span className="byt-stat__value">{stats.totalActive || 0}</span>
+        <span className="byt-stat__label">Total Active</span>
       </div>
-      <div className="gid-stat">
-        <span className="gid-stat__value">{roleMap.architect || 0}</span>
-        <span className="gid-stat__label">Architects</span>
+      <div className="byt-stat">
+        <span className="byt-stat__value">{roleMap.architect || 0}</span>
+        <span className="byt-stat__label">Architects</span>
       </div>
-      <div className="gid-stat">
-        <span className="gid-stat__value">{roleMap.interior_designer || 0}</span>
-        <span className="gid-stat__label">Interior Designers</span>
+      <div className="byt-stat">
+        <span className="byt-stat__value">{roleMap.interior_designer || 0}</span>
+        <span className="byt-stat__label">Interior Designers</span>
       </div>
-      <div className="gid-stat">
-        <span className="gid-stat__value">{roleMap.pm || 0}</span>
-        <span className="gid-stat__label">Project Managers</span>
+      <div className="byt-stat">
+        <span className="byt-stat__value">{roleMap.pm || 0}</span>
+        <span className="byt-stat__label">Project Managers</span>
       </div>
-      <div className="gid-stat">
-        <span className="gid-stat__value">{roleMap.gc || 0}</span>
-        <span className="gid-stat__label">Gen. Contractors</span>
+      <div className="byt-stat">
+        <span className="byt-stat__value">{roleMap.gc || 0}</span>
+        <span className="byt-stat__label">Gen. Contractors</span>
       </div>
-      <div className="gid-stat">
-        <span className="gid-stat__value">{stats.totalProjects || 0}</span>
-        <span className="gid-stat__label">Portfolio Projects</span>
+      <div className="byt-stat">
+        <span className="byt-stat__value">{stats.totalProjects || 0}</span>
+        <span className="byt-stat__label">Portfolio Projects</span>
       </div>
     </div>
   );
@@ -288,7 +288,7 @@ const StatsBar = ({ stats }) => {
 // MAIN MODULE COMPONENT
 // ============================================================================
 
-const GIDModule = ({ showDocs, onCloseDocs }) => {
+const BYTModule = ({ showDocs, onCloseDocs }) => {
   const { hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
 
   // Local state
@@ -326,7 +326,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
       setConsultants(consultantData.consultants || []);
       setStats(statsData);
     } catch (err) {
-      console.error('[GID] Load error:', err);
+      console.error('[BYT] Load error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -361,7 +361,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
       setSelectedConsultant(full);
       setDetailModalOpen(true);
     } catch (err) {
-      console.error('[GID] Fetch detail error:', err);
+      console.error('[BYT] Fetch detail error:', err);
     }
   }, []);
 
@@ -371,7 +371,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
       setSelectedConsultant(full);
       setViewMode('edit');
     } catch (err) {
-      console.error('[GID] Fetch for edit error:', err);
+      console.error('[BYT] Fetch for edit error:', err);
     }
   }, []);
 
@@ -381,7 +381,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
       await gidApi.archiveConsultant(consultant.id);
       loadConsultants();
     } catch (err) {
-      console.error('[GID] Archive error:', err);
+      console.error('[BYT] Archive error:', err);
     }
   }, [loadConsultants]);
 
@@ -412,7 +412,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
       setSelectedConsultant(null);
       loadConsultants();
     } catch (err) {
-      console.error('[GID] Save error:', err);
+      console.error('[BYT] Save error:', err);
       alert('Failed to save consultant: ' + err.message);
     }
   }, [viewMode, selectedConsultant, loadConsultants]);
@@ -432,13 +432,13 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
   return (
     <div className={`n4s-docs-layout ${showDocs ? 'n4s-docs-layout--with-docs' : ''}`}>
       <div className="n4s-docs-layout__main">
-        <div className="gid-module">
+        <div className="byt-module">
 
           {/* Module Header */}
           <header className="module-header">
             <div className="module-header__content">
               <div className="module-header__title-group">
-                <h1 className="module-header__title">GID – Get It Done</h1>
+                <h1 className="module-header__title">BYT – Build Your Team</h1>
                 <p className="module-header__subtitle">Curate and match your creative and delivery team</p>
               </div>
 
@@ -470,38 +470,38 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
           </header>
 
           {/* Screen Tabs */}
-          <div className="gid-screen-tabs">
+          <div className="byt-screen-tabs">
             <button
-              className={`gid-screen-tab ${viewMode === 'registry' || viewMode === 'add' || viewMode === 'edit' ? 'gid-screen-tab--active' : ''}`}
+              className={`byt-screen-tab ${viewMode === 'registry' || viewMode === 'add' || viewMode === 'edit' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('registry'); setSelectedConsultant(null); }}
             >
               <Users size={16} />
               Registry
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'discovery' ? 'gid-screen-tab--active' : ''}`}
+              className={`byt-screen-tab ${viewMode === 'discovery' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('discovery'); setSelectedConsultant(null); }}
             >
               <Search size={16} />
               Discovery
-              {queueCount > 0 && <span className="gid-queue-badge">{queueCount}</span>}
+              {queueCount > 0 && <span className="byt-queue-badge">{queueCount}</span>}
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'shortlist' ? 'gid-screen-tab--active' : ''}`}
+              className={`byt-screen-tab ${viewMode === 'shortlist' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('shortlist'); setSelectedConsultant(null); }}
             >
               <Filter size={16} />
               Shortlist
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'matchmaking' ? 'gid-screen-tab--active' : ''}`}
+              className={`byt-screen-tab ${viewMode === 'matchmaking' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('matchmaking'); setSelectedConsultant(null); }}
             >
               <Briefcase size={16} />
               Matchmaking
             </button>
             <button
-              className={`gid-screen-tab ${viewMode === 'synergy' ? 'gid-screen-tab--active' : ''}`}
+              className={`byt-screen-tab ${viewMode === 'synergy' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('synergy'); setSelectedConsultant(null); }}
             >
               <Zap size={16} />
@@ -514,30 +514,30 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
 
           {/* Registry Screen */}
           {viewMode === 'registry' && (
-            <div className="gid-registry">
+            <div className="byt-registry">
               {/* Toolbar */}
-              <div className="gid-toolbar">
-                <div className="gid-toolbar__search">
-                  <Search size={16} className="gid-toolbar__search-icon" />
+              <div className="byt-toolbar">
+                <div className="byt-toolbar__search">
+                  <Search size={16} className="byt-toolbar__search-icon" />
                   <input
                     type="text"
                     placeholder="Search firms, names..."
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    className="gid-toolbar__search-input"
+                    className="byt-toolbar__search-input"
                   />
                   {searchInput && (
-                    <button className="gid-toolbar__search-clear" onClick={() => setSearchInput('')}>
+                    <button className="byt-toolbar__search-clear" onClick={() => setSearchInput('')}>
                       <X size={14} />
                     </button>
                   )}
                 </div>
 
-                <div className="gid-toolbar__filters">
+                <div className="byt-toolbar__filters">
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="gid-filter-select"
+                    className="byt-filter-select"
                   >
                     <option value="">All Disciplines</option>
                     <option value="architect">Architects</option>
@@ -549,7 +549,7 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
                   <select
                     value={verificationFilter}
                     onChange={(e) => setVerificationFilter(e.target.value)}
-                    className="gid-filter-select"
+                    className="byt-filter-select"
                   >
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
@@ -558,11 +558,11 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
                   </select>
                 </div>
 
-                <div className="gid-toolbar__actions">
-                  <button className="gid-btn gid-btn--ghost" onClick={loadConsultants} title="Refresh">
+                <div className="byt-toolbar__actions">
+                  <button className="byt-btn byt-btn--ghost" onClick={loadConsultants} title="Refresh">
                     <RefreshCw size={16} />
                   </button>
-                  <button className="gid-btn gid-btn--primary" onClick={() => setViewMode('add')}>
+                  <button className="byt-btn byt-btn--primary" onClick={() => setViewMode('add')}>
                     <Plus size={16} />
                     Add Consultant
                   </button>
@@ -571,33 +571,33 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
 
               {/* Content */}
               {loading && (
-                <div className="gid-loading">
+                <div className="byt-loading">
                   <RefreshCw size={24} className="spinning" />
                   <p>Loading consultant registry...</p>
                 </div>
               )}
 
               {error && (
-                <div className="gid-error">
+                <div className="byt-error">
                   <AlertTriangle size={20} />
                   <p>{error}</p>
-                  <button className="gid-btn gid-btn--primary" onClick={loadConsultants}>Retry</button>
+                  <button className="byt-btn byt-btn--primary" onClick={loadConsultants}>Retry</button>
                 </div>
               )}
 
               {!loading && !error && consultants.length === 0 && (
-                <div className="gid-empty">
+                <div className="byt-empty">
                   <Users size={48} />
                   <h3>No Consultants Yet</h3>
                   <p>Start building your consultant registry by adding architects, designers, project managers, and contractors.</p>
-                  <button className="gid-btn gid-btn--primary" onClick={() => setViewMode('add')}>
+                  <button className="byt-btn byt-btn--primary" onClick={() => setViewMode('add')}>
                     <Plus size={16} /> Add First Consultant
                   </button>
                 </div>
               )}
 
               {!loading && !error && consultants.length > 0 && (
-                <div className="gid-consultant-grid">
+                <div className="byt-consultant-grid">
                   {consultants.map(c => (
                     <ConsultantCard
                       key={c.id}
@@ -624,12 +624,12 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
 
           {/* Shortlist Screen */}
           {viewMode === 'shortlist' && (
-            <GIDShortlistScreen />
+            <BYTShortlistScreen />
           )}
 
           {/* Discovery Screen */}
           {viewMode === 'discovery' && (
-            <GIDDiscoveryScreen
+            <BYTDiscoveryScreen
               onImportComplete={() => { loadConsultants(); loadQueueCount(); }}
               onQuickAdd={(prefill) => {
                 setSelectedConsultant(prefill);
@@ -640,12 +640,12 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
 
           {/* Matchmaking Screen */}
           {viewMode === 'matchmaking' && (
-            <GIDMatchmakingScreen />
+            <BYTMatchmakingScreen />
           )}
 
           {/* Synergy Sandbox Screen */}
           {viewMode === 'synergy' && (
-            <GIDSynergySandboxScreen />
+            <BYTSynergySandboxScreen />
           )}
 
           {/* Detail Modal */}
@@ -662,11 +662,11 @@ const GIDModule = ({ showDocs, onCloseDocs }) => {
 
       {showDocs && (
         <div className="n4s-docs-layout__docs">
-          <GIDDocumentation onClose={onCloseDocs} />
+          <BYTDocumentation onClose={onCloseDocs} />
         </div>
       )}
     </div>
   );
 };
 
-export default GIDModule;
+export default BYTModule;

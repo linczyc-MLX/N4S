@@ -207,7 +207,7 @@ const AlignmentBadges = ({ consultant, kycData, fyiData, compact = false }) => {
   const badges = computeAlignmentBadges(consultant, kycData, fyiData);
 
   return (
-    <div className={`gid-alignment-badges ${compact ? 'gid-alignment-badges--compact' : ''}`}>
+    <div className={`byt-alignment-badges ${compact ? 'byt-alignment-badges--compact' : ''}`}>
       {badges.map(badge => {
         const Icon = badge.icon;
         const isIndeterminate = badge.aligned === null;
@@ -215,12 +215,12 @@ const AlignmentBadges = ({ consultant, kycData, fyiData, compact = false }) => {
         return (
           <span
             key={badge.key}
-            className={`gid-alignment-badge ${
+            className={`byt-alignment-badge ${
               isIndeterminate
-                ? 'gid-alignment-badge--unknown'
+                ? 'byt-alignment-badge--unknown'
                 : badge.aligned
-                  ? 'gid-alignment-badge--aligned'
-                  : 'gid-alignment-badge--misaligned'
+                  ? 'byt-alignment-badge--aligned'
+                  : 'byt-alignment-badge--misaligned'
             }`}
             title={badge.detail}
           >

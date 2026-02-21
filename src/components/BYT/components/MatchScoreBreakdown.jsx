@@ -1,12 +1,12 @@
 /**
- * MatchScoreBreakdown.jsx — GID Match Score Visualization
+ * MatchScoreBreakdown.jsx — BYT Match Score Visualization
  *
  * Two display modes:
  *  - inline: Compact score badges for ConsultantCard in match results
  *  - expanded: Full bar chart breakdown in detail/comparison view
  *
  * Mirrors BAM v3.0 dual score pattern (Client Satisfaction + Market Appeal)
- * mapped to GID's Client Fit + Project Fit.
+ * mapped to BYT's Client Fit + Project Fit.
  */
 
 import React from 'react';
@@ -49,7 +49,7 @@ const ScoreGauge = ({ score, label, size = 'medium' }) => {
   else color = '#d32f2f'; // Red — Below
 
   return (
-    <div className="gid-score-gauge" style={{ width, textAlign: 'center' }}>
+    <div className="byt-score-gauge" style={{ width, textAlign: 'center' }}>
       <svg width={width} height={width} viewBox={`0 0 ${width} ${width}`}>
         <circle
           cx={width / 2} cy={width / 2} r={radius}
@@ -92,15 +92,15 @@ export const MatchScoreInline = ({ matchResult }) => {
   const { clientFitScore, projectFitScore, combinedScore, tier, tierColor, tierBgColor } = matchResult;
 
   return (
-    <div className="gid-match-score-inline">
-      <div className="gid-match-score-inline__gauges">
+    <div className="byt-match-score-inline">
+      <div className="byt-match-score-inline__gauges">
         <ScoreGauge score={clientFitScore} label="Client Fit" size="small" />
         <ScoreGauge score={projectFitScore} label="Project Fit" size="small" />
       </div>
-      <div className="gid-match-score-inline__combined">
-        <span className="gid-match-score-inline__value">{combinedScore}</span>
+      <div className="byt-match-score-inline__combined">
+        <span className="byt-match-score-inline__value">{combinedScore}</span>
         <span
-          className="gid-match-tier-badge"
+          className="byt-match-tier-badge"
           style={{ backgroundColor: tierBgColor, color: tierColor }}
         >
           {tier}
@@ -121,14 +121,14 @@ export const MatchScoreExpanded = ({ matchResult, showWeights = false }) => {
   const { clientFitScore, projectFitScore, combinedScore, tier, tierColor, tierBgColor, breakdown } = matchResult;
 
   return (
-    <div className="gid-match-score-expanded">
+    <div className="byt-match-score-expanded">
       {/* Dual gauges header */}
-      <div className="gid-match-score-expanded__header">
+      <div className="byt-match-score-expanded__header">
         <ScoreGauge score={clientFitScore} label="Client Fit" size="medium" />
-        <div className="gid-match-score-expanded__combined">
+        <div className="byt-match-score-expanded__combined">
           <ScoreGauge score={combinedScore} label="Combined" size="large" />
           <span
-            className="gid-match-tier-badge gid-match-tier-badge--lg"
+            className="byt-match-tier-badge byt-match-tier-badge--lg"
             style={{ backgroundColor: tierBgColor, color: tierColor }}
           >
             {tier}
@@ -138,7 +138,7 @@ export const MatchScoreExpanded = ({ matchResult, showWeights = false }) => {
       </div>
 
       {/* Dimension bars */}
-      <div className="gid-match-score-expanded__dimensions">
+      <div className="byt-match-score-expanded__dimensions">
         {(breakdown || []).map((dim) => {
           const Icon = DIMENSION_ICONS[dim.dimension] || Layers;
           const barColor = dim.normalized >= 80 ? '#c9a227'
@@ -147,23 +147,23 @@ export const MatchScoreExpanded = ({ matchResult, showWeights = false }) => {
             : '#d32f2f';
 
           return (
-            <div key={dim.dimension} className="gid-dimension-row">
-              <div className="gid-dimension-row__label">
+            <div key={dim.dimension} className="byt-dimension-row">
+              <div className="byt-dimension-row__label">
                 <Icon size={14} />
                 <span>{dim.label}</span>
               </div>
-              <div className="gid-dimension-row__bar-container">
+              <div className="byt-dimension-row__bar-container">
                 <div
-                  className="gid-dimension-row__bar"
+                  className="byt-dimension-row__bar"
                   style={{ width: `${dim.normalized}%`, backgroundColor: barColor }}
                 />
               </div>
-              <div className="gid-dimension-row__score">
-                <span className="gid-dimension-row__value">{dim.raw}</span>
-                <span className="gid-dimension-row__max">/{dim.maxRaw}</span>
+              <div className="byt-dimension-row__score">
+                <span className="byt-dimension-row__value">{dim.raw}</span>
+                <span className="byt-dimension-row__max">/{dim.maxRaw}</span>
               </div>
               {showWeights && (
-                <div className="gid-dimension-row__weights">
+                <div className="byt-dimension-row__weights">
                   <span title="Client weight">C: ×{dim.clientWeight}</span>
                   <span title="Project weight">P: ×{dim.projectWeight}</span>
                 </div>
@@ -191,18 +191,18 @@ export const MatchComparisonTable = ({ matchResults, consultants }) => {
   const dimensionKeys = matchResults[0]?.breakdown?.map(b => b.dimension) || [];
 
   return (
-    <div className="gid-match-comparison">
-      <table className="gid-match-comparison__table">
+    <div className="byt-match-comparison">
+      <table className="byt-match-comparison__table">
         <thead>
           <tr>
-            <th className="gid-match-comparison__dimension-header">Dimension</th>
+            <th className="byt-match-comparison__dimension-header">Dimension</th>
             {matchResults.map(result => {
               const c = consultantMap[result.consultantId];
               return (
-                <th key={result.consultantId} className="gid-match-comparison__consultant-header">
-                  <div className="gid-match-comparison__firm">{c?.firm_name || result.consultantName}</div>
+                <th key={result.consultantId} className="byt-match-comparison__consultant-header">
+                  <div className="byt-match-comparison__firm">{c?.firm_name || result.consultantName}</div>
                   <span
-                    className="gid-match-tier-badge"
+                    className="byt-match-tier-badge"
                     style={{ backgroundColor: result.tierBgColor, color: result.tierColor }}
                   >
                     {result.tier}
@@ -214,10 +214,10 @@ export const MatchComparisonTable = ({ matchResults, consultants }) => {
         </thead>
         <tbody>
           {/* Overall scores row */}
-          <tr className="gid-match-comparison__totals-row">
+          <tr className="byt-match-comparison__totals-row">
             <td>Combined Score</td>
             {matchResults.map(r => (
-              <td key={r.consultantId} className="gid-match-comparison__score-cell">
+              <td key={r.consultantId} className="byt-match-comparison__score-cell">
                 <strong>{r.combinedScore}</strong>
               </td>
             ))}
@@ -225,13 +225,13 @@ export const MatchComparisonTable = ({ matchResults, consultants }) => {
           <tr>
             <td>Client Fit</td>
             {matchResults.map(r => (
-              <td key={r.consultantId} className="gid-match-comparison__score-cell">{r.clientFitScore}</td>
+              <td key={r.consultantId} className="byt-match-comparison__score-cell">{r.clientFitScore}</td>
             ))}
           </tr>
           <tr>
             <td>Project Fit</td>
             {matchResults.map(r => (
-              <td key={r.consultantId} className="gid-match-comparison__score-cell">{r.projectFitScore}</td>
+              <td key={r.consultantId} className="byt-match-comparison__score-cell">{r.projectFitScore}</td>
             ))}
           </tr>
 
@@ -242,7 +242,7 @@ export const MatchComparisonTable = ({ matchResults, consultants }) => {
 
             return (
               <tr key={dimKey}>
-                <td className="gid-match-comparison__dim-label">
+                <td className="byt-match-comparison__dim-label">
                   <Icon size={12} />
                   {dimLabel}
                 </td>
@@ -255,14 +255,14 @@ export const MatchComparisonTable = ({ matchResults, consultants }) => {
                     : '#d32f2f';
 
                   return (
-                    <td key={r.consultantId} className="gid-match-comparison__bar-cell">
-                      <div className="gid-comparison-bar-container">
+                    <td key={r.consultantId} className="byt-match-comparison__bar-cell">
+                      <div className="byt-comparison-bar-container">
                         <div
-                          className="gid-comparison-bar"
+                          className="byt-comparison-bar"
                           style={{ width: `${normalized}%`, backgroundColor: barColor }}
                         />
                       </div>
-                      <span className="gid-comparison-bar-label">{dim?.raw}/{dim?.maxRaw}</span>
+                      <span className="byt-comparison-bar-label">{dim?.raw}/{dim?.maxRaw}</span>
                     </td>
                   );
                 })}

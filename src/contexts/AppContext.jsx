@@ -130,9 +130,9 @@ const initialKYSData = {
   comparisonEnabled: false,  // Multi-site comparison mode
 };
 
-// Initial GID data (Get It Done — per-project team assembly)
+// Initial BYT data (Build Your Team — per-project team assembly)
 // Consultant registry lives in its own DB tables; this tracks project-specific selections
-const initialGIDData = {
+const initialBYTData = {
   currentMatches: {},          // { architect: [...], interior_designer: [...], pm: [...], gc: [...] }
   engagements: [],             // Active engagements for this project
   teamAssembly: {
@@ -347,7 +347,7 @@ const getEmptyProjectData = () => ({
   mvpData: JSON.parse(JSON.stringify(initialMVPData)),
   kysData: JSON.parse(JSON.stringify(initialKYSData)),
   vmxData: JSON.parse(JSON.stringify(initialVMXData)),
-  gidData: JSON.parse(JSON.stringify(initialGIDData)),
+  bytData: JSON.parse(JSON.stringify(initialBYTData)),
   lcdData: JSON.parse(JSON.stringify(initialLCDData)),
   activeRespondent: 'principal',
 });
@@ -415,7 +415,7 @@ export const AppProvider = ({ children }) => {
   const mvpData = projectData.mvpData || initialMVPData;
   const kysData = projectData.kysData || initialKYSData;
   const vmxData = projectData.vmxData || initialVMXData;
-  const gidData = projectData.gidData || initialGIDData;
+  const bytData = projectData.bytData || initialBYTData;
   const lcdData = projectData.lcdData || initialLCDData;
 
   // ---------------------------------------------------------------------------
@@ -479,8 +479,8 @@ export const AppProvider = ({ children }) => {
               const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
               // Load lcdData directly (first-class data type)
               const loadedLcdData = data.lcdData || initialLCDData;
-              // Load gidData (per-project team assembly)
-              const loadedGidData = data.gidData || initialGIDData;
+              // Load bytData (per-project team assembly)
+              const loadedBytData = data.bytData || initialBYTData;
               setProjectData({
                 ...getEmptyProjectData(),
                 ...data,
@@ -496,8 +496,8 @@ export const AppProvider = ({ children }) => {
                 kysData: loadedKysData,
                 // Ensure vmxData is available at top level for component access
                 vmxData: loadedVmxData,
-                // Ensure gidData is available at top level for component access
-                gidData: loadedGidData,
+                // Ensure bytData is available at top level for component access
+                bytData: loadedBytData,
                 // Ensure lcdData is available at top level for component access
                 lcdData: loadedLcdData,
               });
@@ -634,8 +634,8 @@ export const AppProvider = ({ children }) => {
         const loadedVmxData = data.vmxData || data.fyiData?.vmxData || initialVMXData;
         // Load lcdData directly (first-class data type)
         const loadedLcdData = data.lcdData || initialLCDData;
-        // Load gidData (per-project team assembly)
-        const loadedGidData = data.gidData || initialGIDData;
+        // Load bytData (per-project team assembly)
+        const loadedBytData = data.bytData || initialBYTData;
         setProjectData({
           ...getEmptyProjectData(),
           ...data,
@@ -651,8 +651,8 @@ export const AppProvider = ({ children }) => {
           kysData: loadedKysData,
           // Ensure vmxData is available at top level for component access
           vmxData: loadedVmxData,
-          // Ensure gidData is available at top level for component access
-          gidData: loadedGidData,
+          // Ensure bytData is available at top level for component access
+          bytData: loadedBytData,
           // Ensure lcdData is available at top level for component access
           lcdData: loadedLcdData,
         });
@@ -1018,27 +1018,27 @@ export const AppProvider = ({ children }) => {
     markChanged();
   }, [markChanged]);
 
-  // Update GID data (Get It Done — per-project team assembly)
-  const updateGIDData = useCallback((updates) => {
-    console.log('[APP] updateGIDData:', updates);
+  // Update BYT data (Build Your Team — per-project team assembly)
+  const updateBYTData = useCallback((updates) => {
+    console.log('[APP] updateBYTData:', updates);
     setProjectData(prev => {
-      const currentGidData = prev.gidData || initialGIDData;
+      const currentBytData = prev.bytData || initialBYTData;
       return {
         ...prev,
-        gidData: {
-          ...currentGidData,
+        bytData: {
+          ...currentBytData,
           ...updates,
           // Deep merge teamAssembly if provided
           ...(updates.teamAssembly && {
             teamAssembly: {
-              ...currentGidData.teamAssembly,
+              ...currentBytData.teamAssembly,
               ...updates.teamAssembly,
             },
           }),
           // Deep merge currentMatches if provided
           ...(updates.currentMatches && {
             currentMatches: {
-              ...currentGidData.currentMatches,
+              ...currentBytData.currentMatches,
               ...updates.currentMatches,
             },
           }),
@@ -1284,7 +1284,7 @@ export const AppProvider = ({ children }) => {
     mvpData,
     kysData,
     vmxData,
-    gidData,
+    bytData,
     lcdData,
 
     // Data updates
@@ -1301,7 +1301,7 @@ export const AppProvider = ({ children }) => {
     updateMVPDecisionAnswer,
     updateKYSData,
     updateVMXData,
-    updateGIDData,
+    updateBYTData,
     updateLCDData,
 
     // UI state

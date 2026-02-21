@@ -55,50 +55,50 @@ const CandidateCard = ({
   const specialties = candidate.specialties || [];
 
   return (
-    <div className={`gid-candidate-card ${selected ? 'gid-candidate-card--selected' : ''} ${candidate.status === 'dismissed' ? 'gid-candidate-card--dismissed' : ''}`}>
+    <div className={`byt-candidate-card ${selected ? 'byt-candidate-card--selected' : ''} ${candidate.status === 'dismissed' ? 'byt-candidate-card--dismissed' : ''}`}>
       {/* Header row */}
-      <div className="gid-candidate-card__header">
-        <div className="gid-candidate-card__header-left">
+      <div className="byt-candidate-card__header">
+        <div className="byt-candidate-card__header-left">
           {onSelect && candidate.status !== 'imported' && candidate.status !== 'dismissed' && (
-            <label className="gid-candidate-card__checkbox">
+            <label className="byt-candidate-card__checkbox">
               <input
                 type="checkbox"
                 checked={selected}
                 onChange={() => onSelect(candidate.id)}
               />
-              <span className="gid-candidate-card__checkmark" />
+              <span className="byt-candidate-card__checkmark" />
             </label>
           )}
-          <span className="gid-source-tier-badge" style={{ color: tier.color, background: tier.bg }}>
+          <span className="byt-source-tier-badge" style={{ color: tier.color, background: tier.bg }}>
             {tier.label}
           </span>
           {candidate.discipline && (
-            <span className="gid-candidate-card__discipline">
+            <span className="byt-candidate-card__discipline">
               {DISCIPLINE_LABELS[candidate.discipline] || candidate.discipline}
             </span>
           )}
         </div>
-        <span className="gid-candidate-card__status" style={{ color: status.color, background: status.bg }}>
+        <span className="byt-candidate-card__status" style={{ color: status.color, background: status.bg }}>
           {status.label}
         </span>
       </div>
 
       {/* Body */}
-      <div className="gid-candidate-card__body">
-        <h3 className="gid-candidate-card__firm">{candidate.firm_name}</h3>
+      <div className="byt-candidate-card__body">
+        <h3 className="byt-candidate-card__firm">{candidate.firm_name}</h3>
         {candidate.principal_name && (
-          <p className="gid-candidate-card__principal">{candidate.principal_name}</p>
+          <p className="byt-candidate-card__principal">{candidate.principal_name}</p>
         )}
 
-        <div className="gid-candidate-card__meta">
+        <div className="byt-candidate-card__meta">
           {(candidate.hq_city || candidate.hq_state) && (
-            <span className="gid-meta-item">
+            <span className="byt-meta-item">
               <MapPin size={12} />
               {[candidate.hq_city, candidate.hq_state].filter(Boolean).join(', ')}
             </span>
           )}
           {candidate.years_experience && (
-            <span className="gid-meta-item">
+            <span className="byt-meta-item">
               <Briefcase size={12} />
               {candidate.years_experience} yrs
             </span>
@@ -108,7 +108,7 @@ const CandidateCard = ({
               href={candidate.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="gid-meta-item gid-meta-item--link"
+              className="byt-meta-item byt-meta-item--link"
               onClick={(e) => e.stopPropagation()}
             >
               <Globe size={12} />
@@ -120,26 +120,26 @@ const CandidateCard = ({
 
         {/* Specialties */}
         {specialties.length > 0 && (
-          <div className="gid-candidate-card__tags">
+          <div className="byt-candidate-card__tags">
             {specialties.slice(0, 5).map((s, i) => (
-              <span key={i} className="gid-tag">{s}</span>
+              <span key={i} className="byt-tag">{s}</span>
             ))}
             {specialties.length > 5 && (
-              <span className="gid-tag gid-tag--more">+{specialties.length - 5}</span>
+              <span className="byt-tag byt-tag--more">+{specialties.length - 5}</span>
             )}
           </div>
         )}
 
         {/* Confidence bar */}
         {confidence > 0 && (
-          <div className="gid-confidence-bar">
-            <div className="gid-confidence-bar__label">
+          <div className="byt-confidence-bar">
+            <div className="byt-confidence-bar__label">
               <span>Match confidence</span>
-              <span className="gid-confidence-bar__value">{confidence}%</span>
+              <span className="byt-confidence-bar__value">{confidence}%</span>
             </div>
-            <div className="gid-confidence-bar__track">
+            <div className="byt-confidence-bar__track">
               <div
-                className="gid-confidence-bar__fill"
+                className="byt-confidence-bar__fill"
                 style={{
                   width: `${confidence}%`,
                   background: confidence >= 80 ? '#2e7d32' : confidence >= 60 ? '#f57c00' : '#d32f2f',
@@ -151,13 +151,13 @@ const CandidateCard = ({
 
         {/* Source rationale */}
         {candidate.source_rationale && (
-          <p className="gid-candidate-card__rationale">{candidate.source_rationale}</p>
+          <p className="byt-candidate-card__rationale">{candidate.source_rationale}</p>
         )}
 
         {/* Expandable details */}
         {(notableProjects.length > 0 || awards.length > 0) && (
           <button
-            className="gid-candidate-card__expand-btn"
+            className="byt-candidate-card__expand-btn"
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -166,29 +166,29 @@ const CandidateCard = ({
         )}
 
         {expanded && (
-          <div className="gid-candidate-card__details">
+          <div className="byt-candidate-card__details">
             {notableProjects.length > 0 && (
-              <div className="gid-candidate-card__detail-section">
+              <div className="byt-candidate-card__detail-section">
                 <h4><Star size={12} /> Notable Projects</h4>
                 <ul>
                   {notableProjects.map((p, i) => (
                     <li key={i}>
                       <strong>{p.name}</strong>
                       {p.location && <span> — {p.location}</span>}
-                      {p.year && <span className="gid-candidate-card__year"> ({p.year})</span>}
+                      {p.year && <span className="byt-candidate-card__year"> ({p.year})</span>}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
             {awards.length > 0 && (
-              <div className="gid-candidate-card__detail-section">
+              <div className="byt-candidate-card__detail-section">
                 <h4><Award size={12} /> Awards</h4>
                 <ul>
                   {awards.map((a, i) => (
                     <li key={i}>
                       {a.name}
-                      {a.year && <span className="gid-candidate-card__year"> ({a.year})</span>}
+                      {a.year && <span className="byt-candidate-card__year"> ({a.year})</span>}
                     </li>
                   ))}
                 </ul>
@@ -200,28 +200,28 @@ const CandidateCard = ({
 
       {/* Actions */}
       {showActions && candidate.status !== 'imported' && (
-        <div className="gid-candidate-card__actions">
+        <div className="byt-candidate-card__actions">
           {candidate.status === 'pending' && (
             <>
               {onApprove && (
-                <button className="gid-btn gid-btn--success-sm" onClick={() => onApprove(candidate)} title="Approve for import">
+                <button className="byt-btn byt-btn--success-sm" onClick={() => onApprove(candidate)} title="Approve for import">
                   <Check size={14} /> Approve
                 </button>
               )}
               {onDismiss && (
-                <button className="gid-btn gid-btn--ghost gid-btn--danger" onClick={() => onDismiss(candidate)} title="Dismiss">
+                <button className="byt-btn byt-btn--ghost byt-btn--danger" onClick={() => onDismiss(candidate)} title="Dismiss">
                   <X size={14} /> Dismiss
                 </button>
               )}
             </>
           )}
           {candidate.status === 'approved' && onImport && (
-            <button className="gid-btn gid-btn--primary" onClick={() => onImport(candidate)} title="Import to Registry">
+            <button className="byt-btn byt-btn--primary" onClick={() => onImport(candidate)} title="Import to Registry">
               <Upload size={14} /> Import to Registry
             </button>
           )}
           {candidate.status === 'dismissed' && onApprove && (
-            <button className="gid-btn gid-btn--ghost" onClick={() => onApprove(candidate)} title="Reconsider">
+            <button className="byt-btn byt-btn--ghost" onClick={() => onApprove(candidate)} title="Reconsider">
               Reconsider
             </button>
           )}
@@ -230,7 +230,7 @@ const CandidateCard = ({
 
       {/* Imported link */}
       {candidate.status === 'imported' && candidate.imported_consultant_id && (
-        <div className="gid-candidate-card__imported-link">
+        <div className="byt-candidate-card__imported-link">
           <Check size={14} />
           <span>Imported to Registry</span>
         </div>

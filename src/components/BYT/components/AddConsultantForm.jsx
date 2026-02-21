@@ -1,5 +1,5 @@
 /**
- * AddConsultantForm.jsx — Manual entry form for GID consultants
+ * AddConsultantForm.jsx — Manual entry form for BYT consultants
  * 
  * Handles both create and edit modes.
  * Includes inline portfolio project sub-form.
@@ -207,7 +207,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
 
       await onSave(cleanData, cleanPortfolio);
     } catch (err) {
-      console.error('[GID] Save error:', err);
+      console.error('[BYT] Save error:', err);
     } finally {
       setSaving(false);
     }
@@ -216,24 +216,24 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
   const SectionHeader = ({ id, label, count }) => (
     <button
       type="button"
-      className="gid-form-section__toggle"
+      className="byt-form-section__toggle"
       onClick={() => toggleSection(id)}
     >
       {expandedSections[id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       <span>{label}</span>
-      {count !== undefined && <span className="gid-form-section__count">{count}</span>}
+      {count !== undefined && <span className="byt-form-section__count">{count}</span>}
     </button>
   );
 
   return (
-    <form className="gid-form" onSubmit={handleSubmit}>
-      <div className="gid-form__header">
+    <form className="byt-form" onSubmit={handleSubmit}>
+      <div className="byt-form__header">
         <h2>{isEditing ? 'Edit Consultant' : 'Add New Consultant'}</h2>
-        <div className="gid-form__header-actions">
-          <button type="button" className="gid-btn gid-btn--ghost" onClick={onCancel}>
+        <div className="byt-form__header-actions">
+          <button type="button" className="byt-btn byt-btn--ghost" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" className="gid-btn gid-btn--primary" disabled={saving}>
+          <button type="submit" className="byt-btn byt-btn--primary" disabled={saving}>
             <Save size={16} />
             {saving ? 'Saving...' : isEditing ? 'Update' : 'Add Consultant'}
           </button>
@@ -241,12 +241,12 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Basic Information */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="basic" label="Basic Information" />
         {expandedSections.basic && (
-          <div className="gid-form-section__body">
-            <div className="gid-form-row">
-              <div className="gid-form-field">
+          <div className="byt-form-section__body">
+            <div className="byt-form-row">
+              <div className="byt-form-field">
                 <label>Discipline *</label>
                 <select value={form.role} onChange={(e) => updateField('role', e.target.value)}>
                   <option value="architect">Architect</option>
@@ -255,7 +255,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
                   <option value="gc">General Contractor</option>
                 </select>
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Verification Status</label>
                 <select value={form.verification_status} onChange={(e) => updateField('verification_status', e.target.value)}>
                   <option value="pending">Pending</option>
@@ -265,7 +265,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
               </div>
             </div>
 
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Firm Name *</label>
               <input
                 type="text"
@@ -276,8 +276,8 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
               />
             </div>
 
-            <div className="gid-form-row">
-              <div className="gid-form-field">
+            <div className="byt-form-row">
+              <div className="byt-form-field">
                 <label>First Name</label>
                 <input
                   type="text"
@@ -286,7 +286,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
                   placeholder="Principal's first name"
                 />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Last Name</label>
                 <input
                   type="text"
@@ -297,33 +297,33 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
               </div>
             </div>
 
-            <div className="gid-form-row gid-form-row--3col">
-              <div className="gid-form-field">
+            <div className="byt-form-row byt-form-row--3col">
+              <div className="byt-form-field">
                 <label>HQ City</label>
                 <input type="text" value={form.hq_city} onChange={(e) => updateField('hq_city', e.target.value)} placeholder="New York" />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>HQ State</label>
                 <select value={form.hq_state} onChange={(e) => updateField('hq_state', e.target.value)}>
                   <option value="">Select...</option>
                   {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Country</label>
                 <input type="text" value={form.hq_country} onChange={(e) => updateField('hq_country', e.target.value)} />
               </div>
             </div>
 
             {/* Service Areas */}
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Service Areas (states)</label>
-              <div className="gid-chip-grid gid-chip-grid--compact">
+              <div className="byt-chip-grid byt-chip-grid--compact">
                 {US_STATES.map(s => (
                   <button
                     key={s}
                     type="button"
-                    className={`gid-chip ${(form.service_areas || []).includes(s) ? 'gid-chip--active' : ''}`}
+                    className={`byt-chip ${(form.service_areas || []).includes(s) ? 'byt-chip--active' : ''}`}
                     onClick={() => toggleArrayItem('service_areas', s)}
                   >
                     {s}
@@ -333,14 +333,14 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
             </div>
 
             {/* Specialties */}
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Specialties</label>
-              <div className="gid-chip-grid">
+              <div className="byt-chip-grid">
                 {(SPECIALTY_OPTIONS[form.role] || []).map(s => (
                   <button
                     key={s}
                     type="button"
-                    className={`gid-chip ${(form.specialties || []).includes(s) ? 'gid-chip--active' : ''}`}
+                    className={`byt-chip ${(form.specialties || []).includes(s) ? 'byt-chip--active' : ''}`}
                     onClick={() => toggleArrayItem('specialties', s)}
                   >
                     {s}
@@ -350,14 +350,14 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
             </div>
 
             {/* Certifications */}
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Certifications</label>
-              <div className="gid-chip-grid">
+              <div className="byt-chip-grid">
                 {(CERTIFICATION_OPTIONS[form.role] || []).map(c => (
                   <button
                     key={c}
                     type="button"
-                    className={`gid-chip ${(form.certifications || []).includes(c) ? 'gid-chip--active' : ''}`}
+                    className={`byt-chip ${(form.certifications || []).includes(c) ? 'byt-chip--active' : ''}`}
                     onClick={() => toggleArrayItem('certifications', c)}
                   >
                     {c}
@@ -366,8 +366,8 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
               </div>
             </div>
 
-            <div className="gid-form-row">
-              <div className="gid-form-field">
+            <div className="byt-form-row">
+              <div className="byt-form-field">
                 <label>Min Budget ($)</label>
                 <input
                   type="number"
@@ -377,7 +377,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
                   step="100000"
                 />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Max Budget ($)</label>
                 <input
                   type="number"
@@ -389,7 +389,7 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
               </div>
             </div>
 
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Bio</label>
               <textarea
                 value={form.bio}
@@ -403,26 +403,26 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Contact */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="contact" label="Contact Information" />
         {expandedSections.contact && (
-          <div className="gid-form-section__body">
-            <div className="gid-form-row">
-              <div className="gid-form-field">
+          <div className="byt-form-section__body">
+            <div className="byt-form-row">
+              <div className="byt-form-field">
                 <label>Phone</label>
                 <input type="tel" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} placeholder="+1 (212) 555-0100" />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Email</label>
                 <input type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="info@firm.com" />
               </div>
             </div>
-            <div className="gid-form-row">
-              <div className="gid-form-field">
+            <div className="byt-form-row">
+              <div className="byt-form-field">
                 <label>Website</label>
                 <input type="url" value={form.website} onChange={(e) => updateField('website', e.target.value)} placeholder="https://www.firm.com" />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>LinkedIn</label>
                 <input type="url" value={form.linkedin_url} onChange={(e) => updateField('linkedin_url', e.target.value)} placeholder="https://linkedin.com/company/..." />
               </div>
@@ -432,20 +432,20 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Experience */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="experience" label="Experience & Scale" />
         {expandedSections.experience && (
-          <div className="gid-form-section__body">
-            <div className="gid-form-row gid-form-row--3col">
-              <div className="gid-form-field">
+          <div className="byt-form-section__body">
+            <div className="byt-form-row byt-form-row--3col">
+              <div className="byt-form-field">
                 <label>Years of Experience</label>
                 <input type="number" value={form.years_experience} onChange={(e) => updateField('years_experience', e.target.value)} placeholder="25" min="0" />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Firm Established</label>
                 <input type="number" value={form.firm_established_year} onChange={(e) => updateField('firm_established_year', e.target.value)} placeholder="1998" min="1800" max="2026" />
               </div>
-              <div className="gid-form-field">
+              <div className="byt-form-field">
                 <label>Team Size</label>
                 <input type="number" value={form.team_size} onChange={(e) => updateField('team_size', e.target.value)} placeholder="45" min="1" />
               </div>
@@ -455,24 +455,24 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Portfolio Projects */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="portfolio" label="Portfolio Projects" count={portfolioProjects.length} />
         {expandedSections.portfolio && (
-          <div className="gid-form-section__body">
+          <div className="byt-form-section__body">
             {portfolioProjects.map((project, idx) => (
-              <div key={project._tempId} className="gid-portfolio-entry">
-                <div className="gid-portfolio-entry__header">
+              <div key={project._tempId} className="byt-portfolio-entry">
+                <div className="byt-portfolio-entry__header">
                   <h4>Project {idx + 1}: {project.project_name || 'Untitled'}</h4>
-                  <button type="button" className="gid-btn gid-btn--ghost gid-btn--danger" onClick={() => removePortfolio(project._tempId)}>
+                  <button type="button" className="byt-btn byt-btn--ghost byt-btn--danger" onClick={() => removePortfolio(project._tempId)}>
                     <Trash2 size={14} />
                   </button>
                 </div>
-                <div className="gid-form-row">
-                  <div className="gid-form-field" style={{ flex: 2 }}>
+                <div className="byt-form-row">
+                  <div className="byt-form-field" style={{ flex: 2 }}>
                     <label>Project Name *</label>
                     <input type="text" value={project.project_name} onChange={(e) => updatePortfolio(project._tempId, 'project_name', e.target.value)} placeholder="e.g., Thornwood Estate" />
                   </div>
-                  <div className="gid-form-field">
+                  <div className="byt-form-field">
                     <label>Type</label>
                     <select value={project.project_type} onChange={(e) => updatePortfolio(project._tempId, 'project_type', e.target.value)}>
                       <option value="new_build">New Build</option>
@@ -482,52 +482,52 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
                     </select>
                   </div>
                 </div>
-                <div className="gid-form-row gid-form-row--3col">
-                  <div className="gid-form-field">
+                <div className="byt-form-row byt-form-row--3col">
+                  <div className="byt-form-field">
                     <label>City</label>
                     <input type="text" value={project.location_city} onChange={(e) => updatePortfolio(project._tempId, 'location_city', e.target.value)} />
                   </div>
-                  <div className="gid-form-field">
+                  <div className="byt-form-field">
                     <label>State</label>
                     <select value={project.location_state} onChange={(e) => updatePortfolio(project._tempId, 'location_state', e.target.value)}>
                       <option value="">—</option>
                       {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-                  <div className="gid-form-field">
+                  <div className="byt-form-field">
                     <label>Year</label>
                     <input type="number" value={project.completion_year} onChange={(e) => updatePortfolio(project._tempId, 'completion_year', e.target.value)} placeholder="2024" min="1900" max="2030" />
                   </div>
                 </div>
-                <div className="gid-form-row gid-form-row--3col">
-                  <div className="gid-form-field">
+                <div className="byt-form-row byt-form-row--3col">
+                  <div className="byt-form-field">
                     <label>Budget Min ($)</label>
                     <input type="number" value={project.budget_min} onChange={(e) => updatePortfolio(project._tempId, 'budget_min', e.target.value)} step="100000" />
                   </div>
-                  <div className="gid-form-field">
+                  <div className="byt-form-field">
                     <label>Budget Max ($)</label>
                     <input type="number" value={project.budget_max} onChange={(e) => updatePortfolio(project._tempId, 'budget_max', e.target.value)} step="100000" />
                   </div>
-                  <div className="gid-form-field">
+                  <div className="byt-form-field">
                     <label>Square Footage</label>
                     <input type="number" value={project.square_footage} onChange={(e) => updatePortfolio(project._tempId, 'square_footage', e.target.value)} />
                   </div>
                 </div>
-                <div className="gid-form-field">
+                <div className="byt-form-field">
                   <label>Architectural Style</label>
                   <select value={project.architectural_style} onChange={(e) => updatePortfolio(project._tempId, 'architectural_style', e.target.value)}>
                     <option value="">Select...</option>
                     {ARCH_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <div className="gid-form-field">
+                <div className="byt-form-field">
                   <label>Features</label>
-                  <div className="gid-chip-grid">
+                  <div className="byt-chip-grid">
                     {PROJECT_FEATURES.map(f => (
                       <button
                         key={f}
                         type="button"
-                        className={`gid-chip ${(project.features || []).includes(f) ? 'gid-chip--active' : ''}`}
+                        className={`byt-chip ${(project.features || []).includes(f) ? 'byt-chip--active' : ''}`}
                         onClick={() => togglePortfolioFeature(project._tempId, f)}
                       >
                         {f}
@@ -535,23 +535,23 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
                     ))}
                   </div>
                 </div>
-                <div className="gid-form-field">
+                <div className="byt-form-field">
                   <label>Description</label>
                   <textarea value={project.description} onChange={(e) => updatePortfolio(project._tempId, 'description', e.target.value)} rows={2} placeholder="Brief project description..." />
                 </div>
-                <div className="gid-form-row">
-                  <label className="gid-checkbox-label">
+                <div className="byt-form-row">
+                  <label className="byt-checkbox-label">
                     <input type="checkbox" checked={project.award_winner} onChange={(e) => updatePortfolio(project._tempId, 'award_winner', e.target.checked)} />
                     Award Winner
                   </label>
-                  <label className="gid-checkbox-label">
+                  <label className="byt-checkbox-label">
                     <input type="checkbox" checked={project.is_featured} onChange={(e) => updatePortfolio(project._tempId, 'is_featured', e.target.checked)} />
                     Featured Project
                   </label>
                 </div>
               </div>
             ))}
-            <button type="button" className="gid-btn gid-btn--outline" onClick={addPortfolio}>
+            <button type="button" className="byt-btn byt-btn--outline" onClick={addPortfolio}>
               <Plus size={16} /> Add Portfolio Project
             </button>
           </div>
@@ -559,18 +559,18 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Source */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="source" label="Discovery Source" />
         {expandedSections.source && (
-          <div className="gid-form-section__body">
-            <div className="gid-form-field">
+          <div className="byt-form-section__body">
+            <div className="byt-form-field">
               <label>Source of Discovery</label>
               <select value={form.source_of_discovery} onChange={(e) => updateField('source_of_discovery', e.target.value)}>
                 <option value="">Select...</option>
                 {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div className="gid-form-field">
+            <div className="byt-form-field">
               <label>Source Attribution</label>
               <input type="text" value={form.source_attribution} onChange={(e) => updateField('source_attribution', e.target.value)} placeholder="e.g., AD100 2025 List, AIA NY Chapter Directory" />
             </div>
@@ -579,11 +579,11 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Notes */}
-      <div className="gid-form-section">
+      <div className="byt-form-section">
         <SectionHeader id="notes" label="Internal Notes" />
         {expandedSections.notes && (
-          <div className="gid-form-section__body">
-            <div className="gid-form-field">
+          <div className="byt-form-section__body">
+            <div className="byt-form-field">
               <label>LRA Team Notes</label>
               <textarea
                 value={form.notes}
@@ -597,9 +597,9 @@ const AddConsultantForm = ({ consultant, onSave, onCancel, isEditing }) => {
       </div>
 
       {/* Submit Footer */}
-      <div className="gid-form__footer">
-        <button type="button" className="gid-btn gid-btn--ghost" onClick={onCancel}>Cancel</button>
-        <button type="submit" className="gid-btn gid-btn--primary" disabled={saving}>
+      <div className="byt-form__footer">
+        <button type="button" className="byt-btn byt-btn--ghost" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="byt-btn byt-btn--primary" disabled={saving}>
           <Save size={16} />
           {saving ? 'Saving...' : isEditing ? 'Update Consultant' : 'Add Consultant'}
         </button>

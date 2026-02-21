@@ -1,7 +1,7 @@
 /**
- * GIDAssemblyScreen.jsx — Team Assembly Screen
+ * BYTAssemblyScreen.jsx — Team Assembly Screen
  *
- * Final tab of GID module. Manages the engagement pipeline for shortlisted consultants.
+ * Final tab of BYT module. Manages the engagement pipeline for shortlisted consultants.
  * 
  * Features:
  * - Team Composition Summary (4 discipline slots, readiness %)
@@ -39,7 +39,7 @@ const COLORS = {
   info: '#1976d2',
 };
 
-// Discipline definitions (matching GIDModule.jsx)
+// Discipline definitions (matching BYTModule.jsx)
 const DISCIPLINES = {
   architect:          { label: 'Architect',          color: '#315098', icon: '🏛',  slot: 'architect' },
   interior_designer:  { label: 'Interior Designer',  color: '#8CA8BE', icon: '🎨',  slot: 'interiorDesigner' },
@@ -142,30 +142,30 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
   const readiness = Math.round((filledCount / 4) * 100);
 
   return (
-    <div className="gid-assembly-composition">
-      <div className="gid-assembly-composition__header">
-        <div className="gid-assembly-composition__title-row">
-          <h3 className="gid-assembly-composition__title">Team Composition</h3>
-          <div className="gid-assembly-composition__readiness">
-            <div className="gid-assembly-composition__readiness-bar">
+    <div className="byt-assembly-composition">
+      <div className="byt-assembly-composition__header">
+        <div className="byt-assembly-composition__title-row">
+          <h3 className="byt-assembly-composition__title">Team Composition</h3>
+          <div className="byt-assembly-composition__readiness">
+            <div className="byt-assembly-composition__readiness-bar">
               <div
-                className="gid-assembly-composition__readiness-fill"
+                className="byt-assembly-composition__readiness-fill"
                 style={{ width: `${readiness}%` }}
               />
             </div>
-            <span className="gid-assembly-composition__readiness-label">
+            <span className="byt-assembly-composition__readiness-label">
               {filledCount}/4 roles filled ({readiness}%)
             </span>
           </div>
         </div>
         {inProgressCount > 0 && (
-          <span className="gid-assembly-composition__progress-note">
+          <span className="byt-assembly-composition__progress-note">
             {inProgressCount} role{inProgressCount > 1 ? 's' : ''} in pipeline
           </span>
         )}
       </div>
 
-      <div className="gid-assembly-composition__slots">
+      <div className="byt-assembly-composition__slots">
         {slots.map(slot => {
           const stageInfo = slot.mostAdvanced
             ? PIPELINE_STAGES.find(s => s.key === slot.mostAdvanced.contact_status)
@@ -175,19 +175,19 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
           return (
             <div
               key={slot.key}
-              className={`gid-assembly-slot gid-assembly-slot--${slot.status}`}
+              className={`byt-assembly-slot byt-assembly-slot--${slot.status}`}
               style={{ borderTopColor: slot.disc.color }}
             >
-              <div className="gid-assembly-slot__icon">{slot.disc.icon}</div>
-              <div className="gid-assembly-slot__info">
-                <span className="gid-assembly-slot__discipline">{slot.disc.label}</span>
+              <div className="byt-assembly-slot__icon">{slot.disc.icon}</div>
+              <div className="byt-assembly-slot__info">
+                <span className="byt-assembly-slot__discipline">{slot.disc.label}</span>
                 {slot.mostAdvanced ? (
                   <>
-                    <span className="gid-assembly-slot__firm">
+                    <span className="byt-assembly-slot__firm">
                       {slot.mostAdvanced.firm_name || 'Unknown Firm'}
                     </span>
                     <span
-                      className="gid-assembly-slot__status"
+                      className="byt-assembly-slot__status"
                       style={{ color: stageInfo?.color }}
                     >
                       <StageIcon size={12} />
@@ -195,11 +195,11 @@ const TeamCompositionSummary = ({ engagementsByDiscipline }) => {
                     </span>
                   </>
                 ) : (
-                  <span className="gid-assembly-slot__empty">No candidates yet</span>
+                  <span className="byt-assembly-slot__empty">No candidates yet</span>
                 )}
               </div>
               {slot.count > 1 && (
-                <span className="gid-assembly-slot__count">
+                <span className="byt-assembly-slot__count">
                   +{slot.count - 1} more
                 </span>
               )}
@@ -220,7 +220,7 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
   const currentIdx = PIPELINE_STAGES.findIndex(s => s.key === currentStatus);
 
   return (
-    <div className={`gid-pipeline-progress ${compact ? 'gid-pipeline-progress--compact' : ''}`}>
+    <div className={`byt-pipeline-progress ${compact ? 'byt-pipeline-progress--compact' : ''}`}>
       {PIPELINE_STAGES.map((stage, idx) => {
         const isComplete = idx < currentIdx;
         const isCurrent = idx === currentIdx;
@@ -229,11 +229,11 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
         return (
           <React.Fragment key={stage.key}>
             <div
-              className={`gid-pipeline-step ${isComplete ? 'gid-pipeline-step--complete' : ''} ${isCurrent ? 'gid-pipeline-step--current' : ''}`}
+              className={`byt-pipeline-step ${isComplete ? 'byt-pipeline-step--complete' : ''} ${isCurrent ? 'byt-pipeline-step--current' : ''}`}
               title={stage.label}
             >
               <div
-                className="gid-pipeline-step__dot"
+                className="byt-pipeline-step__dot"
                 style={{
                   backgroundColor: isComplete || isCurrent ? stage.color : COLORS.border,
                   borderColor: isCurrent ? stage.color : 'transparent',
@@ -247,7 +247,7 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
               </div>
               {!compact && (
                 <span
-                  className="gid-pipeline-step__label"
+                  className="byt-pipeline-step__label"
                   style={{ color: isComplete || isCurrent ? COLORS.text : COLORS.textMuted }}
                 >
                   {stage.label}
@@ -256,7 +256,7 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
             </div>
             {idx < PIPELINE_STAGES.length - 1 && (
               <div
-                className="gid-pipeline-connector"
+                className="byt-pipeline-connector"
                 style={{
                   backgroundColor: idx < currentIdx ? PIPELINE_STAGES[idx + 1].color : COLORS.border,
                 }}
@@ -350,28 +350,28 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
   };
 
   return (
-    <div className={`gid-engagement-card ${expanded ? 'gid-engagement-card--expanded' : ''}`}>
+    <div className={`byt-engagement-card ${expanded ? 'byt-engagement-card--expanded' : ''}`}>
       {/* Card Header */}
-      <div className="gid-engagement-card__header" onClick={() => setExpanded(!expanded)}>
-        <div className="gid-engagement-card__left">
-          <div className="gid-engagement-card__score" style={{ borderColor: scoreColor }}>
+      <div className="byt-engagement-card__header" onClick={() => setExpanded(!expanded)}>
+        <div className="byt-engagement-card__left">
+          <div className="byt-engagement-card__score" style={{ borderColor: scoreColor }}>
             <span style={{ color: scoreColor }}>{engagement.match_score || '—'}</span>
           </div>
-          <div className="gid-engagement-card__info">
-            <h4 className="gid-engagement-card__firm">{engagement.firm_name || 'Unknown Firm'}</h4>
+          <div className="byt-engagement-card__info">
+            <h4 className="byt-engagement-card__firm">{engagement.firm_name || 'Unknown Firm'}</h4>
             {(engagement.first_name || engagement.last_name) && (
-              <span className="gid-engagement-card__name">
+              <span className="byt-engagement-card__name">
                 {engagement.first_name} {engagement.last_name}
               </span>
             )}
-            <div className="gid-engagement-card__meta">
+            <div className="byt-engagement-card__meta">
               {engagement.hq_city && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <MapPin size={11} />
                   {engagement.hq_city}{engagement.hq_state ? `, ${engagement.hq_state}` : ''}
                 </span>
               )}
-              <span className="gid-meta-item" style={{ color: currentStage?.color }}>
+              <span className="byt-meta-item" style={{ color: currentStage?.color }}>
                 {currentStage?.icon && React.createElement(currentStage.icon, { size: 11 })}
                 {currentStage?.label}
               </span>
@@ -379,9 +379,9 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
           </div>
         </div>
 
-        <div className="gid-engagement-card__right">
+        <div className="byt-engagement-card__right">
           <PipelineProgress currentStatus={engagement.contact_status} compact />
-          <span className="gid-engagement-card__expand-icon">
+          <span className="byt-engagement-card__expand-icon">
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </span>
         </div>
@@ -389,11 +389,11 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
 
       {/* Expanded Detail */}
       {expanded && (
-        <div className="gid-engagement-card__detail">
+        <div className="byt-engagement-card__detail">
           {/* Full pipeline with dates */}
-          <div className="gid-engagement-card__pipeline-full">
+          <div className="byt-engagement-card__pipeline-full">
             <PipelineProgress currentStatus={engagement.contact_status} />
-            <div className="gid-engagement-card__dates">
+            <div className="byt-engagement-card__dates">
               {PIPELINE_STAGES.map(stage => {
                 const dateVal = engagement[stage.dateField];
                 const stageIdx = PIPELINE_STAGES.findIndex(s => s.key === stage.key);
@@ -401,10 +401,10 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                 return (
                   <div
                     key={stage.key}
-                    className={`gid-engagement-card__date-item ${isReached ? 'gid-engagement-card__date-item--reached' : ''}`}
+                    className={`byt-engagement-card__date-item ${isReached ? 'byt-engagement-card__date-item--reached' : ''}`}
                   >
-                    <span className="gid-engagement-card__date-label">{stage.label}</span>
-                    <span className="gid-engagement-card__date-value">
+                    <span className="byt-engagement-card__date-label">{stage.label}</span>
+                    <span className="byt-engagement-card__date-value">
                       {dateVal ? formatDate(dateVal) : '—'}
                     </span>
                   </div>
@@ -414,29 +414,29 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
           </div>
 
           {/* Scores */}
-          <div className="gid-engagement-card__scores-row">
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Combined</span>
-              <span className="gid-engagement-card__score-value" style={{ color: scoreColor }}>
+          <div className="byt-engagement-card__scores-row">
+            <div className="byt-engagement-card__score-item">
+              <span className="byt-engagement-card__score-label">Combined</span>
+              <span className="byt-engagement-card__score-value" style={{ color: scoreColor }}>
                 {engagement.match_score || '—'}
               </span>
             </div>
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Client Fit</span>
-              <span className="gid-engagement-card__score-value">
+            <div className="byt-engagement-card__score-item">
+              <span className="byt-engagement-card__score-label">Client Fit</span>
+              <span className="byt-engagement-card__score-value">
                 {engagement.client_fit_score || '—'}
               </span>
             </div>
-            <div className="gid-engagement-card__score-item">
-              <span className="gid-engagement-card__score-label">Project Fit</span>
-              <span className="gid-engagement-card__score-value">
+            <div className="byt-engagement-card__score-item">
+              <span className="byt-engagement-card__score-label">Project Fit</span>
+              <span className="byt-engagement-card__score-value">
                 {engagement.project_fit_score || '—'}
               </span>
             </div>
             {engagement.chemistry_score && (
-              <div className="gid-engagement-card__score-item">
-                <span className="gid-engagement-card__score-label">Chemistry</span>
-                <span className="gid-engagement-card__score-value" style={{ color: COLORS.gold }}>
+              <div className="byt-engagement-card__score-item">
+                <span className="byt-engagement-card__score-label">Chemistry</span>
+                <span className="byt-engagement-card__score-value" style={{ color: COLORS.gold }}>
                   {engagement.chemistry_score}/10
                 </span>
               </div>
@@ -445,31 +445,31 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
 
           {/* Notes & Feedback — View/Edit Mode */}
           {!editing ? (
-            <div className="gid-engagement-card__notes-section">
+            <div className="byt-engagement-card__notes-section">
               {engagement.team_notes && (
-                <div className="gid-engagement-card__note-block">
-                  <span className="gid-engagement-card__note-label">Team Notes</span>
-                  <p className="gid-engagement-card__note-text">{engagement.team_notes}</p>
+                <div className="byt-engagement-card__note-block">
+                  <span className="byt-engagement-card__note-label">Team Notes</span>
+                  <p className="byt-engagement-card__note-text">{engagement.team_notes}</p>
                 </div>
               )}
               {engagement.client_feedback && (
-                <div className="gid-engagement-card__note-block">
-                  <span className="gid-engagement-card__note-label">Client Feedback</span>
-                  <p className="gid-engagement-card__note-text">{engagement.client_feedback}</p>
+                <div className="byt-engagement-card__note-block">
+                  <span className="byt-engagement-card__note-label">Client Feedback</span>
+                  <p className="byt-engagement-card__note-text">{engagement.client_feedback}</p>
                 </div>
               )}
               {engagement.project_outcome && engagement.project_outcome !== 'pending' && (
-                <div className="gid-engagement-card__note-block">
-                  <span className="gid-engagement-card__note-label">Outcome</span>
-                  <span className="gid-engagement-card__outcome-badge">
+                <div className="byt-engagement-card__note-block">
+                  <span className="byt-engagement-card__note-label">Outcome</span>
+                  <span className="byt-engagement-card__outcome-badge">
                     {PROJECT_OUTCOMES.find(o => o.value === engagement.project_outcome)?.label || engagement.project_outcome}
                   </span>
                 </div>
               )}
             </div>
           ) : (
-            <div className="gid-engagement-card__edit-section">
-              <div className="gid-engagement-card__edit-field">
+            <div className="byt-engagement-card__edit-section">
+              <div className="byt-engagement-card__edit-field">
                 <label>Team Notes</label>
                 <textarea
                   value={editData.team_notes}
@@ -478,7 +478,7 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                   rows={3}
                 />
               </div>
-              <div className="gid-engagement-card__edit-field">
+              <div className="byt-engagement-card__edit-field">
                 <label>Client Feedback</label>
                 <textarea
                   value={editData.client_feedback}
@@ -487,8 +487,8 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                   rows={3}
                 />
               </div>
-              <div className="gid-engagement-card__edit-row">
-                <div className="gid-engagement-card__edit-field gid-engagement-card__edit-field--half">
+              <div className="byt-engagement-card__edit-row">
+                <div className="byt-engagement-card__edit-field byt-engagement-card__edit-field--half">
                   <label>Chemistry Score (1-10)</label>
                   <input
                     type="number"
@@ -499,7 +499,7 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
                     placeholder="—"
                   />
                 </div>
-                <div className="gid-engagement-card__edit-field gid-engagement-card__edit-field--half">
+                <div className="byt-engagement-card__edit-field byt-engagement-card__edit-field--half">
                   <label>Project Outcome</label>
                   <select
                     value={editData.project_outcome}
@@ -515,30 +515,30 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
           )}
 
           {/* Actions */}
-          <div className="gid-engagement-card__actions">
+          <div className="byt-engagement-card__actions">
             {!editing ? (
               <>
                 <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
+                  className="byt-btn byt-btn--ghost byt-btn--sm"
                   onClick={(e) => { e.stopPropagation(); setEditing(true); }}
                 >
                   <Edit2 size={14} /> Edit Notes
                 </button>
                 {nextStage && (
                   <button
-                    className="gid-btn gid-btn--primary gid-btn--sm"
+                    className="byt-btn byt-btn--primary byt-btn--sm"
                     onClick={(e) => { e.stopPropagation(); handleAdvanceStage(); }}
                   >
                     <ArrowRight size={14} /> Move to {nextStage.label}
                   </button>
                 )}
                 {engagement.contact_status === 'contracted' && (
-                  <span className="gid-engagement-card__contracted-badge">
+                  <span className="byt-engagement-card__contracted-badge">
                     <Shield size={14} /> Contracted
                   </span>
                 )}
                 <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm gid-btn--danger"
+                  className="byt-btn byt-btn--ghost byt-btn--sm byt-btn--danger"
                   onClick={(e) => { e.stopPropagation(); handleRemove(); }}
                 >
                   <Trash2 size={14} /> Remove
@@ -547,14 +547,14 @@ const EngagementCard = ({ engagement, onUpdate, onRemove }) => {
             ) : (
               <>
                 <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
+                  className="byt-btn byt-btn--ghost byt-btn--sm"
                   onClick={(e) => { e.stopPropagation(); setEditing(false); }}
                   disabled={saving}
                 >
                   <X size={14} /> Cancel
                 </button>
                 <button
-                  className="gid-btn gid-btn--primary gid-btn--sm"
+                  className="byt-btn byt-btn--primary byt-btn--sm"
                   onClick={(e) => { e.stopPropagation(); handleSaveEdits(); }}
                   disabled={saving}
                 >
@@ -590,26 +590,26 @@ const DisciplineGroup = ({ disciplineKey, engagements, onUpdate, onRemove }) => 
   });
 
   return (
-    <div className="gid-assembly-discipline-group">
+    <div className="byt-assembly-discipline-group">
       <div
-        className="gid-assembly-discipline-group__header"
+        className="byt-assembly-discipline-group__header"
         onClick={() => setCollapsed(!collapsed)}
         style={{ borderLeftColor: disc.color }}
       >
-        <div className="gid-assembly-discipline-group__title-row">
-          <span className="gid-assembly-discipline-group__icon">{disc.icon}</span>
-          <h3 className="gid-assembly-discipline-group__title">{disc.label}</h3>
-          <span className="gid-assembly-discipline-group__count">{engagements.length} candidate{engagements.length !== 1 ? 's' : ''}</span>
+        <div className="byt-assembly-discipline-group__title-row">
+          <span className="byt-assembly-discipline-group__icon">{disc.icon}</span>
+          <h3 className="byt-assembly-discipline-group__title">{disc.label}</h3>
+          <span className="byt-assembly-discipline-group__count">{engagements.length} candidate{engagements.length !== 1 ? 's' : ''}</span>
         </div>
-        <span className="gid-assembly-discipline-group__toggle">
+        <span className="byt-assembly-discipline-group__toggle">
           {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
         </span>
       </div>
 
       {!collapsed && (
-        <div className="gid-assembly-discipline-group__body">
+        <div className="byt-assembly-discipline-group__body">
           {sorted.length === 0 ? (
-            <div className="gid-assembly-discipline-group__empty">
+            <div className="byt-assembly-discipline-group__empty">
               <span>No candidates shortlisted. Use Matchmaking to add {disc.label.toLowerCase()} candidates.</span>
             </div>
           ) : (
@@ -633,7 +633,7 @@ const DisciplineGroup = ({ disciplineKey, engagements, onUpdate, onRemove }) => 
 // MAIN ASSEMBLY SCREEN
 // =============================================================================
 
-const GIDAssemblyScreen = () => {
+const BYTAssemblyScreen = () => {
   const { activeProjectId } = useAppContext();
 
   const [engagements, setEngagements] = useState([]);
@@ -700,32 +700,32 @@ const GIDAssemblyScreen = () => {
   const engagedCount = engagements.filter(e => e.contact_status === 'engaged').length;
 
   return (
-    <div className="gid-assembly-screen">
+    <div className="byt-assembly-screen">
 
       {/* Team Composition Summary */}
       <TeamCompositionSummary engagementsByDiscipline={engagementsByDiscipline} />
 
       {/* Quick Stats Bar */}
       {totalEngagements > 0 && (
-        <div className="gid-assembly-stats-bar">
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value">{totalEngagements}</span>
-            <span className="gid-assembly-stat__label">Total Candidates</span>
+        <div className="byt-assembly-stats-bar">
+          <div className="byt-assembly-stat">
+            <span className="byt-assembly-stat__value">{totalEngagements}</span>
+            <span className="byt-assembly-stat__label">Total Candidates</span>
           </div>
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value" style={{ color: COLORS.gold }}>
+          <div className="byt-assembly-stat">
+            <span className="byt-assembly-stat__value" style={{ color: COLORS.gold }}>
               {contractedCount}
             </span>
-            <span className="gid-assembly-stat__label">Contracted</span>
+            <span className="byt-assembly-stat__label">Contracted</span>
           </div>
-          <div className="gid-assembly-stat">
-            <span className="gid-assembly-stat__value" style={{ color: COLORS.success }}>
+          <div className="byt-assembly-stat">
+            <span className="byt-assembly-stat__value" style={{ color: COLORS.success }}>
               {engagedCount}
             </span>
-            <span className="gid-assembly-stat__label">Engaged</span>
+            <span className="byt-assembly-stat__label">Engaged</span>
           </div>
           <button
-            className="gid-btn gid-btn--ghost gid-btn--sm"
+            className="byt-btn byt-btn--ghost byt-btn--sm"
             onClick={loadEngagements}
             title="Refresh"
           >
@@ -736,7 +736,7 @@ const GIDAssemblyScreen = () => {
 
       {/* Loading */}
       {loading && (
-        <div className="gid-loading">
+        <div className="byt-loading">
           <RefreshCw size={24} className="spinning" />
           <p>Loading team assembly...</p>
         </div>
@@ -744,16 +744,16 @@ const GIDAssemblyScreen = () => {
 
       {/* Error */}
       {error && (
-        <div className="gid-error">
+        <div className="byt-error">
           <AlertTriangle size={20} />
           <p>{error}</p>
-          <button className="gid-btn gid-btn--primary" onClick={loadEngagements}>Retry</button>
+          <button className="byt-btn byt-btn--primary" onClick={loadEngagements}>Retry</button>
         </div>
       )}
 
       {/* Discipline Groups */}
       {!loading && !error && (
-        <div className="gid-assembly-groups">
+        <div className="byt-assembly-groups">
           {Object.keys(DISCIPLINES).map(key => (
             <DisciplineGroup
               key={key}
@@ -768,7 +768,7 @@ const GIDAssemblyScreen = () => {
 
       {/* Empty State (only if no engagements at all) */}
       {!loading && !error && totalEngagements === 0 && (
-        <div className="gid-empty" style={{ marginTop: '1rem' }}>
+        <div className="byt-empty" style={{ marginTop: '1rem' }}>
           <Briefcase size={48} />
           <h3>No Team Members Yet</h3>
           <p>
@@ -781,4 +781,4 @@ const GIDAssemblyScreen = () => {
   );
 };
 
-export default GIDAssemblyScreen;
+export default BYTAssemblyScreen;

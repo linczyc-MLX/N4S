@@ -1,7 +1,7 @@
 /**
- * GIDMatchScreen.jsx — Matchmaking Screen
+ * BYTMatchScreen.jsx — Matchmaking Screen
  *
- * Phase 2 of GID module. Allows LRA team to:
+ * Phase 2 of BYT module. Allows LRA team to:
  * 1. Select a discipline (Architect / ID / PM / GC)
  * 2. See prerequisite gate status
  * 3. Run the matching algorithm against the consultant registry
@@ -56,26 +56,26 @@ const PrerequisiteGates = ({ prerequisites }) => {
   if (!prerequisites) return null;
 
   return (
-    <div className="gid-match-prereqs">
-      <div className="gid-match-prereqs__header">
-        <h3 className="gid-match-prereqs__title">
+    <div className="byt-match-prereqs">
+      <div className="byt-match-prereqs__header">
+        <h3 className="byt-match-prereqs__title">
           {prerequisites.ready
             ? <><CheckCircle2 size={16} style={{ color: COLORS.success }} /> Ready to Match</>
             : <><AlertTriangle size={16} style={{ color: COLORS.warning }} /> Prerequisites Needed</>
           }
         </h3>
-        <span className="gid-match-prereqs__completeness">
+        <span className="byt-match-prereqs__completeness">
           {prerequisites.completeness}% data available
         </span>
       </div>
 
-      <div className="gid-match-prereqs__gates">
+      <div className="byt-match-prereqs__gates">
         {prerequisites.gates.map((gate) => (
           <div
             key={gate.field}
-            className={`gid-match-prereq-item ${gate.filled ? 'gid-match-prereq-item--filled' : ''} ${gate.required ? 'gid-match-prereq-item--required' : ''}`}
+            className={`byt-match-prereq-item ${gate.filled ? 'byt-match-prereq-item--filled' : ''} ${gate.required ? 'byt-match-prereq-item--required' : ''}`}
           >
-            <span className="gid-match-prereq-item__icon">
+            <span className="byt-match-prereq-item__icon">
               {gate.filled
                 ? <CheckCircle2 size={14} style={{ color: COLORS.success }} />
                 : gate.required
@@ -83,10 +83,10 @@ const PrerequisiteGates = ({ prerequisites }) => {
                   : <Clock size={14} style={{ color: COLORS.textMuted }} />
               }
             </span>
-            <span className="gid-match-prereq-item__label">{gate.label}</span>
-            <span className="gid-match-prereq-item__source">{gate.source}</span>
+            <span className="byt-match-prereq-item__label">{gate.label}</span>
+            <span className="byt-match-prereq-item__source">{gate.source}</span>
             {gate.required && !gate.filled && (
-              <span className="gid-match-prereq-item__required-badge">Required</span>
+              <span className="byt-match-prereq-item__required-badge">Required</span>
             )}
           </div>
         ))}
@@ -110,37 +110,37 @@ const MatchResultCard = ({
   const discipline = DISCIPLINES[c?.role] || {};
 
   return (
-    <div className={`gid-match-result-card ${isSelected ? 'gid-match-result-card--selected' : ''} ${isShortlisted ? 'gid-match-result-card--shortlisted' : ''}`}>
+    <div className={`byt-match-result-card ${isSelected ? 'byt-match-result-card--selected' : ''} ${isShortlisted ? 'byt-match-result-card--shortlisted' : ''}`}>
       {/* Rank badge */}
-      <div className="gid-match-result-card__rank" style={{ backgroundColor: matchResult.tierBgColor, color: matchResult.tierColor }}>
+      <div className="byt-match-result-card__rank" style={{ backgroundColor: matchResult.tierBgColor, color: matchResult.tierColor }}>
         #{rank}
       </div>
 
-      <div className="gid-match-result-card__content">
+      <div className="byt-match-result-card__content">
         {/* Header row */}
-        <div className="gid-match-result-card__header">
-          <div className="gid-match-result-card__info">
-            <h3 className="gid-match-result-card__firm">{c?.firm_name}</h3>
+        <div className="byt-match-result-card__header">
+          <div className="byt-match-result-card__info">
+            <h3 className="byt-match-result-card__firm">{c?.firm_name}</h3>
             {(c?.first_name || c?.last_name) && (
-              <p className="gid-match-result-card__name">
+              <p className="byt-match-result-card__name">
                 {c?.first_name} {c?.last_name}
               </p>
             )}
-            <div className="gid-match-result-card__meta">
+            <div className="byt-match-result-card__meta">
               {c?.hq_city && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <MapPin size={12} />
                   {c.hq_city}{c.hq_state ? `, ${c.hq_state}` : ''}
                 </span>
               )}
               {c?.years_experience && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <Briefcase size={12} />
                   {c.years_experience} yrs
                 </span>
               )}
               {c?.avg_rating > 0 && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <Star size={12} />
                   {Number(c.avg_rating).toFixed(1)}
                 </span>
@@ -154,27 +154,27 @@ const MatchResultCard = ({
 
         {/* Specialty tags */}
         {c?.specialties?.length > 0 && (
-          <div className="gid-match-result-card__tags">
+          <div className="byt-match-result-card__tags">
             {c.specialties.slice(0, 5).map((s, i) => (
-              <span key={i} className="gid-tag">{s}</span>
+              <span key={i} className="byt-tag">{s}</span>
             ))}
             {c.specialties.length > 5 && (
-              <span className="gid-tag gid-tag--more">+{c.specialties.length - 5}</span>
+              <span className="byt-tag byt-tag--more">+{c.specialties.length - 5}</span>
             )}
           </div>
         )}
 
         {/* Expanded breakdown */}
         {expanded && (
-          <div className="gid-match-result-card__expanded">
+          <div className="byt-match-result-card__expanded">
             <MatchScoreExpanded matchResult={matchResult} showWeights />
           </div>
         )}
 
         {/* Actions */}
-        <div className="gid-match-result-card__actions">
+        <div className="byt-match-result-card__actions">
           <button
-            className="gid-btn gid-btn--ghost gid-btn--sm"
+            className="byt-btn byt-btn--ghost byt-btn--sm"
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -182,7 +182,7 @@ const MatchResultCard = ({
           </button>
 
           <button
-            className={`gid-btn gid-btn--sm ${isComparing ? 'gid-btn--active' : 'gid-btn--ghost'}`}
+            className={`byt-btn byt-btn--sm ${isComparing ? 'byt-btn--active' : 'byt-btn--ghost'}`}
             onClick={() => onToggleCompare(matchResult.consultantId)}
             title={isComparing ? 'Remove from comparison' : 'Add to comparison'}
           >
@@ -191,7 +191,7 @@ const MatchResultCard = ({
           </button>
 
           <button
-            className={`gid-btn gid-btn--sm ${isShortlisted ? 'gid-btn--success' : 'gid-btn--primary'}`}
+            className={`byt-btn byt-btn--sm ${isShortlisted ? 'byt-btn--success' : 'byt-btn--primary'}`}
             onClick={() => onShortlist(matchResult)}
             disabled={isShortlisted}
           >
@@ -209,8 +209,8 @@ const MatchResultCard = ({
 // MAIN MATCH SCREEN
 // =============================================================================
 
-const GIDMatchScreen = () => {
-  const { kycData, fyiData, gidData, updateGIDData, activeProjectId } = useAppContext();
+const BYTMatchScreen = () => {
+  const { kycData, fyiData, bytData, updateBYTData, activeProjectId } = useAppContext();
 
   // State
   const [selectedDiscipline, setSelectedDiscipline] = useState('architect');
@@ -236,9 +236,9 @@ const GIDMatchScreen = () => {
     [kycData, fyiData]
   );
 
-  // Load existing match results from gidData if available
+  // Load existing match results from bytData if available
   useEffect(() => {
-    const existing = gidData?.currentMatches?.[selectedDiscipline];
+    const existing = bytData?.currentMatches?.[selectedDiscipline];
     if (existing && existing.length > 0) {
       setMatchResults(existing);
       setHasRun(true);
@@ -247,18 +247,18 @@ const GIDMatchScreen = () => {
       setHasRun(false);
     }
     setCompareIds([]);
-  }, [selectedDiscipline, gidData?.currentMatches]);
+  }, [selectedDiscipline, bytData?.currentMatches]);
 
   // Load existing shortlisted IDs
   useEffect(() => {
-    const engagements = gidData?.engagements || [];
+    const engagements = bytData?.engagements || [];
     const ids = new Set(
       engagements
         .filter(e => e.discipline === selectedDiscipline)
         .map(e => e.consultantId)
     );
     setShortlistedIds(ids);
-  }, [selectedDiscipline, gidData?.engagements]);
+  }, [selectedDiscipline, bytData?.engagements]);
 
   // --------------------------------------------------
   // Run matching
@@ -303,21 +303,21 @@ const GIDMatchScreen = () => {
       setHasRun(true);
 
       // Persist to AppContext (merge with existing disciplines)
-      updateGIDData({
+      updateBYTData({
         currentMatches: {
-          ...(gidData?.currentMatches || {}),
+          ...(bytData?.currentMatches || {}),
           [selectedDiscipline]: results,
         },
         lastMatchRun: new Date().toISOString(),
       });
 
     } catch (err) {
-      console.error('[GID Match] Error:', err);
+      console.error('[BYT Match] Error:', err);
       setError(err.message);
     } finally {
       setIsRunning(false);
     }
-  }, [prerequisites.ready, selectedDiscipline, kycData, fyiData, minScore, gidData?.currentMatches, updateGIDData]);
+  }, [prerequisites.ready, selectedDiscipline, kycData, fyiData, minScore, bytData?.currentMatches, updateBYTData]);
 
   // --------------------------------------------------
   // Comparison toggle
@@ -361,15 +361,15 @@ const GIDMatchScreen = () => {
       });
 
       if (!res.ok) {
-        console.warn('[GID] Engagement API not yet available, saving locally only');
+        console.warn('[BYT] Engagement API not yet available, saving locally only');
       }
 
       // Update local state
       setShortlistedIds(prev => new Set([...prev, matchResult.consultantId]));
 
       // Persist to AppContext
-      const currentEngagements = gidData?.engagements || [];
-      updateGIDData({
+      const currentEngagements = bytData?.engagements || [];
+      updateBYTData({
         engagements: [
           ...currentEngagements,
           {
@@ -385,11 +385,11 @@ const GIDMatchScreen = () => {
       });
 
     } catch (err) {
-      console.error('[GID] Shortlist error:', err);
+      console.error('[BYT] Shortlist error:', err);
       // Still save locally even if API fails
       setShortlistedIds(prev => new Set([...prev, matchResult.consultantId]));
     }
-  }, [activeProjectId, selectedDiscipline, gidData?.engagements, updateGIDData]);
+  }, [activeProjectId, selectedDiscipline, bytData?.engagements, updateBYTData]);
 
   // Build consultant lookup
   const consultantMap = useMemo(() => {
@@ -418,22 +418,22 @@ const GIDMatchScreen = () => {
   // Render
   // --------------------------------------------------
   return (
-    <div className="gid-match-screen">
+    <div className="byt-match-screen">
 
       {/* Discipline selector */}
-      <div className="gid-match-disciplines">
+      <div className="byt-match-disciplines">
         {Object.entries(DISCIPLINES).map(([key, disc]) => (
           <button
             key={key}
-            className={`gid-match-discipline-btn ${selectedDiscipline === key ? 'gid-match-discipline-btn--active' : ''}`}
+            className={`byt-match-discipline-btn ${selectedDiscipline === key ? 'byt-match-discipline-btn--active' : ''}`}
             style={selectedDiscipline === key ? { borderColor: disc.color, backgroundColor: disc.color + '10' } : {}}
             onClick={() => setSelectedDiscipline(key)}
           >
-            <span className="gid-match-discipline-btn__icon">{disc.icon}</span>
-            <span className="gid-match-discipline-btn__label">{disc.label}</span>
-            {gidData?.currentMatches?.[key]?.length > 0 && (
-              <span className="gid-match-discipline-btn__count">
-                {gidData.currentMatches[key].length}
+            <span className="byt-match-discipline-btn__icon">{disc.icon}</span>
+            <span className="byt-match-discipline-btn__label">{disc.label}</span>
+            {bytData?.currentMatches?.[key]?.length > 0 && (
+              <span className="byt-match-discipline-btn__count">
+                {bytData.currentMatches[key].length}
               </span>
             )}
           </button>
@@ -441,14 +441,14 @@ const GIDMatchScreen = () => {
       </div>
 
       {/* Prerequisites + Run button */}
-      <div className="gid-match-control-panel">
+      <div className="byt-match-control-panel">
         <PrerequisiteGates prerequisites={prerequisites} />
 
-        <div className="gid-match-run-section">
+        <div className="byt-match-run-section">
           {/* Filters toggle */}
-          <div className="gid-match-filters-row">
+          <div className="byt-match-filters-row">
             <button
-              className="gid-btn gid-btn--ghost gid-btn--sm"
+              className="byt-btn byt-btn--ghost byt-btn--sm"
               onClick={() => setShowFilters(!showFilters)}
             >
               <FilterIcon size={14} />
@@ -457,13 +457,13 @@ const GIDMatchScreen = () => {
             </button>
 
             {showFilters && (
-              <div className="gid-match-filters-panel">
-                <label className="gid-match-filter-label">
+              <div className="byt-match-filters-panel">
+                <label className="byt-match-filter-label">
                   Minimum Score:
                   <select
                     value={minScore}
                     onChange={(e) => setMinScore(Number(e.target.value))}
-                    className="gid-filter-select gid-filter-select--sm"
+                    className="byt-filter-select byt-filter-select--sm"
                   >
                     <option value={0}>Show All</option>
                     <option value={40}>40+ (Consider & above)</option>
@@ -476,7 +476,7 @@ const GIDMatchScreen = () => {
           </div>
 
           <button
-            className="gid-btn gid-btn--primary gid-btn--run-match"
+            className="byt-btn byt-btn--primary byt-btn--run-match"
             onClick={handleRunMatch}
             disabled={!prerequisites.ready || isRunning}
           >
@@ -486,9 +486,9 @@ const GIDMatchScreen = () => {
             }
           </button>
 
-          {gidData?.lastMatchRun && hasRun && (
-            <span className="gid-match-last-run">
-              Last run: {new Date(gidData.lastMatchRun).toLocaleString()}
+          {bytData?.lastMatchRun && hasRun && (
+            <span className="byt-match-last-run">
+              Last run: {new Date(bytData.lastMatchRun).toLocaleString()}
             </span>
           )}
         </div>
@@ -496,10 +496,10 @@ const GIDMatchScreen = () => {
 
       {/* Error */}
       {error && (
-        <div className="gid-error">
+        <div className="byt-error">
           <AlertTriangle size={18} />
           <p>{error}</p>
-          <button className="gid-btn gid-btn--ghost gid-btn--sm" onClick={() => setError(null)}>
+          <button className="byt-btn byt-btn--ghost byt-btn--sm" onClick={() => setError(null)}>
             <X size={14} /> Dismiss
           </button>
         </div>
@@ -507,25 +507,25 @@ const GIDMatchScreen = () => {
 
       {/* Results summary */}
       {hasRun && resultStats && (
-        <div className="gid-match-summary">
-          <div className="gid-match-summary__stat">
-            <span className="gid-match-summary__value">{resultStats.total}</span>
-            <span className="gid-match-summary__label">Matched</span>
+        <div className="byt-match-summary">
+          <div className="byt-match-summary__stat">
+            <span className="byt-match-summary__value">{resultStats.total}</span>
+            <span className="byt-match-summary__label">Matched</span>
           </div>
-          <div className="gid-match-summary__stat" style={{ color: MATCH_TIERS.TOP_MATCH.color }}>
-            <span className="gid-match-summary__value">{resultStats.topMatch}</span>
-            <span className="gid-match-summary__label">Top Match</span>
+          <div className="byt-match-summary__stat" style={{ color: MATCH_TIERS.TOP_MATCH.color }}>
+            <span className="byt-match-summary__value">{resultStats.topMatch}</span>
+            <span className="byt-match-summary__label">Top Match</span>
           </div>
-          <div className="gid-match-summary__stat" style={{ color: MATCH_TIERS.GOOD_FIT.color }}>
-            <span className="gid-match-summary__value">{resultStats.goodFit}</span>
-            <span className="gid-match-summary__label">Good Fit</span>
+          <div className="byt-match-summary__stat" style={{ color: MATCH_TIERS.GOOD_FIT.color }}>
+            <span className="byt-match-summary__value">{resultStats.goodFit}</span>
+            <span className="byt-match-summary__label">Good Fit</span>
           </div>
-          <div className="gid-match-summary__stat" style={{ color: COLORS.textMuted }}>
-            <span className="gid-match-summary__value">{resultStats.consider}</span>
-            <span className="gid-match-summary__label">Consider</span>
+          <div className="byt-match-summary__stat" style={{ color: COLORS.textMuted }}>
+            <span className="byt-match-summary__value">{resultStats.consider}</span>
+            <span className="byt-match-summary__label">Consider</span>
           </div>
           {compareIds.length > 0 && (
-            <div className="gid-match-summary__compare-badge">
+            <div className="byt-match-summary__compare-badge">
               <Users size={14} />
               Comparing {compareIds.length}
             </div>
@@ -535,11 +535,11 @@ const GIDMatchScreen = () => {
 
       {/* Comparison panel */}
       {compareIds.length >= 2 && (
-        <div className="gid-match-comparison-panel">
-          <div className="gid-match-comparison-panel__header">
+        <div className="byt-match-comparison-panel">
+          <div className="byt-match-comparison-panel__header">
             <h3>Side-by-Side Comparison</h3>
             <button
-              className="gid-btn gid-btn--ghost gid-btn--sm"
+              className="byt-btn byt-btn--ghost byt-btn--sm"
               onClick={() => setCompareIds([])}
             >
               <X size={14} /> Clear
@@ -554,7 +554,7 @@ const GIDMatchScreen = () => {
 
       {/* Match results list */}
       {hasRun && matchResults.length > 0 && (
-        <div className="gid-match-results">
+        <div className="byt-match-results">
           {matchResults.map((result, index) => (
             <MatchResultCard
               key={result.consultantId}
@@ -575,7 +575,7 @@ const GIDMatchScreen = () => {
 
       {/* Empty state */}
       {hasRun && matchResults.length === 0 && !error && (
-        <div className="gid-empty">
+        <div className="byt-empty">
           <Target size={48} />
           <h3>No Matches Found</h3>
           <p>
@@ -587,7 +587,7 @@ const GIDMatchScreen = () => {
 
       {/* Not yet run */}
       {!hasRun && !isRunning && (
-        <div className="gid-match-placeholder">
+        <div className="byt-match-placeholder">
           <Target size={48} style={{ color: COLORS.border }} />
           <h3>Ready to Match</h3>
           <p>
@@ -600,4 +600,4 @@ const GIDMatchScreen = () => {
   );
 };
 
-export default GIDMatchScreen;
+export default BYTMatchScreen;

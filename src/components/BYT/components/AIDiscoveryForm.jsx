@@ -218,28 +218,28 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
   const profileToggleDisabled = !profilePrereqs.ready;
 
   return (
-    <div className="gid-ai-form">
+    <div className="byt-ai-form">
       {/* Phase 4: Client Profile Toggle */}
-      <div className={`gid-profile-toggle ${useClientProfile ? 'gid-profile-toggle--active' : ''} ${profileToggleDisabled ? 'gid-profile-toggle--disabled' : ''}`}>
-        <div className="gid-profile-toggle__header">
-          <div className="gid-profile-toggle__label-row">
+      <div className={`byt-profile-toggle ${useClientProfile ? 'byt-profile-toggle--active' : ''} ${profileToggleDisabled ? 'byt-profile-toggle--disabled' : ''}`}>
+        <div className="byt-profile-toggle__header">
+          <div className="byt-profile-toggle__label-row">
             <Users size={16} />
-            <span className="gid-profile-toggle__label">Use Client Profile</span>
+            <span className="byt-profile-toggle__label">Use Client Profile</span>
           </div>
           <button
-            className="gid-profile-toggle__switch"
+            className="byt-profile-toggle__switch"
             onClick={handleToggleProfile}
             disabled={profileToggleDisabled}
             aria-label={useClientProfile ? 'Disable client profile' : 'Enable client profile'}
           >
             {useClientProfile
-              ? <ToggleRight size={28} className="gid-profile-toggle__icon gid-profile-toggle__icon--on" />
-              : <ToggleLeft size={28} className="gid-profile-toggle__icon gid-profile-toggle__icon--off" />
+              ? <ToggleRight size={28} className="byt-profile-toggle__icon byt-profile-toggle__icon--on" />
+              : <ToggleLeft size={28} className="byt-profile-toggle__icon byt-profile-toggle__icon--off" />
             }
           </button>
         </div>
 
-        <p className="gid-profile-toggle__subtitle">
+        <p className="byt-profile-toggle__subtitle">
           {profileToggleDisabled
             ? 'Complete KYC Project City and Budget to enable profile-based search'
             : useClientProfile
@@ -250,19 +250,19 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
 
         {/* Profile Summary Box */}
         {useClientProfile && profileData && (
-          <div className="gid-profile-toggle__info">
-            <div className="gid-profile-toggle__info-header">
+          <div className="byt-profile-toggle__info">
+            <div className="byt-profile-toggle__info-header">
               <Info size={14} />
               <span>Profile Data Applied</span>
             </div>
-            <div className="gid-profile-toggle__info-details">
+            <div className="byt-profile-toggle__info-details">
               <span>
                 {profileData.projectCity && profileData.projectCity}
                 {profileData.state && ', ' + profileData.state}
                 {profileData.budgetFormatted && ' \u00b7 Budget: ' + profileData.budgetFormatted}
               </span>
               {profileData.architecturalStyles && (
-                <span className="gid-profile-toggle__info-arch">
+                <span className="byt-profile-toggle__info-arch">
                   Architectural Style: {profileData.architecturalStyles.styles.map(s =>
                     s.isPrimary ? s.name : s.name
                   ).join(' \u2022 ')}
@@ -273,7 +273,7 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
                 {profileData.styleKeywords.length} style signal{profileData.styleKeywords.length !== 1 ? 's' : ''} detected
               </span>
               {profileData.includedSpaces.length > 0 && (
-                <span className="gid-profile-toggle__info-spaces">
+                <span className="byt-profile-toggle__info-spaces">
                   Spaces: {profileData.includedSpaces.slice(0, 8).join(', ')}
                   {profileData.includedSpaces.length > 8 && ' +' + (profileData.includedSpaces.length - 8) + ' more'}
                 </span>
@@ -284,17 +284,17 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       </div>
 
       {/* Discipline selector */}
-      <div className="gid-ai-form__section">
-        <label className="gid-ai-form__label">Discipline</label>
-        <div className="gid-ai-form__discipline-grid">
+      <div className="byt-ai-form__section">
+        <label className="byt-ai-form__label">Discipline</label>
+        <div className="byt-ai-form__discipline-grid">
           {DISCIPLINES.map(d => (
             <button
               key={d.key}
-              className={`gid-ai-form__discipline-btn ${discipline === d.key ? 'gid-ai-form__discipline-btn--active' : ''}`}
+              className={`byt-ai-form__discipline-btn ${discipline === d.key ? 'byt-ai-form__discipline-btn--active' : ''}`}
               style={discipline === d.key ? { borderColor: d.color, background: d.color + '12' } : {}}
               onClick={() => setDiscipline(d.key)}
             >
-              <span className="gid-ai-form__discipline-icon">{d.icon}</span>
+              <span className="byt-ai-form__discipline-icon">{d.icon}</span>
               <span>{d.label}</span>
             </button>
           ))}
@@ -302,17 +302,17 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       </div>
 
       {/* Geographic scope */}
-      <div className="gid-ai-form__section">
-        <label className="gid-ai-form__label">
+      <div className="byt-ai-form__section">
+        <label className="byt-ai-form__label">
           <MapPin size={14} />
           Geographic Focus
           {useClientProfile && profileData?.state && (
-            <span className="gid-profile-badge">From KYC</span>
+            <span className="byt-profile-badge">From KYC</span>
           )}
         </label>
-        <div className="gid-ai-form__state-controls">
+        <div className="byt-ai-form__state-controls">
           <button
-            className="gid-ai-form__state-toggle"
+            className="byt-ai-form__state-toggle"
             onClick={() => setShowStatePicker(!showStatePicker)}
           >
             {selectedStates.length === 0
@@ -321,16 +321,16 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
             }
           </button>
           {selectedStates.length > 0 && (
-            <button className="gid-btn gid-btn--ghost" onClick={() => setSelectedStates([])}>
+            <button className="byt-btn byt-btn--ghost" onClick={() => setSelectedStates([])}>
               <X size={12} /> Clear
             </button>
           )}
         </div>
 
         {selectedStates.length > 0 && (
-          <div className="gid-ai-form__selected-states">
+          <div className="byt-ai-form__selected-states">
             {selectedStates.map(st => (
-              <span key={st} className="gid-ai-form__state-tag">
+              <span key={st} className="byt-ai-form__state-tag">
                 {st}
                 <button onClick={() => toggleState(st)}><X size={10} /></button>
               </span>
@@ -339,11 +339,11 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
         )}
 
         {showStatePicker && (
-          <div className="gid-ai-form__state-picker">
+          <div className="byt-ai-form__state-picker">
             {US_STATES.map(st => (
               <button
                 key={st}
-                className={`gid-ai-form__state-chip ${selectedStates.includes(st) ? 'gid-ai-form__state-chip--active' : ''}`}
+                className={`byt-ai-form__state-chip ${selectedStates.includes(st) ? 'byt-ai-form__state-chip--active' : ''}`}
                 onClick={() => toggleState(st)}
               >
                 {st}
@@ -354,58 +354,58 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       </div>
 
       {/* Budget tier */}
-      <div className="gid-ai-form__section">
-        <label className="gid-ai-form__label">
+      <div className="byt-ai-form__section">
+        <label className="byt-ai-form__label">
           <DollarSign size={14} />
           Budget Tier
           {useClientProfile && profileData?.budgetTier && (
-            <span className="gid-profile-badge">From KYC</span>
+            <span className="byt-profile-badge">From KYC</span>
           )}
         </label>
-        <div className="gid-ai-form__budget-grid">
+        <div className="byt-ai-form__budget-grid">
           {BUDGET_TIERS.map(bt => (
             <button
               key={bt.key}
-              className={`gid-ai-form__budget-btn ${budgetTier === bt.key ? 'gid-ai-form__budget-btn--active' : ''}`}
+              className={`byt-ai-form__budget-btn ${budgetTier === bt.key ? 'byt-ai-form__budget-btn--active' : ''}`}
               style={budgetTier === bt.key ? { borderColor: bt.color } : {}}
               onClick={() => setBudgetTier(bt.key)}
             >
-              <span className="gid-ai-form__budget-label">{bt.label}</span>
-              <span className="gid-ai-form__budget-range">{bt.range}</span>
+              <span className="byt-ai-form__budget-label">{bt.label}</span>
+              <span className="byt-ai-form__budget-range">{bt.range}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Style keywords */}
-      <div className="gid-ai-form__section">
-        <label className="gid-ai-form__label">
+      <div className="byt-ai-form__section">
+        <label className="byt-ai-form__label">
           <Palette size={14} />
           Style Keywords
           {useClientProfile && profileData?.styleKeywords.length > 0 && (
-            <span className="gid-profile-badge">From KYC</span>
+            <span className="byt-profile-badge">From KYC</span>
           )}
         </label>
-        <div className="gid-ai-form__style-input-row">
+        <div className="byt-ai-form__style-input-row">
           <input
             type="text"
             value={styleInput}
             onChange={(e) => setStyleInput(e.target.value)}
             onKeyDown={handleStyleInputKeyDown}
             placeholder="Type and press Enter, or pick below..."
-            className="gid-ai-form__style-input"
+            className="byt-ai-form__style-input"
           />
           {styleInput && (
-            <button className="gid-btn gid-btn--ghost" onClick={() => addStyleKeyword(styleInput)}>
+            <button className="byt-btn byt-btn--ghost" onClick={() => addStyleKeyword(styleInput)}>
               Add
             </button>
           )}
         </div>
 
         {styleKeywords.length > 0 && (
-          <div className="gid-ai-form__style-tags">
+          <div className="byt-ai-form__style-tags">
             {styleKeywords.map(kw => (
-              <span key={kw} className="gid-ai-form__style-tag">
+              <span key={kw} className="byt-ai-form__style-tag">
                 {kw}
                 <button onClick={() => removeStyleKeyword(kw)}><X size={10} /></button>
               </span>
@@ -413,11 +413,11 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
           </div>
         )}
 
-        <div className="gid-ai-form__style-suggestions">
+        <div className="byt-ai-form__style-suggestions">
           {STYLE_SUGGESTIONS.filter(s => !styleKeywords.includes(s)).slice(0, 12).map(s => (
             <button
               key={s}
-              className="gid-ai-form__suggestion-chip"
+              className="byt-ai-form__suggestion-chip"
               onClick={() => addStyleKeyword(s)}
             >
               + {s}
@@ -427,16 +427,16 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       </div>
 
       {/* Result count */}
-      <div className="gid-ai-form__section">
-        <label className="gid-ai-form__label">
+      <div className="byt-ai-form__section">
+        <label className="byt-ai-form__label">
           <Hash size={14} />
           Number of Results
         </label>
-        <div className="gid-ai-form__count-btns">
+        <div className="byt-ai-form__count-btns">
           {RESULT_COUNTS.map(n => (
             <button
               key={n}
-              className={`gid-ai-form__count-btn ${resultCount === n ? 'gid-ai-form__count-btn--active' : ''}`}
+              className={`byt-ai-form__count-btn ${resultCount === n ? 'byt-ai-form__count-btn--active' : ''}`}
               onClick={() => setResultCount(n)}
             >
               {n}
@@ -446,9 +446,9 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
       </div>
 
       {/* Submit */}
-      <div className="gid-ai-form__submit">
+      <div className="byt-ai-form__submit">
         <button
-          className="gid-btn gid-btn--primary gid-btn--lg"
+          className="byt-btn byt-btn--primary byt-btn--lg"
           onClick={handleSubmit}
           disabled={isSearching}
         >
@@ -464,7 +464,7 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
             </>
           )}
         </button>
-        <p className="gid-ai-form__hint">
+        <p className="byt-ai-form__hint">
           {useClientProfile
             ? 'AI will search for ' + (DISCIPLINES.find(d => d.key === discipline)?.label.toLowerCase() || 'consultant') + ' firms aligned with ' + (profileData?.clientName || 'client') + '\u2019s full design identity and project parameters.'
             : 'AI will search for real, verifiable ' + (DISCIPLINES.find(d => d.key === discipline)?.label.toLowerCase() || 'consultant') + ' firms matching your criteria.'
@@ -474,20 +474,20 @@ const AIDiscoveryForm = ({ onSearch, isSearching, recentSearches = [], kycData, 
 
       {/* Recent searches */}
       {recentSearches.length > 0 && (
-        <div className="gid-ai-form__recent">
-          <label className="gid-ai-form__label">
+        <div className="byt-ai-form__recent">
+          <label className="byt-ai-form__label">
             <Clock size={14} />
             Recent Searches
           </label>
-          <div className="gid-ai-form__recent-list">
+          <div className="byt-ai-form__recent-list">
             {recentSearches.map((search, i) => (
               <button
                 key={i}
-                className="gid-ai-form__recent-item"
+                className="byt-ai-form__recent-item"
                 onClick={() => loadPreviousSearch(search)}
               >
-                <span className="gid-ai-form__recent-query">{search.query || 'Previous search'}</span>
-                <span className="gid-ai-form__recent-meta">
+                <span className="byt-ai-form__recent-query">{search.query || 'Previous search'}</span>
+                <span className="byt-ai-form__recent-meta">
                   {search.resultCount || 0} results
                 </span>
               </button>

@@ -1,7 +1,7 @@
 /**
- * GIDShortlistScreen.jsx — Shortlist Curation Screen
+ * BYTShortlistScreen.jsx — Shortlist Curation Screen
  *
- * Phase 1 of GID Restructure. Replaces the old Matchmaking tab.
+ * Phase 1 of BYT Restructure. Replaces the old Matchmaking tab.
  *
  * Philosophy: Trust Discovery's intelligence. Don't re-score — curate.
  * The AI already evaluated candidates with deep context. This screen presents
@@ -140,26 +140,26 @@ const ShortlistCandidateCard = ({
 
   return (
     <div
-      className={`gid-shortlist-card ${isShortlisted ? 'gid-shortlist-card--shortlisted' : ''} ${isPassed ? 'gid-shortlist-card--passed' : ''}`}
+      className={`byt-shortlist-card ${isShortlisted ? 'byt-shortlist-card--shortlisted' : ''} ${isPassed ? 'byt-shortlist-card--passed' : ''}`}
       {...(dragHandlers || {})}
     >
       {/* Drag handle + rank (only for shortlisted) */}
       {isShortlisted && rank && (
-        <div className="gid-shortlist-card__rank-handle">
-          <GripVertical size={16} className="gid-shortlist-card__grip" />
-          <span className="gid-shortlist-card__rank">#{rank}</span>
+        <div className="byt-shortlist-card__rank-handle">
+          <GripVertical size={16} className="byt-shortlist-card__grip" />
+          <span className="byt-shortlist-card__rank">#{rank}</span>
         </div>
       )}
 
-      <div className="gid-shortlist-card__content">
+      <div className="byt-shortlist-card__content">
         {/* Header row */}
-        <div className="gid-shortlist-card__header">
-          <div className="gid-shortlist-card__info">
-            <div className="gid-shortlist-card__title-row">
-              <h3 className="gid-shortlist-card__firm">{consultant.firm_name}</h3>
+        <div className="byt-shortlist-card__header">
+          <div className="byt-shortlist-card__info">
+            <div className="byt-shortlist-card__title-row">
+              <h3 className="byt-shortlist-card__firm">{consultant.firm_name}</h3>
               {stageInfo && (
                 <span
-                  className="gid-shortlist-card__pipeline-badge"
+                  className="byt-shortlist-card__pipeline-badge"
                   style={{ color: stageInfo.color, backgroundColor: stageInfo.color + '15' }}
                 >
                   {React.createElement(stageInfo.icon, { size: 12 })}
@@ -168,27 +168,27 @@ const ShortlistCandidateCard = ({
               )}
             </div>
             {(consultant.first_name || consultant.last_name) && (
-              <p className="gid-shortlist-card__name">
+              <p className="byt-shortlist-card__name">
                 {consultant.first_name} {consultant.last_name}
               </p>
             )}
-            <div className="gid-shortlist-card__meta">
+            <div className="byt-shortlist-card__meta">
               {consultant.hq_city && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <MapPin size={12} />
                   {consultant.hq_city}{consultant.hq_state ? `, ${consultant.hq_state}` : ''}
                 </span>
               )}
               {consultant.years_experience && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <Briefcase size={12} />
                   {consultant.years_experience} yrs
                 </span>
               )}
               {consultant.website && (
-                <span className="gid-meta-item">
+                <span className="byt-meta-item">
                   <Globe size={12} />
-                  <a href={consultant.website} target="_blank" rel="noopener noreferrer" className="gid-shortlist-card__link">
+                  <a href={consultant.website} target="_blank" rel="noopener noreferrer" className="byt-shortlist-card__link">
                     Website
                   </a>
                 </span>
@@ -198,8 +198,8 @@ const ShortlistCandidateCard = ({
 
           {/* Discovery confidence gauge */}
           {confidence && (
-            <div className="gid-shortlist-card__confidence">
-              <div className="gid-confidence-ring" title={`Discovery confidence: ${confidence}%`}>
+            <div className="byt-shortlist-card__confidence">
+              <div className="byt-confidence-ring" title={`Discovery confidence: ${confidence}%`}>
                 <svg width="56" height="56" viewBox="0 0 56 56">
                   <circle cx="28" cy="28" r="24" fill="none" stroke="#e5e5e0" strokeWidth="4" />
                   <circle
@@ -216,7 +216,7 @@ const ShortlistCandidateCard = ({
                   </text>
                 </svg>
               </div>
-              <span className="gid-confidence-label">AI Confidence</span>
+              <span className="byt-confidence-label">AI Confidence</span>
             </div>
           )}
         </div>
@@ -226,21 +226,21 @@ const ShortlistCandidateCard = ({
 
         {/* Specialties tags */}
         {specialties.length > 0 && (
-          <div className="gid-shortlist-card__tags">
+          <div className="byt-shortlist-card__tags">
             {specialties.slice(0, 5).map((s, i) => (
-              <span key={i} className="gid-tag">{s}</span>
+              <span key={i} className="byt-tag">{s}</span>
             ))}
             {specialties.length > 5 && (
-              <span className="gid-tag gid-tag--more">+{specialties.length - 5}</span>
+              <span className="byt-tag byt-tag--more">+{specialties.length - 5}</span>
             )}
           </div>
         )}
 
         {/* AI Rationale (collapsed by default) */}
         {(attribution?.rationale || discoveryData?.ai_summary) && (
-          <div className="gid-shortlist-card__rationale-toggle">
+          <div className="byt-shortlist-card__rationale-toggle">
             <button
-              className="gid-btn gid-btn--ghost gid-btn--sm"
+              className="byt-btn byt-btn--ghost byt-btn--sm"
               onClick={() => setExpanded(!expanded)}
             >
               <Zap size={12} />
@@ -251,17 +251,17 @@ const ShortlistCandidateCard = ({
         )}
 
         {expanded && (
-          <div className="gid-shortlist-card__rationale">
+          <div className="byt-shortlist-card__rationale">
             {attribution?.rationale && (
-              <p className="gid-shortlist-card__rationale-text">{attribution.rationale}</p>
+              <p className="byt-shortlist-card__rationale-text">{attribution.rationale}</p>
             )}
             {discoveryData?.ai_summary && (
-              <p className="gid-shortlist-card__rationale-text">{discoveryData.ai_summary}</p>
+              <p className="byt-shortlist-card__rationale-text">{discoveryData.ai_summary}</p>
             )}
 
             {/* Notable projects */}
             {notableProjects.length > 0 && (
-              <div className="gid-shortlist-card__notable">
+              <div className="byt-shortlist-card__notable">
                 <h4>Notable Projects</h4>
                 <ul>
                   {notableProjects.map((p, i) => (
@@ -277,11 +277,11 @@ const ShortlistCandidateCard = ({
 
             {/* Awards */}
             {awards.length > 0 && (
-              <div className="gid-shortlist-card__awards">
+              <div className="byt-shortlist-card__awards">
                 <h4>Awards & Recognition</h4>
-                <div className="gid-shortlist-card__award-tags">
+                <div className="byt-shortlist-card__award-tags">
                   {awards.map((a, i) => (
-                    <span key={i} className="gid-tag gid-tag--award">
+                    <span key={i} className="byt-tag byt-tag--award">
                       <Award size={10} /> {typeof a === 'string' ? a : a.name || a}
                     </span>
                   ))}
@@ -293,30 +293,30 @@ const ShortlistCandidateCard = ({
 
         {/* Budget range */}
         {(consultant.min_budget || consultant.max_budget) && (
-          <p className="gid-shortlist-card__budget">
+          <p className="byt-shortlist-card__budget">
             Budget: ${((consultant.min_budget || 0) / 1e6).toFixed(1)}M – ${((consultant.max_budget || 0) / 1e6).toFixed(1)}M
           </p>
         )}
 
         {/* Actions */}
         {!isPassed && (
-          <div className="gid-shortlist-card__actions">
+          <div className="byt-shortlist-card__actions">
             {!isShortlisted ? (
               <>
                 <button
-                  className="gid-btn gid-btn--primary gid-btn--sm"
+                  className="byt-btn byt-btn--primary byt-btn--sm"
                   onClick={() => onShortlist(consultant)}
                 >
                   <CheckCircle2 size={14} /> Shortlist
                 </button>
                 <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
+                  className="byt-btn byt-btn--ghost byt-btn--sm"
                   onClick={() => onPass(consultant)}
                 >
                   <X size={14} /> Pass
                 </button>
                 <button
-                  className="gid-btn gid-btn--ghost gid-btn--sm"
+                  className="byt-btn byt-btn--ghost byt-btn--sm"
                   onClick={() => onRequestInfo(consultant)}
                   title="Flag for manual research"
                 >
@@ -324,13 +324,13 @@ const ShortlistCandidateCard = ({
                 </button>
               </>
             ) : (
-              <div className="gid-shortlist-card__pipeline-actions">
-                <span className="gid-shortlist-card__status-label" style={{ color: COLORS.success }}>
+              <div className="byt-shortlist-card__pipeline-actions">
+                <span className="byt-shortlist-card__status-label" style={{ color: COLORS.success }}>
                   <CheckCircle2 size={14} /> Shortlisted
                 </span>
                 {onSendRFQ && engagement?.contact_status !== 'questionnaire_sent' && engagement?.contact_status !== 'questionnaire_received' && (
                   <button
-                    className="gid-btn gid-btn--gold gid-btn--sm"
+                    className="byt-btn byt-btn--gold byt-btn--sm"
                     onClick={(e) => { e.stopPropagation(); onSendRFQ(consultant); }}
                     title="Send Request for Qualifications"
                   >
@@ -338,7 +338,7 @@ const ShortlistCandidateCard = ({
                   </button>
                 )}
                 {(engagement?.contact_status === 'questionnaire_sent' || engagement?.contact_status === 'questionnaire_received') && (
-                  <span className="gid-shortlist-card__rfq-status" style={{
+                  <span className="byt-shortlist-card__rfq-status" style={{
                     color: engagement.contact_status === 'questionnaire_received' ? COLORS.warning : '#5c6bc0'
                   }}>
                     <FileText size={13} />
@@ -352,11 +352,11 @@ const ShortlistCandidateCard = ({
 
         {/* Pass reason display */}
         {isPassed && (
-          <div className="gid-shortlist-card__passed-notice">
+          <div className="byt-shortlist-card__passed-notice">
             <X size={14} />
             <span>Passed</span>
             <button
-              className="gid-btn gid-btn--ghost gid-btn--xs"
+              className="byt-btn byt-btn--ghost byt-btn--xs"
               onClick={() => onShortlist(consultant)}
             >
               Undo
@@ -373,8 +373,8 @@ const ShortlistCandidateCard = ({
 // MAIN SHORTLIST SCREEN
 // =============================================================================
 
-const GIDShortlistScreen = () => {
-  const { kycData, fyiData, gidData, updateGIDData, activeProjectId, projectData } = useAppContext();
+const BYTShortlistScreen = () => {
+  const { kycData, fyiData, bytData, updateBYTData, activeProjectId, projectData } = useAppContext();
 
   // State
   const [selectedDiscipline, setSelectedDiscipline] = useState('architect');
@@ -764,7 +764,7 @@ const GIDShortlistScreen = () => {
       // Sync project to RFQ backend first
       await rfqSyncProject({
         n4s_project_id: activeProjectId,
-        project_name: projectData?.projectName || gidData?.project_name || `Project ${activeProjectId}`,
+        project_name: projectData?.projectName || bytData?.project_name || `Project ${activeProjectId}`,
         project_features: fyiData?.spaces?.map(s => s.displayName || s.name) || []
       });
 
@@ -802,7 +802,7 @@ const GIDShortlistScreen = () => {
     } finally {
       setRfqSending(false);
     }
-  }, [rfqTarget, activeProjectId, gidData, fyiData, engagementMap]);
+  }, [rfqTarget, activeProjectId, bytData, fyiData, engagementMap]);
 
   // Copy to clipboard helper
   const handleCopy = useCallback((text, label) => {
@@ -845,82 +845,82 @@ const GIDShortlistScreen = () => {
   // Render
   // --------------------------------------------------
   return (
-    <div className="gid-shortlist-screen">
+    <div className="byt-shortlist-screen">
 
       {/* Discipline selector */}
-      <div className="gid-match-disciplines">
+      <div className="byt-match-disciplines">
         {Object.entries(DISCIPLINES).map(([key, disc]) => {
           const discCount = consultants.filter(c => c.role === key).length;
           return (
             <button
               key={key}
-              className={`gid-match-discipline-btn ${selectedDiscipline === key ? 'gid-match-discipline-btn--active' : ''}`}
+              className={`byt-match-discipline-btn ${selectedDiscipline === key ? 'byt-match-discipline-btn--active' : ''}`}
               style={selectedDiscipline === key ? { borderColor: disc.color, backgroundColor: disc.color + '10' } : {}}
               onClick={() => setSelectedDiscipline(key)}
             >
-              <span className="gid-match-discipline-btn__icon">{disc.icon}</span>
-              <span className="gid-match-discipline-btn__label">{disc.label}</span>
+              <span className="byt-match-discipline-btn__icon">{disc.icon}</span>
+              <span className="byt-match-discipline-btn__label">{disc.label}</span>
             </button>
           );
         })}
       </div>
 
       {/* Stats bar */}
-      <div className="gid-shortlist-stats">
-        <div className="gid-shortlist-stat">
-          <span className="gid-shortlist-stat__value">{stats.total}</span>
-          <span className="gid-shortlist-stat__label">Total</span>
+      <div className="byt-shortlist-stats">
+        <div className="byt-shortlist-stat">
+          <span className="byt-shortlist-stat__value">{stats.total}</span>
+          <span className="byt-shortlist-stat__label">Total</span>
         </div>
-        <div className="gid-shortlist-stat">
-          <span className="gid-shortlist-stat__value" style={{ color: COLORS.success }}>
+        <div className="byt-shortlist-stat">
+          <span className="byt-shortlist-stat__value" style={{ color: COLORS.success }}>
             {stats.shortlisted}
           </span>
-          <span className="gid-shortlist-stat__label">Shortlisted</span>
+          <span className="byt-shortlist-stat__label">Shortlisted</span>
         </div>
-        <div className="gid-shortlist-stat">
-          <span className="gid-shortlist-stat__value">{stats.unreviewed}</span>
-          <span className="gid-shortlist-stat__label">To Review</span>
+        <div className="byt-shortlist-stat">
+          <span className="byt-shortlist-stat__value">{stats.unreviewed}</span>
+          <span className="byt-shortlist-stat__label">To Review</span>
         </div>
-        <div className="gid-shortlist-stat">
-          <span className="gid-shortlist-stat__value" style={{ color: COLORS.textMuted }}>
+        <div className="byt-shortlist-stat">
+          <span className="byt-shortlist-stat__value" style={{ color: COLORS.textMuted }}>
             {stats.passed}
           </span>
-          <span className="gid-shortlist-stat__label">Passed</span>
+          <span className="byt-shortlist-stat__label">Passed</span>
         </div>
         {stats.withDiscovery > 0 && (
-          <div className="gid-shortlist-stat">
-            <span className="gid-shortlist-stat__value" style={{ color: COLORS.info }}>
+          <div className="byt-shortlist-stat">
+            <span className="byt-shortlist-stat__value" style={{ color: COLORS.info }}>
               <Zap size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> {stats.withDiscovery}
             </span>
-            <span className="gid-shortlist-stat__label">AI Sourced</span>
+            <span className="byt-shortlist-stat__label">AI Sourced</span>
           </div>
         )}
 
         {/* Search + filter controls */}
-        <div className="gid-shortlist-controls">
-          <div className="gid-shortlist-search">
+        <div className="byt-shortlist-controls">
+          <div className="byt-shortlist-search">
             <SearchIcon size={14} />
             <input
               type="text"
               placeholder="Search firms..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="gid-shortlist-search__input"
+              className="byt-shortlist-search__input"
             />
             {searchInput && (
-              <button onClick={() => setSearchInput('')} className="gid-shortlist-search__clear">
+              <button onClick={() => setSearchInput('')} className="byt-shortlist-search__clear">
                 <X size={12} />
               </button>
             )}
           </div>
           <button
-            className={`gid-btn gid-btn--ghost gid-btn--sm ${showPassed ? 'gid-btn--active' : ''}`}
+            className={`byt-btn byt-btn--ghost byt-btn--sm ${showPassed ? 'byt-btn--active' : ''}`}
             onClick={() => setShowPassed(!showPassed)}
           >
             {showPassed ? 'Hide' : 'Show'} Passed ({stats.passed})
           </button>
           <button
-            className="gid-btn gid-btn--ghost gid-btn--sm"
+            className="byt-btn byt-btn--ghost byt-btn--sm"
             onClick={loadData}
             title="Refresh"
           >
@@ -931,7 +931,7 @@ const GIDShortlistScreen = () => {
 
       {/* Loading */}
       {loading && (
-        <div className="gid-loading">
+        <div className="byt-loading">
           <RefreshCw size={24} className="spinning" />
           <p>Loading {DISCIPLINES[selectedDiscipline]?.label} candidates...</p>
         </div>
@@ -939,16 +939,16 @@ const GIDShortlistScreen = () => {
 
       {/* Error */}
       {error && (
-        <div className="gid-error">
+        <div className="byt-error">
           <AlertTriangle size={18} />
           <p>{error}</p>
-          <button className="gid-btn gid-btn--primary gid-btn--sm" onClick={loadData}>Retry</button>
+          <button className="byt-btn byt-btn--primary byt-btn--sm" onClick={loadData}>Retry</button>
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && consultants.length === 0 && (
-        <div className="gid-empty">
+        <div className="byt-empty">
           <Users size={48} />
           <h3>No {DISCIPLINES[selectedDiscipline]?.label} Candidates</h3>
           <p>
@@ -960,24 +960,24 @@ const GIDShortlistScreen = () => {
 
       {/* Main content */}
       {!loading && !error && consultants.length > 0 && (
-        <div className="gid-shortlist-content">
+        <div className="byt-shortlist-content">
 
           {/* SHORTLISTED SECTION */}
           {shortlisted.length > 0 && (
-            <div className="gid-shortlist-section">
-              <div className="gid-shortlist-section__header">
-                <h3 className="gid-shortlist-section__title">
+            <div className="byt-shortlist-section">
+              <div className="byt-shortlist-section__header">
+                <h3 className="byt-shortlist-section__title">
                   <CheckCircle2 size={18} style={{ color: COLORS.success }} />
                   Shortlisted ({shortlisted.length})
                 </h3>
-                <span className="gid-shortlist-section__hint">
+                <span className="byt-shortlist-section__hint">
                   Drag to reorder priority
                 </span>
               </div>
 
               {/* Alignment summary */}
               {alignmentSummary && (
-                <div className="gid-shortlist-alignment-summary">
+                <div className="byt-shortlist-alignment-summary">
                   <span title="Style Aligned">🎨 {alignmentSummary.styleCount}/{alignmentSummary.total}</span>
                   <span title="Budget Aligned">💰 {alignmentSummary.budgetCount}/{alignmentSummary.total}</span>
                   <span title="Geographic Aligned">📍 {alignmentSummary.geoCount}/{alignmentSummary.total}</span>
@@ -985,11 +985,11 @@ const GIDShortlistScreen = () => {
                 </div>
               )}
 
-              <div className="gid-shortlist-list">
+              <div className="byt-shortlist-list">
                 {shortlisted.map((consultant, index) => (
                   <div
                     key={consultant.id}
-                    className={`gid-shortlist-drag-wrapper ${dragOverIndex === index ? 'gid-shortlist-drag-wrapper--over' : ''}`}
+                    className={`byt-shortlist-drag-wrapper ${dragOverIndex === index ? 'byt-shortlist-drag-wrapper--over' : ''}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragOver={(e) => handleDragOver(e, index)}
@@ -1018,15 +1018,15 @@ const GIDShortlistScreen = () => {
 
           {/* UNREVIEWED SECTION */}
           {unreviewed.length > 0 && (
-            <div className="gid-shortlist-section">
-              <div className="gid-shortlist-section__header">
-                <h3 className="gid-shortlist-section__title">
+            <div className="byt-shortlist-section">
+              <div className="byt-shortlist-section__header">
+                <h3 className="byt-shortlist-section__title">
                   <Clock size={18} style={{ color: COLORS.warning }} />
                   To Review ({unreviewed.length})
                 </h3>
               </div>
 
-              <div className="gid-shortlist-list">
+              <div className="byt-shortlist-list">
                 {unreviewed.map(consultant => (
                   <ShortlistCandidateCard
                     key={consultant.id}
@@ -1049,15 +1049,15 @@ const GIDShortlistScreen = () => {
 
           {/* PASSED SECTION */}
           {showPassed && passed.length > 0 && (
-            <div className="gid-shortlist-section gid-shortlist-section--passed">
-              <div className="gid-shortlist-section__header">
-                <h3 className="gid-shortlist-section__title">
+            <div className="byt-shortlist-section byt-shortlist-section--passed">
+              <div className="byt-shortlist-section__header">
+                <h3 className="byt-shortlist-section__title">
                   <X size={18} style={{ color: COLORS.textMuted }} />
                   Passed ({passed.length})
                 </h3>
               </div>
 
-              <div className="gid-shortlist-list">
+              <div className="byt-shortlist-list">
                 {passed.map(consultant => (
                   <ShortlistCandidateCard
                     key={consultant.id}
@@ -1082,32 +1082,32 @@ const GIDShortlistScreen = () => {
 
       {/* RFQ Dispatch Modal */}
       {rfqModalOpen && rfqTarget && (
-        <div className="gid-modal-overlay" onClick={() => setRfqModalOpen(false)}>
-          <div className="gid-modal gid-rfq-modal" onClick={e => e.stopPropagation()}>
-            <div className="gid-modal__header">
+        <div className="byt-modal-overlay" onClick={() => setRfqModalOpen(false)}>
+          <div className="byt-modal byt-rfq-modal" onClick={e => e.stopPropagation()}>
+            <div className="byt-modal__header">
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.navy, margin: 0 }}>
                 <Send size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
                 Send RFQ
               </h3>
-              <button className="gid-modal__close" onClick={() => setRfqModalOpen(false)}>
+              <button className="byt-modal__close" onClick={() => setRfqModalOpen(false)}>
                 <X size={18} />
               </button>
             </div>
 
-            <div className="gid-modal__body">
+            <div className="byt-modal__body">
               {!rfqResult ? (
                 <>
-                  <div className="gid-rfq-modal__target">
-                    <div className="gid-rfq-modal__target-firm">{rfqTarget.firm_name}</div>
-                    <div className="gid-rfq-modal__target-name">
+                  <div className="byt-rfq-modal__target">
+                    <div className="byt-rfq-modal__target-firm">{rfqTarget.firm_name}</div>
+                    <div className="byt-rfq-modal__target-name">
                       {rfqTarget.first_name} {rfqTarget.last_name}
                     </div>
-                    <div className="gid-rfq-modal__target-disc">
+                    <div className="byt-rfq-modal__target-disc">
                       {DISCIPLINES[rfqTarget.role]?.label} • {rfqTarget.email || 'No email on file'}
                     </div>
                   </div>
 
-                  <div className="gid-rfq-modal__info">
+                  <div className="byt-rfq-modal__info">
                     This will create a secure questionnaire invitation for this consultant.
                     You'll receive a unique link and password to send them.
                     The questionnaire includes:
@@ -1132,12 +1132,12 @@ const GIDShortlistScreen = () => {
                     </div>
                   )}
 
-                  <div className="gid-rfq-modal__actions">
-                    <button className="gid-btn gid-btn--ghost" onClick={() => setRfqModalOpen(false)}>
+                  <div className="byt-rfq-modal__actions">
+                    <button className="byt-btn byt-btn--ghost" onClick={() => setRfqModalOpen(false)}>
                       Cancel
                     </button>
                     <button
-                      className="gid-btn gid-btn--gold"
+                      className="byt-btn byt-btn--gold"
                       onClick={handleDispatchRFQ}
                       disabled={rfqSending || !rfqApiAvailable}
                     >
@@ -1158,15 +1158,15 @@ const GIDShortlistScreen = () => {
                     </p>
                   </div>
 
-                  <div className="gid-rfq-modal__credentials">
-                    <div className="gid-rfq-cred">
-                      <label className="gid-rfq-cred__label">
+                  <div className="byt-rfq-modal__credentials">
+                    <div className="byt-rfq-cred">
+                      <label className="byt-rfq-cred__label">
                         <ExternalLink size={12} /> Portal Link
                       </label>
-                      <div className="gid-rfq-cred__value">
+                      <div className="byt-rfq-cred__value">
                         <code>{rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`}</code>
                         <button
-                          className="gid-rfq-cred__copy"
+                          className="byt-rfq-cred__copy"
                           onClick={() => handleCopy(rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`, 'link')}
                         >
                           {copied === 'link' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
@@ -1174,14 +1174,14 @@ const GIDShortlistScreen = () => {
                       </div>
                     </div>
 
-                    <div className="gid-rfq-cred">
-                      <label className="gid-rfq-cred__label">
+                    <div className="byt-rfq-cred">
+                      <label className="byt-rfq-cred__label">
                         <Key size={12} /> Password
                       </label>
-                      <div className="gid-rfq-cred__value">
-                        <code className="gid-rfq-cred__password">{rfqResult.invitation?.plain_password}</code>
+                      <div className="byt-rfq-cred__value">
+                        <code className="byt-rfq-cred__password">{rfqResult.invitation?.plain_password}</code>
                         <button
-                          className="gid-rfq-cred__copy"
+                          className="byt-rfq-cred__copy"
                           onClick={() => handleCopy(rfqResult.invitation?.plain_password, 'password')}
                         >
                           {copied === 'password' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
@@ -1189,11 +1189,11 @@ const GIDShortlistScreen = () => {
                       </div>
                     </div>
 
-                    <div className="gid-rfq-cred">
-                      <label className="gid-rfq-cred__label">
+                    <div className="byt-rfq-cred">
+                      <label className="byt-rfq-cred__label">
                         <Clock size={12} /> Expires
                       </label>
-                      <div className="gid-rfq-cred__value">
+                      <div className="byt-rfq-cred__value">
                         <span style={{ fontSize: 13 }}>
                           {rfqResult.invitation?.expires_at
                             ? new Date(rfqResult.invitation.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -1212,15 +1212,15 @@ const GIDShortlistScreen = () => {
                   {rfqTarget.email && (
                     <a
                       href={`mailto:${rfqTarget.email}?subject=${encodeURIComponent('Request for Qualifications — Luxury Residential Advisory')}&body=${encodeURIComponent(`Dear ${rfqTarget.first_name || 'Colleague'},\n\nYou have been invited to complete a confidential Request for Qualifications questionnaire for an ultra-luxury residential engagement.\n\nPlease access the portal here:\n${rfqResult.invitation?.access_url || `https://rfq.not-4.sale/respond?token=${rfqResult.invitation?.access_token}`}\n\nYour access password: ${rfqResult.invitation?.plain_password}\n\nThis invitation expires on ${rfqResult.invitation?.expires_at ? new Date(rfqResult.invitation.expires_at).toLocaleDateString() : '14 days'}.\n\nYour responses are confidential and will be evaluated as part of our team selection process.\n\nBest regards,\nLuxury Residential Advisory Team\nNot4Sale`)}`}
-                      className="gid-btn gid-btn--primary"
+                      className="byt-btn byt-btn--primary"
                       style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 16, textDecoration: 'none', width: '100%' }}
                     >
                       <Mail size={14} /> Open Email Draft
                     </a>
                   )}
 
-                  <div className="gid-rfq-modal__actions" style={{ marginTop: 12 }}>
-                    <button className="gid-btn gid-btn--primary" onClick={() => setRfqModalOpen(false)}>
+                  <div className="byt-rfq-modal__actions" style={{ marginTop: 12 }}>
+                    <button className="byt-btn byt-btn--primary" onClick={() => setRfqModalOpen(false)}>
                       Done
                     </button>
                   </div>
@@ -1234,4 +1234,4 @@ const GIDShortlistScreen = () => {
   );
 };
 
-export default GIDShortlistScreen;
+export default BYTShortlistScreen;
