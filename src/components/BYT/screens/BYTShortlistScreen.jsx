@@ -416,18 +416,22 @@ const BYTShortlistScreen = () => {
     setError(null);
 
     try {
-      // 1. Fetch consultants for selected discipline (all, not just discovery-sourced)
+      // 1. Fetch consultants for selected discipline (project-scoped)
+      const consultantParams = new URLSearchParams({ entity: 'consultants', role: selectedDiscipline });
+      if (activeProjectId) consultantParams.set('project_id', activeProjectId);
       const consultantRes = await fetch(
-        `${API_BASE}/gid.php?entity=consultants&role=${selectedDiscipline}`,
+        `${API_BASE}/gid.php?${consultantParams}`,
         { credentials: 'include' }
       );
       if (!consultantRes.ok) throw new Error(`Failed to load consultants: ${consultantRes.status}`);
       const consultantData = await consultantRes.json();
       const allConsultants = consultantData.consultants || [];
 
-      // 2. Fetch discovery candidates for this discipline (to get AI rationale, confidence)
+      // 2. Fetch discovery candidates for this discipline (project-scoped)
+      const discoveryParams = new URLSearchParams({ entity: 'discovery', discipline: selectedDiscipline, status: 'imported', limit: '100' });
+      if (activeProjectId) discoveryParams.set('project_id', activeProjectId);
       const discoveryRes = await fetch(
-        `${API_BASE}/gid.php?entity=discovery&discipline=${selectedDiscipline}&status=imported&limit=100`,
+        `${API_BASE}/gid.php?${discoveryParams}`,
         { credentials: 'include' }
       );
       let discoveryData = {};

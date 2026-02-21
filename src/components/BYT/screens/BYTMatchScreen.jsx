@@ -270,8 +270,9 @@ const BYTMatchScreen = () => {
     setError(null);
 
     try {
-      // Fetch all consultants for the discipline (with portfolio)
+      // Fetch all consultants for the discipline (project-scoped, with portfolio)
       const params = new URLSearchParams({ entity: 'consultants', role: selectedDiscipline });
+      if (activeProjectId) params.set('project_id', activeProjectId);
       const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();

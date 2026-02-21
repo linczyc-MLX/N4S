@@ -145,14 +145,17 @@ EXCLUDE:
 
 const discoveryApi = {
   async fetchCandidates(filters = {}) {
-    const params = new URLSearchParams({ entity: 'discovery', ...filters });
+    const params = new URLSearchParams({ entity: 'discovery' });
+    Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
     const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   },
 
-  async fetchQueueStats() {
-    const res = await fetch(`${API_BASE}/gid.php?entity=discovery&action=queue_stats`, { credentials: 'include' });
+  async fetchQueueStats(projectId) {
+    const params = new URLSearchParams({ entity: 'discovery', action: 'queue_stats' });
+    if (projectId) params.set('project_id', projectId);
+    const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   },
@@ -168,11 +171,12 @@ const discoveryApi = {
     return res.json();
   },
 
-  async importCandidate(id) {
+  async importCandidate(id, projectId) {
     const res = await fetch(`${API_BASE}/gid.php?entity=discovery&id=${id}&action=import`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
+      body: JSON.stringify({ project_id: projectId }),
     });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
@@ -363,6 +367,7 @@ CRITICAL RULES:
 
     for (const c of candidates) {
       const candidateData = {
+        project_id: criteria.project_id || null,
         discipline,
         firm_name: c.firm_name || 'Unknown',
         principal_name: c.principal_name || null,
@@ -572,7 +577,7 @@ const BatchActionsBar = ({ selectedCount, onBatchApprove, onBatchDismiss, onClea
 
 const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   // App context for client profile data (Phase 4)
-  const { kycData, fyiData } = useAppContext();
+  const { kycData, fyiData, activeProjectId } = useAppContext();
 
   // Sub-mode
   const [subMode, setSubMode] = useState('ai');
@@ -595,22 +600,23 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   // Selection for batch operations
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  // Load queue stats
+  // Load queue stats (project-scoped)
   const loadQueueStats = useCallback(async () => {
     try {
-      const stats = await discoveryApi.fetchQueueStats();
+      const stats = await discoveryApi.fetchQueueStats(activeProjectId);
       setQueueStats(stats);
     } catch (err) {
       console.error('[BYT Discovery] Stats error:', err);
     }
-  }, []);
+  }, [activeProjectId]);
 
-  // Load candidates for queue
+  // Load candidates for queue (project-scoped)
   const loadCandidates = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const filters = {};
+      if (activeProjectId) filters.project_id = activeProjectId;
       if (statusFilter) filters.status = statusFilter;
       if (disciplineFilter) filters.discipline = disciplineFilter;
       const data = await discoveryApi.fetchCandidates(filters);
@@ -621,7 +627,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, disciplineFilter]);
+  }, [statusFilter, disciplineFilter, activeProjectId]);
 
   // Initial load
   useEffect(() => {
@@ -641,7 +647,8 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     setError(null);
     setAiResults(null);
     try {
-      const result = await discoveryApi.runAISearch(criteria);
+      // Inject project_id so candidates are scoped to this project
+      const result = await discoveryApi.runAISearch({ ...criteria, project_id: activeProjectId });
       setAiResults(result);
 
       // Track recent search
@@ -660,7 +667,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     } finally {
       setAiSearching(false);
     }
-  }, [loadQueueStats]);
+  }, [loadQueueStats, activeProjectId]);
 
   const handleApprove = useCallback(async (candidate) => {
     try {
@@ -702,7 +709,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
   const handleImport = useCallback(async (candidate) => {
     if (!window.confirm(`Import "${candidate.firm_name}" to the BYT Registry?`)) return;
     try {
-      const result = await discoveryApi.importCandidate(candidate.id);
+      const result = await discoveryApi.importCandidate(candidate.id, activeProjectId);
       setCandidates(prev => prev.map(c =>
         c.id === candidate.id ? { ...c, status: 'imported', imported_consultant_id: result.consultant_id } : c
       ));
@@ -712,7 +719,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
       console.error('[BYT Discovery] Import error:', err);
       alert('Failed to import: ' + err.message);
     }
-  }, [loadQueueStats, onImportComplete]);
+  }, [loadQueueStats, onImportComplete, activeProjectId]);
 
   const handleSelectCandidate = useCallback((id) => {
     setSelectedIds(prev => {

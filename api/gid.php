@@ -46,6 +46,36 @@ function getBody() {
 }
 
 // ============================================================================
+// AUTO-MIGRATION: Project-scoped tables
+// ============================================================================
+
+try {
+    // Junction table: links consultants to projects
+    $pdo->exec("CREATE TABLE IF NOT EXISTS gid_project_consultants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        project_id VARCHAR(100) NOT NULL,
+        consultant_id VARCHAR(36) NOT NULL,
+        discipline VARCHAR(30) DEFAULT NULL,
+        source ENUM('manual','discovery','imported_from_global') DEFAULT 'manual',
+        source_project_id VARCHAR(100) DEFAULT NULL,
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        added_by VARCHAR(100) DEFAULT NULL,
+        UNIQUE KEY uq_project_consultant (project_id, consultant_id),
+        KEY idx_project (project_id),
+        KEY idx_consultant (consultant_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Add project_id to discovery candidates if not present
+    $cols = $pdo->query("SHOW COLUMNS FROM gid_discovery_candidates LIKE 'project_id'")->fetchAll();
+    if (empty($cols)) {
+        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD COLUMN project_id VARCHAR(100) DEFAULT NULL AFTER id");
+        $pdo->exec("ALTER TABLE gid_discovery_candidates ADD KEY idx_disc_project (project_id)");
+    }
+} catch (Exception $e) {
+    // Tables may not exist yet on fresh install — silent fail
+}
+
+// ============================================================================
 // CONSULTANTS
 // ============================================================================
 
@@ -107,33 +137,43 @@ if ($entity === 'consultants') {
         // List consultants with optional filters
         $where = ["1=1"];
         $params = [];
+        $joinClause = "";
+        $selectPrefix = "c.*";
+        
+        // PROJECT SCOPING: When project_id provided, only show consultants linked to this project
+        $projectId = $_GET['project_id'] ?? null;
+        if ($projectId) {
+            $joinClause = "INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id AND pc.project_id = ?";
+            $params[] = $projectId;
+            $selectPrefix = "c.*, pc.source as project_source, pc.added_at as project_added_at";
+        }
         
         // Filter: role
         if (!empty($_GET['role'])) {
-            $where[] = "role = ?";
+            $where[] = "c.role = ?";
             $params[] = $_GET['role'];
         }
         
         // Filter: active only (default true)
         if (($_GET['active'] ?? '1') === '1') {
-            $where[] = "active = 1";
+            $where[] = "c.active = 1";
         }
         
         // Filter: verification status
         if (!empty($_GET['verification'])) {
-            $where[] = "verification_status = ?";
+            $where[] = "c.verification_status = ?";
             $params[] = $_GET['verification'];
         }
         
         // Filter: state
         if (!empty($_GET['state'])) {
-            $where[] = "hq_state = ?";
+            $where[] = "c.hq_state = ?";
             $params[] = $_GET['state'];
         }
         
         // Filter: search (firm name or last name)
         if (!empty($_GET['search'])) {
-            $where[] = "(firm_name LIKE ? OR last_name LIKE ? OR first_name LIKE ?)";
+            $where[] = "(c.firm_name LIKE ? OR c.last_name LIKE ? OR c.first_name LIKE ?)";
             $searchTerm = '%' . $_GET['search'] . '%';
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -152,7 +192,7 @@ if ($entity === 'consultants') {
         $offset = max((int)($_GET['offset'] ?? 0), 0);
         
         $whereClause = implode(' AND ', $where);
-        $sql = "SELECT * FROM gid_consultants WHERE $whereClause ORDER BY $sortField $sortDir LIMIT $limit OFFSET $offset";
+        $sql = "SELECT $selectPrefix FROM gid_consultants c $joinClause WHERE $whereClause ORDER BY c.$sortField $sortDir LIMIT $limit OFFSET $offset";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $consultants = $stmt->fetchAll();
@@ -166,7 +206,7 @@ if ($entity === 'consultants') {
         }
         
         // Get total count
-        $countSql = "SELECT COUNT(*) FROM gid_consultants WHERE $whereClause";
+        $countSql = "SELECT COUNT(*) FROM gid_consultants c $joinClause WHERE $whereClause";
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
@@ -282,6 +322,21 @@ if ($entity === 'consultants') {
                 $body['notes'] ?? null,
                 $body['created_by'] ?? null,
             ]);
+            
+            // Link to project if project_id provided
+            if (!empty($body['project_id'])) {
+                try {
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO gid_project_consultants 
+                        (project_id, consultant_id, discipline, source, added_by) 
+                        VALUES (?, ?, ?, 'manual', ?)");
+                    $stmt->execute([
+                        $body['project_id'],
+                        $newId,
+                        $body['role'] ?? 'architect',
+                        $body['created_by'] ?? null,
+                    ]);
+                } catch (Exception $e) { /* junction table may not exist yet */ }
+            }
             
             jsonResponse(['success' => true, 'id' => $newId], 201);
         }
@@ -476,28 +531,53 @@ if ($entity === 'reviews') {
 
 if ($entity === 'stats') {
     $stats = [];
+    $projectId = $_GET['project_id'] ?? null;
     
-    // Total consultants
-    $stmt = $pdo->query("SELECT COUNT(*) FROM gid_consultants WHERE active = 1");
-    $stats['totalActive'] = (int)$stmt->fetchColumn();
+    if ($projectId) {
+        // PROJECT-SCOPED stats: only count consultants linked to this project
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM gid_consultants c 
+            INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id 
+            WHERE pc.project_id = ? AND c.active = 1");
+        $stmt->execute([$projectId]);
+        $stats['totalActive'] = (int)$stmt->fetchColumn();
+        
+        $stmt = $pdo->prepare("SELECT c.role, COUNT(*) as count FROM gid_consultants c 
+            INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id 
+            WHERE pc.project_id = ? AND c.active = 1 GROUP BY c.role");
+        $stmt->execute([$projectId]);
+        $stats['byRole'] = $stmt->fetchAll();
+        
+        $stmt = $pdo->prepare("SELECT c.verification_status, COUNT(*) as count FROM gid_consultants c 
+            INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id 
+            WHERE pc.project_id = ? AND c.active = 1 GROUP BY c.verification_status");
+        $stmt->execute([$projectId]);
+        $stats['byVerification'] = $stmt->fetchAll();
+        
+        $stmt = $pdo->prepare("SELECT c.hq_state, COUNT(*) as count FROM gid_consultants c 
+            INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id 
+            WHERE pc.project_id = ? AND c.active = 1 AND c.hq_state IS NOT NULL 
+            GROUP BY c.hq_state ORDER BY count DESC LIMIT 10");
+        $stmt->execute([$projectId]);
+        $stats['byState'] = $stmt->fetchAll();
+    } else {
+        // GLOBAL stats (backward compatible)
+        $stmt = $pdo->query("SELECT COUNT(*) FROM gid_consultants WHERE active = 1");
+        $stats['totalActive'] = (int)$stmt->fetchColumn();
+        
+        $stmt = $pdo->query("SELECT role, COUNT(*) as count FROM gid_consultants WHERE active = 1 GROUP BY role");
+        $stats['byRole'] = $stmt->fetchAll();
+        
+        $stmt = $pdo->query("SELECT verification_status, COUNT(*) as count FROM gid_consultants WHERE active = 1 GROUP BY verification_status");
+        $stats['byVerification'] = $stmt->fetchAll();
+        
+        $stmt = $pdo->query("SELECT hq_state, COUNT(*) as count FROM gid_consultants WHERE active = 1 AND hq_state IS NOT NULL GROUP BY hq_state ORDER BY count DESC LIMIT 10");
+        $stats['byState'] = $stmt->fetchAll();
+    }
     
-    // By role
-    $stmt = $pdo->query("SELECT role, COUNT(*) as count FROM gid_consultants WHERE active = 1 GROUP BY role");
-    $stats['byRole'] = $stmt->fetchAll();
-    
-    // By verification status
-    $stmt = $pdo->query("SELECT verification_status, COUNT(*) as count FROM gid_consultants WHERE active = 1 GROUP BY verification_status");
-    $stats['byVerification'] = $stmt->fetchAll();
-    
-    // By state (top 10)
-    $stmt = $pdo->query("SELECT hq_state, COUNT(*) as count FROM gid_consultants WHERE active = 1 AND hq_state IS NOT NULL GROUP BY hq_state ORDER BY count DESC LIMIT 10");
-    $stats['byState'] = $stmt->fetchAll();
-    
-    // Total portfolio projects
+    // Portfolio + reviews are global (not project-scoped)
     $stmt = $pdo->query("SELECT COUNT(*) FROM gid_portfolio_projects");
     $stats['totalProjects'] = (int)$stmt->fetchColumn();
     
-    // Total reviews
     $stmt = $pdo->query("SELECT COUNT(*) FROM gid_reviews");
     $stats['totalReviews'] = (int)$stmt->fetchColumn();
     
@@ -617,6 +697,49 @@ if ($entity === 'engagements') {
 }
 
 // ============================================================================
+// PROJECT-CONSULTANT LINKS (Junction table for project scoping)
+// ============================================================================
+
+if ($entity === 'project_consultants') {
+
+    // GET — List consultant links for a project
+    if ($method === 'GET') {
+        $projectId = $_GET['project_id'] ?? null;
+        if (!$projectId) errorResponse('project_id required');
+
+        $stmt = $pdo->prepare("SELECT pc.*, c.firm_name, c.first_name, c.last_name, c.role, c.hq_city, c.hq_state, c.verification_status
+            FROM gid_project_consultants pc
+            LEFT JOIN gid_consultants c ON pc.consultant_id = c.id
+            WHERE pc.project_id = ?
+            ORDER BY pc.added_at DESC");
+        $stmt->execute([$projectId]);
+        jsonResponse(['links' => $stmt->fetchAll()]);
+    }
+
+    // POST — Link an existing consultant to a project
+    if ($method === 'POST') {
+        $body = getBody();
+        $projectId = $body['project_id'] ?? null;
+        $consultantId = $body['consultant_id'] ?? null;
+        if (!$projectId || !$consultantId) errorResponse('project_id and consultant_id required');
+
+        $stmt = $pdo->prepare("INSERT IGNORE INTO gid_project_consultants 
+            (project_id, consultant_id, discipline, source, source_project_id, added_by)
+            VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $projectId,
+            $consultantId,
+            $body['discipline'] ?? null,
+            $body['source'] ?? 'imported_from_global',
+            $body['source_project_id'] ?? null,
+            $body['added_by'] ?? null,
+        ]);
+
+        jsonResponse(['success' => true, 'project_id' => $projectId, 'consultant_id' => $consultantId]);
+    }
+}
+
+// ============================================================================
 // DISCOVERY CANDIDATES (Phase 3)
 // ============================================================================
 
@@ -624,7 +747,13 @@ if ($entity === 'discovery') {
 
     // GET — Queue stats (must check before listing)
     if ($method === 'GET' && $action === 'queue_stats') {
-        $stmt = $pdo->query("SELECT status, COUNT(*) as count FROM gid_discovery_candidates GROUP BY status");
+        $discProjectId = $_GET['project_id'] ?? null;
+        if ($discProjectId) {
+            $stmt = $pdo->prepare("SELECT status, COUNT(*) as count FROM gid_discovery_candidates WHERE project_id = ? GROUP BY status");
+            $stmt->execute([$discProjectId]);
+        } else {
+            $stmt = $pdo->query("SELECT status, COUNT(*) as count FROM gid_discovery_candidates GROUP BY status");
+        }
         $rows = $stmt->fetchAll();
         $stats = ['pending' => 0, 'reviewing' => 0, 'approved' => 0, 'dismissed' => 0, 'imported' => 0, 'total' => 0];
         foreach ($rows as $r) {
@@ -655,6 +784,12 @@ if ($entity === 'discovery') {
         // List with filters
         $where = ["1=1"];
         $params = [];
+
+        // PROJECT SCOPING: filter by project_id
+        if (!empty($_GET['project_id'])) {
+            $where[] = "project_id = ?";
+            $params[] = $_GET['project_id'];
+        }
 
         if (!empty($_GET['status'])) {
             // Support comma-separated statuses
@@ -799,6 +934,21 @@ if ($entity === 'discovery') {
             $stmt = $pdo->prepare("UPDATE gid_discovery_candidates SET status = 'imported', imported_consultant_id = ?, imported_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$consultantId, $id]);
 
+            // Link consultant to the project that discovered them
+            $discProjectId = $candidate['project_id'] ?? ($body['project_id'] ?? null);
+            if ($discProjectId) {
+                try {
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO gid_project_consultants 
+                        (project_id, consultant_id, discipline, source, added_by) 
+                        VALUES (?, ?, ?, 'discovery', 'gid_discovery')");
+                    $stmt->execute([
+                        $discProjectId,
+                        $consultantId,
+                        $candidate['discipline'],
+                    ]);
+                } catch (Exception $e) { /* junction table may not exist */ }
+            }
+
             jsonResponse(['success' => true, 'consultant_id' => $consultantId, 'candidate_id' => $id], 201);
         }
 
@@ -837,15 +987,16 @@ if ($entity === 'discovery') {
             }
 
             $stmt = $pdo->prepare("INSERT INTO gid_discovery_candidates (
-                id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
+                id, project_id, discipline, firm_name, principal_name, hq_city, hq_state, hq_country,
                 website, linkedin_url, specialties, service_areas, estimated_budget_tier,
                 years_experience, notable_projects, awards, publications,
                 source_tier, source_type, source_url, source_name, discovery_query,
                 confidence_score, source_rationale, status, discovered_by, project_context
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $stmt->execute([
                 $newId,
+                $body['project_id'] ?? null,
                 $body['discipline'] ?? 'architect',
                 $body['firm_name'] ?? 'Unknown Firm',
                 $body['principal_name'] ?? null,
@@ -973,13 +1124,25 @@ if ($entity === 'admin_config') {
     if ($method === 'GET' && $configAction === 'stats') {
         $projectId = $_GET['project_id'] ?? 'default';
         
-        // Consultant counts (global registry — not project-scoped)
-        $stmt = $pdo->query("SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
-            SUM(CASE WHEN verification_status = 'pending' OR verification_status IS NULL THEN 1 ELSE 0 END) as pending
-            FROM gid_consultants WHERE active = 1");
-        $consultants = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Consultant counts — project-scoped if project_id provided
+        if ($projectId && $projectId !== 'default') {
+            $stmt = $pdo->prepare("SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN c.verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
+                SUM(CASE WHEN c.verification_status = 'pending' OR c.verification_status IS NULL THEN 1 ELSE 0 END) as pending
+                FROM gid_consultants c
+                INNER JOIN gid_project_consultants pc ON c.id = pc.consultant_id
+                WHERE pc.project_id = ? AND c.active = 1");
+            $stmt->execute([$projectId]);
+            $consultants = $stmt->fetch(PDO::FETCH_ASSOC);
+        } else {
+            $stmt = $pdo->query("SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) as verified,
+                SUM(CASE WHEN verification_status = 'pending' OR verification_status IS NULL THEN 1 ELSE 0 END) as pending
+                FROM gid_consultants WHERE active = 1");
+            $consultants = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
 
         // Engagement counts (project-scoped via n4s_project_id)
         $engagements = ['active' => 0, 'archived' => 0];
@@ -992,14 +1155,23 @@ if ($entity === 'admin_config') {
             $engagements = $engStmt->fetch(PDO::FETCH_ASSOC) ?: $engagements;
         } catch (Exception $e) { /* table may not exist yet */ }
 
-        // Discovery counts (global queue — no project_id column)
+        // Discovery counts — project-scoped
         $discovery = ['pending' => 0, 'imported' => 0, 'rejected' => 0];
         try {
-            $discStmt = $pdo->query("SELECT 
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) as imported,
-                SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END) as rejected
-                FROM gid_discovery_candidates");
+            if ($projectId && $projectId !== 'default') {
+                $discStmt = $pdo->prepare("SELECT 
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) as imported,
+                    SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END) as rejected
+                    FROM gid_discovery_candidates WHERE project_id = ?");
+                $discStmt->execute([$projectId]);
+            } else {
+                $discStmt = $pdo->query("SELECT 
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'imported' THEN 1 ELSE 0 END) as imported,
+                    SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END) as rejected
+                    FROM gid_discovery_candidates");
+            }
             $discovery = $discStmt->fetch(PDO::FETCH_ASSOC) ?: $discovery;
         } catch (Exception $e) { /* table may not exist yet */ }
 
@@ -1029,5 +1201,5 @@ if ($entity === 'admin_config') {
 
 // If no entity matched
 if (empty($entity)) {
-    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements, discovery, admin_config');
+    errorResponse('Missing entity parameter. Use: consultants, portfolio, reviews, stats, engagements, discovery, project_consultants, admin_config');
 }

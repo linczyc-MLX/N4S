@@ -68,7 +68,9 @@ const API_BASE = window.location.hostname.includes('ionos.space')
 
 const gidApi = {
   async fetchConsultants(filters = {}) {
-    const params = new URLSearchParams({ entity: 'consultants', ...filters });
+    const params = new URLSearchParams({ entity: 'consultants' });
+    // Pass all filters including project_id
+    Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
     const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
@@ -155,8 +157,10 @@ const gidApi = {
     return res.json();
   },
 
-  async fetchStats() {
-    const res = await fetch(`${API_BASE}/gid.php?entity=stats`, { credentials: 'include' });
+  async fetchStats(projectId) {
+    const params = new URLSearchParams({ entity: 'stats' });
+    if (projectId) params.set('project_id', projectId);
+    const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   },
@@ -290,7 +294,7 @@ const StatsBar = ({ stats }) => {
 // ============================================================================
 
 const BYTModule = ({ showDocs, onCloseDocs }) => {
-  const { hasUnsavedChanges, saveNow, isSaving, lastSaved } = useAppContext();
+  const { hasUnsavedChanges, saveNow, isSaving, lastSaved, activeProjectId } = useAppContext();
 
   // Local state
   const [consultants, setConsultants] = useState([]);
@@ -310,19 +314,20 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
   const [verificationFilter, setVerificationFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load consultants
+  // Load consultants (project-scoped)
   const loadConsultants = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const filters = {};
+      if (activeProjectId) filters.project_id = activeProjectId;
       if (roleFilter) filters.role = roleFilter;
       if (verificationFilter) filters.verification = verificationFilter;
       if (searchQuery) filters.search = searchQuery;
 
       const [consultantData, statsData] = await Promise.all([
         gidApi.fetchConsultants(filters),
-        gidApi.fetchStats(),
+        gidApi.fetchStats(activeProjectId),
       ]);
       setConsultants(consultantData.consultants || []);
       setStats(statsData);
@@ -332,16 +337,18 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, verificationFilter, searchQuery]);
+  }, [roleFilter, verificationFilter, searchQuery, activeProjectId]);
 
   useEffect(() => {
     loadConsultants();
   }, [loadConsultants]);
 
-  // Fetch discovery queue count for badge
+  // Fetch discovery queue count for badge (project-scoped)
   const loadQueueCount = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/gid.php?entity=discovery&action=queue_stats`, { credentials: 'include' });
+      const params = new URLSearchParams({ entity: 'discovery', action: 'queue_stats' });
+      if (activeProjectId) params.set('project_id', activeProjectId);
+      const res = await fetch(`${API_BASE}/gid.php?${params}`, { credentials: 'include' });
       if (res.ok) {
         const stats = await res.json();
         setQueueCount(stats.queue || 0);
@@ -349,7 +356,7 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
     } catch (err) {
       // Silently fail — badge is non-critical
     }
-  }, []);
+  }, [activeProjectId]);
 
   useEffect(() => {
     loadQueueCount();
@@ -394,7 +401,9 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
         await gidApi.updateConsultant(selectedConsultant.id, data);
         consultantId = selectedConsultant.id;
       } else {
-        const result = await gidApi.createConsultant(data);
+        // Include project_id so the backend links the new consultant to this project
+        const createData = activeProjectId ? { ...data, project_id: activeProjectId } : data;
+        const result = await gidApi.createConsultant(createData);
         consultantId = result.id;
       }
 
@@ -416,7 +425,7 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
       console.error('[BYT] Save error:', err);
       alert('Failed to save consultant: ' + err.message);
     }
-  }, [viewMode, selectedConsultant, loadConsultants]);
+  }, [viewMode, selectedConsultant, loadConsultants, activeProjectId]);
 
   const handleCancelForm = useCallback(() => {
     setViewMode('registry');
