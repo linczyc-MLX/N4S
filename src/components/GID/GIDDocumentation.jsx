@@ -937,7 +937,6 @@ export default function GIDDocumentation({ onClose, printAll }) {
 const gidDocumentationStyles = `
 /* Base Container */
 .doc-container {
-  min-height: 100vh;
   background-color: ${COLORS.background};
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -1052,8 +1051,6 @@ const gidDocumentationStyles = `
 /* Content */
 .doc-content {
   padding: 1.5rem;
-  max-width: 900px;
-  margin: 0 auto;
 }
 
 .doc-tab-content {
@@ -1419,8 +1416,8 @@ const gidDocumentationStyles = `
 }
 
 /* Print Mode */
-.doc-print-mode { max-width: 100%; padding: 0 2rem; }
-.doc-print-mode .doc-content { max-width: 100%; padding: 1rem 0; }
+.doc-print-mode { padding: 0 2rem; }
+.doc-print-mode .doc-content { padding: 1rem 0; }
 .doc-print-header { padding: 2rem 0 1.5rem; border-bottom: 2px solid #1e3a5f; margin-bottom: 1rem; }
 .doc-print-header__title {
   font-family: 'Playfair Display', Georgia, serif;
