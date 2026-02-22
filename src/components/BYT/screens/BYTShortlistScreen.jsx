@@ -77,7 +77,7 @@ const API_BASE = window.location.hostname.includes('ionos.space')
 const ShortlistCandidateCard = ({
   consultant, discoveryData, engagement, kycData, fyiData,
   isShortlisted, isPassed, rank,
-  onShortlist, onPass, onRequestInfo, onExpand, onSendRFQ,
+  onShortlist, onUnshortlist, onPass, onRequestInfo, onExpand, onSendRFQ,
   dragHandlers,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -325,9 +325,14 @@ const ShortlistCandidateCard = ({
               </>
             ) : (
               <div className="byt-shortlist-card__pipeline-actions">
-                <span className="byt-shortlist-card__status-label" style={{ color: COLORS.success }}>
+                <button
+                  className="byt-shortlist-card__status-btn"
+                  onClick={(e) => { e.stopPropagation(); onUnshortlist(consultant); }}
+                  title="Click to move back to To Review"
+                  style={{ color: COLORS.success }}
+                >
                   <CheckCircle2 size={14} /> Shortlisted
-                </span>
+                </button>
                 {onSendRFQ && engagement?.contact_status !== 'questionnaire_sent' && engagement?.contact_status !== 'questionnaire_received' && (
                   <button
                     className="byt-btn byt-btn--gold byt-btn--sm"
@@ -605,6 +610,34 @@ const BYTShortlistScreen = () => {
       // Still update UI even if API fails
     }
   }, [engagementMap, getDiscoveryData, activeProjectId, selectedDiscipline]);
+
+  const handleUnshortlist = useCallback(async (consultant) => {
+    // Remove from shortlist order (moves back to "To Review")
+    setShortlistOrder(prev => prev.filter(id => id !== consultant.id));
+
+    // Delete the engagement record if it exists and is only shortlisted
+    const existing = engagementMap[consultant.id];
+    if (existing && existing.contact_status === 'shortlisted') {
+      try {
+        await fetch(`${API_BASE}/gid.php?entity=engagements&id=${existing.id}&action=delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        // Refresh engagements
+        const engRes = await fetch(
+          `${API_BASE}/gid.php?entity=engagements&project_id=${activeProjectId || 'default'}`,
+          { credentials: 'include' }
+        );
+        if (engRes.ok) {
+          const eData = await engRes.json();
+          setEngagements((eData.engagements || []).filter(e => e.discipline === selectedDiscipline));
+        }
+      } catch (err) {
+        console.error('[Shortlist] Unshortlist error:', err);
+      }
+    }
+  }, [engagementMap, activeProjectId, selectedDiscipline]);
 
   const handlePass = useCallback(async (consultant) => {
     // Remove from shortlist order
@@ -1010,6 +1043,7 @@ const BYTShortlistScreen = () => {
                       isPassed={false}
                       rank={index + 1}
                       onShortlist={handleShortlist}
+                      onUnshortlist={handleUnshortlist}
                       onPass={handlePass}
                       onRequestInfo={handleRequestInfo}
                       onSendRFQ={handleSendRFQ}
@@ -1043,6 +1077,7 @@ const BYTShortlistScreen = () => {
                     isPassed={false}
                     rank={null}
                     onShortlist={handleShortlist}
+                      onUnshortlist={handleUnshortlist}
                     onPass={handlePass}
                     onRequestInfo={handleRequestInfo}
                   />
@@ -1074,6 +1109,7 @@ const BYTShortlistScreen = () => {
                     isPassed={true}
                     rank={null}
                     onShortlist={handleShortlist}
+                      onUnshortlist={handleUnshortlist}
                     onPass={handlePass}
                     onRequestInfo={handleRequestInfo}
                   />

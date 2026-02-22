@@ -3680,6 +3680,25 @@
   font-weight: 500;
 }
 
+.byt-shortlist-card__status-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.byt-shortlist-card__status-btn:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #d32f2f !important;
+}
+
 .byt-shortlist-card__passed-notice {
   display: flex;
   align-items: center;
