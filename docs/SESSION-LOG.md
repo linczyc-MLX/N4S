@@ -1748,3 +1748,82 @@ Start by: git clone repo, read docs/*.md, verify deploy status, then address new
 - `anthropic-dangerous-direct-browser-access` header is the only option on IONOS
 - config-secrets.php was being overwritten by every deploy (was tracked in git despite comment saying otherwise)
 - Taste Exploration scores live in `principalTasteResults.profile.scores` (1-10 scale), NOT in flat KYC axis fields
+
+---
+
+## Session: February 22, 2026 — BYT Config Wiring, Score Fixes, Shortlist UX, RFQ Simulation
+
+### Summary
+Completed three major areas: (1) wired BYT Discovery and Matchmaking screens to use Admin Panel config system, (2) fixed score display inconsistencies between Shortlist and Matchmaking, (3) added unshortlist capability, and (4) simulated full RFQ completion for all 4 candidates.
+
+### Changes Made
+
+#### Config Wiring (commits f376c9ba, 4ae197ad)
+- **NEW** `src/components/BYT/utils/useBYTConfig.js` (232 lines) — shared config hook
+  - Module-level cache for global config (5-minute TTL)
+  - Reads from `byt_global_config` table, merges with project overrides
+  - Helper functions: `getEffectiveGuidance()`, `getEffectiveExemplars()`, `getEffectiveExclusions()`
+- **MODIFIED** `BYTDiscoveryScreen.jsx` — removed 110-line hardcoded `getDisciplineGuidance()`
+  - AI model, discipline guidance, exemplar firms, exclusion list, confidence threshold all from config
+  - Exemplar/exclusion blocks injected into AI prompt
+  - Post-generation filtering removes excluded firms
+  - Results metadata tracks model_used, excluded_by_filter, below_threshold
+- **MODIFIED** `BYTMatchmakingScreen.jsx` — removed hardcoded score dimensions/weights
+  - Scoring weights and tier thresholds from config
+  - Config flows through: Screen → DisciplineGroup → EngagementCard → ScoreBreakdown
+- **FIX** Discovery endpoint: `byt-ai-config.php` → `gid-ai-config.php`
+
+#### Score Display Fix (commit d574592f)
+- **MODIFIED** `api/gid.php` — engagement query now includes subquery for `ai_confidence` from `gid_discovery_candidates` via `imported_consultant_id`
+- **MODIFIED** `BYTMatchmakingScreen.jsx` — score priority: VPS overall_score → ai_confidence → legacy match_score
+  - Tier label ("Top Match"/"Good Fit"/"Consider") moved below circle, not crammed inside
+  - "AI Confidence" source label shown when score comes from discovery
+  - TeamComposition slots show AI confidence when no VPS score
+  - Sorting uses ai_confidence as fallback
+
+#### Shortlist Unshortlist (commit 25c1c5de)
+- **MODIFIED** `BYTShortlistScreen.jsx` — green "✓ Shortlisted" label is now a clickable button
+  - `handleUnshortlist()` removes from shortlistOrder and deletes engagement
+  - Only deletes if status is still `shortlisted` (won't undo contacted/RFQ)
+- **MODIFIED** `BYTModule.css` — `.byt-shortlist-card__status-btn` with hover-to-red effect
+
+#### RFQ Simulation (no code change — data only)
+- Completed all 4 RFQ questionnaires via real API path (rfq.not-4.sale)
+- **Ehrlich Yanai (Architect)**: Fixed short responses (2A.4, 4.5b, 4.5c, 4.5d), added 3+1 portfolio projects, submitted
+- **Cliff Fong Design (Interior Designer)**: Created invitation, 33 responses + 3 portfolio projects, submitted
+- **Premier Development Advisors (PM)**: Created invitation, 33 responses + 3 portfolio projects, submitted
+- **Mayfair Construction (GC)**: Created invitation, 33 responses + 3 portfolio projects, submitted
+- All IONOS engagements updated to `questionnaire_received`
+- Synergy-critical Section 4 has deliberately varied communication/conflict styles for meaningful Synergy Sandbox testing
+
+### Git Commits (all pushed to main)
+| Commit | Message |
+|--------|---------|
+| f376c9ba | Wire Discovery + Matchmaking screens to Admin configResolver |
+| 4ae197ad | Fix Discovery AI config endpoint: byt-ai-config.php → gid-ai-config.php |
+| d574592f | Fix Matchmaking scores: use AI confidence from discovery, tier label below circle |
+| 25c1c5de | Shortlist: clickable Shortlisted button to move candidates back to To Review |
+
+### Files Changed
+| File | Action | Notes |
+|------|--------|-------|
+| `src/components/BYT/utils/useBYTConfig.js` | NEW | Shared config hook with caching |
+| `src/components/BYT/screens/BYTDiscoveryScreen.jsx` | MODIFIED | Config wiring, removed hardcoded guidance |
+| `src/components/BYT/screens/BYTMatchmakingScreen.jsx` | MODIFIED | Config wiring, score priority fix, tier label UX |
+| `src/components/BYT/screens/BYTShortlistScreen.jsx` | MODIFIED | Unshortlist button + handler |
+| `src/components/BYT/BYTModule.css` | MODIFIED | Status button styles |
+| `api/gid.php` | MODIFIED | ai_confidence subquery in engagement SELECT |
+
+### RFQ Portal State (rfq.not-4.sale)
+| Discipline | Firm | Responses | Portfolio | Token (first 12) |
+|---|---|---|---|---|
+| Architect | Ehrlich Yanai Rhee Chaney | 33 | 4 | fac4513a435a |
+| Interior Designer | Cliff Fong Design | 33 | 3 | 84269449a7ea |
+| PM | Premier Development Advisors | 33 | 3 | 17bda906189c |
+| GC | Mayfair Construction | 33 | 3 | d9442ac32377 |
+
+### Key Technical Notes
+- `useBYTConfig` uses module-level cache (not React state) to avoid refetch on screen switches — 5 min TTL
+- Engagement ai_confidence comes from subquery: `SELECT MAX(d.confidence_score) FROM gid_discovery_candidates d WHERE d.imported_consultant_id = e.consultant_id`
+- RFQ responses saved via consultant-facing Bearer token auth, not admin API — follows exact production data path
+- Section 4 (Synergy) responses deliberately vary: Ehrlich=fast/realtime, Fong=methodical/weekly, Premier=methodical/hybrid, Mayfair=fast/daily — this creates real synergy signal variety
