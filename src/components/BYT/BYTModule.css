@@ -5380,6 +5380,13 @@
   font-weight: 600;
 }
 
+.byt-library-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* Submissions (library expanded) */
 .byt-library-row__submissions {
   display: flex;
@@ -5409,6 +5416,44 @@
   gap: 10px;
   flex-wrap: wrap;
   min-width: 0;
+}
+
+/* Pipeline Mini (compact status bar for library rows) */
+.byt-library-pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 6px;
+  padding: 4px 0;
+}
+
+.byt-library-pipeline__step {
+  display: flex;
+  align-items: center;
+}
+
+.byt-library-pipeline__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.byt-library-pipeline__line {
+  width: 12px;
+  height: 2px;
+  flex-shrink: 0;
+}
+
+.byt-library-pipeline__label {
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Detail panel */
