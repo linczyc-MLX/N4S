@@ -313,7 +313,7 @@ const ResponseDetailPanel = ({ invitationId, firmName, onClose }) => {
 // PROJECT RESPONSE CARD
 // =============================================================================
 
-const ProjectResponseCard = ({ invitation, engagement, onViewDetail, onAddToShortlist, adding }) => {
+const ProjectResponseCard = ({ invitation, engagement, onViewDetail }) => {
   const disc = invitation.discipline || 'architect';
   const discColor = DISCIPLINE_COLORS[disc] || COLORS.navy;
   const submitted = invitation.submitted_at || invitation.updated_at;
@@ -340,12 +340,6 @@ const ProjectResponseCard = ({ invitation, engagement, onViewDetail, onAddToShor
             <button className="byt-btn byt-btn--ghost byt-btn--sm"
               onClick={() => onViewDetail(invitation.id, invitation.firm_name)}>
               <Eye size={14} /> View
-            </button>
-            <button className={`byt-btn byt-btn--sm ${engagement ? 'byt-btn--ghost' : 'byt-btn--gold'}`}
-              onClick={() => !engagement && onAddToShortlist(invitation)}
-              disabled={!!engagement || adding}
-              style={engagement ? { opacity: 0.45, cursor: 'default' } : undefined}>
-              <UserPlus size={13} /> {adding ? 'Adding...' : engagement ? 'Shortlisted' : 'Add to Shortlist'}
             </button>
           </div>
         </div>
@@ -462,12 +456,14 @@ const BYTLibraryScreen = () => {
   const [engagements, setEngagements] = useState([]);
   const [addingId, setAddingId] = useState(null);
 
-  // Engagement map: consultant_id → engagement (also index by firm_name for fallback)
+  // Engagement map: index by normalized firm_name+discipline for reliable matching
   const engagementMap = useMemo(() => {
     const map = {};
     engagements.forEach(eng => {
-      if (eng.consultant_id) map[`id:${eng.consultant_id}`] = eng;
-      if (eng.firm_name) map[`fn:${eng.firm_name}:${eng.discipline}`] = eng;
+      if (eng.firm_name && eng.discipline) {
+        const key = `${eng.firm_name.trim().toLowerCase()}::${eng.discipline}`;
+        map[key] = eng;
+      }
     });
     return map;
   }, [engagements]);
@@ -599,13 +595,10 @@ const BYTLibraryScreen = () => {
   }, []);
 
   // Helper: find engagement for invitation
-  const getEngagement = (firmName, discipline, consultantId) => {
-    if (consultantId) {
-      const byId = engagementMap[`id:${consultantId}`];
-      if (byId) return byId;
-    }
+  const getEngagement = (firmName, discipline) => {
     if (firmName && discipline) {
-      return engagementMap[`fn:${firmName}:${discipline}`] || null;
+      const key = `${firmName.trim().toLowerCase()}::${discipline}`;
+      return engagementMap[key] || null;
     }
     return null;
   };
@@ -695,10 +688,8 @@ const BYTLibraryScreen = () => {
                 <ProjectResponseCard
                   key={inv.id}
                   invitation={inv}
-                  engagement={getEngagement(inv.firm_name, inv.discipline, inv.consultant_id)}
+                  engagement={getEngagement(inv.firm_name, inv.discipline)}
                   onViewDetail={handleViewDetail}
-                  onAddToShortlist={handleAddToShortlist}
-                  adding={addingId === (inv.consultant_id || inv.id)}
                 />
               ))}
             </>
@@ -715,7 +706,7 @@ const BYTLibraryScreen = () => {
                 <LibraryConsultantCard
                   key={consultant.consultant_id}
                   consultant={consultant}
-                  engagement={getEngagement(consultant.firm_name, consultant.discipline, consultant.consultant_id)}
+                  engagement={getEngagement(consultant.firm_name, consultant.discipline)}
                   onViewSubmission={handleViewDetail}
                   onAddToShortlist={handleAddToShortlist}
                   adding={addingId === consultant.consultant_id}
