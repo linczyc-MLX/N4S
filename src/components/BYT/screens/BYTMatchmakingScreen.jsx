@@ -5,8 +5,11 @@
  * 1. VPS scoring engine results (quantitative + qualitative from RFQ responses)
  * 2. IONOS engagement pipeline tracking (shortlisted → contracted)
  *
- * Scores are computed on the VPS via rfqComputeAllScores / rfqComputeScore.
- * Candidates with submitted RFQ responses get scored; others show pipeline only.
+ * CONFIG WIRING (Feb 2026):
+ * - Scoring dimension weights from Admin config (scoring.weights)
+ * - Tier thresholds from Admin config (scoring.tiers)
+ * - Tier labels/colors use getTierLabel/getTierColor from configResolver
+ * - Score breakdown displays effective (not hardcoded) weight percentages
  *
  * Data flow:
  *   IONOS gid_engagements (pipeline) + VPS rfq scoring (match scores) → merged view
@@ -25,6 +28,8 @@ import {
   rfqGetScores, rfqComputeAllScores, rfqComputeScore,
   rfqListInvitations
 } from '../../../services/rfqApi';
+import { useBYTConfig } from '../utils/useBYTConfig';
+import { getTierLabel, getTierColor } from '../utils/configResolver';
 
 // N4S Brand Colors
 const COLORS = {
@@ -71,39 +76,24 @@ const PROJECT_OUTCOMES = [
   { value: 'declined',     label: 'Declined' },
 ];
 
-// Scoring dimension labels (from VPS scoring engine)
-const SCORE_DIMENSIONS = [
-  { key: 'scale_match',          label: 'Scale Match',           weight: '15%', icon: Target },
-  { key: 'financial_resilience', label: 'Financial Resilience',  weight: '10%', icon: Shield },
-  { key: 'geographic_alignment', label: 'Geographic Alignment',  weight: '10%', icon: MapPin },
-  { key: 'capability_coverage',  label: 'Capability Coverage',   weight: '20%', icon: CheckCircle2 },
-  { key: 'portfolio_relevance',  label: 'Portfolio Relevance',   weight: '15%', icon: Briefcase },
-  { key: 'tech_compatibility',   label: 'Tech Compatibility',    weight: '5%',  icon: Zap },
-  { key: 'credentials',          label: 'Credentials',           weight: '5%',  icon: Award },
-  { key: 'philosophy_alignment', label: 'Philosophy Alignment',  weight: '10%', icon: Star },
-  { key: 'methodology_fit',      label: 'Methodology Fit',       weight: '5%',  icon: Calendar },
-  { key: 'collaboration_maturity', label: 'Collaboration',       weight: '5%',  icon: Users },
-];
+// Scoring dimension definitions (static metadata — weights come from config)
+const SCORE_DIMENSION_META = {
+  scale_match:            { label: 'Scale Match',           icon: Target },
+  financial_resilience:   { label: 'Financial Resilience',  icon: Shield },
+  geographic_alignment:   { label: 'Geographic Alignment',  icon: MapPin },
+  capability_coverage:    { label: 'Capability Coverage',   icon: CheckCircle2 },
+  portfolio_relevance:    { label: 'Portfolio Relevance',   icon: Briefcase },
+  tech_compatibility:     { label: 'Tech Compatibility',    icon: Zap },
+  credentials:            { label: 'Credentials',           icon: Award },
+  philosophy_alignment:   { label: 'Philosophy Alignment',  icon: Star },
+  methodology_fit:        { label: 'Methodology Fit',       icon: Calendar },
+  collaboration_maturity: { label: 'Collaboration',         icon: Users },
+};
 
 // API base URL
 const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
   : '/api';
-
-// Score tier helpers
-const tierColor = (score) => {
-  if (score >= 80) return COLORS.gold;
-  if (score >= 60) return COLORS.navy;
-  if (score >= 40) return COLORS.warning;
-  return COLORS.error;
-};
-
-const tierLabel = (score) => {
-  if (score >= 80) return 'Top Match';
-  if (score >= 60) return 'Good Fit';
-  if (score >= 40) return 'Consider';
-  return 'Below Threshold';
-};
 
 
 // =============================================================================
@@ -146,7 +136,7 @@ const engagementApi = {
 // TEAM COMPOSITION SUMMARY
 // =============================================================================
 
-const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap }) => {
+const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap, tiers }) => {
   const slots = Object.entries(DISCIPLINES).map(([key, disc]) => {
     const engagements = engagementsByDiscipline[key] || [];
     const mostAdvanced = engagements.reduce((best, eng) => {
@@ -205,7 +195,7 @@ const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap }) => {
                       {stageInfo?.label || slot.mostAdvanced.contact_status}
                     </span>
                     {slot.score && (
-                      <span style={{ fontSize: 12, fontWeight: 700, color: tierColor(slot.score.overall_score || 0) }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: getTierColor(slot.score.overall_score || 0, tiers) }}>
                         Score: {Math.round(slot.score.overall_score || 0)}
                       </span>
                     )}
@@ -227,12 +217,20 @@ const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap }) => {
 
 
 // =============================================================================
-// SCORE BREAKDOWN PANEL
+// SCORE BREAKDOWN PANEL — CONFIG-DRIVEN WEIGHTS
 // =============================================================================
 
-const ScoreBreakdown = ({ score }) => {
+const ScoreBreakdown = ({ score, configWeights, tiers }) => {
   if (!score || !score.dimensions) return null;
   const dims = score.dimensions;
+
+  // Build ordered dimension list from config weights
+  const dimensionList = Object.entries(configWeights || {}).map(([key, weight]) => ({
+    key,
+    label: SCORE_DIMENSION_META[key]?.label || key,
+    icon: SCORE_DIMENSION_META[key]?.icon || Target,
+    weight,
+  }));
 
   return (
     <div className="byt-mm-breakdown">
@@ -245,7 +243,7 @@ const ScoreBreakdown = ({ score }) => {
       </div>
 
       <div className="byt-mm-breakdown__dims">
-        {SCORE_DIMENSIONS.map(dim => {
+        {dimensionList.map(dim => {
           const val = dims[dim.key];
           if (val === undefined || val === null) return null;
           const normalizedVal = Math.min(100, Math.max(0, Number(val)));
@@ -255,13 +253,13 @@ const ScoreBreakdown = ({ score }) => {
               <div className="byt-mm-dim__label">
                 <DimIcon size={12} />
                 <span>{dim.label}</span>
-                <span className="byt-mm-dim__weight">{dim.weight}</span>
+                <span className="byt-mm-dim__weight">{dim.weight}%</span>
               </div>
               <div className="byt-mm-dim__bar">
                 <div className="byt-mm-dim__fill"
-                  style={{ width: `${normalizedVal}%`, background: tierColor(normalizedVal) }} />
+                  style={{ width: `${normalizedVal}%`, background: getTierColor(normalizedVal, tiers) }} />
               </div>
-              <div className="byt-mm-dim__value" style={{ color: tierColor(normalizedVal) }}>
+              <div className="byt-mm-dim__value" style={{ color: getTierColor(normalizedVal, tiers) }}>
                 {Math.round(normalizedVal)}
               </div>
             </div>
@@ -270,7 +268,7 @@ const ScoreBreakdown = ({ score }) => {
       </div>
 
       {score.match_tier && (
-        <div className="byt-mm-breakdown__tier" style={{ color: tierColor(score.overall_score || 0) }}>
+        <div className="byt-mm-breakdown__tier" style={{ color: getTierColor(score.overall_score || 0, tiers) }}>
           <Award size={14} /> {score.match_tier}
         </div>
       )}
@@ -329,10 +327,8 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
     );
   }
 
-  // Full (non-compact): grid layout with icons + labels aligned
   return (
     <div className="byt-pipeline-full-grid">
-      {/* Connector line row */}
       <div className="byt-pipeline-full-grid__line">
         {PIPELINE_STAGES.map((stage, idx) => {
           const isComplete = idx < currentIdx;
@@ -347,7 +343,6 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
           );
         })}
       </div>
-      {/* Icons row */}
       <div className="byt-pipeline-full-grid__icons">
         {PIPELINE_STAGES.map((stage, idx) => {
           const isComplete = idx < currentIdx;
@@ -381,10 +376,10 @@ const PipelineProgress = ({ currentStatus, compact = false }) => {
 
 
 // =============================================================================
-// ENGAGEMENT CARD (with scoring integration)
+// ENGAGEMENT CARD (with config-driven scoring)
 // =============================================================================
 
-const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore }) => {
+const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore, configWeights, tiers }) => {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -401,7 +396,7 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
   const nextStage = currentStageIdx < PIPELINE_STAGES.length - 1 ? PIPELINE_STAGES[currentStageIdx + 1] : null;
 
   const displayScore = score?.overall_score || engagement.match_score || null;
-  const scoreColor = displayScore ? tierColor(displayScore) : COLORS.textMuted;
+  const scoreColor = displayScore ? getTierColor(displayScore, tiers) : COLORS.textMuted;
 
   const hasResponse = ['questionnaire_received', 'under_review', 'proposal', 'engaged', 'contracted']
     .includes(engagement.contact_status);
@@ -457,9 +452,9 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
             <span style={{ color: scoreColor, fontSize: displayScore ? 16 : 12 }}>
               {displayScore ? Math.round(displayScore) : '—'}
             </span>
-            {score?.match_tier && (
+            {displayScore && (
               <span style={{ fontSize: 8, color: scoreColor, fontWeight: 600 }}>
-                {score.match_tier.split(' ')[0]}
+                {getTierLabel(displayScore, tiers).split(' ')[0]}
               </span>
             )}
           </div>
@@ -500,10 +495,9 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
       {/* Expanded Detail */}
       {expanded && (
         <div className="byt-engagement-card__detail">
-          {/* VPS Score Breakdown */}
-          {score && <ScoreBreakdown score={score} />}
+          {/* CONFIG-DRIVEN Score Breakdown */}
+          {score && <ScoreBreakdown score={score} configWeights={configWeights} tiers={tiers} />}
 
-          {/* Compute score prompt */}
           {hasResponse && !score && (
             <div style={{ padding: '12px', background: '#fffbeb', borderRadius: 8, border: '1px solid #fde68a', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -520,7 +514,7 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
             </div>
           )}
 
-          {/* Full pipeline with dates — unified grid */}
+          {/* Full pipeline with dates */}
           <div className="byt-engagement-card__pipeline-full">
             <div className="byt-pipeline-dated-grid">
               {PIPELINE_STAGES.map((stage, idx) => {
@@ -533,7 +527,6 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
 
                 return (
                   <div key={stage.key} className="byt-pipeline-dated-grid__col">
-                    {/* Dot + connector */}
                     <div className="byt-pipeline-dated-grid__dot-row">
                       {idx > 0 && (
                         <div className="byt-pipeline-dated-grid__connector-left"
@@ -555,13 +548,11 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
                           style={{ backgroundColor: isComplete ? PIPELINE_STAGES[idx + 1].color : COLORS.border }} />
                       )}
                     </div>
-                    {/* Label */}
                     <span className="byt-pipeline-dated-grid__label"
                       style={{ color: isReached ? COLORS.text : COLORS.textMuted,
                                fontWeight: isCurrent ? 600 : 400 }}>
                       {stage.label}
                     </span>
-                    {/* Date */}
                     <span className="byt-pipeline-dated-grid__date"
                       style={{ color: isReached ? COLORS.text : COLORS.textMuted }}>
                       {dateVal ? formatDate(dateVal) : '—'}
@@ -572,7 +563,7 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
             </div>
           </div>
 
-          {/* Legacy scores (backward compat with old IONOS-only scores) */}
+          {/* Legacy scores */}
           {(engagement.client_fit_score || engagement.project_fit_score || engagement.chemistry_score) && (
             <div className="byt-engagement-card__scores-row">
               {engagement.client_fit_score && (
@@ -704,7 +695,7 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore 
 // DISCIPLINE GROUP
 // =============================================================================
 
-const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRemove, onComputeScore }) => {
+const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRemove, onComputeScore, configWeights, tiers }) => {
   const disc = DISCIPLINES[disciplineKey];
   const [collapsed, setCollapsed] = useState(false);
   if (!disc) return null;
@@ -758,7 +749,8 @@ const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRem
             sorted.map(eng => (
               <EngagementCard key={eng.id} engagement={eng}
                 score={scoreMap[eng.consultant_id] || null}
-                onUpdate={onUpdate} onRemove={onRemove} onComputeScore={onComputeScore} />
+                onUpdate={onUpdate} onRemove={onRemove} onComputeScore={onComputeScore}
+                configWeights={configWeights} tiers={tiers} />
             ))
           )}
         </div>
@@ -769,12 +761,17 @@ const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRem
 
 
 // =============================================================================
-// MAIN MATCHMAKING SCREEN
+// MAIN MATCHMAKING SCREEN — CONFIG-DRIVEN
 // =============================================================================
 
 const BYTMatchmakingScreen = () => {
   const { activeProjectId } = useAppContext();
   const projectId = activeProjectId;
+
+  // CONFIG WIRING: Load resolved configuration
+  const { config: effectiveConfig } = useBYTConfig();
+  const configWeights = effectiveConfig?.scoring?.weights || {};
+  const tiers = effectiveConfig?.scoring?.tiers || null;
 
   const [engagements, setEngagements] = useState([]);
   const [vpsScores, setVpsScores] = useState([]);
@@ -783,7 +780,6 @@ const BYTMatchmakingScreen = () => {
   const [error, setError] = useState(null);
   const [scoringError, setScoringError] = useState(null);
 
-  // Load engagements from IONOS + scores from VPS
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -804,7 +800,6 @@ const BYTMatchmakingScreen = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Score lookup: consultant_id → score object
   const scoreMap = useMemo(() => {
     const map = {};
     for (const s of vpsScores) {
@@ -813,7 +808,6 @@ const BYTMatchmakingScreen = () => {
     return map;
   }, [vpsScores]);
 
-  // Group by discipline
   const engagementsByDiscipline = useMemo(() => {
     const groups = {};
     Object.keys(DISCIPLINES).forEach(key => { groups[key] = []; });
@@ -825,7 +819,6 @@ const BYTMatchmakingScreen = () => {
     return groups;
   }, [engagements]);
 
-  // Update engagement
   const handleUpdate = useCallback(async (engagementId, updateData) => {
     try {
       await engagementApi.update(engagementId, updateData);
@@ -836,7 +829,6 @@ const BYTMatchmakingScreen = () => {
     }
   }, [loadData]);
 
-  // Remove engagement
   const handleRemove = useCallback(async (engagementId) => {
     try {
       await engagementApi.remove(engagementId);
@@ -847,7 +839,6 @@ const BYTMatchmakingScreen = () => {
     }
   }, []);
 
-  // Compute all scores via VPS
   const handleComputeAllScores = useCallback(async () => {
     if (!projectId) return;
     setScoringAll(true);
@@ -862,7 +853,6 @@ const BYTMatchmakingScreen = () => {
     } finally { setScoringAll(false); }
   }, [projectId]);
 
-  // Compute score for a single candidate
   const handleComputeScore = useCallback(async (engagement) => {
     if (!projectId) return;
     try {
@@ -900,8 +890,8 @@ const BYTMatchmakingScreen = () => {
   return (
     <div className="byt-assembly-screen">
 
-      {/* Team Composition Summary */}
-      <TeamCompositionSummary engagementsByDiscipline={engagementsByDiscipline} scoreMap={scoreMap} />
+      {/* Team Composition Summary — CONFIG-DRIVEN tiers */}
+      <TeamCompositionSummary engagementsByDiscipline={engagementsByDiscipline} scoreMap={scoreMap} tiers={tiers} />
 
       {/* Stats + Scoring Controls */}
       <div className="byt-assembly-stats-bar">
@@ -941,7 +931,6 @@ const BYTMatchmakingScreen = () => {
         </div>
       </div>
 
-      {/* Scoring error */}
       {scoringError && (
         <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#d32f2f', borderRadius: 6, fontSize: 13, margin: '0 0 12px' }}>
           <AlertTriangle size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
@@ -949,7 +938,6 @@ const BYTMatchmakingScreen = () => {
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="byt-loading">
           <RefreshCw size={24} className="spinning" />
@@ -957,7 +945,6 @@ const BYTMatchmakingScreen = () => {
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div className="byt-error">
           <AlertTriangle size={20} />
@@ -966,18 +953,18 @@ const BYTMatchmakingScreen = () => {
         </div>
       )}
 
-      {/* Discipline Groups */}
+      {/* CONFIG-DRIVEN Discipline Groups — weights + tiers passed through */}
       {!loading && !error && (
         <div className="byt-assembly-groups">
           {Object.keys(DISCIPLINES).map(key => (
             <DisciplineGroup key={key} disciplineKey={key}
               engagements={engagementsByDiscipline[key]} scoreMap={scoreMap}
-              onUpdate={handleUpdate} onRemove={handleRemove} onComputeScore={handleComputeScore} />
+              onUpdate={handleUpdate} onRemove={handleRemove} onComputeScore={handleComputeScore}
+              configWeights={configWeights} tiers={tiers} />
           ))}
         </div>
       )}
 
-      {/* Empty State */}
       {!loading && !error && totalEngagements === 0 && (
         <div className="byt-empty" style={{ marginTop: '1rem' }}>
           <Briefcase size={48} />
@@ -989,7 +976,6 @@ const BYTMatchmakingScreen = () => {
         </div>
       )}
 
-      {/* Scoped Styles for Scoring UI */}
       <style>{mmStyles}</style>
     </div>
   );
@@ -1001,10 +987,6 @@ const BYTMatchmakingScreen = () => {
 // =============================================================================
 
 const mmStyles = `
-/* ============================================================
-   UNIFIED PIPELINE DATED GRID
-   Icons, labels, and dates all in one aligned grid
-   ============================================================ */
 .byt-pipeline-dated-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -1069,10 +1051,6 @@ const mmStyles = `
   margin-top: 2px;
   opacity: 0.7;
 }
-
-/* ============================================================
-   FULL PIPELINE GRID (standalone, non-dated - used in PipelineProgress full)
-   ============================================================ */
 .byt-pipeline-full-grid__icons {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -1103,10 +1081,6 @@ const mmStyles = `
   line-height: 1.2;
   white-space: nowrap;
 }
-
-/* ============================================================
-   SCORE BREAKDOWN
-   ============================================================ */
 .byt-mm-breakdown {
   background: #fafaf8;
   border: 1px solid #e5e5e0;

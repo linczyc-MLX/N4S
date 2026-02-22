@@ -1,10 +1,18 @@
 /**
- * BYTDiscoveryScreen.jsx — Discovery Screen (Phase 3)
+ * BYTDiscoveryScreen.jsx — Discovery Screen (Phase 3 + Config Wiring)
  *
  * AI-assisted consultant sourcing tool with three sub-modes:
  * 1. Manual Search — Quick lookup + pre-fill AddConsultantForm
  * 2. AI Discovery — Criteria-based AI search using Claude
  * 3. Import Queue — Review, approve, and import candidates to registry
+ *
+ * CONFIG WIRING (Feb 2026):
+ * - AI model from Admin config (discovery.model)
+ * - Discipline guidance from Admin config (discovery.disciplineGuidance)
+ * - Exemplar firms injected into prompts (discovery.exemplarFirms)
+ * - Exclusion list filters AI results (discovery.exclusionList)
+ * - Confidence threshold from Admin config (discovery.confidenceThreshold)
+ * - Results per search default from Admin config (discovery.resultsPerSearch)
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -15,6 +23,7 @@ import {
 import { useAppContext } from '../../../contexts/AppContext';
 import CandidateCard from '../components/CandidateCard';
 import AIDiscoveryForm from '../components/AIDiscoveryForm';
+import { useBYTConfig, getEffectiveGuidance, getEffectiveExemplars, getEffectiveExclusions } from '../utils/useBYTConfig';
 
 // API base
 const API_BASE = window.location.hostname.includes('ionos.space')
@@ -31,112 +40,6 @@ async function getAIKey() {
   if (data.error) throw new Error(data.error);
   BYT_AI_KEY = data.key;
   return BYT_AI_KEY;
-}
-
-// ============================================================================
-// DISCIPLINE-SPECIFIC SEARCH GUIDANCE
-// Dramatically improves AI discovery quality for non-architecture disciplines
-// ============================================================================
-function getDisciplineGuidance(discipline, budgetLabel) {
-  const guidance = {
-    architect: `
-DISCIPLINE CONTEXT — Architecture:
-Search for licensed architecture firms (AIA members preferred) with a demonstrated 
-luxury residential portfolio. Prioritize firms whose BUILT WORK (not just renderings) 
-includes completed private residences at the ${budgetLabel} scale. Consider both 
-established practices and emerging studios with exceptional design recognition.
-Look for: Design awards (AIA Honor Awards, AD100, Architectural Record Houses), 
-published residential work, and evidence of bespoke single-family commissions.
-`,
-    interior_designer: `
-DISCIPLINE CONTEXT — Interior Design:
-Search for interior design firms specializing in LUXURY RESIDENTIAL interiors — not 
-commercial hospitality, not retail, not corporate. Prioritize firms whose portfolio 
-shows completed private residences at the ${budgetLabel} scale with evidence of 
-bespoke furniture specification, custom millwork, and curated art programs.
-Look for: AD100 listings, ELLE DECOR A-List, Architectural Digest features, Luxe 
-Interiors + Design Gold List, and evidence of ongoing high-net-worth private client 
-relationships. Prefer principals who are personally involved in residential projects.
-`,
-    pm: `
-DISCIPLINE CONTEXT — Project Management / Owner's Representative:
-THIS IS A SPECIALIZED NICHE. You are NOT looking for generic construction companies 
-or large commercial builders. You are searching for BOUTIQUE FIRMS that serve as the 
-OWNER'S ADVOCATE during luxury residential construction.
-
-KEY DISTINCTIONS:
-- "Owner's Representative" / "Owner's Rep" — a consultant who represents the 
-  homeowner's interests, NOT a contractor who builds
-- "Development Manager" — manages the entire development process on behalf of 
-  the owner, from design through construction
-- "Construction Consultant" — independent advisory, NOT a builder
-- These firms are typically SMALL (5–25 people), work on 2–5 projects at a time, 
-  and charge professional fees, not construction markups
-
-WHAT TO LOOK FOR:
-- Firms that explicitly identify as "Owner's Representative" or "Development Manager"
-- Principals with backgrounds in architecture, real estate development, or 
-  construction management (often MBA + technical degree)
-- Demonstrated experience managing $10M+ RESIDENTIAL projects specifically 
-  (not commercial, not institutional, not infrastructure)
-- CMAA (Construction Management Association of America) certification
-- Memberships: ULI, NAHB Custom Builder Council, ICAA
-- Firms known in luxury markets: Hamptons, Palm Beach, Aspen, Beverly Hills, 
-  Greenwich, Manhattan penthouses, Malibu, etc.
-
-EXCLUDE:
-- Large commercial general contractors (Turner, Skanska, etc.)
-- National homebuilders (Toll Brothers, Lennar)
-- Construction companies that "also do" residential
-- Firms whose primary business is commercial or institutional
-- Property management companies (they manage EXISTING buildings, not construction)
-
-EXEMPLAR FIRMS (for calibration — include these if they match geography):
-- Plus Development (LA, NYC, Miami, Aspen) — $10M-$100M+ residential
-- CPM Link Enterprises (NYC area) — high-value residential PM
-- Corcoran Expositions / luxury Owner's Rep divisions
-- Boutique development managers affiliated with family offices
-
-The right candidates will have LinkedIn profiles mentioning: "Owner's Representative", 
-"private residence", "estate construction", "UHNW", "family office", "bespoke", 
-"ground-up luxury residential", or "custom home development management."
-`,
-    gc: `
-DISCIPLINE CONTEXT — General Contractor (Luxury Residential):
-You are NOT looking for commercial construction companies. You are searching for 
-LUXURY RESIDENTIAL BUILDERS who specialize in bespoke, architect-designed homes 
-at the ${budgetLabel} scale.
-
-KEY DISTINCTIONS:
-- "Custom Home Builder" or "Luxury Residential Builder" — NOT tract housing
-- These firms build 3–10 homes per year, each highly customized
-- They work closely with architects and interior designers on complex detailing
-- They employ or subcontract specialized craft trades: custom millwork, stone 
-  masonry, ornamental metalwork, imported materials, smart home systems
-
-WHAT TO LOOK FOR:
-- Firms whose portfolio shows COMPLETED architect-designed residences at $10M+
-- Experience with complex structural systems (cantilevers, large-span glass, 
-  infinity edges, underground construction)
-- Relationships with recognized luxury architects (evidence of repeat collaboration)
-- NAHB Custom Builder Council membership
-- Custom Builder of the Year awards, local HBA awards
-- Firms known in luxury markets: Hamptons, Palm Beach, Aspen, Bel Air, 
-  Greenwich, Napa Valley, etc.
-- Evidence of handling imported materials, European fixtures, museum-grade 
-  environmental controls
-
-EXCLUDE:
-- Commercial general contractors
-- National production homebuilders
-- Remodeling/renovation-only firms (unless they also do ground-up at scale)
-- Firms whose largest project is under $5M
-- Design-build firms that impose their own design (we need builders who execute 
-  an architect's vision)
-`
-  };
-
-  return guidance[discipline] || '';
 }
 
 // ============================================================================
@@ -193,8 +96,13 @@ const discoveryApi = {
     return res.json();
   },
 
-  async runAISearch(criteria) {
-    // Load API key from server (key served from FTP config-secrets.php, not in git)
+  /**
+   * Run AI Discovery search — CONFIG-DRIVEN
+   *
+   * @param {Object} criteria - Search criteria from AIDiscoveryForm
+   * @param {Object} effectiveConfig - Resolved config from useBYTConfig
+   */
+  async runAISearch(criteria, effectiveConfig) {
     await getAIKey();
 
     const { discipline, states, budgetTier, styleKeywords, limit, useClientProfile, profileData } = criteria;
@@ -217,7 +125,30 @@ const discoveryApi = {
     const budgetLabel = budgetLabels[budgetTier] || budgetTier;
     const discoveryQuery = `Find ${limit} ${disciplineLabel} firms | Geo: ${geoFocus} | Budget: ${budgetLabel} | Style: ${styleFocus}${useClientProfile ? ' | Profile-Aware' : ''}`;
 
-    // Build enriched client context block when profile is active
+    // =====================================================================
+    // CONFIG-DRIVEN: guidance, exemplars, exclusions, model from Admin
+    // =====================================================================
+    const guidanceText = getEffectiveGuidance(discipline, budgetLabel, effectiveConfig);
+    const exemplarFirms = getEffectiveExemplars(discipline, effectiveConfig);
+    const exclusionList = getEffectiveExclusions(effectiveConfig);
+    const aiModel = effectiveConfig?.discovery?.model || 'claude-sonnet-4-20250514';
+
+    // Exemplar firms prompt block
+    let exemplarBlock = '';
+    if (exemplarFirms.length > 0) {
+      exemplarBlock = `\n\nEXEMPLAR FIRMS (calibration anchors — include if they match geography):
+${exemplarFirms.map(f => `- ${f}`).join('\n')}
+Use these as calibration for the quality level expected.`;
+    }
+
+    // Exclusion prompt block
+    let exclusionBlock = '';
+    if (exclusionList.length > 0) {
+      exclusionBlock = `\n\nEXCLUDED FIRMS (NEVER include in results):
+${exclusionList.map(f => `- ${f}`).join('\n')}`;
+    }
+
+    // Build enriched client context when profile is active
     let enrichedContext = '';
     if (useClientProfile && profileData) {
       const di = profileData.designIdentity || {};
@@ -246,7 +177,6 @@ const discoveryApi = {
       if (di.architectureStyleTags?.length > 0) sections.push(`Architecture Style Tags: [${di.architectureStyleTags.join(', ')}]`);
       if (di.interiorStyleTags?.length > 0) sections.push(`Interior Style Tags: [${di.interiorStyleTags.join(', ')}]`);
 
-      // Architectural Style Spectrum (AS1–AS9) — 3 closest categories from Taste Exploration
       if (profileData.architecturalStyles) {
         const as = profileData.architecturalStyles;
         const primary = as.styles.find(s => s.isPrimary);
@@ -263,7 +193,6 @@ const discoveryApi = {
       if (di.roofFormPreference) sections.push(`Roof Form: ${di.roofFormPreference}`);
       if (di.structuralAmbition) sections.push(`Structural Ambition: ${di.structuralAmbition}`);
 
-      // Lifestyle signals
       const lifestyleSignals = [];
       if (ls.entertainingFrequency) lifestyleSignals.push(`Entertaining: ${ls.entertainingFrequency}${ls.typicalGuestCount ? ', ' + ls.typicalGuestCount + ' guests' : ''}`);
       if (ls.wellnessPriorities?.length > 0) lifestyleSignals.push(`Wellness: ${ls.wellnessPriorities.join(', ')}`);
@@ -273,13 +202,11 @@ const discoveryApi = {
         sections.push(`\nLifestyle Signals:\n  ${lifestyleSignals.join('\n  ')}`);
       }
 
-      // FYI spaces
       if (profileData.includedSpaces.length > 0) {
         sections.push(`\nSpace Program (from FYI):\n  Included: ${profileData.includedSpaces.join(', ')}`);
         if (profileData.targetGSF) sections.push(`  Target SF: ${Number(profileData.targetGSF).toLocaleString()}`);
       }
 
-      // Build matching priority with arch styles if available
       let matchingPriority = `\n\nMATCHING PRIORITY:\nFind firms whose portfolio demonstrates ALIGNMENT with this specific client's\ndesign identity — not just the style keywords, but the full sensibility\n(warmth level, material language, massing approach, lifestyle integration).`;
 
       if (profileData.architecturalStyles) {
@@ -301,7 +228,7 @@ Your task is to identify real, verifiable ${disciplineLabel} firms matching thes
 - Budget tier: ${budgetLabel}
 - Style specialization: ${styleFocus}
 - Number of results requested: ${limit}${enrichedContext}
-${getDisciplineGuidance(discipline, budgetLabel)}
+${guidanceText}${exemplarBlock}${exclusionBlock}
 For each firm, provide:
 - firm_name (official business name — must be a real, verifiable firm)
 - principal_name (lead partner/principal)
@@ -325,8 +252,7 @@ CRITICAL RULES:
 4. Prioritize firms with demonstrated luxury residential experience.
 5. Confidence scores: 90+ = perfect match, 70-89 = strong match, 50-69 = possible match, <50 = stretch.${useClientProfile ? '\n6. Weight firms that demonstrate alignment with the FULL client design identity above, not just keyword overlap.' : ''}`;
 
-    // Call Anthropic API directly (IONOS blocks outbound PHP, so client-side is required)
-    // Key is safe: config-secrets.php is gitignored, persists on FTP through deploys
+    // Call Anthropic API — MODEL IS CONFIG-DRIVEN
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -336,7 +262,7 @@ CRITICAL RULES:
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: aiModel,
         max_tokens: 4096,
         system: systemPrompt,
         messages: [
@@ -356,16 +282,36 @@ CRITICAL RULES:
       .map(b => b.text)
       .join('');
 
-    // Strip markdown fencing if present
     textContent = textContent.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
     const candidates = JSON.parse(textContent);
     if (!Array.isArray(candidates)) throw new Error('AI returned invalid format');
 
+    // =====================================================================
+    // CONFIG-DRIVEN: Filter out excluded firms from AI results
+    // =====================================================================
+    const exclusionSet = new Set(exclusionList.map(f => f.toLowerCase()));
+    const confidenceThreshold = effectiveConfig?.discovery?.confidenceThreshold ?? 0;
+
+    const filteredCandidates = candidates.filter(c => {
+      const firmLower = (c.firm_name || '').toLowerCase();
+      if (exclusionSet.has(firmLower)) return false;
+      for (const excluded of exclusionSet) {
+        if (firmLower.includes(excluded) || excluded.includes(firmLower)) return false;
+      }
+      return true;
+    });
+
+    const excludedByFilter = candidates.length - filteredCandidates.length;
+
     // Save each candidate to backend
     const insertedCandidates = [];
     const duplicatesSkipped = [];
+    const belowThreshold = [];
 
-    for (const c of candidates) {
+    for (const c of filteredCandidates) {
+      const isBelowThreshold = confidenceThreshold > 0 && (c.confidence_score || 0) < confidenceThreshold;
+      if (isBelowThreshold) belowThreshold.push(c.firm_name);
+
       const candidateData = {
         project_id: criteria.project_id || null,
         discipline,
@@ -385,7 +331,7 @@ CRITICAL RULES:
         source_tier: 3,
         source_type: 'ai_discovery',
         source_url: c.website || null,
-        source_name: 'Claude Sonnet',
+        source_name: `Claude (${aiModel})`,
         discovery_query: discoveryQuery,
         confidence_score: c.confidence_score || null,
         source_rationale: c.source_rationale || null,
@@ -416,7 +362,10 @@ CRITICAL RULES:
       candidates: insertedCandidates,
       inserted: insertedCandidates.length,
       duplicates_skipped: duplicatesSkipped,
+      excluded_by_filter: excludedByFilter,
+      below_threshold: belowThreshold,
       query: discoveryQuery,
+      model_used: aiModel,
     };
   },
 };
@@ -576,8 +525,10 @@ const BatchActionsBar = ({ selectedCount, onBatchApprove, onBatchDismiss, onClea
 // ============================================================================
 
 const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
-  // App context for client profile data (Phase 4)
   const { kycData, fyiData, activeProjectId } = useAppContext();
+
+  // CONFIG WIRING: Load resolved configuration
+  const { config: effectiveConfig } = useBYTConfig();
 
   // Sub-mode
   const [subMode, setSubMode] = useState('ai');
@@ -629,16 +580,10 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     }
   }, [statusFilter, disciplineFilter, activeProjectId]);
 
-  // Initial load
-  useEffect(() => {
-    loadQueueStats();
-  }, [loadQueueStats]);
+  useEffect(() => { loadQueueStats(); }, [loadQueueStats]);
 
-  // Load candidates when switching to queue or changing filters
   useEffect(() => {
-    if (subMode === 'queue') {
-      loadCandidates();
-    }
+    if (subMode === 'queue') loadCandidates();
   }, [subMode, statusFilter, disciplineFilter, loadCandidates]);
 
   // Handlers
@@ -647,19 +592,21 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     setError(null);
     setAiResults(null);
     try {
-      // Inject project_id so candidates are scoped to this project
-      const result = await discoveryApi.runAISearch({ ...criteria, project_id: activeProjectId });
+      // CONFIG WIRING: Pass effective config to runAISearch
+      const result = await discoveryApi.runAISearch(
+        { ...criteria, project_id: activeProjectId },
+        effectiveConfig
+      );
       setAiResults(result);
 
-      // Track recent search
       setRecentSearches(prev => [{
         ...criteria,
         query: result.query,
         resultCount: result.inserted,
+        modelUsed: result.model_used,
         timestamp: Date.now(),
       }, ...prev].slice(0, 5));
 
-      // Refresh queue stats
       loadQueueStats();
     } catch (err) {
       console.error('[BYT Discovery] AI search error:', err);
@@ -667,12 +614,11 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     } finally {
       setAiSearching(false);
     }
-  }, [loadQueueStats, activeProjectId]);
+  }, [loadQueueStats, activeProjectId, effectiveConfig]);
 
   const handleApprove = useCallback(async (candidate) => {
     try {
       await discoveryApi.reviewCandidate(candidate.id, 'approved');
-      // Update local state
       setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, status: 'approved' } : c));
       if (aiResults?.candidates) {
         setAiResults(prev => ({
@@ -689,7 +635,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
 
   const handleDismiss = useCallback(async (candidate) => {
     const notes = window.prompt('Dismissal notes (optional):');
-    if (notes === null) return; // cancelled
+    if (notes === null) return;
     try {
       await discoveryApi.reviewCandidate(candidate.id, 'dismissed', notes);
       setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, status: 'dismissed' } : c));
@@ -756,11 +702,13 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
     }
   }, [selectedIds, loadQueueStats]);
 
+  // CONFIG-DRIVEN: confidence threshold for display
+  const confidenceThreshold = effectiveConfig?.discovery?.confidenceThreshold ?? 0;
+
   return (
     <div className="byt-discovery">
       <SubModeTabs subMode={subMode} setSubMode={setSubMode} queueStats={queueStats} />
 
-      {/* Error display */}
       {error && (
         <div className="byt-error">
           <AlertTriangle size={20} />
@@ -771,12 +719,10 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
         </div>
       )}
 
-      {/* Manual Search */}
       {subMode === 'manual' && (
         <ManualSearchPanel onQuickAdd={onQuickAdd} />
       )}
 
-      {/* AI Discovery */}
       {subMode === 'ai' && (
         <div className="byt-discovery-ai">
           <AIDiscoveryForm
@@ -787,7 +733,6 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
             fyiData={fyiData}
           />
 
-          {/* AI Results */}
           {aiResults && (
             <div className="byt-discovery-ai__results">
               <div className="byt-discovery-ai__results-header">
@@ -797,6 +742,22 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
                     {aiResults.inserted} new candidate{aiResults.inserted !== 1 ? 's' : ''} found
                   </span>
                 </h3>
+                {/* CONFIG WIRING: Show model + filter metadata */}
+                {aiResults.model_used && (
+                  <p style={{ fontSize: 11, color: '#6b6b6b', margin: '2px 0 0' }}>
+                    Model: {aiResults.model_used}
+                    {aiResults.excluded_by_filter > 0 && (
+                      <span style={{ color: '#d32f2f', marginLeft: 8 }}>
+                        · {aiResults.excluded_by_filter} excluded (exclusion list)
+                      </span>
+                    )}
+                    {aiResults.below_threshold?.length > 0 && (
+                      <span style={{ color: '#f57c00', marginLeft: 8 }}>
+                        · {aiResults.below_threshold.length} below confidence threshold ({confidenceThreshold})
+                      </span>
+                    )}
+                  </p>
+                )}
                 {aiResults.duplicates_skipped?.length > 0 && (
                   <p className="byt-discovery-ai__duplicates">
                     {aiResults.duplicates_skipped.length} duplicate{aiResults.duplicates_skipped.length !== 1 ? 's' : ''} skipped: {aiResults.duplicates_skipped.join(', ')}
@@ -818,6 +779,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
                     onApprove={handleApprove}
                     onDismiss={handleDismiss}
                     onImport={handleImport}
+                    confidenceThreshold={confidenceThreshold}
                   />
                 ))}
               </div>
@@ -826,7 +788,6 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
         </div>
       )}
 
-      {/* Import Queue */}
       {subMode === 'queue' && (
         <div className="byt-discovery-queue">
           <QueueFilterBar
@@ -880,6 +841,7 @@ const BYTDiscoveryScreen = ({ onImportComplete, onQuickAdd }) => {
                     onApprove={handleApprove}
                     onDismiss={handleDismiss}
                     onImport={handleImport}
+                    confidenceThreshold={confidenceThreshold}
                   />
                 ))}
               </div>
