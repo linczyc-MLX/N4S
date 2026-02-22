@@ -39,9 +39,9 @@ LuXeBrief `n4sDatabase.ts` footer still shows old "Confidential" text that shoul
 **Module**: BYT | **Severity**: High | **Added**: 2026-02-22
 RFQ data is submitted for all 4 candidates. Individual scores computed (Ehrlich 61, Cliff Fong 55, Premier 68, Mayfair 69). Need to test: (a) scores display correctly in Matchmaking, (b) Synergy Sandbox reads Section 4 responses for compatibility analysis.
 
-### ITR-11: BYT — Library tab Shortlist button not greying out
-**Module**: BYT | **Severity**: High | **Added**: 2026-02-22
-Library > Consultant Library: "Shortlist" button stays active (gold) for all consultants even though all 4 already have engagements in active project. Engagement fetch from IONOS (`website.not-4.sale/api/gid.php`) likely fails silently — needs browser console debugging. Matching is on firm_name+discipline (case-insensitive). Three fix attempts failed. See `CLAUDE-CODE-HANDOVER.md` for debug steps.
+### ~~ITR-11: BYT — Library tab Shortlist button not greying out~~ ✅ FIXED 2026-02-22
+**Module**: BYT | **Resolved**: 2026-02-22
+API_BASE was empty string on website.not-4.sale, so engagement fetch hit /gid.php (404) instead of /api/gid.php. Every other BYT screen had the correct /api fallback — Library was the odd one out. Fixed by Claude Code.
 
 ---
 
