@@ -1827,3 +1827,40 @@ Completed three major areas: (1) wired BYT Discovery and Matchmaking screens to 
 - Engagement ai_confidence comes from subquery: `SELECT MAX(d.confidence_score) FROM gid_discovery_candidates d WHERE d.imported_consultant_id = e.consultant_id`
 - RFQ responses saved via consultant-facing Bearer token auth, not admin API — follows exact production data path
 - Section 4 (Synergy) responses deliberately vary: Ehrlich=fast/realtime, Fong=methodical/weekly, Premier=methodical/hybrid, Mayfair=fast/daily — this creates real synergy signal variety
+
+---
+
+## Session: 2026-02-22 (Evening — Claude.ai)
+
+### Summary
+Built BYT Library tab (Tab 6) with dual-view layout, Response Viewer integration into Matchmaking, and attempted pipeline status + shortlist button logic. Library shortlist button bug remains unresolved (ITR-11).
+
+### Key Decisions
+- **Library tab dual-view**: Project Responses (current project RFQs) + Consultant Library (cross-project database from VPS)
+- **No shortlist button on Project Responses**: They're already in the pipeline by definition — only View button
+- **Consultant Library shortlist button**: Should grey out with "Shortlisted" label when engagement exists — matching on firm_name+discipline
+- **VPS UUID ≠ IONOS auto-increment**: Never match consultant_id across systems, always use firm_name+discipline
+- **RFQ Response PDF**: Generated Ehrlich Yanai PDF with ReportLab (output only, not committed)
+
+### Git Commits
+| Commit | Message |
+|--------|---------|
+| 28846a5a | Wire score breakdown dimensions + pipeline dates |
+| 1c0791c7 | Response Viewer in Matchmaking cards |
+| a3e87572 | Library tab — Project Responses + Consultant Library |
+| 45f8e721 | Pipeline status bars + Add to Shortlist button |
+| 3fb33ebb | Grey out Shortlist button when already shortlisted |
+| b08444c1 | Remove button from Project Responses, fix engagement matching |
+| 1f1751d8 | Fix API_BASE to website.not-4.sale/api |
+
+### Files Changed
+| File | Action | Notes |
+|------|--------|-------|
+| `src/components/BYT/screens/BYTLibraryScreen.jsx` | NEW | 580 lines, dual-view, PipelineMini, ResponseDetailPanel |
+| `src/components/BYT/screens/BYTMatchmakingScreen.jsx` | MODIFIED | Score breakdown transform, ResponseViewer component, pipeline date mapping |
+| `src/components/BYT/BYTModule.jsx` | MODIFIED | Library tab wiring |
+| `src/components/BYT/BYTModule.css` | MODIFIED | 420+ lines added: library layout, pipeline mini, detail panel, cards |
+| `CLAUDE-CODE-HANDOVER.md` | NEW | Debug handover for ITR-11 |
+
+### Open Issue
+**ITR-11**: Library Shortlist button never greys out. API_BASE was wrong (fixed), engagement matching by firm_name+discipline (fixed), but still not working. Likely CORS or silent fetch failure. Needs browser console debugging — handover prepared for Claude Code.

@@ -5,13 +5,14 @@
 ## Purpose
 Consultant matching and team assembly system. AI-powered discovery, qualification via RFQ, scoring, and synergy analysis across 4 disciplines: Architect, Interior Designer, PM/Owner's Rep, General Contractor.
 
-## Tab Structure (6 tabs)
+## Tab Structure (7 tabs)
 1. **Registry** — Consultant database (manual entry + imports)
 2. **Discovery** — AI-powered sourcing with configurable guidance
 3. **Shortlist** — Curation, RFQ dispatch, pipeline management
 4. **Matchmaking** — Deep scoring from RFQ responses (two-pass: quantitative + qualitative)
 5. **Synergy Sandbox** — Team combination testing + conflict mapping
-6. **Admin** — Global + project-level configuration
+6. **Library** — Project RFQ responses + cross-project consultant database
+7. **Admin** — Global + project-level configuration
 
 ## Key Files
 
@@ -23,6 +24,7 @@ Consultant matching and team assembly system. AI-powered discovery, qualificatio
 | `BYTShortlistScreen.jsx` | Shortlist | Drag-rank, RFQ dispatch |
 | `BYTMatchmakingScreen.jsx` | Matchmaking | Score display, tier labels |
 | `BYTSynergySandboxScreen.jsx` | Synergy | Team combination analysis |
+| `BYTLibraryScreen.jsx` | Library | Dual-view: Project Responses + Consultant Library |
 | `BYTAdminScreen.jsx` | Admin | Global + project config |
 
 ### Utils (src/components/BYT/utils/)
@@ -80,11 +82,15 @@ Consultant matching and team assembly system. AI-powered discovery, qualificatio
 4. **Working Style & Synergy** (10 questions, universal) — feeds Synergy Sandbox
 5. **Project Capabilities** (dynamic from FYI) — feature checklist
 
-## Current State (as of 2026-02-22)
+## Current State (as of 2026-02-22 evening)
 - All 4 candidates have submitted RFQs (33 responses + 3-4 portfolio each)
 - Engagement statuses: all `questionnaire_received`
-- Ready for: Matchmaking scoring ("Score All") and Synergy Sandbox testing
-- Synergy data has deliberately varied styles for meaningful compatibility signals
+- Individual scores computed: Ehrlich 61, Cliff Fong 55, Premier 68, Mayfair 69
+- **Library tab live** with dual-view (Project Responses + Consultant Library)
+- Response Viewer in Matchmaking cards (eye icon)
+- **BUG (ITR-11)**: Library "Shortlist" button not greying out for existing engagements — engagement fetch or firm_name matching failing silently
+- Ready for: Synergy Sandbox testing, Library bug fix
+- VPS consultant_id (UUID) ≠ IONOS consultant_id (auto-increment) — CRITICAL: always match by firm_name+discipline across systems, never by ID
 
 ## Project Scoping
 - `gid_project_consultants` junction table (must be utf8mb4_unicode_ci)

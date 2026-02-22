@@ -1,52 +1,71 @@
 # N4S Session Handover
 
-> **Session Date**: February 22, 2026
-> **Git**: `main` at commit `88b9df3d`
+> **Session Date**: February 22, 2026 (Evening Session)
+> **Git**: `main` at commit `1f1751d8`
 > **Build**: ✅ Clean, auto-deployed
 
 ---
 
 ## What Was Done This Session
 
-### 1. BYT Config Wiring
-- Discovery + Matchmaking screens now read all config from Admin Panel via `useBYTConfig()` hook
-- AI model, discipline guidance, exemplar firms, exclusion lists, confidence thresholds, scoring weights, tier thresholds — all configurable
-- Admin changes take effect immediately
+### 1. Score Breakdown + Pipeline Dates (28846a5a)
+- VPS flat score fields transformed into dimensions object for ScoreBreakdown component
+- IONOS date_contacted → questionnaire_sent_at, date_responded → questionnaire_received_at mapping
 
-### 2. Score Display Fix
-- Matchmaking now shows AI Confidence matching Shortlist (was showing stale legacy match_score)
-- Tier labels ("Top Match"/"Good Fit"/"Consider") display below score circle, not crammed inside
+### 2. Response Viewer in Matchmaking (1c0791c7)
+- Eye icon button on EngagementCards to view full RFQ questionnaire responses
+- Fetches from VPS `/api/admin/invitations/:id/responses`
+- Tabbed sections: Firm Profile, Design Philosophy, Synergy, Capabilities, Portfolio
+- Portfolio tab shows project cards with location, budget, scope, features, publications
+- JSON array parsing for multiselect fields
 
-### 3. Shortlist UX — Unshortlist
-- Green "✓ Shortlisted" button is clickable → moves candidate back to "To Review"
-- Only removes engagement if status is still `shortlisted` (protects contacted/RFQ candidates)
+### 3. BYT Library Tab — NEW (a3e87572)
+- **Tab 6** between Synergy Sandbox and Admin
+- **Project Responses view**: Lists submitted RFQ invitations for active project, click to view full responses in side-by-side detail panel
+- **Consultant Library view**: Cross-project consultant database from VPS `/api/library`, expandable submission history per consultant
+- ResponseDetailPanel: Full questionnaire viewer with same tabbed sections
+- Side-by-side layout: 340px list + flex detail panel
 
-### 4. Full RFQ Simulation
-- All 4 candidates completed questionnaires via real API path (rfq.not-4.sale):
-  - **Ehrlich Yanai** (Architect): 33 responses, 4 portfolio
-  - **Cliff Fong Design** (Interior Designer): 33 responses, 3 portfolio
-  - **Premier Development Advisors** (PM): 33 responses, 3 portfolio
-  - **Mayfair Construction** (GC): 33 responses, 3 portfolio
-- All IONOS engagements synced to `questionnaire_received`
+### 4. Pipeline Status Bars + Add to Shortlist (45f8e721 → 1f1751d8)
+- PipelineMini component: compact 8-stage status bar (Shortlisted → Contracted)
+- "Add to Shortlist" gold button in Consultant Library view
+- Button should grey out when engagement exists — **NOT YET WORKING** (see ITR-11)
+- Removed button from Project Responses view (they're already in pipeline by definition)
 
-### 5. Memory System Restructured
-- New `docs/memory/` directory with ARCHITECTURE, PROTOCOL, module files, ITR
-- Standardized "Claude: Update Memory and Hand Off" command
+### 5. RFQ Response PDF Generated (file output only, no commit)
+- N4S-branded PDF for Ehrlich Yanai using ReportLab
+- Cover page, score breakdown, 5 sections, portfolio — 5 pages total
+
+---
+
+## CRITICAL — Unresolved Bug: ITR-11
+
+**The "Shortlist" button in Consultant Library stays active for all consultants even though all 4 are already shortlisted.** Three fix attempts failed:
+
+- Attempt 1: Button hidden → wrong UX (should grey out, not hide)
+- Attempt 2: Match by consultant_id → VPS UUIDs don't match IONOS auto-increment IDs
+- Attempt 3: Match by firm_name+discipline → engagements still empty because API_BASE was wrong
+- Attempt 4: Fixed API_BASE to `website.not-4.sale/api` → **still not working**
+
+**Likely remaining issue**: CORS, or the engagement fetch still silently failing, or firm_name values differ between VPS library data and IONOS gid_consultants JOIN. Needs browser console debugging.
+
+**Handover file for Claude Code**: `CLAUDE-CODE-HANDOVER.md` in repo root — contains full debug steps.
 
 ---
 
 ## Immediate Next Steps
 
-1. **Test Matchmaking Scoring** — Hit "Score All" button. Should trigger VPS endpoint `/scoring/compute-all/proj_thornwood_001`. Verify scores populate in Matchmaking cards.
-2. **Test Synergy Sandbox** — Open Synergy tab, select team of 4 candidates, run combination analysis. Section 4 data has deliberately varied communication/conflict styles.
-3. **Scoring Pipeline Debug** — If scores don't populate, check VPS scoring routes in `N4S-RFQ-API/src/routes/scoring.js`.
+1. **FIX ITR-11** — Debug in browser console: does `/api/gid.php?entity=engagements` return data? Do firm_names match? Use `CLAUDE-CODE-HANDOVER.md`.
+2. **Test Matchmaking Scoring** — Hit "Score All" button to trigger VPS scoring.
+3. **Test Synergy Sandbox** — Select team, run combination analysis.
 
 ---
 
 ## Blockers / Warnings
 
-- **Ehrlich's original manual responses** (2A.4, 4.5b, 4.5c, 4.5d) were too short — have been overwritten with proper-length AI responses. The old partial data from manual testing is gone.
-- **No Section 5 (Project Capabilities)** was populated — this section is dynamically generated from FYI spaces and was not part of the simulation. If scoring requires it, it will need to be populated or the scoring logic needs to handle missing Section 5 gracefully.
+- **ITR-11 is a UX blocker** — Library tab looks broken because all buttons are active
+- IONOS static host (app-ionos.space) cannot call PHP APIs directly — must use `website.not-4.sale/api` as API_BASE
+- VPS consultant_id (UUID) ≠ IONOS consultant_id (auto-increment) — never match by ID across systems, always use firm_name+discipline
 
 ---
 
@@ -54,9 +73,10 @@
 
 | Commit | Message |
 |--------|---------|
-| `f376c9ba` | Wire Discovery + Matchmaking to Admin configResolver |
-| `4ae197ad` | Fix Discovery AI config endpoint |
-| `d574592f` | Fix Matchmaking scores: AI confidence + tier label UX |
-| `25c1c5de` | Shortlist: unshortlist button |
-| `88b9df3d` | Session log + handover |
-| `(pending)` | Memory system restructure |
+| `28846a5a` | Wire score breakdown dimensions + pipeline dates |
+| `1c0791c7` | Response Viewer in Matchmaking cards |
+| `a3e87572` | Library tab — Project Responses + Consultant Library |
+| `45f8e721` | Pipeline status bars + Add to Shortlist button |
+| `3fb33ebb` | Grey out Shortlist button when already shortlisted |
+| `b08444c1` | Remove button from Project Responses, fix engagement matching |
+| `1f1751d8` | Fix API_BASE to website.not-4.sale/api |
