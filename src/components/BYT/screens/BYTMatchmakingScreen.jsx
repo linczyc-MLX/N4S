@@ -802,7 +802,12 @@ const BYTMatchmakingScreen = () => {
           ? rfqGetScores(projectId).catch(() => ({ scores: [] }))
           : Promise.resolve({ scores: [] })
       ]);
-      setEngagements(engData.engagements || []);
+      setEngagements((engData.engagements || []).map(eng => ({
+        ...eng,
+        // Map IONOS date fields to pipeline-expected fields
+        questionnaire_sent_at: eng.questionnaire_sent_at || eng.date_contacted || null,
+        questionnaire_received_at: eng.questionnaire_received_at || eng.date_responded || null,
+      })));
       setVpsScores(scoreData.scores || []);
     } catch (err) {
       console.error('[Matchmaking] Load error:', err);
@@ -815,7 +820,25 @@ const BYTMatchmakingScreen = () => {
   const scoreMap = useMemo(() => {
     const map = {};
     for (const s of vpsScores) {
-      if (s.consultant_id) map[s.consultant_id] = s;
+      if (!s.consultant_id) continue;
+      // Transform flat VPS score fields into dimensions object for ScoreBreakdown
+      map[s.consultant_id] = {
+        ...s,
+        quantitative_score: Number(s.quantitative_total) || 0,
+        qualitative_score: Number(s.qualitative_total) || 0,
+        dimensions: {
+          scale_match:            Number(s.scale_match_score) || 0,
+          financial_resilience:   Number(s.financial_resilience_score) || 0,
+          geographic_alignment:   Number(s.geographic_score) || 0,
+          capability_coverage:    Number(s.capability_coverage_score) || 0,
+          portfolio_relevance:    Number(s.portfolio_relevance_score) || 0,
+          tech_compatibility:     Number(s.tech_compatibility_score) || 0,
+          credentials:            Number(s.credentials_score) || 0,
+          philosophy_alignment:   Number(s.philosophy_alignment_score) || 0,
+          methodology_fit:        Number(s.methodology_fit_score) || 0,
+          collaboration_maturity: Number(s.collaboration_maturity_score) || 0,
+        },
+      };
     }
     return map;
   }, [vpsScores]);
