@@ -86,7 +86,7 @@ const PIPELINE_STAGES = [
 // IONOS API base
 const API_BASE = window.location.hostname.includes('ionos.space')
   ? 'https://website.not-4.sale/api'
-  : (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
+  : '/api';
 
 
 // =============================================================================
@@ -462,10 +462,11 @@ const BYTLibraryScreen = () => {
     const map = {};
     engagements.forEach(eng => {
       if (eng.firm_name && eng.discipline) {
-        const key = `${eng.firm_name.trim().toLowerCase()}::${eng.discipline}`;
+        const key = `${eng.firm_name.trim().toLowerCase()}::${eng.discipline.trim().toLowerCase()}`;
         map[key] = eng;
       }
     });
+    console.log('[Library] engagementMap keys:', Object.keys(map));
     return map;
   }, [engagements]);
 
@@ -479,7 +480,10 @@ const BYTLibraryScreen = () => {
       );
       if (res.ok) {
         const data = await res.json();
+        console.log('[Library] Loaded engagements:', (data.engagements || []).length, 'for project:', projectId);
         setEngagements(data.engagements || []);
+      } else {
+        console.warn('[Library] Engagements fetch failed:', res.status, 'URL:', `${API_BASE}/gid.php?entity=engagements&project_id=${projectId}`);
       }
     } catch (err) {
       console.error('[Library] Load engagements error:', err);
@@ -598,8 +602,12 @@ const BYTLibraryScreen = () => {
   // Helper: find engagement for invitation
   const getEngagement = (firmName, discipline) => {
     if (firmName && discipline) {
-      const key = `${firmName.trim().toLowerCase()}::${discipline}`;
-      return engagementMap[key] || null;
+      const key = `${firmName.trim().toLowerCase()}::${discipline.trim().toLowerCase()}`;
+      const match = engagementMap[key] || null;
+      if (!match && Object.keys(engagementMap).length > 0) {
+        console.log('[Library] getEngagement miss:', key, 'map has:', Object.keys(engagementMap));
+      }
+      return match;
     }
     return null;
   };
