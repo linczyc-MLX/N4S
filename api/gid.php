@@ -607,7 +607,8 @@ if ($entity === 'engagements') {
         $projectId = $_GET['project_id'] ?? null;
         $discipline = $_GET['discipline'] ?? null;
 
-        $sql = "SELECT e.*, c.firm_name, c.first_name, c.last_name, c.role, c.hq_city, c.hq_state
+        $sql = "SELECT e.*, c.firm_name, c.first_name, c.last_name, c.role, c.hq_city, c.hq_state,
+                (SELECT MAX(d.confidence_score) FROM gid_discovery_candidates d WHERE d.imported_consultant_id = e.consultant_id) as ai_confidence
                 FROM gid_engagements e
                 LEFT JOIN gid_consultants c ON e.consultant_id = c.id
                 WHERE 1=1";

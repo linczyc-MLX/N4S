@@ -199,6 +199,11 @@ const TeamCompositionSummary = ({ engagementsByDiscipline, scoreMap, tiers }) =>
                         Score: {Math.round(slot.score.overall_score || 0)}
                       </span>
                     )}
+                    {!slot.score && slot.mostAdvanced?.ai_confidence && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: getTierColor(slot.mostAdvanced.ai_confidence, tiers) }}>
+                        AI: {Math.round(slot.mostAdvanced.ai_confidence)}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="byt-assembly-slot__empty">No candidates yet</span>
@@ -395,7 +400,9 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
   const currentStage = PIPELINE_STAGES[currentStageIdx];
   const nextStage = currentStageIdx < PIPELINE_STAGES.length - 1 ? PIPELINE_STAGES[currentStageIdx + 1] : null;
 
-  const displayScore = score?.overall_score || engagement.match_score || null;
+  // Score priority: VPS overall_score > AI confidence > legacy match_score
+  const displayScore = score?.overall_score || engagement.ai_confidence || engagement.match_score || null;
+  const scoreSource = score?.overall_score ? 'match' : (engagement.ai_confidence ? 'ai' : 'legacy');
   const scoreColor = displayScore ? getTierColor(displayScore, tiers) : COLORS.textMuted;
 
   const hasResponse = ['questionnaire_received', 'under_review', 'proposal', 'engaged', 'contracted']
@@ -448,14 +455,19 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
       {/* Card Header */}
       <div className="byt-engagement-card__header" onClick={() => setExpanded(!expanded)}>
         <div className="byt-engagement-card__left">
-          <div className="byt-engagement-card__score" style={{ borderColor: scoreColor }}>
-            <span style={{ color: scoreColor, fontSize: displayScore ? 16 : 12 }}>
-              {displayScore ? Math.round(displayScore) : '—'}
-            </span>
-            {displayScore && (
-              <span style={{ fontSize: 8, color: scoreColor, fontWeight: 600 }}>
-                {getTierLabel(displayScore, tiers).split(' ')[0]}
+          <div className="byt-engagement-card__score-wrapper">
+            <div className="byt-engagement-card__score" style={{ borderColor: scoreColor }}>
+              <span style={{ color: scoreColor, fontSize: displayScore ? 16 : 12 }}>
+                {displayScore ? Math.round(displayScore) : '—'}
               </span>
+            </div>
+            {displayScore && (
+              <span className="byt-engagement-card__score-tier" style={{ color: scoreColor }}>
+                {getTierLabel(displayScore, tiers)}
+              </span>
+            )}
+            {displayScore && scoreSource === 'ai' && (
+              <span className="byt-engagement-card__score-source">AI Confidence</span>
             )}
           </div>
           <div className="byt-engagement-card__info">
@@ -702,8 +714,8 @@ const DisciplineGroup = ({ disciplineKey, engagements, scoreMap, onUpdate, onRem
 
   const stageOrder = { contracted: 7, engaged: 6, proposal: 5, under_review: 4, questionnaire_received: 3, questionnaire_sent: 2, contacted: 1, shortlisted: 0 };
   const sorted = [...engagements].sort((a, b) => {
-    const aScore = scoreMap[a.consultant_id]?.overall_score || 0;
-    const bScore = scoreMap[b.consultant_id]?.overall_score || 0;
+    const aScore = scoreMap[a.consultant_id]?.overall_score || a.ai_confidence || 0;
+    const bScore = scoreMap[b.consultant_id]?.overall_score || b.ai_confidence || 0;
     if (aScore && !bScore) return -1;
     if (!aScore && bScore) return 1;
     if (aScore && bScore) return bScore - aScore;
@@ -1165,6 +1177,26 @@ const mmStyles = `
   .byt-pipeline-full-grid__icons { grid-template-columns: repeat(4, 1fr); row-gap: 8px; }
   .byt-pipeline-dated-grid__connector-left,
   .byt-pipeline-dated-grid__connector-right { display: none; }
+}
+.byt-engagement-card__score-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 56px;
+  flex-shrink: 0;
+}
+.byt-engagement-card__score-tier {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.byt-engagement-card__score-source {
+  font-size: 9px;
+  color: #999;
+  line-height: 1;
+  white-space: nowrap;
 }
 `;
 
