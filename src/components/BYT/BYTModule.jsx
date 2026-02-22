@@ -9,6 +9,8 @@
  * 3. Shortlist — Curation, alignment badges, outreach pipeline
  * 4. Matchmaking — Deep scoring from RFQ responses
  * 5. Synergy Sandbox — Team combination testing & conflict mapping
+ * 6. Library — Project RFQ responses & cross-project consultant library
+ * 7. Admin — Configuration, weights, API keys
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -25,6 +27,7 @@ import BYTShortlistScreen from './screens/BYTShortlistScreen';
 import BYTDiscoveryScreen from './screens/BYTDiscoveryScreen';
 import BYTMatchmakingScreen from './screens/BYTMatchmakingScreen';
 import BYTSynergySandboxScreen from './screens/BYTSynergySandboxScreen';
+import BYTLibraryScreen from './screens/BYTLibraryScreen';
 import BYTAdminScreen from './screens/BYTAdminScreen';
 import './BYTModule.css';
 
@@ -518,6 +521,13 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
               Synergy Sandbox
             </button>
             <button
+              className={`byt-screen-tab ${viewMode === 'library' ? 'byt-screen-tab--active' : ''}`}
+              onClick={() => { setViewMode('library'); setSelectedConsultant(null); }}
+            >
+              <Eye size={16} />
+              Library
+            </button>
+            <button
               className={`byt-screen-tab ${viewMode === 'admin' ? 'byt-screen-tab--active' : ''}`}
               onClick={() => { setViewMode('admin'); setSelectedConsultant(null); }}
             >
@@ -663,6 +673,11 @@ const BYTModule = ({ showDocs, onCloseDocs }) => {
           {/* Synergy Sandbox Screen */}
           {viewMode === 'synergy' && (
             <BYTSynergySandboxScreen />
+          )}
+
+          {/* Library Screen */}
+          {viewMode === 'library' && (
+            <BYTLibraryScreen />
           )}
 
           {/* Admin Screen */}
