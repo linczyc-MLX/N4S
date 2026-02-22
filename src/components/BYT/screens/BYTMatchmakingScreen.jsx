@@ -21,12 +21,12 @@ import {
   AlertTriangle, CheckCircle2, Clock, ArrowRight, Phone,
   MessageSquare, Calendar, FileText, UserCheck, Shield,
   MapPin, Star, Edit2, Save, Trash2, Award, Zap,
-  ChevronRight, BarChart3, Target, Play
+  ChevronRight, BarChart3, Target, Play, Eye
 } from 'lucide-react';
 import { useAppContext } from '../../../contexts/AppContext';
 import {
   rfqGetScores, rfqComputeAllScores, rfqComputeScore,
-  rfqListInvitations
+  rfqListInvitations, rfqGetInvitationResponses
 } from '../../../services/rfqApi';
 import { useBYTConfig } from '../utils/useBYTConfig';
 import { getTierLabel, getTierColor } from '../utils/configResolver';
@@ -290,6 +290,204 @@ const ScoreBreakdown = ({ score, configWeights, tiers }) => {
 
 
 // =============================================================================
+// RESPONSE VIEWER — Displays full RFQ questionnaire responses
+// =============================================================================
+
+const SECTION_LABELS = {
+  baseline: 'Firm Profile',
+  discipline_architect: 'Design Philosophy & Process',
+  discipline_interior_designer: 'Design Philosophy & Process',
+  discipline_pm: 'Management Approach',
+  discipline_gc: 'Construction Approach',
+  synergy: 'Synergy & Collaboration',
+  capabilities: 'Project Capabilities',
+};
+
+const SECTION_ORDER = ['baseline', 'discipline_architect', 'discipline_interior_designer', 'discipline_pm', 'discipline_gc', 'synergy', 'capabilities'];
+
+const ResponseViewer = ({ invitationId, firmName, onClose }) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeSection, setActiveSection] = useState(null);
+
+  useEffect(() => {
+    if (!invitationId) return;
+    let mounted = true;
+    setLoading(true);
+    rfqGetInvitationResponses(invitationId)
+      .then(result => {
+        if (!mounted) return;
+        setData(result);
+        // Auto-select first section that has responses
+        const responses = result.responses || [];
+        const sections = [...new Set(responses.map(r => r.section_key).filter(Boolean))];
+        const ordered = SECTION_ORDER.filter(s => sections.includes(s));
+        if (ordered.length > 0) setActiveSection(ordered[0]);
+        else if (sections.length > 0) setActiveSection(sections[0]);
+      })
+      .catch(err => { if (mounted) setError(err.message); })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, [invitationId]);
+
+  if (loading) {
+    return (
+      <div className="byt-response-viewer">
+        <div className="byt-response-viewer__header">
+          <span><Eye size={14} /> Loading responses...</span>
+          <button className="byt-btn byt-btn--ghost byt-btn--sm" onClick={onClose}><X size={14} /></button>
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="byt-response-viewer">
+        <div className="byt-response-viewer__header">
+          <span style={{ color: COLORS.error }}><AlertTriangle size={14} /> {error}</span>
+          <button className="byt-btn byt-btn--ghost byt-btn--sm" onClick={onClose}><X size={14} /></button>
+        </div>
+      </div>
+    );
+  }
+
+  const responses = data?.responses || [];
+  const portfolio = data?.portfolio || [];
+  const sections = [...new Set(responses.map(r => r.section_key).filter(Boolean))];
+  const orderedSections = SECTION_ORDER.filter(s => sections.includes(s));
+  // Add any sections not in our predefined order
+  sections.forEach(s => { if (!orderedSections.includes(s)) orderedSections.push(s); });
+
+  const sectionResponses = responses.filter(r => r.section_key === activeSection);
+
+  const formatResponseValue = (val, inputType) => {
+    if (!val) return '—';
+    // Try parsing JSON arrays
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.join(', ');
+    } catch { /* not JSON */ }
+    return val;
+  };
+
+  return (
+    <div className="byt-response-viewer">
+      <div className="byt-response-viewer__header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Eye size={14} style={{ color: COLORS.navy }} />
+          <span style={{ fontWeight: 600, fontSize: 13, color: COLORS.navy }}>
+            RFQ Responses — {firmName}
+          </span>
+          <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+            {responses.length} answers · {portfolio.filter(p => p.project_name && p.project_name !== 'Project 1').length} portfolio projects
+          </span>
+        </div>
+        <button className="byt-btn byt-btn--ghost byt-btn--sm" onClick={onClose}><X size={14} /> Close</button>
+      </div>
+
+      {/* Section tabs */}
+      <div className="byt-response-viewer__tabs">
+        {orderedSections.map(sKey => (
+          <button key={sKey}
+            className={`byt-response-viewer__tab ${activeSection === sKey ? 'byt-response-viewer__tab--active' : ''}`}
+            onClick={() => setActiveSection(sKey)}>
+            {SECTION_LABELS[sKey] || sKey}
+            <span className="byt-response-viewer__tab-count">
+              {responses.filter(r => r.section_key === sKey).length}
+            </span>
+          </button>
+        ))}
+        {portfolio.filter(p => p.project_name && p.project_name !== 'Project 1').length > 0 && (
+          <button
+            className={`byt-response-viewer__tab ${activeSection === '_portfolio' ? 'byt-response-viewer__tab--active' : ''}`}
+            onClick={() => setActiveSection('_portfolio')}>
+            Portfolio
+            <span className="byt-response-viewer__tab-count">
+              {portfolio.filter(p => p.project_name && p.project_name !== 'Project 1').length}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Response content */}
+      <div className="byt-response-viewer__content">
+        {activeSection === '_portfolio' ? (
+          <div className="byt-response-viewer__portfolio">
+            {portfolio.filter(p => p.project_name && p.project_name !== 'Project 1').map((proj, idx) => (
+              <div key={proj.id || idx} className="byt-response-viewer__portfolio-card">
+                <div className="byt-response-viewer__portfolio-name">{proj.project_name}</div>
+                <div className="byt-response-viewer__portfolio-meta">
+                  {proj.location && <span><MapPin size={11} /> {proj.location}</span>}
+                  {proj.budget_range && <span>Budget: ${proj.budget_range}</span>}
+                  {proj.square_footage && <span>{Number(proj.square_footage).toLocaleString()} SF</span>}
+                  {proj.completion_year && <span>Completed: {proj.completion_year}</span>}
+                </div>
+                {proj.architectural_style && (
+                  <div className="byt-response-viewer__qa">
+                    <span className="byt-response-viewer__q">Style</span>
+                    <span className="byt-response-viewer__a">{proj.architectural_style}</span>
+                  </div>
+                )}
+                {proj.role_scope && (
+                  <div className="byt-response-viewer__qa">
+                    <span className="byt-response-viewer__q">Scope</span>
+                    <span className="byt-response-viewer__a">{proj.role_scope}</span>
+                  </div>
+                )}
+                {proj.key_features && proj.key_features.length > 0 && (
+                  <div className="byt-response-viewer__qa">
+                    <span className="byt-response-viewer__q">Features</span>
+                    <span className="byt-response-viewer__a">
+                      {(Array.isArray(proj.key_features) ? proj.key_features : []).join(', ')}
+                    </span>
+                  </div>
+                )}
+                {proj.publications && (
+                  <div className="byt-response-viewer__qa">
+                    <span className="byt-response-viewer__q">Publications</span>
+                    <span className="byt-response-viewer__a">{proj.publications}</span>
+                  </div>
+                )}
+                <div className="byt-response-viewer__portfolio-footer">
+                  {proj.client_reference_available && (
+                    <span style={{ color: COLORS.success, fontSize: 11 }}>
+                      <CheckCircle2 size={11} /> Client reference available
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="byt-response-viewer__responses">
+            {sectionResponses.map((r, idx) => (
+              <div key={r.id || idx} className="byt-response-viewer__qa">
+                <span className="byt-response-viewer__q">
+                  {r.question_text}
+                  {r.question_help && (
+                    <span className="byt-response-viewer__help" title={r.question_help}> ⓘ</span>
+                  )}
+                </span>
+                <span className="byt-response-viewer__a">
+                  {formatResponseValue(r.response_value, r.input_type)}
+                </span>
+              </div>
+            ))}
+            {sectionResponses.length === 0 && (
+              <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12, textAlign: 'center' }}>
+                No responses in this section.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// =============================================================================
 // PIPELINE PROGRESS BAR
 // =============================================================================
 
@@ -395,6 +593,9 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
   });
   const [saving, setSaving] = useState(false);
   const [computing, setComputing] = useState(false);
+  const [showResponses, setShowResponses] = useState(false);
+  const [responseInvitationId, setResponseInvitationId] = useState(null);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
 
   const currentStageIdx = PIPELINE_STAGES.findIndex(s => s.key === engagement.contact_status);
   const currentStage = PIPELINE_STAGES[currentStageIdx];
@@ -444,6 +645,32 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
     if (!window.confirm(`Remove ${engagement.firm_name || 'this consultant'} from the matchmaking pipeline?`)) return;
     onRemove(engagement.id);
   }, [engagement, onRemove]);
+
+  const handleViewResponses = useCallback(async () => {
+    if (showResponses) { setShowResponses(false); return; }
+    if (responseInvitationId) { setShowResponses(true); return; }
+    // Find the invitation for this engagement's consultant
+    setLoadingInvitation(true);
+    try {
+      const invData = await rfqListInvitations({
+        project_id: engagement.n4s_project_id || 'proj_thornwood_001',
+        consultant_id: String(engagement.consultant_id)
+      }).catch(() => ({ invitations: [] }));
+      const inv = (invData.invitations || []).find(
+        i => String(i.consultant_id) === String(engagement.consultant_id)
+          && ['submitted', 'questionnaire_received'].includes(i.status)
+      );
+      if (inv) {
+        setResponseInvitationId(inv.id);
+        setShowResponses(true);
+      } else {
+        alert('No submitted RFQ response found for this consultant.');
+      }
+    } catch (err) {
+      console.error('[Matchmaking] Fetch invitation error:', err);
+      alert('Failed to load responses: ' + err.message);
+    } finally { setLoadingInvitation(false); }
+  }, [engagement, showResponses, responseInvitationId]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -667,6 +894,14 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
                   onClick={(e) => { e.stopPropagation(); setEditing(true); }}>
                   <Edit2 size={14} /> Edit Notes
                 </button>
+                {hasResponse && (
+                  <button className="byt-btn byt-btn--ghost byt-btn--sm"
+                    onClick={(e) => { e.stopPropagation(); handleViewResponses(); }}
+                    disabled={loadingInvitation}
+                    style={{ color: showResponses ? COLORS.navy : undefined }}>
+                    <Eye size={14} /> {loadingInvitation ? 'Loading...' : showResponses ? 'Hide Responses' : 'View Responses'}
+                  </button>
+                )}
                 {nextStage && (
                   <button className="byt-btn byt-btn--primary byt-btn--sm"
                     onClick={(e) => { e.stopPropagation(); handleAdvanceStage(); }}>
@@ -696,6 +931,15 @@ const EngagementCard = ({ engagement, score, onUpdate, onRemove, onComputeScore,
               </>
             )}
           </div>
+
+          {/* RFQ Response Viewer */}
+          {showResponses && responseInvitationId && (
+            <ResponseViewer
+              invitationId={responseInvitationId}
+              firmName={engagement.firm_name || 'Consultant'}
+              onClose={() => setShowResponses(false)}
+            />
+          )}
         </div>
       )}
     </div>
