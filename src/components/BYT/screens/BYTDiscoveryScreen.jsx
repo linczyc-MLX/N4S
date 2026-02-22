@@ -34,7 +34,7 @@ const API_BASE = window.location.hostname.includes('ionos.space')
 let BYT_AI_KEY = null;
 async function getAIKey() {
   if (BYT_AI_KEY) return BYT_AI_KEY;
-  const res = await fetch(`${API_BASE}/byt-ai-config.php`, { credentials: 'include' });
+  const res = await fetch(`${API_BASE}/gid-ai-config.php`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to load AI configuration');
   const data = await res.json();
   if (data.error) throw new Error(data.error);
