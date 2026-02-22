@@ -306,8 +306,11 @@ const ShortlistCandidateCard = ({
                 <button
                   className="byt-btn byt-btn--primary byt-btn--sm"
                   onClick={() => onShortlist(consultant)}
+                  disabled={!!engagement && engagement.contact_status !== 'passed' && engagement.contact_status !== 'archived'}
+                  title={engagement && engagement.contact_status !== 'passed' && engagement.contact_status !== 'archived' ? 'Already has an active engagement' : 'Add to shortlist'}
+                  style={engagement && engagement.contact_status !== 'passed' && engagement.contact_status !== 'archived' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                 >
-                  <CheckCircle2 size={14} /> Shortlist
+                  <CheckCircle2 size={14} /> {engagement && engagement.contact_status !== 'passed' && engagement.contact_status !== 'archived' ? 'Already Engaged' : 'Shortlist'}
                 </button>
                 <button
                   className="byt-btn byt-btn--ghost byt-btn--sm"
@@ -465,6 +468,16 @@ const BYTShortlistScreen = () => {
         engagementList = (eData.engagements || []).filter(e => e.discipline === selectedDiscipline);
       }
 
+      console.log('[Shortlist] Loaded:', {
+        discipline: selectedDiscipline,
+        projectId: activeProjectId,
+        consultants: allConsultants.length,
+        engagements: engagementList.length,
+        engagementDetails: engagementList.map(e => ({
+          id: e.id, consultant_id: e.consultant_id, firm: e.firm_name, status: e.contact_status
+        })),
+      });
+
       setConsultants(allConsultants);
       setDiscoveryMap(discoveryData);
       setEngagements(engagementList);
@@ -475,6 +488,11 @@ const BYTShortlistScreen = () => {
         .sort((a, b) => (a.shortlist_rank || 999) - (b.shortlist_rank || 999))
         .map(e => e.consultant_id);
       setShortlistOrder(shortlistedIds);
+
+      console.log('[Shortlist] Engagement matching:', {
+        shortlistedIds,
+        engagementMap: Object.fromEntries(engagementList.map(e => [e.consultant_id, e.contact_status])),
+      });
 
       // Build passed set
       const passed = new Set(
