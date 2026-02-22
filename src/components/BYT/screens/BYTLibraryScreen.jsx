@@ -341,13 +341,12 @@ const ProjectResponseCard = ({ invitation, engagement, onViewDetail, onAddToShor
               onClick={() => onViewDetail(invitation.id, invitation.firm_name)}>
               <Eye size={14} /> View
             </button>
-            {!engagement && (
-              <button className="byt-btn byt-btn--gold byt-btn--sm"
-                onClick={() => onAddToShortlist(invitation)}
-                disabled={adding}>
-                <UserPlus size={13} /> {adding ? 'Adding...' : 'Add to Shortlist'}
-              </button>
-            )}
+            <button className={`byt-btn byt-btn--sm ${engagement ? 'byt-btn--ghost' : 'byt-btn--gold'}`}
+              onClick={() => !engagement && onAddToShortlist(invitation)}
+              disabled={!!engagement || adding}
+              style={engagement ? { opacity: 0.45, cursor: 'default' } : undefined}>
+              <UserPlus size={13} /> {adding ? 'Adding...' : engagement ? 'Shortlisted' : 'Add to Shortlist'}
+            </button>
           </div>
         </div>
         {pipelineStatus && (
@@ -388,13 +387,12 @@ const LibraryConsultantCard = ({ consultant, engagement, onViewSubmission, onAdd
             </div>
           </div>
           <div className="byt-library-row__actions" onClick={e => e.stopPropagation()}>
-            {!engagement && (
-              <button className="byt-btn byt-btn--gold byt-btn--sm"
-                onClick={() => onAddToShortlist(consultant)}
-                disabled={adding}>
-                <UserPlus size={13} /> {adding ? 'Adding...' : 'Shortlist'}
-              </button>
-            )}
+            <button className={`byt-btn byt-btn--sm ${engagement ? 'byt-btn--ghost' : 'byt-btn--gold'}`}
+              onClick={() => !engagement && onAddToShortlist(consultant)}
+              disabled={!!engagement || adding}
+              style={engagement ? { opacity: 0.45, cursor: 'default' } : undefined}>
+              <UserPlus size={13} /> {adding ? 'Adding...' : engagement ? 'Shortlisted' : 'Shortlist'}
+            </button>
             <span style={{ color: COLORS.textMuted, cursor: 'pointer' }} onClick={() => setExpanded(!expanded)}>
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </span>
