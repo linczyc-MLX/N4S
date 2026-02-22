@@ -85,7 +85,8 @@ const PIPELINE_STAGES = [
 
 // IONOS API base
 const API_BASE = window.location.hostname.includes('ionos.space')
-  ? '' : (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
+  ? 'https://website.not-4.sale/api'
+  : (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
 
 
 // =============================================================================
